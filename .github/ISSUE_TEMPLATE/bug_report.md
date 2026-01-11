@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 <!--
-If have a feature request, create a new [discussion](https://github.com/ananthakumaran/paisa/discussions), Issue is
+If have a feature request, create a new [discussion](https://github.com/nextxm/paisa/discussions), Issue is
 reserved for bugs only.
 -->
 
