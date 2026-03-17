@@ -296,22 +296,30 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 
 	router.POST("/api/sheets/file", func(c *gin.Context) {
 		var sheetFile SheetFile
-		if err := c.ShouldBindJSON(&sheetFile); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if !BindJSONOrError(c, &sheetFile) {
 			return
 		}
 
-		c.JSON(200, GetSheet(sheetFile))
+		result, err := GetSheet(sheetFile)
+		if err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
+		c.JSON(200, result)
 	})
 
 	router.POST("/api/sheets/file/delete_backups", func(c *gin.Context) {
 		var sheetFile SheetFile
-		if err := c.ShouldBindJSON(&sheetFile); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if !BindJSONOrError(c, &sheetFile) {
 			return
 		}
 
-		c.JSON(200, DeleteSheetBackups(sheetFile))
+		result, err := DeleteSheetBackups(sheetFile)
+		if err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
+		c.JSON(200, result)
 	})
 
 	router.POST("/api/sheets/save", func(c *gin.Context) {
@@ -321,8 +329,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		}
 
 		var sheetFile SheetFile
-		if err := c.ShouldBindJSON(&sheetFile); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if !BindJSONOrError(c, &sheetFile) {
 			return
 		}
 

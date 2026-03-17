@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"path/filepath"
 	"sort"
 	"time"
@@ -33,7 +34,12 @@ func GetSheets(db *gorm.DB) gin.H {
 
 	files := []*SheetFile{}
 	for _, path := range paths {
-		files = append(files, readSheetFileWithVersions(dir, path))
+		file, err := readSheetFileWithVersions(dir, path)
+		if err != nil {
+			log.Warn(err)
+			continue
+		}
+		files = append(files, file)
 	}
 
 	postings := query.Init(db).All()
@@ -42,12 +48,16 @@ func GetSheets(db *gorm.DB) gin.H {
 	return gin.H{"files": files, "postings": postings}
 }
 
-func GetSheet(file SheetFile) gin.H {
+func GetSheet(file SheetFile) (gin.H, error) {
 	dir := config.GetSheetDir()
-	return gin.H{"file": readSheetFile(dir, filepath.Join(dir, file.Name))}
+	sheetFile, err := readSheetFile(dir, filepath.Join(dir, file.Name))
+	if err != nil {
+		return nil, err
+	}
+	return gin.H{"file": sheetFile}, nil
 }
 
-func DeleteSheetBackups(file SheetFile) gin.H {
+func DeleteSheetBackups(file SheetFile) (gin.H, error) {
 	dir := config.GetSheetDir()
 
 	if !config.GetConfig().Readonly {
@@ -55,12 +65,16 @@ func DeleteSheetBackups(file SheetFile) gin.H {
 		for _, version := range versions {
 			err := os.Remove(version)
 			if err != nil {
-				log.Fatal(err)
+				return nil, fmt.Errorf("failed to remove backup %s: %w", version, err)
 			}
 		}
 	}
 
-	return gin.H{"file": readSheetFileWithVersions(dir, filepath.Join(dir, file.Name))}
+	sheetFile, err := readSheetFileWithVersions(dir, filepath.Join(dir, file.Name))
+	if err != nil {
+		return nil, err
+	}
+	return gin.H{"file": sheetFile}, nil
 }
 
 func SaveSheetFile(db *gorm.DB, file SheetFile) gin.H {
@@ -113,48 +127,56 @@ func SaveSheetFile(db *gorm.DB, file SheetFile) gin.H {
 		return gin.H{"saved": false, "message": "Failed to write file"}
 	}
 
-	return gin.H{"saved": true, "file": readSheetFileWithVersions(dir, filePath)}
+	savedFile, err := readSheetFileWithVersions(dir, filePath)
+	if err != nil {
+		log.Warn(err)
+		return gin.H{"saved": true, "message": "Failed to read saved file"}
+	}
+	return gin.H{"saved": true, "file": savedFile}
 }
 
-func readSheetFile(dir string, path string) *SheetFile {
+func readSheetFile(dir string, path string) (*SheetFile, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to read file %s: %w", path, err)
 	}
 
 	name, err := filepath.Rel(dir, path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compute relative path for %s: %w", path, err)
+	}
 
 	return &SheetFile{
 		Name:    name,
 		Content: string(content),
-	}
+	}, nil
 }
 
-func readSheetFileWithVersions(dir string, path string) *SheetFile {
+func readSheetFileWithVersions(dir string, path string) (*SheetFile, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to read file %s: %w", path, err)
 	}
 
 	versions, _ := filepath.Glob(filepath.Join(filepath.Dir(path), filepath.Base(path)+".backup.*"))
-	versionPaths := lo.Map(versions, func(path string, _ int) string {
-		name, err := filepath.Rel(dir, path)
+	versionPaths := lo.FilterMap(versions, func(vPath string, _ int) (string, bool) {
+		name, err := filepath.Rel(dir, vPath)
 		if err != nil {
-			log.Fatal(err)
+			log.Warn(fmt.Errorf("failed to compute relative path for %s: %w", vPath, err))
+			return "", false
 		}
-
-		return name
+		return name, true
 	})
 	sort.Sort(sort.Reverse(sort.StringSlice(versionPaths)))
 
 	name, err := filepath.Rel(dir, path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to compute relative path for %s: %w", path, err)
 	}
 
 	return &SheetFile{
 		Name:     name,
 		Content:  string(content),
 		Versions: versionPaths,
-	}
+	}, nil
 }
