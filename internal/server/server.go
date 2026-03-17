@@ -69,13 +69,13 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 
 		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+			RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, err.Error())
 			return
 		}
 
 		err = config.SaveConfig(body)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+			RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, err.Error())
 			return
 		}
 
@@ -101,8 +101,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		}
 
 		var syncRequest SyncRequest
-		if err := c.ShouldBindJSON(&syncRequest); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if !BindJSONOrError(c, &syncRequest) {
 			return
 		}
 
@@ -187,8 +186,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 
 	router.POST("/api/price/autocomplete", func(c *gin.Context) {
 		var autoCompleteRequest AutoCompleteRequest
-		if err := c.ShouldBindJSON(&autoCompleteRequest); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if !BindJSONOrError(c, &autoCompleteRequest) {
 			return
 		}
 
@@ -417,13 +415,13 @@ func TokenAuthMiddleware() gin.HandlerFunc {
 
 		_, detail, _ := rateLimiter.RateLimitCtx(c.Request.Context(), "user", 0)
 		if detail.Remaining <= 0 {
-			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests"})
+			AbortWithError(c, http.StatusTooManyRequests, ErrCodeTooManyRequests, "Too many requests")
 			return
 		}
 
 		tokens := strings.SplitN(c.Request.Header.Get("X-Auth"), ":", 2)
 		if len(tokens) != 2 {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid Token"})
+			AbortWithError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Invalid Token")
 			return
 		}
 
@@ -437,7 +435,7 @@ func TokenAuthMiddleware() gin.HandlerFunc {
 		}
 
 		rateLimiter.RateLimitCtx(c.Request.Context(), "user", 1)
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		AbortWithError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Invalid username or password")
 		return
 
 	}
