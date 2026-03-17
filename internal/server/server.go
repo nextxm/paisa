@@ -11,7 +11,6 @@ import (
 	"github.com/ananthakumaran/paisa/internal/accounting"
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/generator"
-	"github.com/ananthakumaran/paisa/internal/ledger"
 	"github.com/ananthakumaran/paisa/internal/model/template"
 	"github.com/ananthakumaran/paisa/internal/prediction"
 	"github.com/ananthakumaran/paisa/internal/server/assets"
@@ -40,6 +39,9 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 
 	router.Use(TokenAuthMiddleware())
 
+	// writeGroup applies ReadonlyMiddleware to all mutating endpoints.
+	writeGroup := router.Group("", ReadonlyMiddleware())
+
 	router.GET("/robots.txt", func(c *gin.Context) {
 		c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte("User-agent: *\nDisallow: /"))
 	})
@@ -61,12 +63,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, gin.H{"config": config.GetConfig(), "accounts": accounting.AllAccounts(db), "now": now, "schema": config.GetSchema()})
 	})
 
-	router.POST("/api/config", func(c *gin.Context) {
-		if config.GetConfig().Readonly {
-			c.JSON(200, gin.H{"success": true})
-			return
-		}
-
+	writeGroup.POST("/api/config", func(c *gin.Context) {
 		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
 			RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, err.Error())
@@ -82,24 +79,14 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, gin.H{"success": true})
 	})
 
-	router.POST("/api/init", func(c *gin.Context) {
-		if config.GetConfig().Readonly {
-			c.JSON(200, gin.H{"success": true})
-			return
-		}
-
+	writeGroup.POST("/api/init", func(c *gin.Context) {
 		generator.Demo(config.GetConfigDir())
 		config.LoadConfigFile(config.GetConfigPath())
 		Sync(db, SyncRequest{Journal: true, Prices: true, Portfolios: true})
 		c.JSON(200, gin.H{"success": true})
 	})
 
-	router.POST("/api/sync", func(c *gin.Context) {
-		if config.GetConfig().Readonly {
-			c.JSON(200, gin.H{"success": true})
-			return
-		}
-
+	writeGroup.POST("/api/sync", func(c *gin.Context) {
 		var syncRequest SyncRequest
 		if !BindJSONOrError(c, &syncRequest) {
 			return
@@ -159,12 +146,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/ledger", func(c *gin.Context) {
 		c.JSON(200, GetLedger(db))
 	})
-	router.POST("/api/price/delete", func(c *gin.Context) {
-		if config.GetConfig().Readonly {
-			c.JSON(200, gin.H{"success": true})
-			return
-		}
-
+	writeGroup.POST("/api/price/delete", func(c *gin.Context) {
 		c.JSON(200, ClearPriceCache(db))
 	})
 	router.GET("/api/price", func(c *gin.Context) {
@@ -174,12 +156,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, GetPriceProviders(db))
 	})
 
-	router.POST("/api/price/providers/delete/:provider", func(c *gin.Context) {
-		if config.GetConfig().Readonly {
-			c.JSON(200, gin.H{"success": true})
-			return
-		}
-
+	writeGroup.POST("/api/price/providers/delete/:provider", func(c *gin.Context) {
 		provider := c.Param("provider")
 		c.JSON(200, ClearPriceProviderCache(db, provider))
 	})
@@ -276,12 +253,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, result)
 	})
 
-	router.POST("/api/editor/save", func(c *gin.Context) {
-		if config.GetConfig().Readonly {
-			c.JSON(200, gin.H{"errors": []ledger.LedgerFileError{}, "saved": false, "message": "Readonly mode"})
-			return
-		}
-
+	writeGroup.POST("/api/editor/save", func(c *gin.Context) {
 		var ledgerFile LedgerFile
 		if !BindJSONOrError(c, &ledgerFile) {
 			return
@@ -322,12 +294,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, result)
 	})
 
-	router.POST("/api/sheets/save", func(c *gin.Context) {
-		if config.GetConfig().Readonly {
-			c.JSON(200, gin.H{"saved": false, "message": "Readonly mode"})
-			return
-		}
-
+	writeGroup.POST("/api/sheets/save", func(c *gin.Context) {
 		var sheetFile SheetFile
 		if !BindJSONOrError(c, &sheetFile) {
 			return
@@ -344,12 +311,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, gin.H{"templates": template.All()})
 	})
 
-	router.POST("/api/templates/upsert", func(c *gin.Context) {
-		if config.GetConfig().Readonly {
-			c.JSON(200, gin.H{"saved": false, "message": "Readonly mode"})
-			return
-		}
-
+	writeGroup.POST("/api/templates/upsert", func(c *gin.Context) {
 		var t template.Template
 		if err := c.ShouldBindJSON(&t); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -359,12 +321,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, gin.H{"template": template.Upsert(t.Name, t.Content), "saved": true})
 	})
 
-	router.POST("/api/templates/delete", func(c *gin.Context) {
-		if config.GetConfig().Readonly {
-			c.JSON(200, gin.H{"success": false, "message": "Readonly mode"})
-			return
-		}
-
+	writeGroup.POST("/api/templates/delete", func(c *gin.Context) {
 		var t template.Template
 		if err := c.ShouldBindJSON(&t); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

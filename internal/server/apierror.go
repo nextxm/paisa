@@ -15,6 +15,7 @@ import (
 //   - INTERNAL_ERROR    – An unexpected server-side error occurred.
 //   - UNAUTHORIZED      – Authentication credentials are missing or invalid.
 //   - TOO_MANY_REQUESTS – The client has exceeded the allowed request rate.
+//   - READONLY          – The server is running in readonly mode; write operations are rejected.
 type ErrorCode string
 
 const (
@@ -22,6 +23,7 @@ const (
 	ErrCodeInternalError   ErrorCode = "INTERNAL_ERROR"
 	ErrCodeUnauthorized    ErrorCode = "UNAUTHORIZED"
 	ErrCodeTooManyRequests ErrorCode = "TOO_MANY_REQUESTS"
+	ErrCodeReadonly        ErrorCode = "READONLY"
 )
 
 // ErrorDetail is the canonical error payload embedded in every error response.
