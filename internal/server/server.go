@@ -236,32 +236,44 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 
 	router.POST("/api/editor/file", func(c *gin.Context) {
 		var ledgerFile LedgerFile
-		if err := c.ShouldBindJSON(&ledgerFile); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if !BindJSONOrError(c, &ledgerFile) {
 			return
 		}
 
-		c.JSON(200, GetFile(ledgerFile))
+		result, err := GetFile(ledgerFile)
+		if err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
+		c.JSON(200, result)
 	})
 
 	router.POST("/api/editor/file/delete_backups", func(c *gin.Context) {
 		var ledgerFile LedgerFile
-		if err := c.ShouldBindJSON(&ledgerFile); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if !BindJSONOrError(c, &ledgerFile) {
 			return
 		}
 
-		c.JSON(200, DeleteBackups(ledgerFile))
+		result, err := DeleteBackups(ledgerFile)
+		if err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
+		c.JSON(200, result)
 	})
 
 	router.POST("/api/editor/validate", func(c *gin.Context) {
 		var ledgerFile LedgerFile
-		if err := c.ShouldBindJSON(&ledgerFile); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if !BindJSONOrError(c, &ledgerFile) {
 			return
 		}
 
-		c.JSON(200, ValidateFile(ledgerFile))
+		result, err := ValidateFile(ledgerFile)
+		if err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
+		c.JSON(200, result)
 	})
 
 	router.POST("/api/editor/save", func(c *gin.Context) {
@@ -271,8 +283,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		}
 
 		var ledgerFile LedgerFile
-		if err := c.ShouldBindJSON(&ledgerFile); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if !BindJSONOrError(c, &ledgerFile) {
 			return
 		}
 

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"path/filepath"
 	"sort"
 	"time"
@@ -40,19 +41,28 @@ func GetFiles(db *gorm.DB) gin.H {
 	paths, _ := doublestar.FilepathGlob(dir + "/**/*" + filepath.Ext(path))
 
 	for _, path = range paths {
-		files = append(files, readLedgerFileWithVersions(dir, path))
+		file, err := readLedgerFileWithVersions(dir, path)
+		if err != nil {
+			log.Warn(err)
+			continue
+		}
+		files = append(files, file)
 	}
 
 	return gin.H{"files": files, "accounts": accounts, "payees": payees, "commodities": commodities}
 }
 
-func GetFile(file LedgerFile) gin.H {
+func GetFile(file LedgerFile) (gin.H, error) {
 	path := config.GetJournalPath()
 	dir := filepath.Dir(path)
-	return gin.H{"file": readLedgerFile(dir, filepath.Join(dir, file.Name))}
+	ledgerFile, err := readLedgerFile(dir, filepath.Join(dir, file.Name))
+	if err != nil {
+		return nil, err
+	}
+	return gin.H{"file": ledgerFile}, nil
 }
 
-func DeleteBackups(file LedgerFile) gin.H {
+func DeleteBackups(file LedgerFile) (gin.H, error) {
 	path := config.GetJournalPath()
 	dir := filepath.Dir(path)
 
@@ -61,12 +71,16 @@ func DeleteBackups(file LedgerFile) gin.H {
 		for _, version := range versions {
 			err := os.Remove(version)
 			if err != nil {
-				log.Fatal(err)
+				return nil, fmt.Errorf("failed to remove backup %s: %w", version, err)
 			}
 		}
 	}
 
-	return gin.H{"file": readLedgerFileWithVersions(dir, filepath.Join(dir, file.Name))}
+	ledgerFile, err := readLedgerFileWithVersions(dir, filepath.Join(dir, file.Name))
+	if err != nil {
+		return nil, err
+	}
+	return gin.H{"file": ledgerFile}, nil
 }
 
 func SaveFile(db *gorm.DB, file LedgerFile) gin.H {
@@ -126,12 +140,20 @@ func SaveFile(db *gorm.DB, file LedgerFile) gin.H {
 
 	Sync(db, SyncRequest{Journal: true})
 
-	return gin.H{"errors": errors, "saved": true, "file": readLedgerFileWithVersions(dir, filePath)}
+	savedFile, err := readLedgerFileWithVersions(dir, filePath)
+	if err != nil {
+		log.Warn(err)
+		return gin.H{"errors": errors, "saved": true, "message": "Failed to read saved file"}
+	}
+	return gin.H{"errors": errors, "saved": true, "file": savedFile}
 }
 
-func ValidateFile(file LedgerFile) gin.H {
-	errors, output, _ := validateFile(file)
-	return gin.H{"errors": errors, "output": output}
+func ValidateFile(file LedgerFile) (gin.H, error) {
+	errors, output, err := validateFile(file)
+	if err != nil {
+		return nil, err
+	}
+	return gin.H{"errors": errors, "output": output}, nil
 }
 
 func validateFile(file LedgerFile) ([]ledger.LedgerFileError, string, error) {
@@ -139,61 +161,64 @@ func validateFile(file LedgerFile) ([]ledger.LedgerFileError, string, error) {
 
 	tmpfile, err := os.CreateTemp(filepath.Dir(path), "paisa-tmp-")
 	if err != nil {
-		log.Fatal(err)
+		return nil, "", fmt.Errorf("failed to create temp file: %w", err)
 	}
 
 	defer os.Remove(tmpfile.Name())
 
 	if _, err := tmpfile.Write([]byte(file.Content)); err != nil {
-		log.Fatal(err)
+		return nil, "", fmt.Errorf("failed to write temp file: %w", err)
 	}
 
 	if err := tmpfile.Close(); err != nil {
-		log.Fatal(err)
+		return nil, "", fmt.Errorf("failed to close temp file: %w", err)
 	}
 
 	return ledger.Cli().ValidateFile(tmpfile.Name())
 }
 
-func readLedgerFile(dir string, path string) *LedgerFile {
+func readLedgerFile(dir string, path string) (*LedgerFile, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to read file %s: %w", path, err)
 	}
 
 	name, err := filepath.Rel(dir, path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compute relative path for %s: %w", path, err)
+	}
 
 	return &LedgerFile{
 		Name:    name,
 		Content: string(content),
-	}
+	}, nil
 }
 
-func readLedgerFileWithVersions(dir string, path string) *LedgerFile {
+func readLedgerFileWithVersions(dir string, path string) (*LedgerFile, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to read file %s: %w", path, err)
 	}
 
 	versions, _ := filepath.Glob(filepath.Join(filepath.Dir(path), filepath.Base(path)+".backup.*"))
-	versionPaths := lo.Map(versions, func(path string, _ int) string {
-		name, err := filepath.Rel(dir, path)
+	versionPaths := lo.FilterMap(versions, func(vPath string, _ int) (string, bool) {
+		name, err := filepath.Rel(dir, vPath)
 		if err != nil {
-			log.Fatal(err)
+			log.Warn(fmt.Errorf("failed to compute relative path for %s: %w", vPath, err))
+			return "", false
 		}
-
-		return name
+		return name, true
 	})
 	sort.Sort(sort.Reverse(sort.StringSlice(versionPaths)))
 
 	name, err := filepath.Rel(dir, path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to compute relative path for %s: %w", path, err)
 	}
 
 	return &LedgerFile{
 		Name:     name,
 		Content:  string(content),
 		Versions: versionPaths,
-	}
+	}, nil
 }
