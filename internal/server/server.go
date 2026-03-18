@@ -11,6 +11,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/accounting"
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/generator"
+	"github.com/ananthakumaran/paisa/internal/model/session"
 	"github.com/ananthakumaran/paisa/internal/model/template"
 	"github.com/ananthakumaran/paisa/internal/prediction"
 	"github.com/ananthakumaran/paisa/internal/server/assets"
@@ -37,7 +38,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 
 	router.Use(Logger(log.StandardLogger()), gin.Recovery())
 
-	router.Use(TokenAuthMiddleware())
+	router.Use(TokenAuthMiddleware(db))
 
 	// writeGroup applies ReadonlyMiddleware to all mutating endpoints.
 	writeGroup := router.Group("", ReadonlyMiddleware())
@@ -53,6 +54,8 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"success": true})
 	})
+
+	router.POST("/api/auth/login", Login(db))
 
 	router.GET("/api/config", func(c *gin.Context) {
 		var now *time.Time
@@ -365,7 +368,7 @@ func Listen(db *gorm.DB, port int) {
 	}
 }
 
-func TokenAuthMiddleware() gin.HandlerFunc {
+func TokenAuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 	store, err := memstore.NewCtx(10)
 	if err != nil {
 		log.Fatal(err)
@@ -388,24 +391,41 @@ func TokenAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// The login endpoint is always accessible so callers can obtain a token.
+		if c.Request.URL.Path == "/api/auth/login" {
+			c.Next()
+			return
+		}
+
 		_, detail, _ := rateLimiter.RateLimitCtx(c.Request.Context(), "user", 0)
 		if detail.Remaining <= 0 {
 			AbortWithError(c, http.StatusTooManyRequests, ErrCodeTooManyRequests, "Too many requests")
 			return
 		}
 
-		tokens := strings.SplitN(c.Request.Header.Get("X-Auth"), ":", 2)
-		if len(tokens) != 2 {
-			AbortWithError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Invalid Token")
+		authHeader := c.Request.Header.Get("X-Auth")
+		if authHeader == "" {
+			rateLimiter.RateLimitCtx(c.Request.Context(), "user", 1)
+			AbortWithError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Missing credentials")
 			return
 		}
 
-		hashed := utils.Sha256(tokens[1])
-		for _, userAccount := range userAccounts {
-			if subtle.ConstantTimeCompare([]byte(userAccount.Username), []byte(tokens[0])) == 1 &&
-				subtle.ConstantTimeCompare([]byte(userAccount.Password), []byte("sha256:"+hashed)) == 1 {
+		// Session token path: UUIDs contain only hex digits and hyphens, never colons.
+		if !strings.Contains(authHeader, ":") {
+			if _, err := session.FindByToken(db, authHeader); err == nil {
 				c.Next()
 				return
+			}
+		} else {
+			// Legacy username:password path.
+			tokens := strings.SplitN(authHeader, ":", 2)
+			hashed := utils.Sha256(tokens[1])
+			for _, userAccount := range userAccounts {
+				if subtle.ConstantTimeCompare([]byte(userAccount.Username), []byte(tokens[0])) == 1 &&
+					subtle.ConstantTimeCompare([]byte(userAccount.Password), []byte("sha256:"+hashed)) == 1 {
+					c.Next()
+					return
+				}
 			}
 		}
 
