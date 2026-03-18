@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/ananthakumaran/paisa/internal/model"
+	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -17,6 +18,10 @@ var updateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := utils.OpenDB()
 		if err != nil {
+			log.Fatal(err)
+		}
+
+		if err := migration.RunMigrations(db); err != nil {
 			log.Fatal(err)
 		}
 
