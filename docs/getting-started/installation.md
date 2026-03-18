@@ -54,7 +54,8 @@ the primary difference being how the user interface is launched.
     rel="noopener" markdown>![Run on PikaPods](../images/pika-pods.svg)</a><br />
     PikaPods lets you run Paisa on a server with a few clicks. It handles app upgrades,
     backup and hosting for you. Make sure to setup a [user
-    account](../reference/user-authentication.md) post installation.
+    account](../reference/user-authentication.md) post installation. PikaPods provides
+    HTTPS automatically, so no additional reverse-proxy configuration is needed.
 
 ## CLI
 
