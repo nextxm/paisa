@@ -48,6 +48,26 @@ ledger file → ledger CLI (ledger/hledger/beancount) → SQLite (via GORM) → 
 ### Sync Pipeline
 `POST /api/sync` → `cache.Clear()` → `model.SyncJournal(db)` (runs ledger CLI, upserts postings/prices to SQLite) → handlers recompute from DB. Always invalidate the cache before reading fresh data.
 
+### Security & Authentication
+- All `/api/*` routes (except `/api/auth/login`) require an `X-Auth` header validated by `TokenAuthMiddleware`.
+- **Session tokens** (UUID, no colon): validated via `session.FindByToken(db, token)` with a 24-hour TTL. Tokens are stored in the `sessions` SQLite table.
+- **Legacy auth** (`username:password` with colon in `X-Auth`): only enabled when `config.AllowLegacyAuth = true`.
+- Passwords are stored as `sha256:<hex>` in `paisa.yaml`; always use `crypto/subtle.ConstantTimeCompare()` for comparison.
+- Write endpoints are additionally guarded by `ReadonlyMiddleware` (rate limit: 6 req/min per user, 3-request burst via `throttled`).
+- Login: `POST /api/auth/login` → returns UUID session token; Logout: `POST /api/auth/logout` → deletes the session.
+
+### Error Handling
+All API errors must use the standardized envelope from `internal/server/apierror.go`:
+```json
+{ "error": { "code": "<ErrorCode>", "message": "<human-readable text>" } }
+```
+Use the provided helpers (never construct raw error JSON manually):
+- `AbortWithError(c, status, code, message)` – writes error + aborts handler chain
+- `RespondError(c, status, code, message)` – writes error without aborting
+- `BindJSONOrError(c, dst)` – binds JSON body, returns `false` and sends 400 on failure
+
+Defined error codes: `INVALID_REQUEST` (400), `INTERNAL_ERROR` (500), `UNAUTHORIZED` (401), `TOO_MANY_REQUESTS` (429), `READONLY` (write-blocked).
+
 ### Adding a New API Endpoint
 1. Add handler file in `internal/server/` (follow existing files like `budget.go`).
 2. Register the route in `internal/server/server.go` in `Build()`.
@@ -82,6 +102,12 @@ Bank/broker statements (CSV, XLS, XLSX, PDF) are converted to ledger entries ent
 - **Helpers** (`src/lib/template_helpers.ts`): custom Handlebars helpers including `amount`, `predictAccount` (TF-IDF cosine similarity against existing accounts), `isDate`, `negate`, `round`, `eq`, `gt`, `lt`, etc.
 - **Adding a helper**: export it from `template_helpers.ts`; it is automatically registered in both the editor (`handlebars_parser.ts` highlights it) and the Handlebars runtime.
 - **Tests**: `src/lib/import.test.ts` reads fixtures from `fixture/import/<template-name>/` — one CSV/XLS input paired with an expected `.ledger` output.
+
+## Code Style
+- **Go**: formatted with `gofmt` (enforced by `make lint`). No custom linter config — keep code `gofmt`-clean.
+- **TypeScript / Svelte**: Prettier with `printWidth: 100` and `trailingComma: "none"`. Run `./node_modules/.bin/prettier --write src` to auto-format.
+- **ESLint**: `@typescript-eslint/recommended` + `plugin:svelte/recommended`; `@typescript-eslint/no-explicit-any` is disabled (use of `any` is allowed).
+- Run `make lint` to validate all style rules before committing.
 
 ## Testing Conventions
 - **Regression tests** (`tests/`) spawn a real `./paisa serve` binary against fixture directories in `tests/fixture/` (one per currency/dialect: `inr`, `eur`, `inr-hledger`, `eur-hledger`, `inr-beancount`). They compare API responses against stored JSON snapshots; run with `REGENERATE=true` to update snapshots.
