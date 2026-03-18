@@ -316,8 +316,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 
 	writeGroup.POST("/api/templates/upsert", func(c *gin.Context) {
 		var t template.Template
-		if err := c.ShouldBindJSON(&t); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if !BindJSONOrError(c, &t) {
 			return
 		}
 
@@ -326,8 +325,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 
 	writeGroup.POST("/api/templates/delete", func(c *gin.Context) {
 		var t template.Template
-		if err := c.ShouldBindJSON(&t); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if !BindJSONOrError(c, &t) {
 			return
 		}
 
