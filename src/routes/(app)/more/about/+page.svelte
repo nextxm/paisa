@@ -2,21 +2,31 @@
   import Logo from "$lib/components/Logo.svelte";
   const links = [
     { name: "Chat", href: "https://matrix.to/#/#paisa:matrix.org", icon: "fa-solid fa-headset" },
-    { name: "Issue", href: "https://github.com/ananthakumaran/paisa/issues", icon: "fas fa-bug" },
+    { name: "Issue", href: "https://github.com/nextxm/paisa/issues", icon: "fas fa-bug" },
     {
       name: "Discussions",
-      href: "https://github.com/ananthakumaran/paisa/discussions",
+      href: "https://github.com/nextxm/paisa/discussions",
       icon: "fa-regular fa-comments"
     },
     {
       name: "Source Code",
-      href: "https://github.com/ananthakumaran/paisa",
+      href: "https://github.com/nextxm/paisa",
       icon: "fa-solid fa-code"
+    },
+    {
+      name: "Upstream Project",
+      href: "https://github.com/ananthakumaran/paisa",
+      icon: "fa-solid fa-code-branch"
+    },
+    {
+      name: "License (AGPL-3.0-or-later)",
+      href: "https://www.gnu.org/licenses/agpl-3.0.html",
+      icon: "fa-solid fa-scale-balanced"
     },
     { name: "Documentation", href: "https://paisa.fyi", icon: "fa-solid fa-book" },
     {
       name: "Releases",
-      href: "https://github.com/ananthakumaran/paisa/releases",
+      href: "https://github.com/nextxm/paisa/releases",
       icon: "fa-solid fa-download"
     },
     {
@@ -44,6 +54,9 @@
           <div class="is-size-3 is-primary-color">Paisa</div>
           <div>
             Version: <b>0.7.4</b>
+          </div>
+          <div class="is-size-7 mt-2">
+            Forked from ananthakumaran/paisa, maintained at nextxm/paisa under GNU AGPL-3.0-or-later.
           </div>
         </div>
 

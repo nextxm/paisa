@@ -89,8 +89,8 @@ function formatError(error: any) {
 
 const footer = `
 <p class="mt-3">
-  Please report this issue at <a href="https://github.com/ananthakumaran/paisa/issues"
-    >https://github.com/ananthakumaran/paisa/issues</a
+  Please report this issue at <a href="https://github.com/nextxm/paisa/issues"
+    >https://github.com/nextxm/paisa/issues</a
   >. Closing and reopening the app may help.
 </p>
 `;

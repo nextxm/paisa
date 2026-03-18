@@ -12,7 +12,7 @@
     "companyName": "Paisa",
     "productName": "Paisa",
     "productVersion": "0.7.4",
-    "copyright": "Copyright © 2022 - 2025 Anantha Kumaran",
-    "comments": "Personal finance manager"
+    "copyright": "Copyright © 2022 - 2025 Anantha Kumaran; Copyright © 2026 nextxm contributors",
+    "comments": "Fork of ananthakumaran/paisa, maintained at github.com/nextxm/paisa (GNU AGPL-3.0-or-later)"
   }
 }

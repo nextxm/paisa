@@ -20,3 +20,6 @@ you can ask on [Matrix chat](https://matrix.to/#/#paisa:matrix.org).
 ## License
 
 This software is licensed under [the AGPL 3 or later license](./COPYING).
+This repository is a fork of [ananthakumaran/paisa](https://github.com/ananthakumaran/paisa),
+and active updates for this fork are available at
+[nextxm/paisa](https://github.com/nextxm/paisa).

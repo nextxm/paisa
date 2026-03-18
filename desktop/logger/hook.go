@@ -20,7 +20,7 @@ func (hook *Hook) Fire(entry *log.Entry) error {
 	}
 
 	caller := fmt.Sprintf("File: %s\nLine: %d\nFunction:%s\n", entry.Caller.File, entry.Caller.Line, entry.Caller.Function)
-	footer := "Please report this issue at https://github.com/ananthakumaran/paisa/issues."
+	footer := "Please report this issue at https://github.com/nextxm/paisa/issues."
 	message := fmt.Sprintf("Paisa has encountered a critical error and needs to close.\n\n %s\n\n%s\n%s", entry.Message, caller, footer)
 
 	_, err := runtime.MessageDialog(*hook.Ctx, runtime.MessageDialogOptions{
