@@ -15,20 +15,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
-
-// openTestDB returns an in-memory SQLite database suitable for integration tests.
-func openTestDB(t *testing.T) *gorm.DB {
-	t.Helper()
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{
-		Logger: logger.Discard,
-	})
-	require.NoError(t, err, "failed to open in-memory SQLite database")
-	return db
-}
 
 // loadTestConfig sets up a minimal config with the given readonly flag and
 // restores the previous config when the test ends.
