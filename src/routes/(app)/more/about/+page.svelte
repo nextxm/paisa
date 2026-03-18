@@ -56,7 +56,8 @@
             Version: <b>0.7.4</b>
           </div>
           <div class="is-size-7 mt-2">
-            Forked from ananthakumaran/paisa, maintained at nextxm/paisa under GNU AGPL-3.0-or-later.
+            Forked from ananthakumaran/paisa, maintained at nextxm/paisa under GNU
+            AGPL-3.0-or-later.
           </div>
         </div>
 
