@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/ananthakumaran/paisa/cmd"
-	"github.com/ananthakumaran/paisa/internal/model"
+	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -35,7 +35,9 @@ func (a *App) startup(ctx context.Context) {
 		log.Fatal(err)
 	}
 
-	model.AutoMigrate(db)
+	if err := migration.RunMigrations(db); err != nil {
+		log.Fatal(err)
+	}
 
 	a.db = *db
 }

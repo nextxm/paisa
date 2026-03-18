@@ -6,15 +6,11 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/ledger"
-	"github.com/ananthakumaran/paisa/internal/model/cache"
 	"github.com/ananthakumaran/paisa/internal/model/cii"
 	"github.com/ananthakumaran/paisa/internal/model/commodity"
-	mutualfundModel "github.com/ananthakumaran/paisa/internal/model/mutualfund/scheme"
-	npsModel "github.com/ananthakumaran/paisa/internal/model/nps/scheme"
 	"github.com/ananthakumaran/paisa/internal/model/portfolio"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/price"
-	"github.com/ananthakumaran/paisa/internal/model/session"
 	"github.com/ananthakumaran/paisa/internal/scraper"
 	"github.com/ananthakumaran/paisa/internal/scraper/india"
 	"github.com/ananthakumaran/paisa/internal/scraper/mutualfund"
@@ -23,20 +19,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func AutoMigrate(db *gorm.DB) {
-	db.AutoMigrate(&npsModel.Scheme{})
-	db.AutoMigrate(&mutualfundModel.Scheme{})
-	db.AutoMigrate(&posting.Posting{})
-	db.AutoMigrate(&price.Price{})
-	db.AutoMigrate(&portfolio.Portfolio{})
-	db.AutoMigrate(&price.Price{})
-	db.AutoMigrate(&cii.CII{})
-	db.AutoMigrate(&cache.Cache{})
-	db.AutoMigrate(&session.Session{})
-}
-
 func SyncJournal(db *gorm.DB) (string, error) {
-	AutoMigrate(db)
 	log.Info("Syncing transactions from journal")
 
 	errors, _, err := ledger.Cli().ValidateFile(config.GetJournalPath())
@@ -70,7 +53,6 @@ func SyncJournal(db *gorm.DB) (string, error) {
 }
 
 func SyncCommodities(db *gorm.DB) error {
-	AutoMigrate(db)
 	log.Info("Fetching commodities price history")
 	commodities := lo.Shuffle(commodity.All())
 
@@ -105,7 +87,6 @@ func SyncCommodities(db *gorm.DB) error {
 }
 
 func SyncCII(db *gorm.DB) error {
-	AutoMigrate(db)
 	log.Info("Fetching taxation related info")
 	ciis, err := india.GetCostInflationIndex()
 	if err != nil {
@@ -117,7 +98,6 @@ func SyncCII(db *gorm.DB) error {
 }
 
 func SyncPortfolios(db *gorm.DB) error {
-	db.AutoMigrate(&portfolio.Portfolio{})
 	log.Info("Fetching commodities portfolio")
 	commodities := commodity.FindByType(config.MutualFund)
 	for _, commodity := range commodities {
