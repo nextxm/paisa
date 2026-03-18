@@ -16,30 +16,53 @@ type SyncRequest struct {
 func Sync(db *gorm.DB, request SyncRequest) gin.H {
 	cache.Clear()
 
+	var journalResult model.SyncResult
+
 	if request.Journal {
-		message, err := model.SyncJournal(db)
+		var err error
+		journalResult, err = model.SyncJournal(db)
 		if err != nil {
-			return gin.H{"success": false, "message": message}
+			return gin.H{
+				"success":      false,
+				"failed_stage": journalResult.FailedStage,
+				"message":      journalResult.Message,
+			}
 		}
 	}
 
 	if request.Prices {
 		err := model.SyncCommodities(db)
 		if err != nil {
-			return gin.H{"success": false, "message": err.Error()}
+			return gin.H{
+				"success":      false,
+				"failed_stage": "commodities",
+				"message":      err.Error(),
+			}
 		}
 		err = model.SyncCII(db)
 		if err != nil {
-			return gin.H{"success": false, "message": err.Error()}
+			return gin.H{
+				"success":      false,
+				"failed_stage": "cii",
+				"message":      err.Error(),
+			}
 		}
 	}
 
 	if request.Portfolios {
 		err := model.SyncPortfolios(db)
 		if err != nil {
-			return gin.H{"success": false, "message": err.Error()}
+			return gin.H{
+				"success":      false,
+				"failed_stage": "portfolios",
+				"message":      err.Error(),
+			}
 		}
 	}
 
-	return gin.H{"success": true}
+	return gin.H{
+		"success":       true,
+		"posting_count": journalResult.PostingCount,
+		"price_count":   journalResult.PriceCount,
+	}
 }
