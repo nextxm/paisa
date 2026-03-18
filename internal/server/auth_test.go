@@ -268,6 +268,91 @@ func TestTokenAuthMiddleware_LegacyAuth_RejectedWhenDisabled(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 }
 
+// TestTokenAuthMiddleware_ExpiredSession_Rejected verifies that the middleware
+// rejects a session token whose ExpiresAt timestamp is in the past, even
+// though the token exists in the database.
+func TestTokenAuthMiddleware_ExpiredSession_Rejected(t *testing.T) {
+	db := openTestDB(t)
+	configWithSingleAccount(t, "alice", "secret")
+
+	// Insert an already-expired session directly – session.Create always sets a
+	// future expiry, so we bypass it here to simulate a stale record.
+	expired := &session.Session{
+		Token:     "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+		Username:  "alice",
+		ExpiresAt: time.Now().Add(-1 * time.Hour),
+	}
+	require.NoError(t, db.Create(expired).Error)
+
+	router := gin.New()
+	router.Use(TokenAuthMiddleware(db))
+	router.GET("/api/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/ping", nil)
+	req.Header.Set("X-Auth", expired.Token)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	detail := decodeErrorEnvelope(t, rec)
+	assert.Equal(t, ErrCodeUnauthorized, detail.Code)
+}
+
+// TestLogout_InvalidatesSession verifies that after POST /api/auth/logout the
+// session token is immediately invalidated: subsequent requests with the same
+// token must be rejected with 401 Unauthorized.
+func TestLogout_InvalidatesSession(t *testing.T) {
+	db := openTestDB(t)
+	configWithSingleAccount(t, "alice", "secret")
+
+	router := gin.New()
+	router.Use(TokenAuthMiddleware(db))
+	router.POST("/api/auth/login", Login(db))
+	router.POST("/api/auth/logout", Logout(db))
+	router.GET("/api/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+	})
+
+	// 1. Obtain a session token via login.
+	body := strings.NewReader(`{"username":"alice","password":"secret"}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", body)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	var loginResp loginResponse
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&loginResp))
+	token := loginResp.Token
+	require.NotEmpty(t, token)
+
+	// 2. Confirm the token grants access before logout.
+	req = httptest.NewRequest(http.MethodGet, "/api/ping", nil)
+	req.Header.Set("X-Auth", token)
+	rec = httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code, "token must be valid before logout")
+
+	// 3. Log out – this deletes the session from the database.
+	req = httptest.NewRequest(http.MethodPost, "/api/auth/logout", nil)
+	req.Header.Set("X-Auth", token)
+	rec = httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	// 4. The same token must now be rejected immediately.
+	req = httptest.NewRequest(http.MethodGet, "/api/ping", nil)
+	req.Header.Set("X-Auth", token)
+	rec = httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code,
+		"token must be invalidated immediately after logout")
+	detail := decodeErrorEnvelope(t, rec)
+	assert.Equal(t, ErrCodeUnauthorized, detail.Code)
+}
+
 // TestTokenAuthMiddleware_SessionToken_WorksRegardlessOfLegacyFlag verifies
 // that a valid session token is accepted regardless of the AllowLegacyAuth flag.
 func TestTokenAuthMiddleware_SessionToken_WorksRegardlessOfLegacyFlag(t *testing.T) {
