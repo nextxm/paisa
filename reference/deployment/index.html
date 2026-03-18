@@ -6,34 +6,34 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Paisa is an open source personal finance manager. It helps you with tracking investments like mutual funds, stocks etc. It helps with expenses categorization, budgeting and money management in general.">
+        <meta name="description" content="How to deploy Paisa securely for internet-facing access">
       
       
         <meta name="author" content="Anantha Kumaran">
       
       
-        <link rel="canonical" href="https://paisa.fyi/reference/tax/tax-harvesting/">
+        <link rel="canonical" href="https://paisa.fyi/reference/deployment/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../editor/">
       
       
-        <link rel="next" href="../capital-gains/">
+        <link rel="next" href="../user-authentication/">
       
       
-      <link rel="icon" href="../../../images/favicon.png">
+      <link rel="icon" href="../../images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.4">
     
     
       
-        <title>Tax Harvesting - Paisa</title>
+        <title>Deployment - Paisa</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.8608ea7d.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.8608ea7d.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -52,11 +52,11 @@
       
     
     
-      <link rel="stylesheet" href="../../../stylesheets/device-frames.min.css">
+      <link rel="stylesheet" href="../../stylesheets/device-frames.min.css">
     
-      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
   
@@ -98,7 +98,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tax-harvesting" class="md-skip">
+        <a href="#deployment" class="md-skip">
           Skip to content
         </a>
       
@@ -129,7 +129,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="Paisa" class="md-header__button md-logo" aria-label="Paisa" data-md-component="logo">
+    <a href="../.." title="Paisa" class="md-header__button md-logo" aria-label="Paisa" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24"><g><g><g transform="rotate(360, 12, 12)"><path d="M12 12Z" fill="none" stroke="#b388ff" stroke-width="4" stroke-linecap="round"></path></g></g><g><g transform="rotate(0, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#aeea00" stroke-width="4"></path></g><g transform="rotate(72, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#ff1744" stroke-width="4"></path></g><g transform="rotate(144, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#d500f9" stroke-width="4"></path></g><g transform="rotate(216, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#ffab00" stroke-width="4"></path></g><g transform="rotate(288, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#00b0ff" stroke-width="4"></path></g><g transform="rotate(72, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#aeea00" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(144, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#ff1744" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(216, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#d500f9" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(288, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#ffab00" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(360, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#00b0ff" stroke-width="4.2" stroke-linecap="round"></path></g></g></g></svg>
@@ -149,7 +149,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tax Harvesting
+              Deployment
             
           </span>
         </div>
@@ -258,7 +258,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../.." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
     
@@ -277,7 +277,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../getting-started/installation/" class="md-tabs__link">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
           
   
     
@@ -299,7 +299,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../accounts/" class="md-tabs__link">
+        <a href="../accounts/" class="md-tabs__link">
           
   
     
@@ -334,7 +334,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../manifesto/" class="md-tabs__link">
+      <a href="../../manifesto/" class="md-tabs__link">
         
   
     
@@ -351,7 +351,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../faq/" class="md-tabs__link">
+      <a href="../../faq/" class="md-tabs__link">
         
   
     
@@ -370,7 +370,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../blog/" class="md-tabs__link">
+        <a href="../../blog/" class="md-tabs__link">
           
   
     
@@ -405,7 +405,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Paisa" class="md-nav__button md-logo" aria-label="Paisa" data-md-component="logo">
+    <a href="../.." title="Paisa" class="md-nav__button md-logo" aria-label="Paisa" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24"><g><g><g transform="rotate(360, 12, 12)"><path d="M12 12Z" fill="none" stroke="#b388ff" stroke-width="4" stroke-linecap="round"></path></g></g><g><g transform="rotate(0, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#aeea00" stroke-width="4"></path></g><g transform="rotate(72, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#ff1744" stroke-width="4"></path></g><g transform="rotate(144, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#d500f9" stroke-width="4"></path></g><g transform="rotate(216, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#ffab00" stroke-width="4"></path></g><g transform="rotate(288, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#00b0ff" stroke-width="4"></path></g><g transform="rotate(72, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#aeea00" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(144, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#ff1744" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(216, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#d500f9" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(288, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#ffab00" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(360, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#00b0ff" stroke-width="4.2" stroke-linecap="round"></path></g></g></g></svg>
@@ -435,7 +435,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -503,7 +503,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../getting-started/installation/" class="md-nav__link">
+      <a href="../../getting-started/installation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -525,7 +525,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../getting-started/tutorial/" class="md-nav__link">
+      <a href="../../getting-started/tutorial/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -638,7 +638,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../accounts/" class="md-nav__link">
+      <a href="../accounts/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -660,7 +660,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commodities/" class="md-nav__link">
+      <a href="../commodities/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -682,7 +682,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../journal/" class="md-nav__link">
+      <a href="../journal/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -704,7 +704,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../allocation-targets/" class="md-nav__link">
+      <a href="../allocation-targets/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -726,7 +726,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../budget/" class="md-nav__link">
+      <a href="../budget/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -748,7 +748,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../bulk-edit/" class="md-nav__link">
+      <a href="../bulk-edit/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -770,7 +770,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../import/" class="md-nav__link">
+      <a href="../import/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -792,7 +792,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../recurring/" class="md-nav__link">
+      <a href="../recurring/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -814,7 +814,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../sheets/" class="md-nav__link">
+      <a href="../sheets/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -844,7 +844,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config/" class="md-nav__link">
+      <a href="../config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -893,7 +893,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../goals/" class="md-nav__link ">
+            <a href="../goals/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -927,7 +927,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../goals/retirement/" class="md-nav__link">
+      <a href="../goals/retirement/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -949,7 +949,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../goals/savings/" class="md-nav__link">
+      <a href="../goals/savings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -979,7 +979,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ledger-cli/" class="md-nav__link">
+      <a href="../ledger-cli/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1001,7 +1001,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../editor/" class="md-nav__link">
+      <a href="../editor/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1014,157 +1014,6 @@
     </li>
   
 
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../deployment/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Deployment
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../user-authentication/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    User Authentication
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../credit-cards/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Credit Cards
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../analysis/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Analysis
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_18" checked>
-        
-          
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
-              
-  
-  <span class="md-ellipsis">
-    Tax
-    
-  </span>
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_3_18" id="__nav_3_18_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_18_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_3_18">
-            <span class="md-nav__icon md-icon"></span>
-            Tax
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
               
             
               
@@ -1187,7 +1036,7 @@
           
   
   <span class="md-ellipsis">
-    Tax Harvesting
+    Deployment
     
   </span>
   
@@ -1199,7 +1048,7 @@
         
   
   <span class="md-ellipsis">
-    Tax Harvesting
+    Deployment
     
   </span>
   
@@ -1222,9 +1071,60 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#multiple-folios" class="md-nav__link">
+  <a href="#how-paisa-binds-by-default" class="md-nav__link">
     <span class="md-ellipsis">
-      Multiple Folios
+      How Paisa binds by default
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nginx" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nginx
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#caddy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Caddy
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docker-with-a-reverse-proxy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docker with a reverse proxy
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Docker with a reverse proxy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker-compose-caddy-paisa" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docker Compose (Caddy + Paisa)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      Security checklist
     </span>
   </a>
   
@@ -1246,7 +1146,158 @@
   
   
     <li class="md-nav__item">
-      <a href="../capital-gains/" class="md-nav__link">
+      <a href="../user-authentication/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    User Authentication
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../credit-cards/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Credit Cards
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../analysis/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Analysis
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_18" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tax/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Tax
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_18" id="__nav_3_18_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_18">
+            <span class="md-nav__icon md-icon"></span>
+            Tax
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tax/tax-harvesting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tax Harvesting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tax/capital-gains/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1268,7 +1319,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../schedule-al/" class="md-nav__link">
+      <a href="../tax/schedule-al/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1298,7 +1349,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../changelog/" class="md-nav__link">
+      <a href="../changelog/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1348,7 +1399,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../manifesto/" class="md-nav__link">
+      <a href="../../manifesto/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1369,7 +1420,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../faq/" class="md-nav__link">
+      <a href="../../faq/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1417,7 +1468,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../blog/" class="md-nav__link ">
+            <a href="../../blog/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1498,7 +1549,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/archive/2024/" class="md-nav__link">
+      <a href="../../blog/archive/2024/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1585,7 +1636,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/category/configuration/" class="md-nav__link">
+      <a href="../../blog/category/configuration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1609,7 +1660,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/category/gold/" class="md-nav__link">
+      <a href="../../blog/category/gold/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1633,7 +1684,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/category/locale/" class="md-nav__link">
+      <a href="../../blog/category/locale/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1657,7 +1708,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/category/price/" class="md-nav__link">
+      <a href="../../blog/category/price/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1681,7 +1732,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/category/sgb/" class="md-nav__link">
+      <a href="../../blog/category/sgb/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1705,7 +1756,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/category/sovereign-gold-bond/" class="md-nav__link">
+      <a href="../../blog/category/sovereign-gold-bond/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1762,9 +1813,60 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#multiple-folios" class="md-nav__link">
+  <a href="#how-paisa-binds-by-default" class="md-nav__link">
     <span class="md-ellipsis">
-      Multiple Folios
+      How Paisa binds by default
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nginx" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nginx
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#caddy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Caddy
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docker-with-a-reverse-proxy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docker with a reverse proxy
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Docker with a reverse proxy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker-compose-caddy-paisa" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docker Compose (Caddy + Paisa)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      Security checklist
     </span>
   </a>
   
@@ -1789,67 +1891,143 @@
   
 
 
-<h1 id="tax-harvesting">Tax Harvesting<a class="headerlink" href="#tax-harvesting" title="Permanent link">&para;</a></h1>
-<p>Gains from asset types like Mutual Fund, Stock are subject to capital
-gains tax. The taxation rate itself differs based on how long you hold
-your investment, whether it's debt or equity, whether you have more
-than 1 Lakh gains in a year etc. To further complicate things, there
-might be exit load applicable.</p>
-<p>Paisa takes a generic approach and let the user configure when a
-commodity is safe to harvest. There are two fields related to tax
-harvesting.</p>
-<ol>
-<li>
-<p>harvest - specifies the number of days after which the commodity is
-   eligible for tax harvesting. This should be set based on fund exit
-   load, fund category etc</p>
-</li>
-<li>
-<p>tax_category - This defines how the taxes are calculated as the
-   government usually tweaks the tax code regularly with various rules
-   like grandfathering, cost inflation index adjustment, etc.</p>
-<ol>
-<li>
-<p><code>equity65</code> - This is for 65% or more investment in Indian
-   equity.</p>
-</li>
-<li>
-<p><code>equity35</code> - This if for 35% or more investment in India equity
-   but less than 65%</p>
-</li>
-<li>
-<p><code>debt</code> - This is for debt funds.</p>
-</li>
-<li>
-<p><code>unlisted_equity</code> - This is for unlisted foreign on Indian equity.</p>
-</li>
-</ol>
-</li>
-</ol>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">commodities</span><span class="p">:</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">NIFTY</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mutualfund</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">code</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">120716</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">harvest</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">365</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="nt">tax_category</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">equity65</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ABSTF</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mutualfund</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="nt">code</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">119533</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">harvest</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1095</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="nt">tax_category</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">debt</span>
+<h1 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h1>
+<p>Paisa's built-in server listens on plain HTTP. For local-only use this is
+perfectly fine, but <strong>any internet-facing deployment must place Paisa behind a
+reverse proxy that terminates TLS</strong>. Without HTTPS an attacker on the network
+can read your financial data and capture your session token or credentials.</p>
+<div class="admonition danger">
+<p class="admonition-title">HTTPS is required for internet-facing deployments</p>
+<p>Never expose Paisa directly on a public IP or hostname without TLS.
+Always use a reverse proxy with a valid TLS certificate.</p>
+</div>
+<hr />
+<h2 id="how-paisa-binds-by-default">How Paisa binds by default<a class="headerlink" href="#how-paisa-binds-by-default" title="Permanent link">&para;</a></h2>
+<p>By default <code>paisa serve</code> listens on <code>127.0.0.1:7500</code> (localhost only). The
+reverse proxy runs on the public interface and forwards requests to Paisa on
+localhost, so Paisa itself never needs to handle TLS.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Internet ──HTTPS──► Reverse Proxy (port 443) ──HTTP──► Paisa (127.0.0.1:7500)
 </span></code></pre></div>
-<p>The tax harvest page will show the list of accounts eligible for
-harvesting.</p>
-<h2 id="multiple-folios">Multiple Folios<a class="headerlink" href="#multiple-folios" title="Permanent link">&para;</a></h2>
-<p>Paisa uses FIFO method within an Account. If you have multiple folios,
-this might result in incorrect values. The issue can be solved by
-using a different Account for each folio.</p>
+<hr />
+<h2 id="nginx">Nginx<a class="headerlink" href="#nginx" title="Permanent link">&para;</a></h2>
+<p>The example below assumes you already have a TLS certificate. <a href="https://certbot.eff.org/">Certbot with
+Let's Encrypt</a> is the most common way to obtain a
+free certificate automatically.</p>
+<div class="language-nginx highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">paisa.example.com</span><span class="p">;</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="c1"># Redirect all plain-HTTP traffic to HTTPS.</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="kn">return</span><span class="w"> </span><span class="mi">301</span><span class="w"> </span><span class="s">https://</span><span class="nv">$host$request_uri</span><span class="p">;</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="p">}</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">443</span><span class="w"> </span><span class="s">ssl</span><span class="p">;</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">paisa.example.com</span><span class="p">;</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="kn">ssl_certificate</span><span class="w">     </span><span class="s">/etc/letsencrypt/live/paisa.example.com/fullchain.pem</span><span class="p">;</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">    </span><span class="kn">ssl_certificate_key</span><span class="w"> </span><span class="s">/etc/letsencrypt/live/paisa.example.com/privkey.pem</span><span class="p">;</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">    </span><span class="c1"># Modern TLS configuration (TLS 1.2+ only).</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">    </span><span class="kn">ssl_protocols</span><span class="w"> </span><span class="s">TLSv1.2</span><span class="w"> </span><span class="s">TLSv1.3</span><span class="p">;</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">    </span><span class="kn">ssl_ciphers</span><span class="w">   </span><span class="s">HIGH:!aNULL:!MD5</span><span class="p">;</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">    </span><span class="c1"># Optional: add HSTS to tell browsers to always use HTTPS.</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">    </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Strict-Transport-Security</span><span class="w"> </span><span class="s">&quot;max-age=63072000&quot;</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w">         </span><span class="s">http://127.0.0.1:7500</span><span class="p">;</span>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">        </span><span class="kn">proxy_http_version</span><span class="w"> </span><span class="mi">1</span><span class="s">.1</span><span class="p">;</span>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w">   </span><span class="s">Host</span><span class="w">              </span><span class="nv">$host</span><span class="p">;</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w">   </span><span class="s">X-Real-IP</span><span class="w">         </span><span class="nv">$remote_addr</span><span class="p">;</span>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w">   </span><span class="s">X-Forwarded-For</span><span class="w">   </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w">   </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="w">        </span><span class="c1"># Setting Connection to &quot;&quot; clears the hop-by-hop header forwarded by</span>
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w">        </span><span class="c1"># Nginx, which is required to keep Server-Sent Event (SSE) streams</span>
+</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="w">        </span><span class="c1"># open. It is safe to apply globally to this location block.</span>
+</span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w">   </span><span class="s">Connection</span><span class="w">        </span><span class="s">&quot;&quot;</span><span class="p">;</span>
+</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="w">        </span><span class="kn">proxy_buffering</span><span class="w">    </span><span class="no">off</span><span class="p">;</span>
+</span><span id="__span-1-36"><a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-1-37"><a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>After updating the configuration, reload nginx:</p>
+<div class="language-console highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp"># </span>sudo<span class="w"> </span>nginx<span class="w"> </span>-t<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>systemctl<span class="w"> </span>reload<span class="w"> </span>nginx
+</span></code></pre></div>
+<hr />
+<h2 id="caddy">Caddy<a class="headerlink" href="#caddy" title="Permanent link">&para;</a></h2>
+<p><a href="https://caddyserver.com/">Caddy</a> automatically provisions and renews Let's
+Encrypt certificates. A minimal <code>Caddyfile</code> is all that is required:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>paisa.example.com {
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    reverse_proxy 127.0.0.1:7500
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>}
+</span></code></pre></div>
+<p>Caddy handles HTTPS, HTTP→HTTPS redirects, and certificate renewal without any
+extra configuration. Start or reload Caddy after saving the file:</p>
+<div class="language-console highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp"># </span>caddy<span class="w"> </span>reload
+</span></code></pre></div>
+<hr />
+<h2 id="docker-with-a-reverse-proxy">Docker with a reverse proxy<a class="headerlink" href="#docker-with-a-reverse-proxy" title="Permanent link">&para;</a></h2>
+<p>When running Paisa in Docker, bind the container port to localhost only so it
+is not reachable directly from the internet, then front it with a reverse proxy
+container.</p>
+<h3 id="docker-compose-caddy-paisa">Docker Compose (Caddy + Paisa)<a class="headerlink" href="#docker-compose-caddy-paisa" title="Permanent link">&para;</a></h3>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">services</span><span class="p">:</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">paisa</span><span class="p">:</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ananthakumaran/paisa:latest</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/home/john/Documents/paisa:/root/Documents/paisa</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="c1"># Bind to localhost only – do not publish 7500 to the host network.</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span><span class="nt">expose</span><span class="p">:</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;7500&quot;</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">  </span><span class="nt">caddy</span><span class="p">:</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">caddy:latest</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;80:80&quot;</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;443:443&quot;</span>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;443:443/udp&quot;</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./Caddyfile:/etc/caddy/Caddyfile:ro</span>
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">caddy_data:/data</span>
+</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">caddy_config:/config</span>
+</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>
+</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="nt">volumes</span><span class="p">:</span>
+</span><span id="__span-5-22"><a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="w">  </span><span class="nt">caddy_data</span><span class="p">:</span>
+</span><span id="__span-5-23"><a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="w">  </span><span class="nt">caddy_config</span><span class="p">:</span>
+</span></code></pre></div>
+<p><code>Caddyfile</code> (placed next to <code>docker-compose.yml</code>):</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>paisa.example.com {
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    reverse_proxy paisa:7500
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>}
+</span></code></pre></div>
+<p>Start the stack:</p>
+<div class="language-console highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp"># </span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+</span></code></pre></div>
+<hr />
+<h2 id="security-checklist">Security checklist<a class="headerlink" href="#security-checklist" title="Permanent link">&para;</a></h2>
+<p>Before exposing Paisa to the internet, verify the following:</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>HTTPS only</strong> – Reverse proxy redirects HTTP → HTTPS (port 80 → 443).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>User account configured</strong> – At least one username/password has been
+  added in the <a href="../user-authentication/">User Authentication</a> settings.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Strong password</strong> – Use a randomly-generated password of 16+ characters.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Firewall</strong> – Paisa's port (<code>7500</code>) is firewalled and only the reverse
+  proxy can reach it.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>HSTS</strong> – <code>Strict-Transport-Security</code> header is set so browsers remember
+  to use HTTPS.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Keep software updated</strong> – Paisa, your reverse proxy, and the OS should
+  all receive security updates regularly.</li>
+</ul>
 
 
 
 
 
 
+
+  
+  
 
 
 
@@ -1889,7 +2067,7 @@ using a different Account for each folio.</p>
               
                 
               
-              Thanks for your feedback! Help us improve this page by using our <a href="https://docs.google.com/forms/d/e/1FAIpQLSejpTiljuhsviEvXFBN-Z5rJZ_dkXHV5RaZzqpyCAZF1nIFiQ/viewform?usp=pp_url&entry.1125403938=/reference/tax/tax-harvesting/" target="_blank" rel="noopener">feedback form</a>.
+              Thanks for your feedback! Help us improve this page by using our <a href="https://docs.google.com/forms/d/e/1FAIpQLSejpTiljuhsviEvXFBN-Z5rJZ_dkXHV5RaZzqpyCAZF1nIFiQ/viewform?usp=pp_url&entry.1125403938=/reference/deployment/" target="_blank" rel="noopener">feedback form</a>.
             </div>
           
         </div>
@@ -1923,7 +2101,7 @@ using a different Account for each folio.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Tax">
+          <a href="../editor/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Editor">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1933,20 +2111,20 @@ using a different Account for each folio.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Tax
+                Editor
               </div>
             </div>
           </a>
         
         
           
-          <a href="../capital-gains/" class="md-footer__link md-footer__link--next" aria-label="Next: Capital Gains">
+          <a href="../user-authentication/" class="md-footer__link md-footer__link--next" aria-label="Next: User Authentication">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Capital Gains
+                User Authentication
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -2124,12 +2302,12 @@ using a different Account for each folio.</p>
       </div>
       <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.tabs.link", "content.code.copy", "content.code.annotate", "navigation.instant", "navigation.tabs", "navigation.expand", "navigation.indexes", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "announce.dismiss"], "search": "../../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "content.code.copy", "content.code.annotate", "navigation.instant", "navigation.tabs", "navigation.expand", "navigation.indexes", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "announce.dismiss"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.f1b6f286.min.js"></script>
+      <script src="../../assets/javascripts/bundle.f1b6f286.min.js"></script>
       
-        <script src="../../../javascripts/extra.js"></script>
+        <script src="../../javascripts/extra.js"></script>
       
     
   </body>

@@ -12,28 +12,24 @@
         <meta name="author" content="Anantha Kumaran">
       
       
-        <link rel="canonical" href="https://paisa.fyi/reference/tax/tax-harvesting/">
+        <link rel="canonical" href="https://paisa.fyi/architecture/">
       
       
-        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../capital-gains/">
-      
-      
-      <link rel="icon" href="../../../images/favicon.png">
+      <link rel="icon" href="../images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.4">
     
     
       
-        <title>Tax Harvesting - Paisa</title>
+        <title>Architecture and Design Document - Paisa</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.8608ea7d.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.8608ea7d.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -52,11 +48,11 @@
       
     
     
-      <link rel="stylesheet" href="../../../stylesheets/device-frames.min.css">
+      <link rel="stylesheet" href="../stylesheets/device-frames.min.css">
     
-      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+      <link rel="stylesheet" href="../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
   
@@ -98,7 +94,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tax-harvesting" class="md-skip">
+        <a href="#architecture-and-design-document" class="md-skip">
           Skip to content
         </a>
       
@@ -129,7 +125,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="Paisa" class="md-header__button md-logo" aria-label="Paisa" data-md-component="logo">
+    <a href=".." title="Paisa" class="md-header__button md-logo" aria-label="Paisa" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24"><g><g><g transform="rotate(360, 12, 12)"><path d="M12 12Z" fill="none" stroke="#b388ff" stroke-width="4" stroke-linecap="round"></path></g></g><g><g transform="rotate(0, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#aeea00" stroke-width="4"></path></g><g transform="rotate(72, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#ff1744" stroke-width="4"></path></g><g transform="rotate(144, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#d500f9" stroke-width="4"></path></g><g transform="rotate(216, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#ffab00" stroke-width="4"></path></g><g transform="rotate(288, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#00b0ff" stroke-width="4"></path></g><g transform="rotate(72, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#aeea00" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(144, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#ff1744" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(216, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#d500f9" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(288, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#ffab00" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(360, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#00b0ff" stroke-width="4.2" stroke-linecap="round"></path></g></g></g></svg>
@@ -149,7 +145,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tax Harvesting
+              Architecture and Design Document
             
           </span>
         </div>
@@ -258,7 +254,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../.." class="md-tabs__link">
+      <a href=".." class="md-tabs__link">
         
   
     
@@ -277,7 +273,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../getting-started/installation/" class="md-tabs__link">
+        <a href="../getting-started/installation/" class="md-tabs__link">
           
   
     
@@ -293,13 +289,11 @@
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../accounts/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../reference/accounts/" class="md-tabs__link">
           
   
     
@@ -334,7 +328,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../manifesto/" class="md-tabs__link">
+      <a href="../manifesto/" class="md-tabs__link">
         
   
     
@@ -351,7 +345,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../faq/" class="md-tabs__link">
+      <a href="../faq/" class="md-tabs__link">
         
   
     
@@ -370,7 +364,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../blog/" class="md-tabs__link">
+        <a href="../blog/" class="md-tabs__link">
           
   
     
@@ -405,7 +399,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Paisa" class="md-nav__button md-logo" aria-label="Paisa" data-md-component="logo">
+    <a href=".." title="Paisa" class="md-nav__button md-logo" aria-label="Paisa" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24"><g><g><g transform="rotate(360, 12, 12)"><path d="M12 12Z" fill="none" stroke="#b388ff" stroke-width="4" stroke-linecap="round"></path></g></g><g><g transform="rotate(0, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#aeea00" stroke-width="4"></path></g><g transform="rotate(72, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#ff1744" stroke-width="4"></path></g><g transform="rotate(144, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#d500f9" stroke-width="4"></path></g><g transform="rotate(216, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#ffab00" stroke-width="4"></path></g><g transform="rotate(288, 12, 12)"><path d="M 21.510565162951536 8.909830056250526 A 10 10 0 0 0 12 6" fill="none" stroke="#00b0ff" stroke-width="4"></path></g><g transform="rotate(72, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#aeea00" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(144, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#ff1744" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(216, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#d500f9" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(288, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#ffab00" stroke-width="4.2" stroke-linecap="round"></path></g><g transform="rotate(360, 12, 12)"><path d="M12.59 5.88Z" fill="none" stroke="#00b0ff" stroke-width="4.2" stroke-linecap="round"></path></g></g></g></svg>
@@ -435,7 +429,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -503,7 +497,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../getting-started/installation/" class="md-nav__link">
+      <a href="../getting-started/installation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -525,7 +519,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../getting-started/tutorial/" class="md-nav__link">
+      <a href="../getting-started/tutorial/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -551,10 +545,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -599,20 +591,19 @@
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -624,7 +615,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Reference
@@ -638,7 +629,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../accounts/" class="md-nav__link">
+      <a href="../reference/accounts/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -660,7 +651,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commodities/" class="md-nav__link">
+      <a href="../reference/commodities/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -682,7 +673,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../journal/" class="md-nav__link">
+      <a href="../reference/journal/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -704,7 +695,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../allocation-targets/" class="md-nav__link">
+      <a href="../reference/allocation-targets/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -726,7 +717,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../budget/" class="md-nav__link">
+      <a href="../reference/budget/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -748,7 +739,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../bulk-edit/" class="md-nav__link">
+      <a href="../reference/bulk-edit/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -770,7 +761,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../import/" class="md-nav__link">
+      <a href="../reference/import/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -792,7 +783,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../recurring/" class="md-nav__link">
+      <a href="../reference/recurring/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -814,7 +805,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../sheets/" class="md-nav__link">
+      <a href="../reference/sheets/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -844,7 +835,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config/" class="md-nav__link">
+      <a href="../reference/config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -893,7 +884,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../goals/" class="md-nav__link ">
+            <a href="../reference/goals/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -927,7 +918,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../goals/retirement/" class="md-nav__link">
+      <a href="../reference/goals/retirement/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -949,7 +940,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../goals/savings/" class="md-nav__link">
+      <a href="../reference/goals/savings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -979,7 +970,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ledger-cli/" class="md-nav__link">
+      <a href="../reference/ledger-cli/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1001,7 +992,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../editor/" class="md-nav__link">
+      <a href="../reference/editor/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1023,7 +1014,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/" class="md-nav__link">
+      <a href="../reference/deployment/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1045,7 +1036,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-authentication/" class="md-nav__link">
+      <a href="../reference/user-authentication/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1067,7 +1058,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../credit-cards/" class="md-nav__link">
+      <a href="../reference/credit-cards/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1089,7 +1080,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../analysis/" class="md-nav__link">
+      <a href="../reference/analysis/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1108,8 +1099,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1131,16 +1120,18 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_18" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_18" >
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../reference/tax/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1158,7 +1149,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_18_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_18_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3_18">
             <span class="md-nav__icon md-icon"></span>
             Tax
@@ -1171,31 +1162,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Tax Harvesting
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../reference/tax/tax-harvesting/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1205,35 +1175,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#multiple-folios" class="md-nav__link">
-    <span class="md-ellipsis">
-      Multiple Folios
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1246,7 +1187,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../capital-gains/" class="md-nav__link">
+      <a href="../reference/tax/capital-gains/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1268,7 +1209,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../schedule-al/" class="md-nav__link">
+      <a href="../reference/tax/schedule-al/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1298,7 +1239,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../changelog/" class="md-nav__link">
+      <a href="../reference/changelog/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1348,7 +1289,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../manifesto/" class="md-nav__link">
+      <a href="../manifesto/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1369,7 +1310,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../faq/" class="md-nav__link">
+      <a href="../faq/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1417,7 +1358,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../blog/" class="md-nav__link ">
+            <a href="../blog/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1498,7 +1439,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/archive/2024/" class="md-nav__link">
+      <a href="../blog/archive/2024/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1585,7 +1526,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/category/configuration/" class="md-nav__link">
+      <a href="../blog/category/configuration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1609,7 +1550,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/category/gold/" class="md-nav__link">
+      <a href="../blog/category/gold/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1633,7 +1574,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/category/locale/" class="md-nav__link">
+      <a href="../blog/category/locale/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1657,7 +1598,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/category/price/" class="md-nav__link">
+      <a href="../blog/category/price/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1681,7 +1622,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/category/sgb/" class="md-nav__link">
+      <a href="../blog/category/sgb/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1705,7 +1646,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/category/sovereign-gold-bond/" class="md-nav__link">
+      <a href="../blog/category/sovereign-gold-bond/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1762,11 +1703,221 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#multiple-folios" class="md-nav__link">
+  <a href="#overview" class="md-nav__link">
     <span class="md-ellipsis">
-      Multiple Folios
+      Overview
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technology-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      Technology Stack
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Technology Stack">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      Backend
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      Frontend
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Documentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#high-level-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      High-Level Architecture
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backend-architecture-internal" class="md-nav__link">
+    <span class="md-ellipsis">
+      Backend Architecture (internal)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Backend Architecture (internal)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entry-points-cmd" class="md-nav__link">
+    <span class="md-ellipsis">
+      Entry Points (cmd)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#core-domain-modules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Domain Modules
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#infrastructure-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Infrastructure &amp; Adapters
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#frontend-architecture-src" class="md-nav__link">
+    <span class="md-ellipsis">
+      Frontend Architecture (src)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Frontend Architecture (src)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#routing-srcroutes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Routing (src/routes)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Components
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Flow
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      Security
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      API Reference
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      Authentication
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#session-token-primary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Session Token (primary)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#legacy-credential-header" class="md-nav__link">
+    <span class="md-ellipsis">
+      Legacy Credential Header
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rate-limiting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rate Limiting
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      Endpoints
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1789,61 +1940,199 @@
   
 
 
-<h1 id="tax-harvesting">Tax Harvesting<a class="headerlink" href="#tax-harvesting" title="Permanent link">&para;</a></h1>
-<p>Gains from asset types like Mutual Fund, Stock are subject to capital
-gains tax. The taxation rate itself differs based on how long you hold
-your investment, whether it's debt or equity, whether you have more
-than 1 Lakh gains in a year etc. To further complicate things, there
-might be exit load applicable.</p>
-<p>Paisa takes a generic approach and let the user configure when a
-commodity is safe to harvest. There are two fields related to tax
-harvesting.</p>
+<h1 id="architecture-and-design-document">Architecture and Design Document<a class="headerlink" href="#architecture-and-design-document" title="Permanent link">&para;</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>Paisa is a personal finance management tool designed to track finances, visualize expenses, and manage portfolios. It operates as a local server application with a web-based user interface and supports a desktop mode via Wails. It emphasizes privacy by running locally and storing data in a local SQLite database.</p>
+<h2 id="technology-stack">Technology Stack<a class="headerlink" href="#technology-stack" title="Permanent link">&para;</a></h2>
+<h3 id="backend">Backend<a class="headerlink" href="#backend" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Language</strong>: Go (Golang) 1.24+</li>
+<li><strong>Web Framework</strong>: Gin (High-performance HTTP web framework)</li>
+<li><strong>ORM</strong>: GORM (with SQLite driver)</li>
+<li><strong>CLI Framework</strong>: Cobra (for command-line interface commands like <code>serve</code>, <code>update</code>)</li>
+<li><strong>Desktop Wrapper</strong>: Wails (for bundling as a native desktop app)</li>
+<li><strong>Logging</strong>: Logrus (Structured logging)</li>
+<li><strong>Configuration</strong>: YAML-based configuration</li>
+</ul>
+<h3 id="frontend">Frontend<a class="headerlink" href="#frontend" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Framework</strong>: SvelteKit (App framework based on Svelte)</li>
+<li><strong>Build Tool</strong>: Vite (Next Generation Frontend Tooling)</li>
+<li><strong>Runtime</strong>: Node.js (for development/build)</li>
+<li><strong>Styling</strong>: <ul>
+<li>Tailwind CSS (Utility-first CSS framework)</li>
+<li>Bulma (CSS framework, seemingly used for legacy or specific components)</li>
+<li>SCSS (Sassy CSS)</li>
+</ul>
+</li>
+<li><strong>State Management</strong>: Svelte Stores</li>
+<li><strong>Charting</strong>: D3.js (for complex data visualizations)</li>
+<li><strong>Editor</strong>: CodeMirror (for editing ledger files)</li>
+</ul>
+<h3 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tool</strong>: MkDocs (Markdown-based documentation generator)</li>
+</ul>
+<h2 id="high-level-architecture">High-Level Architecture<a class="headerlink" href="#high-level-architecture" title="Permanent link">&para;</a></h2>
+<p>Paisa utilizes a monolithic client-server architecture, typically running on the user's local machine.</p>
 <ol>
-<li>
-<p>harvest - specifies the number of days after which the commodity is
-   eligible for tax harvesting. This should be set based on fund exit
-   load, fund category etc</p>
+<li><strong>Client (Frontend)</strong>: A Single Page Application (SPA) built with SvelteKit. It communicates with the backend via a RESTful API.</li>
+<li><strong>Server (Backend)</strong>: A Go binary that serves two purposes:<ul>
+<li><strong>Static File Server</strong>: Serves the compiled frontend assets.</li>
+<li><strong>API Server</strong>: Exposes endpoints for data retrieval and manipulation.</li>
+</ul>
 </li>
-<li>
-<p>tax_category - This defines how the taxes are calculated as the
-   government usually tweaks the tax code regularly with various rules
-   like grandfathering, cost inflation index adjustment, etc.</p>
+<li><strong>Database</strong>: A local SQLite database (<code>paisa.db</code> likely) managed via GORM.</li>
+<li><strong>Desktop Wrapper</strong>: Wails acts as a bridge, running the Go backend and rendering the frontend in a system interaction view (WebView2 on Windows, WebKit on macOS/Linux).</li>
+</ol>
+<h2 id="backend-architecture-internal">Backend Architecture (<code>internal</code>)<a class="headerlink" href="#backend-architecture-internal" title="Permanent link">&para;</a></h2>
+<p>The backend logic is strictly organized by domain within the <code>internal</code> directory.</p>
+<h3 id="entry-points-cmd">Entry Points (<code>cmd</code>)<a class="headerlink" href="#entry-points-cmd" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>root.go</code>: Initializes the CLI, logger, and configuration.</li>
+<li><code>serve.go</code>: Starts the web server.</li>
+</ul>
+<h3 id="core-domain-modules">Core Domain Modules<a class="headerlink" href="#core-domain-modules" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>accounting</code></strong>: Implements double-entry accounting logic.</li>
+<li><strong><code>ledger</code></strong>: Handles parsing and management of plain text ledger files.</li>
+<li><strong><code>transaction</code></strong>: Manages financial transactions.</li>
+<li><strong><code>portfolio</code></strong>: Logic for investment portfolio tracking.</li>
+<li><strong><code>taxation</code></strong>: Computes tax implications.</li>
+<li><strong><code>prediction</code></strong>: Financial forecasting implementation (likely using ARIMA).</li>
+<li><strong><code>xirr</code></strong>: Extended Internal Rate of Return calculations for investments.</li>
+</ul>
+<h3 id="infrastructure-adapters">Infrastructure &amp; Adapters<a class="headerlink" href="#infrastructure-adapters" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>server</code></strong>: <ul>
+<li>Sets up the Gin router (<code>server.go</code>).</li>
+<li>Defines API handlers (e.g., <code>budget.go</code>, <code>expense.go</code>, <code>income.go</code>) that map HTTP requests to domain logic.</li>
+<li>Implements <code>TokenAuthMiddleware</code> for API authentication using <code>X-Auth</code> header.</li>
+</ul>
+</li>
+<li><strong><code>model</code></strong>: Defines the database schema using GORM structs.</li>
+<li><strong><code>scraper</code></strong>: Modules for scraping or importing financial data from various sources (Banks, PDF statements, etc.).</li>
+<li><strong><code>config</code></strong>: Manages application configuration (loading <code>paisa.yaml</code>).</li>
+</ul>
+<h2 id="frontend-architecture-src">Frontend Architecture (<code>src</code>)<a class="headerlink" href="#frontend-architecture-src" title="Permanent link">&para;</a></h2>
+<p>The frontend is structured as a standard SvelteKit application.</p>
+<h3 id="routing-srcroutes">Routing (<code>src/routes</code>)<a class="headerlink" href="#routing-srcroutes" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>(app)</code></strong>: The main protected application area.<ul>
+<li><code>dashboard</code>: Main overview.</li>
+<li><code>assets</code>, <code>liabilities</code>: Balance sheet items.</li>
+<li><code>income</code>, <code>expense</code>: Income statement items.</li>
+<li><code>cash_flow</code>: Cash flow analysis.</li>
+<li><code>ledger</code>: Review and edit ledger entries.</li>
+<li><code>more</code>: Settings and tools.</li>
+</ul>
+</li>
+<li><strong><code>login</code></strong>: Authentication page.</li>
+</ul>
+<h3 id="key-components">Key Components<a class="headerlink" href="#key-components" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>src/lib</code></strong>: Reusable UI components and helper functions.</li>
+<li><strong><code>src/store.ts</code></strong>: Global state management (likely for user session, theme, etc.).</li>
+<li><strong><code>app.scss</code> / <code>app.html</code></strong>: Global styles and entry point.</li>
+</ul>
+<h2 id="data-flow">Data Flow<a class="headerlink" href="#data-flow" title="Permanent link">&para;</a></h2>
 <ol>
-<li>
-<p><code>equity65</code> - This is for 65% or more investment in Indian
-   equity.</p>
-</li>
-<li>
-<p><code>equity35</code> - This if for 35% or more investment in India equity
-   but less than 65%</p>
-</li>
-<li>
-<p><code>debt</code> - This is for debt funds.</p>
-</li>
-<li>
-<p><code>unlisted_equity</code> - This is for unlisted foreign on Indian equity.</p>
-</li>
+<li><strong>User Action</strong>: User interacts with the UI (e.g., adds a transaction).</li>
+<li><strong>API Call</strong>: Frontend sends a POST request to <code>/api/editor/save</code> (or similar).</li>
+<li><strong>Authentication</strong>: <code>TokenAuthMiddleware</code> validates the request.</li>
+<li><strong>Handler</strong>: The request is routed to the specific handler in <code>internal/server</code>.</li>
+<li><strong>Domain Logic</strong>: The handler calls the appropriate domain service (e.g., <code>accounting</code>, <code>ledger</code>).</li>
+<li><strong>Persistence</strong>: GORM writes changes to the SQLite database.</li>
+<li><strong>Response</strong>: Updated state or success message is returned to the frontend.</li>
 </ol>
-</li>
+<h2 id="security">Security<a class="headerlink" href="#security" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Authentication</strong>: Custom token-based authentication mechanism.</li>
+<li><strong>Local-First</strong>: Data is stored locally, reducing external attack vectors.</li>
+<li><strong>Readonly Mode</strong>: Configuration option to prevent data modification via the UI.</li>
+</ul>
+<h2 id="api-reference">API Reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h2>
+<p>The backend exposes a RESTful API under the <code>/api</code> prefix.</p>
+<h3 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h3>
+<p>Authentication is enforced via <code>TokenAuthMiddleware</code> if <code>UserAccounts</code> are configured in <code>paisa.yaml</code>. Two header formats are accepted:</p>
+<h4 id="session-token-primary">Session Token (primary)<a class="headerlink" href="#session-token-primary" title="Permanent link">&para;</a></h4>
+<ol>
+<li><code>POST /api/auth/login</code> with <code>{"username": "...", "password": "..."}</code> → returns <code>{"token": "&lt;uuid&gt;", "expires_at": "...", "username": "..."}</code></li>
+<li>Subsequent requests: <code>X-Auth: &lt;session-token&gt;</code> (UUID, no colon)</li>
 </ol>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">commodities</span><span class="p">:</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">NIFTY</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mutualfund</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">code</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">120716</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">harvest</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">365</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="nt">tax_category</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">equity65</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ABSTF</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mutualfund</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="nt">code</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">119533</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">harvest</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1095</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="nt">tax_category</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">debt</span>
+<h4 id="legacy-credential-header">Legacy Credential Header<a class="headerlink" href="#legacy-credential-header" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Header</strong>: <code>X-Auth: username:plaintext-password</code></li>
+<li><strong>Mechanism</strong>: The middleware SHA-256-hashes the plaintext password and compares it to <code>sha256:&lt;hash&gt;</code> stored in <code>paisa.yaml</code>.</li>
+<li>Configure user accounts in <code>paisa.yaml</code>:
+    <div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">user_accounts</span><span class="p">:</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">username</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">myuser</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">password</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sha256:&lt;sha256-of-plaintext-password&gt;</span>
 </span></code></pre></div>
-<p>The tax harvest page will show the list of accounts eligible for
-harvesting.</p>
-<h2 id="multiple-folios">Multiple Folios<a class="headerlink" href="#multiple-folios" title="Permanent link">&para;</a></h2>
-<p>Paisa uses FIFO method within an Account. If you have multiple folios,
-this might result in incorrect values. The issue can be solved by
-using a different Account for each folio.</p>
+    Generate the hash: <code>echo -n "mypassword" | sha256sum</code> (Linux/macOS)</li>
+</ul>
+<h4 id="rate-limiting">Rate Limiting<a class="headerlink" href="#rate-limiting" title="Permanent link">&para;</a></h4>
+<p>6 requests per minute (burst 3) per IP. Failed auth attempts consume quota.</p>
+<h3 id="endpoints">Endpoints<a class="headerlink" href="#endpoints" title="Permanent link">&para;</a></h3>
+<p><strong>Authentication</strong>
+-   <code>POST /api/auth/login</code>: Exchange username/password for a session token.</p>
+<p><strong>Configuration &amp; System</strong>
+-   <code>GET /api/ping</code>: Health check.
+-   <code>GET /api/config</code>: Get system configuration.
+-   <code>POST /api/config</code>: Update system configuration.
+-   <code>POST /api/init</code>: Initialize demo data (only if not readonly).
+-   <code>POST /api/sync</code>: Sync data (Journal, Prices, Portfolios).</p>
+<p><strong>Dashboard &amp; Reports</strong>
+-   <code>GET /api/dashboard</code>: Dashboard summary data.
+-   <code>GET /api/networth</code>: Net worth history.
+-   <code>GET /api/assets/balance</code>: Current asset balances.
+-   <code>GET /api/investment</code>: Investment portfolio summary.
+-   <code>GET /api/gain</code>: Overall capital gains/losses.
+-   <code>GET /api/gain/:account</code>: Capital gains for a specific account.
+-   <code>GET /api/income</code>: Income analysis.
+-   <code>GET /api/expense</code>: Expense analysis. Response includes <code>expenses</code>, <code>month_wise</code>, <code>year_wise</code>, <code>graph</code> (hierarchy Sankey per FY), and <code>income_graph</code> (income-allocation Sankey per FY).
+-   <code>GET /api/budget</code>: Budget status.
+-   <code>GET /api/cash_flow</code>: Cash flow statement.
+-   <code>GET /api/income_statement</code>: Income statement details.
+-   <code>GET /api/recurring</code>: Recurring transaction analysis.
+-   <code>GET /api/allocation</code>: Asset allocation.
+-   <code>GET /api/portfolio_allocation</code>: Portfolio allocation.
+-   <code>GET /api/diagnosis</code>: data health checks.
+-   <code>GET /api/logs</code>: Server logs.</p>
+<p><strong>Ledger &amp; Transactions</strong>
+-   <code>GET /api/ledger</code>: Raw ledger entries.
+-   <code>GET /api/transaction</code>: Transaction list.
+-   <code>GET /api/transaction/balanced</code>: Balanced postings.
+-   <code>GET /api/editor/files</code>: List available ledger files.
+-   <code>POST /api/editor/file</code>: specific ledger file content.
+-   <code>POST /api/editor/save</code>: Save changes to a ledger file.
+-   <code>POST /api/editor/validate</code>: Validate ledger file syntax.
+-   <code>GET /api/sheets/files</code>: List sheet files.
+-   <code>POST /api/sheets/file</code>: Get sheet content.
+-   <code>POST /api/sheets/save</code>: Save sheet content.</p>
+<p><strong>Market Data (Prices)</strong>
+-   <code>GET /api/price</code>: Get stored prices.
+-   <code>POST /api/price/delete</code>: Clear price cache.
+-   <code>GET /api/price/providers</code>: List price providers.
+-   <code>POST /api/price/providers/delete/:provider</code>: Clear cache for a provider.
+-   <code>POST /api/price/autocomplete</code>: Autocomplete for price symbols.</p>
+<p><strong>Tax &amp; Planning</strong>
+-   <code>GET /api/harvest</code>: Tax loss harvesting opportunities.
+-   <code>GET /api/capital_gains</code>: Capital gains report.
+-   <code>GET /api/schedule_al</code>: Schedule AL (Assets and Liabilities) report.</p>
+<p><strong>Liabilities</strong>
+-   <code>GET /api/liabilities/interest</code>: Loan interest analysis.
+-   <code>GET /api/liabilities/balance</code>: Liability balances.
+-   <code>GET /api/liabilities/repayment</code>: Repayment schedule.</p>
+<p><strong>Templates &amp; Goals</strong>
+-   <code>GET /api/templates</code>: List templates.
+-   <code>POST /api/templates/upsert</code>: Create/Update details.
+-   <code>POST /api/templates/delete</code>: Delete template.
+-   <code>GET /api/goals</code>: List goals.
+-   <code>GET /api/goals/:type/:name</code>: Specific goal details.</p>
+<p><strong>Credit Cards</strong>
+-   <code>GET /api/credit_cards</code>: List credit cards.
+-   <code>GET /api/credit_cards/:account</code>: Specific credit card details.</p>
 
 
 
@@ -1889,7 +2178,7 @@ using a different Account for each folio.</p>
               
                 
               
-              Thanks for your feedback! Help us improve this page by using our <a href="https://docs.google.com/forms/d/e/1FAIpQLSejpTiljuhsviEvXFBN-Z5rJZ_dkXHV5RaZzqpyCAZF1nIFiQ/viewform?usp=pp_url&entry.1125403938=/reference/tax/tax-harvesting/" target="_blank" rel="noopener">feedback form</a>.
+              Thanks for your feedback! Help us improve this page by using our <a href="https://docs.google.com/forms/d/e/1FAIpQLSejpTiljuhsviEvXFBN-Z5rJZ_dkXHV5RaZzqpyCAZF1nIFiQ/viewform?usp=pp_url&entry.1125403938=/architecture/" target="_blank" rel="noopener">feedback form</a>.
             </div>
           
         </div>
@@ -1918,44 +2207,6 @@ using a different Account for each folio.</p>
       
         <footer class="md-footer">
   
-    
-      
-      <nav class="md-footer__inner md-grid" aria-label="Footer" >
-        
-          
-          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Tax">
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
-            </div>
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              <div class="md-ellipsis">
-                Tax
-              </div>
-            </div>
-          </a>
-        
-        
-          
-          <a href="../capital-gains/" class="md-footer__link md-footer__link--next" aria-label="Next: Capital Gains">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
-                Capital Gains
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
-            </div>
-          </a>
-        
-      </nav>
     
   
   <div class="md-footer-meta md-typeset">
@@ -2124,12 +2375,12 @@ using a different Account for each folio.</p>
       </div>
       <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.tabs.link", "content.code.copy", "content.code.annotate", "navigation.instant", "navigation.tabs", "navigation.expand", "navigation.indexes", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "announce.dismiss"], "search": "../../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.tabs.link", "content.code.copy", "content.code.annotate", "navigation.instant", "navigation.tabs", "navigation.expand", "navigation.indexes", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "announce.dismiss"], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.f1b6f286.min.js"></script>
+      <script src="../assets/javascripts/bundle.f1b6f286.min.js"></script>
       
-        <script src="../../../javascripts/extra.js"></script>
+        <script src="../javascripts/extra.js"></script>
       
     
   </body>

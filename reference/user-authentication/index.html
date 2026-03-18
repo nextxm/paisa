@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://paisa.fyi/reference/user-authentication/">
       
       
-        <link rel="prev" href="../editor/">
+        <link rel="prev" href="../deployment/">
       
       
         <link rel="next" href="../credit-cards/">
@@ -594,6 +594,8 @@
       
         
       
+        
+      
     
     
       
@@ -1018,6 +1020,28 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Deployment
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1069,11 +1093,62 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#session-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Session model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#threat-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Threat model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#implementation-details" class="md-nav__link">
     <span class="md-ellipsis">
       Implementation details
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Implementation details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#password-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Password storage
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#login-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Login flow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#legacy-credential-header" class="md-nav__link">
+    <span class="md-ellipsis">
+      Legacy credential header
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1161,7 +1236,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_17" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_18" >
         
           
           
@@ -1178,14 +1253,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_17" id="__nav_3_17_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_18" id="__nav_3_18_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_17_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_17">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_18">
             <span class="md-nav__icon md-icon"></span>
             Tax
           </label>
@@ -1738,11 +1813,62 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#session-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Session model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#threat-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Threat model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#implementation-details" class="md-nav__link">
     <span class="md-ellipsis">
       Implementation details
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Implementation details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#password-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Password storage
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#login-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Login flow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#legacy-credential-header" class="md-nav__link">
+    <span class="md-ellipsis">
+      Legacy credential header
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1776,21 +1902,124 @@ earlier via another account.</p>
 application user interface. If someone can access your computer and
 they can access the folder where Paisa stores the ledger and database
 files, they will be able to view your data.</p>
-<h2 id="implementation-details">Implementation details<a class="headerlink" href="#implementation-details" title="Permanent link">&para;</a></h2>
-<p>Paisa uses <a href="https://en.wikipedia.org/wiki/Cryptographic_hash_function">cryptographic hash function</a> sha-256 to convert your
-password to digest before storing it in the configuration file. This
-has few implications. No one can look at the configuration file and
-get the password, this includes you as well. If you forget the
-password, you can remove the user accounts from <a href="../config/">configuration</a>
-file to get back access.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>If you run paisa on a server and access it over public internet,
-make sure to use it over <strong>https</strong> and use a <strong>strong password</strong>. If you
-run it over plain http, <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">man in the
-middle</a>
-attack can be performed to obtain the data including your password.</p>
+<div class="admonition danger">
+<p class="admonition-title">HTTPS is required for internet-facing deployments</p>
+<p>If you run Paisa on a server and access it over the public internet,
+you <strong>must</strong> use it over <strong>HTTPS</strong> and choose a <strong>strong password</strong>.
+Over plain HTTP, a <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">man-in-the-middle</a>
+attacker can capture your session token and gain full access to your
+financial data. See the <a href="../deployment/">Deployment</a> guide for
+reverse-proxy TLS setup instructions.</p>
 </div>
+<h2 id="session-model">Session model<a class="headerlink" href="#session-model" title="Permanent link">&para;</a></h2>
+<p>When you log in, Paisa creates a short-lived session and returns a
+<strong>session token</strong> (a random UUID). This token is stored in the browser
+and sent with every subsequent request in the <code>X-Auth</code> header.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Token format</td>
+<td>UUID v4 (random, 128-bit)</td>
+</tr>
+<tr>
+<td>Token lifetime</td>
+<td>24 hours from login</td>
+</tr>
+<tr>
+<td>Storage</td>
+<td>SQLite <code>sessions</code> table on the server</td>
+</tr>
+<tr>
+<td>Revocation</td>
+<td>Logging out deletes the token immediately</td>
+</tr>
+</tbody>
+</table>
+<p>Session tokens expire automatically after 24 hours. Logging out (<code>POST
+/api/auth/logout</code>) revokes the token immediately, regardless of the
+remaining lifetime.</p>
+<h2 id="threat-model">Threat model<a class="headerlink" href="#threat-model" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Threat</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Password guessing / brute-force</td>
+<td>Login endpoint is rate-limited to 6 requests per minute per IP address</td>
+</tr>
+<tr>
+<td>Token theft over the network</td>
+<td>Tokens must only ever be transmitted over HTTPS (see warning above)</td>
+</tr>
+<tr>
+<td>Token theft from config file</td>
+<td>Tokens are <strong>not</strong> stored in <code>paisa.yaml</code>; only password hashes are</td>
+</tr>
+<tr>
+<td>Session fixation / forgery</td>
+<td>Tokens are cryptographically random UUIDs issued only after a successful login</td>
+</tr>
+<tr>
+<td>Persistent access after logout</td>
+<td>Logout deletes the token from the database immediately</td>
+</tr>
+<tr>
+<td>Offline password cracking (stolen config file)</td>
+<td>Passwords are hashed with SHA-256. While this prevents casual inspection, a determined attacker with access to <code>paisa.yaml</code> could attempt offline brute-force. Use a long, randomly-generated password and restrict file-system access to <code>paisa.yaml</code> to limit this risk.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="implementation-details">Implementation details<a class="headerlink" href="#implementation-details" title="Permanent link">&para;</a></h2>
+<h3 id="password-storage">Password storage<a class="headerlink" href="#password-storage" title="Permanent link">&para;</a></h3>
+<p>Paisa uses the <a href="https://en.wikipedia.org/wiki/Cryptographic_hash_function">SHA-256</a>
+cryptographic hash function to convert your password into a digest before
+storing it in the configuration file. This means:</p>
+<ul>
+<li>No one can read the configuration file and recover the password.</li>
+<li>If you forget the password you can remove the user accounts from the
+  <a href="../config/">configuration</a> file to regain access.</li>
+</ul>
+<p>Passwords are stored in <code>paisa.yaml</code> in the form <code>sha256:&lt;hex-digest&gt;</code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Use a strong, randomly-generated password</p>
+<p>Paisa currently uses SHA-256 to hash passwords, which is a fast hash.
+If an attacker obtains a copy of <code>paisa.yaml</code>, they may be able to
+recover a weak password offline very quickly. Always use a long,
+randomly-generated password (16+ characters) and restrict read access
+to <code>paisa.yaml</code> on the server.</p>
+</div>
+<h3 id="login-flow">Login flow<a class="headerlink" href="#login-flow" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Browser sends <code>POST /api/auth/login</code> with <code>{"username": "…", "password": "…"}</code>.</li>
+<li>Server hashes the supplied password with SHA-256 and compares it to the
+   stored hash using a constant-time comparison (preventing timing attacks).</li>
+<li>On success, a new session record is created in the database and the server
+   returns <code>{"token": "&lt;uuid&gt;", "expires_at": "…", "username": "…"}</code>.</li>
+<li>The browser stores the token and includes it as <code>X-Auth: &lt;token&gt;</code> on all
+   subsequent requests.</li>
+<li>Each request is validated against the <code>sessions</code> table; expired or
+   non-existent tokens are rejected with HTTP 401.</li>
+</ol>
+<h3 id="legacy-credential-header">Legacy credential header<a class="headerlink" href="#legacy-credential-header" title="Permanent link">&para;</a></h3>
+<p>For backward compatibility, Paisa also supports a legacy authentication mode
+where credentials are sent directly in every request as
+<code>X-Auth: username:plaintext-password</code>. This mode is <strong>disabled by default</strong>
+and should not be used for internet-facing deployments. It can be enabled in
+<code>paisa.yaml</code> for automated scripts or API clients that cannot maintain sessions:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">allow_legacy_auth</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span></code></pre></div>
+<p>Disable this option once all clients have migrated to the session-based login
+flow.</p>
 
 
 
@@ -1873,7 +2102,7 @@ attack can be performed to obtain the data including your password.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../editor/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Editor">
+          <a href="../deployment/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Deployment">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1883,7 +2112,7 @@ attack can be performed to obtain the data including your password.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Editor
+                Deployment
               </div>
             </div>
           </a>
