@@ -1,20 +1,85 @@
 name: Test
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
 
 jobs:
-  test:
+  # ---------------------------------------------------------------------------
+  # Job 1: Go backend unit tests
+  # Covers: auth expiry, readonly writes, sync rollback, and all other
+  # server/model package tests.  This job must pass before a merge is allowed.
+  # ---------------------------------------------------------------------------
+  backend-tests:
+    name: Backend Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-    - uses: actions/checkout@v2.4.0
-    - uses: nixbuild/nix-quick-install-action@v30
-    - uses: nix-community/cache-nix-action@v6
-      with:
-        primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
-        restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
-    - run: |
-        nix develop --command npm install
-        nix develop --command make lint
-        nix develop --command make test
+      - uses: actions/checkout@v2.4.0
+      - uses: nixbuild/nix-quick-install-action@v30
+      - uses: nix-community/cache-nix-action@v6
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
+      - name: Build frontend assets (required by the Go embed directive)
+        run: |
+          nix develop --command npm install
+          nix develop --command npm run build
+      - name: Run Go tests
+        run: nix develop --command go test ./...
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Frontend checks (lint + type-check + JS unit tests)
+  # Runs independently of the backend so frontend regressions are surfaced
+  # without waiting for Go compilation.
+  # ---------------------------------------------------------------------------
+  frontend-checks:
+    name: Frontend Checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v2.4.0
+      - uses: nixbuild/nix-quick-install-action@v30
+      - uses: nix-community/cache-nix-action@v6
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
+      - name: Install JS dependencies
+        run: nix develop --command npm install
+      - name: Lint (Prettier + svelte-check + gofmt)
+        run: nix develop --command make lint
+      - name: JS unit tests
+        run: nix develop --command bun test --preload ./src/happydom.ts src
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Regression suite
+  # Spawns a real paisa binary against the fixture directories and compares
+  # API responses to stored snapshots.  Failures here indicate a behavioral
+  # regression in any supported ledger dialect.
+  # ---------------------------------------------------------------------------
+  regression-suite:
+    name: Regression Suite
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v2.4.0
+      - uses: nixbuild/nix-quick-install-action@v30
+      - uses: nix-community/cache-nix-action@v6
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
+      - name: Install JS dependencies and build frontend
+        run: |
+          nix develop --command npm install
+          nix develop --command npm run build
+      - name: Build paisa binary
+        run: nix develop --command go build
+      - name: Run regression tests
+        run: nix develop --command bash -c 'unset PAISA_CONFIG && TZ=UTC bun test tests'
