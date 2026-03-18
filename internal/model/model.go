@@ -41,13 +41,20 @@ func SyncJournal(db *gorm.DB) (string, error) {
 		return err.Error(), err
 	}
 
-	price.UpsertAllByType(db, config.Unknown, prices)
-
 	postings, err := ledger.Cli().Parse(config.GetJournalPath(), prices)
 	if err != nil {
 		return err.Error(), err
 	}
-	posting.UpsertAll(db, postings)
+
+	err = db.Transaction(func(tx *gorm.DB) error {
+		if err := price.UpsertAllByType(tx, config.Unknown, prices); err != nil {
+			return err
+		}
+		return posting.UpsertAll(tx, postings)
+	})
+	if err != nil {
+		return err.Error(), err
+	}
 
 	return "", nil
 }
@@ -73,7 +80,10 @@ func SyncCommodities(db *gorm.DB) error {
 			continue
 		}
 
-		price.UpsertAllByTypeNameAndID(db, commodity.Type, name, code, prices)
+		if err := price.UpsertAllByTypeNameAndID(db, commodity.Type, name, code, prices); err != nil {
+			log.Error(err)
+			errors = append(errors, fmt.Errorf("Failed to save price for %s: %w", name, err))
+		}
 	}
 
 	if len(errors) > 0 {
@@ -93,28 +103,35 @@ func SyncCII(db *gorm.DB) error {
 		log.Error(err)
 		return fmt.Errorf("Failed to fetch CII: %w", err)
 	}
-	cii.UpsertAll(db, ciis)
+	if err := cii.UpsertAll(db, ciis); err != nil {
+		return fmt.Errorf("Failed to save CII: %w", err)
+	}
 	return nil
 }
 
 func SyncPortfolios(db *gorm.DB) error {
 	log.Info("Fetching commodities portfolio")
 	commodities := commodity.FindByType(config.MutualFund)
-	for _, commodity := range commodities {
-		if commodity.Price.Provider != "in-mfapi" {
-			continue
+
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, commodity := range commodities {
+			if commodity.Price.Provider != "in-mfapi" {
+				continue
+			}
+
+			name := commodity.Name
+			log.Info("Fetching portfolio for ", name)
+			portfolios, err := mutualfund.GetPortfolio(commodity.Price.Code, commodity.Name)
+
+			if err != nil {
+				log.Error(err)
+				return fmt.Errorf("Failed to fetch portfolio for %s: %w", name, err)
+			}
+
+			if err := portfolio.UpsertAll(tx, commodity.Type, commodity.Price.Code, portfolios); err != nil {
+				return fmt.Errorf("Failed to save portfolio for %s: %w", name, err)
+			}
 		}
-
-		name := commodity.Name
-		log.Info("Fetching portfolio for ", name)
-		portfolios, err := mutualfund.GetPortfolio(commodity.Price.Code, commodity.Name)
-
-		if err != nil {
-			log.Error(err)
-			return fmt.Errorf("Failed to fetch portfolio for %s: %w", name, err)
-		}
-
-		portfolio.UpsertAll(db, commodity.Type, commodity.Price.Code, portfolios)
-	}
-	return nil
+		return nil
+	})
 }
