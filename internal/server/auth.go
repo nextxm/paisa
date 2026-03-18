@@ -9,6 +9,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/session"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -23,6 +24,21 @@ type loginResponse struct {
 	Token     string    `json:"token"`
 	ExpiresAt time.Time `json:"expires_at"`
 	Username  string    `json:"username"`
+}
+
+// Logout returns a handler for POST /api/auth/logout.
+// It deletes the session identified by the X-Auth token (best-effort) so that
+// the token can no longer be used even before its natural expiry.
+func Logout(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.Request.Header.Get("X-Auth")
+		if token != "" {
+			if err := session.DeleteByToken(db, token); err != nil {
+				log.Warnf("logout: failed to delete session token: %v", err)
+			}
+		}
+		c.JSON(http.StatusOK, gin.H{"success": true})
+	}
 }
 
 // Login returns a handler for POST /api/auth/login.

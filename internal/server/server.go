@@ -56,6 +56,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.POST("/api/auth/login", Login(db))
+	router.POST("/api/auth/logout", Logout(db))
 
 	router.GET("/api/config", func(c *gin.Context) {
 		var now *time.Time

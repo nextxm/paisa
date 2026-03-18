@@ -48,6 +48,11 @@ func FindByToken(db *gorm.DB, token string) (*Session, error) {
 	return &s, nil
 }
 
+// DeleteByToken removes the session that matches the given token.
+func DeleteByToken(db *gorm.DB, token string) error {
+	return db.Where("token = ?", token).Delete(&Session{}).Error
+}
+
 // DeleteExpired removes all sessions whose expiry time is in the past.
 func DeleteExpired(db *gorm.DB) error {
 	return db.Exec("DELETE FROM sessions WHERE expires_at < ?", time.Now()).Error
