@@ -16,22 +16,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/session"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
-
-// openTestDB returns an in-memory SQLite database suitable for integration tests.
-// The session table is migrated so that auth tests also work correctly.
-func openTestDB(t *testing.T) *gorm.DB {
-	t.Helper()
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{
-		Logger: logger.Discard,
-	})
-	require.NoError(t, err, "failed to open in-memory SQLite database")
-	require.NoError(t, db.AutoMigrate(&session.Session{}), "failed to migrate session table")
-	return db
-}
 
 // loadTestConfig sets up a minimal config with the given readonly flag and
 // restores the previous config when the test ends.
