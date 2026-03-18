@@ -1,4 +1,3 @@
-import sha256 from "crypto-js/sha256";
 import dayjs from "dayjs";
 import _ from "lodash";
 import * as d3 from "d3";
@@ -823,8 +822,20 @@ export async function ajax(
 }
 
 export async function login(username: string, password: string) {
-  localStorage.setItem(tokenKey, `${username}:${sha256(password)}`);
-  return await ajax("/api/ping");
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
+  });
+  if (response.ok) {
+    const data = await response.json();
+    localStorage.setItem(tokenKey, data.token);
+    return { success: true };
+  } else {
+    const data = await response.json().catch(() => ({}));
+    const msg: string = data?.error?.message || "Invalid username or password";
+    return { success: false, error: msg };
+  }
 }
 
 export function isLoggedIn() {
@@ -832,6 +843,14 @@ export function isLoggedIn() {
 }
 
 export function logout() {
+  const token = localStorage.getItem(tokenKey);
+  if (token) {
+    // Best-effort server-side session invalidation (fire-and-forget).
+    fetch("/api/auth/logout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Auth": token }
+    }).catch(() => {});
+  }
   localStorage.removeItem(tokenKey);
 }
 
