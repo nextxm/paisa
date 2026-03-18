@@ -719,6 +719,11 @@
         "additionalProperties": false
       }
     },
+    "allow_legacy_auth": {
+      "type": "boolean",
+      "description": "Allow legacy username:password authentication via the X-Auth header. Enable during migration from direct credential auth to session tokens; disable once all clients use session tokens.",
+      "ui:widget": "hidden"
+    },
     "goals": {
       "description": "Goals configuration",
       "type": "object",

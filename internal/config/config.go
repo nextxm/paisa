@@ -156,6 +156,11 @@ type Config struct {
 
 	UserAccounts []UserAccount `json:"user_accounts" yaml:"user_accounts"`
 
+	// AllowLegacyAuth enables the legacy username:password authentication path
+	// in the X-Auth header (format "username:password").  Disable this once all
+	// clients have migrated to session tokens issued by POST /api/auth/login.
+	AllowLegacyAuth bool `json:"allow_legacy_auth" yaml:"allow_legacy_auth"`
+
 	CreditCards []CreditCard `json:"credit_cards" yaml:"credit_cards"`
 }
 
