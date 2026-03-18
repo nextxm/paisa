@@ -13,7 +13,7 @@ the primary difference being how the user interface is launched.
 
 === "Linux"
 
-    * Download the prebuilt [binary](https://github.com/ananthakumaran/paisa/releases/latest) named `paisa-app-linux-amd64.deb`
+    * Download the prebuilt [binary](https://github.com/nextxm/paisa/releases/latest) named `paisa-app-linux-amd64.deb`
     * You can install it either by double clicking the deb file or run the following commands in a Terminal
 
     ```console
@@ -23,7 +23,7 @@ the primary difference being how the user interface is launched.
 
 === "Mac"
 
-    * Download the prebuilt [binary](https://github.com/ananthakumaran/paisa/releases/latest) named `paisa-app-macos-amd64.dmg`
+    * Download the prebuilt [binary](https://github.com/nextxm/paisa/releases/latest) named `paisa-app-macos-amd64.dmg`
     * Open the dmg file and drag the Paisa app into Application folder
     * Since the app is not signed[^1], Mac will show a warning when
     you try to open the app. You can check the
@@ -38,7 +38,7 @@ the primary difference being how the user interface is launched.
 
 === "Windows"
 
-    * Download the prebuilt [binary](https://github.com/ananthakumaran/paisa/releases/latest) named `paisa-app-windows-amd64.exe`
+    * Download the prebuilt [binary](https://github.com/nextxm/paisa/releases/latest) named `paisa-app-windows-amd64.exe`
     * Since the app is not signed[^1], Windows will show multiple
     warnings, You might have to click `Keep anyway`, `More info`, `Run
     anyway` etc.
@@ -61,7 +61,7 @@ the primary difference being how the user interface is launched.
 
 === "Linux"
 
-    * Download the prebuilt [binary](https://github.com/ananthakumaran/paisa/releases/latest) named `paisa-cli-linux-amd64`
+    * Download the prebuilt [binary](https://github.com/nextxm/paisa/releases/latest) named `paisa-cli-linux-amd64`
     * Run the following commands in a Terminal
 
     ```console
@@ -73,7 +73,7 @@ the primary difference being how the user interface is launched.
 
 === "Mac"
 
-    * Download the prebuilt [binary](https://github.com/ananthakumaran/paisa/releases/latest) named `paisa-cli-macos-amd64`
+    * Download the prebuilt [binary](https://github.com/nextxm/paisa/releases/latest) named `paisa-cli-macos-amd64`
     * Run the following commands in a Terminal
 
     ```console
@@ -86,7 +86,7 @@ the primary difference being how the user interface is launched.
 
 === "Windows"
 
-    * Download the prebuilt [binary](https://github.com/ananthakumaran/paisa/releases/latest) named `paisa-cli-windows-amd64.exe`
+    * Download the prebuilt [binary](https://github.com/nextxm/paisa/releases/latest) named `paisa-cli-windows-amd64.exe`
     * Since the binary is not signed[^1] with a certificate, you might get
     a warning from Windows. You would have to click `keep anyway`.
     * Run the following command in a Windows PowerShell. Make sure
@@ -136,7 +136,7 @@ more.
 
 ## Docker
 
-Paisa CLI is available on [dockerhub](https://hub.docker.com/r/ananthakumaran/paisa). The default image only
+Paisa CLI is available on [dockerhub](https://hub.docker.com/r/nextxm/paisa). The default image only
 supports ledger. `paisa:<version>-hledger`,
 `paisa:<version>-beancount` or `paisa:<version>-all` image variants
 can be used if you want to use paisa with others.
@@ -145,14 +145,14 @@ can be used if you want to use paisa with others.
 
     ```console
     # mkdir -p /home/john/Documents/paisa/
-    # docker run -p 7500:7500 -v /home/john/Documents/paisa/:/root/Documents/paisa/ ananthakumaran/paisa:latest
+    # docker run -p 7500:7500 -v /home/john/Documents/paisa/:/root/Documents/paisa/ nextxm/paisa:latest
     ```
 
 === "Mac"
 
     ```console
     # mkdir -p /Users/john/Documents/paisa/
-    # docker run -p 7500:7500 -v /Users/john/Documents/paisa/:/root/Documents/paisa/ ananthakumaran/paisa:latest
+    # docker run -p 7500:7500 -v /Users/john/Documents/paisa/:/root/Documents/paisa/ nextxm/paisa:latest
     ```
 
 ## Nix Flake
@@ -162,13 +162,13 @@ Paisa CLI is available as a nix flake.
 === "Linux"
 
     ```console
-    # nix profile install github:ananthakumaran/paisa
+    # nix profile install github:nextxm/paisa
     ```
 
 === "Mac"
 
     ```console
-    # nix profile install github:ananthakumaran/paisa
+    # nix profile install github:nextxm/paisa
     ```
 
 [^1]: I offer Paisa as a free app, and I don't generate any revenue

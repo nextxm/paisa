@@ -15,7 +15,7 @@ Paisa currently supports two types of goals:
 
 
 More goal types will be added in the future. Feel free to create a
-[discussion](https://github.com/ananthakumaran/paisa/discussions) if you have any suggestions.
+[discussion](https://github.com/nextxm/paisa/discussions) if you have any suggestions.
 
 
 ### Create Goal

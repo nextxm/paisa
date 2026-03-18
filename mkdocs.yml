@@ -1,15 +1,19 @@
 site_description: Paisa is an open source personal finance manager. It helps you with tracking investments like mutual funds, stocks etc. It helps with expenses categorization, budgeting and money management in general.
-site_author: Anantha Kumaran
+site_author: Anantha Kumaran and nextxm contributors
 site_name: Paisa
 site_url: https://paisa.fyi
-repo_url: https://github.com/ananthakumaran/paisa
-repo_name: ananthakumaran/paisa
+repo_url: https://github.com/nextxm/paisa
+repo_name: nextxm/paisa
 nav:
   - index.md
   - 'Getting Started':
     - getting-started/installation.md
     - getting-started/tutorial.md
   - 'Reference':
+    - reference/architecture.md
+    - reference/design.md
+    - reference/engineering-review.md
+    - reference/roadmap.md
     - reference/accounts.md
     - reference/commodities.md
     - reference/journal.md
@@ -118,11 +122,11 @@ extra_css:
   - stylesheets/extra.css
 
 copyright: |
-  Copyright © 2022 - 2025 Anantha Kumaran <br \> <a href="#__consent">Change cookie settings</a>
+  Copyright © 2022 - 2025 Anantha Kumaran; © 2026 nextxm contributors <br \> <a href="#__consent">Change cookie settings</a>
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/ananthakumaran/paisa
+      link: https://github.com/nextxm/paisa
     - icon: simple/matrix
       link: https://matrix.to/#/#paisa:matrix.org
     - icon: fontawesome/brands/x-twitter
@@ -130,7 +134,7 @@ extra:
     - icon: fontawesome/brands/mastodon
       link: https://mastodon.social/@PaisaFinanceApp
     - icon: fontawesome/brands/docker
-      link: https://hub.docker.com/r/ananthakumaran/paisa
+      link: https://hub.docker.com/r/nextxm/paisa
   status:
     new: Recently added
   consent:
