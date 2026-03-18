@@ -26,6 +26,7 @@ nav:
         - reference/goals/savings.md
     - reference/ledger-cli.md
     - reference/editor.md
+    - reference/deployment.md
     - reference/user-authentication.md
     - reference/credit-cards.md
     - reference/analysis.md
