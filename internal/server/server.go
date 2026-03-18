@@ -414,8 +414,8 @@ func TokenAuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 				c.Next()
 				return
 			}
-		} else {
-			// Legacy username:password path.
+		} else if config.GetConfig().AllowLegacyAuth {
+			// Legacy username:password path – only active when explicitly enabled.
 			tokens := strings.SplitN(authHeader, ":", 2)
 			hashed := utils.Sha256(tokens[1])
 			for _, userAccount := range userAccounts {

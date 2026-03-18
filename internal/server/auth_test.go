@@ -15,18 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
-
-// openTestDB opens an in-memory SQLite database and runs the session migration.
-func openTestDB(t *testing.T) *gorm.DB {
-	t.Helper()
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	require.NoError(t, err)
-	require.NoError(t, db.AutoMigrate(&session.Session{}))
-	return db
-}
 
 // configWithSingleAccount temporarily loads a minimal config that contains one
 // user account for username with the given plain-text password.  It restores
@@ -212,4 +201,101 @@ func TestTokenAuthMiddleware_LoginRoute_Bypasses(t *testing.T) {
 	router.ServeHTTP(rec, req)
 
 	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+// configWithSingleAccountAndLegacyAuth is like configWithSingleAccount but also
+// sets allow_legacy_auth: true so that the legacy username:password X-Auth path
+// is enabled.
+func configWithSingleAccountAndLegacyAuth(t *testing.T, username, plainPassword string) {
+	t.Helper()
+	orig := config.GetConfig()
+	hashed := "sha256:" + utils.Sha256(plainPassword)
+	yaml := fmt.Sprintf(
+		"journal_path: main.ledger\ndb_path: paisa.db\nallow_legacy_auth: true\nuser_accounts:\n  - username: %s\n    password: %s\n",
+		username, hashed,
+	)
+	require.NoError(t, config.LoadConfig([]byte(yaml), ""))
+	t.Cleanup(func() {
+		_ = config.LoadConfig(
+			[]byte(fmt.Sprintf("journal_path: %s\ndb_path: %s", orig.JournalPath, orig.DBPath)),
+			"",
+		)
+	})
+}
+
+// --- Legacy auth flag tests ---
+
+// TestTokenAuthMiddleware_LegacyAuth_AcceptedWhenEnabled verifies that a valid
+// legacy username:password credential in X-Auth is accepted when AllowLegacyAuth
+// is true.
+func TestTokenAuthMiddleware_LegacyAuth_AcceptedWhenEnabled(t *testing.T) {
+	db := openTestDB(t)
+	configWithSingleAccountAndLegacyAuth(t, "alice", "secret")
+
+	router := gin.New()
+	router.Use(TokenAuthMiddleware(db))
+	router.GET("/api/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/ping", nil)
+	req.Header.Set("X-Auth", "alice:secret")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+// TestTokenAuthMiddleware_LegacyAuth_RejectedWhenDisabled verifies that a
+// legacy username:password credential in X-Auth is rejected when AllowLegacyAuth
+// is false (the default).
+func TestTokenAuthMiddleware_LegacyAuth_RejectedWhenDisabled(t *testing.T) {
+	db := openTestDB(t)
+	// AllowLegacyAuth defaults to false when not set in YAML.
+	configWithSingleAccount(t, "alice", "secret")
+
+	router := gin.New()
+	router.Use(TokenAuthMiddleware(db))
+	router.GET("/api/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/ping", nil)
+	req.Header.Set("X-Auth", "alice:secret")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+}
+
+// TestTokenAuthMiddleware_SessionToken_WorksRegardlessOfLegacyFlag verifies
+// that a valid session token is accepted regardless of the AllowLegacyAuth flag.
+func TestTokenAuthMiddleware_SessionToken_WorksRegardlessOfLegacyFlag(t *testing.T) {
+	for _, legacyEnabled := range []bool{false, true} {
+		legacyEnabled := legacyEnabled
+		t.Run(fmt.Sprintf("legacy_auth=%v", legacyEnabled), func(t *testing.T) {
+			db := openTestDB(t)
+			if legacyEnabled {
+				configWithSingleAccountAndLegacyAuth(t, "alice", "secret")
+			} else {
+				configWithSingleAccount(t, "alice", "secret")
+			}
+
+			s, err := session.Create(db, "alice")
+			require.NoError(t, err)
+
+			router := gin.New()
+			router.Use(TokenAuthMiddleware(db))
+			router.GET("/api/ping", func(c *gin.Context) {
+				c.JSON(http.StatusOK, gin.H{"ok": true})
+			})
+
+			req := httptest.NewRequest(http.MethodGet, "/api/ping", nil)
+			req.Header.Set("X-Auth", s.Token)
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusOK, rec.Code)
+		})
+	}
 }

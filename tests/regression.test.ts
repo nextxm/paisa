@@ -24,7 +24,7 @@ async function recordAndVerify(dir: string, route: string, name: string) {
   if (fs.existsSync(filename) && process.env["REGENERATE"] !== "true") {
     const current = JSON.parse(fs.readFileSync(filename).toString());
     const diff = diffString(data, current, {
-      excludeKeys: ["id", "transaction_id", "endLine", "transaction_end_line"]
+      excludeKeys: ["id", "transaction_id", "endLine", "transaction_end_line", "allow_legacy_auth"]
     });
 
     if (diff != "") {
