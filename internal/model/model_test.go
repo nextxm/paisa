@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/ananthakumaran/paisa/internal/model"
 	"github.com/ananthakumaran/paisa/internal/model/cii"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/ananthakumaran/paisa/internal/model/portfolio"
@@ -194,4 +195,14 @@ func TestPortfolioUpsertAll_OuterTransactionRollback(t *testing.T) {
 	// fund1 must still be intact (committed before the failing outer transaction).
 	db.Model(&portfolio.Portfolio{}).Where("parent_commodity_id = ?", "fund1").Count(&count)
 	assert.Equal(t, int64(1), count, "fund1 portfolio must not be affected by later rollback")
+}
+
+// TestSyncResult_DefaultValues verifies that a zero-value SyncResult
+// represents a not-yet-run sync with no counts and no failed stage.
+func TestSyncResult_DefaultValues(t *testing.T) {
+	var result model.SyncResult
+	assert.Equal(t, 0, result.PostingCount, "PostingCount must default to zero")
+	assert.Equal(t, 0, result.PriceCount, "PriceCount must default to zero")
+	assert.Empty(t, result.FailedStage, "FailedStage must default to empty string")
+	assert.Empty(t, result.Message, "Message must default to empty string")
 }

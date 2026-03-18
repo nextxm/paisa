@@ -60,9 +60,9 @@ func ClearPriceCache(db *gorm.DB) gin.H {
 
 	cache.Clear()
 
-	message, err := model.SyncJournal(db)
+	result, err := model.SyncJournal(db)
 	if err != nil {
-		return gin.H{"success": false, "message": message}
+		return gin.H{"success": false, "message": result.Message}
 	}
 
 	return gin.H{"success": true}
