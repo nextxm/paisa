@@ -116,7 +116,9 @@ export interface Price {
   commodity_type: string;
   commodity_id: string;
   commodity_name: string;
+  quote_commodity: string;
   value: number;
+  source: string;
 }
 
 export interface Networth {
@@ -767,6 +769,9 @@ export function ajax(
 ): Promise<{ success: boolean; error?: string }>;
 
 export function ajax(route: "/api/ping"): Promise<{ success: boolean; error?: string }>;
+
+// Generic overload for dynamically constructed routes (e.g. with query params).
+export function ajax(route: string, options?: RequestOptions): Promise<any>;
 
 export async function ajax(
   route: string,
