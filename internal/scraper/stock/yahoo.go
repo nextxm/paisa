@@ -122,7 +122,7 @@ func GetHistory(ticker string, commodityName string) ([]*price.Price, error) {
 			value = value * exchangePrice.Close
 		}
 
-		price := price.Price{Date: date, CommodityType: config.Stock, CommodityID: ticker, CommodityName: commodityName, Value: decimal.NewFromFloat(value)}
+		price := price.Price{Date: date, CommodityType: config.Stock, CommodityID: ticker, CommodityName: commodityName, Value: decimal.NewFromFloat(value), QuoteCommodity: config.DefaultCurrency()}
 
 		prices = append(prices, &price)
 	}
