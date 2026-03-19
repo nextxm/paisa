@@ -7,11 +7,22 @@ on:
       - '*'
 jobs:
   docker:
-    name: Push Docker image to Docker Hub
+    name: Push Docker image to GHCR
     runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
+    strategy:
+      matrix:
+        include:
+          # - file: Dockerfile
+          #   suffix: ""
+          # - file: Dockerfile.hledger
+          #   suffix: "-hledger"
+          # - file: Dockerfile.beancount
+          #   suffix: "-beancount"
+          - file: Dockerfile.all
+            suffix: "-all"
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -25,59 +36,17 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
+          flavor: |
+            latest=auto
+            prefix=
+            suffix=${{ matrix.suffix }},onlatest=true
       - uses: docker/build-push-action@v5
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          file: ./Dockerfile
+          file: ./${{ matrix.file }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      - id: meta-hledger
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          flavor: |
-            latest=auto
-            prefix=
-            suffix=-hledger,onlatest=true
-      - uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          file: ./Dockerfile.hledger
-          push: true
-          tags: ${{ steps.meta-hledger.outputs.tags }}
-          labels: ${{ steps.meta-hledger.outputs.labels }}
-      - id: meta-beancount
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          flavor: |
-            latest=auto
-            prefix=
-            suffix=-beancount,onlatest=true
-      - uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          file: ./Dockerfile.beancount
-          push: true
-          tags: ${{ steps.meta-beancount.outputs.tags }}
-          labels: ${{ steps.meta-beancount.outputs.labels }}
-      - id: meta-all
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          flavor: |
-            latest=auto
-            prefix=
-            suffix=-all,onlatest=true
-      - uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          file: ./Dockerfile.all
-          push: true
-          tags: ${{ steps.meta-all.outputs.tags }}
-          labels: ${{ steps.meta-all.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
