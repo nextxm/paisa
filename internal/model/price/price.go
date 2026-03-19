@@ -66,6 +66,30 @@ func UpsertAllByTypeNameAndID(db *gorm.DB, commodityType config.CommodityType, c
 	})
 }
 
+// deduplicatePrices returns a new slice with only the last price seen for each
+// (CommodityName, Date, QuoteCommodity) triple.  Ledger CLIs that infer
+// implicit prices from transaction cost annotations (e.g. hledger
+// --infer-market-prices) can emit multiple identical entries for the same
+// date; keeping only one is safe because they carry the same value.
+func deduplicatePrices(prices []Price) []Price {
+	type key struct {
+		name  string
+		date  time.Time
+		quote string
+	}
+	seen := make(map[key]struct{}, len(prices))
+	out := make([]Price, 0, len(prices))
+	for _, p := range prices {
+		k := key{p.CommodityName, p.Date, p.QuoteCommodity}
+		if _, dup := seen[k]; dup {
+			continue
+		}
+		seen[k] = struct{}{}
+		out = append(out, p)
+	}
+	return out
+}
+
 func UpsertAllByType(db *gorm.DB, commodityType config.CommodityType, prices []Price) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		err := tx.Delete(&Price{}, "commodity_type = ?", commodityType).Error
@@ -73,10 +97,12 @@ func UpsertAllByType(db *gorm.DB, commodityType config.CommodityType, prices []P
 			return err
 		}
 		dc := defaultQuoteCommodity()
-		for _, price := range prices {
-			if price.QuoteCommodity == "" {
-				price.QuoteCommodity = dc
+		for i := range prices {
+			if prices[i].QuoteCommodity == "" {
+				prices[i].QuoteCommodity = dc
 			}
+		}
+		for _, price := range deduplicatePrices(prices) {
 			err := tx.Create(&price).Error
 			if err != nil {
 				return err
