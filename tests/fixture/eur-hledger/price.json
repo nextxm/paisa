@@ -7,7 +7,9 @@
         "commodity_type": "unknown",
         "commodity_id": "AAPL",
         "commodity_name": "AAPL",
-        "value": 10025.05
+        "quote_commodity": "EUR",
+        "value": 10025.05,
+        "source": ""
       },
       {
         "id": 1,
@@ -15,7 +17,9 @@
         "commodity_type": "unknown",
         "commodity_id": "AAPL",
         "commodity_name": "AAPL",
-        "value": 10005.05
+        "quote_commodity": "EUR",
+        "value": 10005.05,
+        "source": ""
       }
     ]
   }
