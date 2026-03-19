@@ -882,8 +882,17 @@ func buildHLedgerPostings(p HLedgerPosting, t HLedgerTransaction, pricesTree map
 }
 
 func buildPricesTree(prices []price.Price) map[string]*btree.BTree {
+	dc := config.DefaultCurrency()
 	pricesTree := make(map[string]*btree.BTree)
 	for _, price := range prices {
+		// Skip prices quoted in a non-default currency (e.g. ABNB/USD in an INR
+		// journal): including them would cause the posting-amount computation to
+		// treat a USD rate as an INR rate.  An empty QuoteCommodity is treated as
+		// the default currency for backward-compat with parsers that predate the
+		// QuoteCommodity field.
+		if price.QuoteCommodity != "" && price.QuoteCommodity != dc {
+			continue
+		}
 		if pricesTree[price.CommodityName] == nil {
 			pricesTree[price.CommodityName] = btree.New(2)
 		}
