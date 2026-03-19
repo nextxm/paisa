@@ -161,6 +161,16 @@ type Config struct {
 	// clients have migrated to session tokens issued by POST /api/auth/login.
 	AllowLegacyAuth bool `json:"allow_legacy_auth" yaml:"allow_legacy_auth"`
 
+	// EnableMultiCurrencyPrices enables pair-aware rate resolution and
+	// report-currency conversion introduced in the multi-currency pricing
+	// rollout.  When false the system behaves identically to pre-rollout
+	// releases: GetRate only resolves direct/inverse pairs (no cross-rate
+	// hops) and report_currency conversion in /api/price is a no-op.
+	// Set to true (the default) to enable the full multi-currency feature
+	// set.  Set to false as a rollback flag if unexpected valuation
+	// regressions are observed after upgrading.
+	EnableMultiCurrencyPrices bool `json:"enable_multi_currency_prices" yaml:"enable_multi_currency_prices"`
+
 	CreditCards []CreditCard `json:"credit_cards" yaml:"credit_cards"`
 }
 
@@ -188,6 +198,7 @@ var defaultConfig = Config{
 	Goals:                      Goals{Retirement: []RetirementGoal{}, Savings: []SavingsGoal{}},
 	UserAccounts:               []UserAccount{},
 	CreditCards:                []CreditCard{},
+	EnableMultiCurrencyPrices:  true,
 }
 
 var itemsUniquePropertiesMeta = jsonschema.MustCompileString("itemsUniqueProperties.json", `{
