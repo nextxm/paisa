@@ -158,7 +158,13 @@
             </p>
             {#if isFiltered}
               <p class="control">
-                <button class="button is-small is-light" on:click={() => { clearFilters(); fetchPrice(); }}>
+                <button
+                  class="button is-small is-light"
+                  on:click={() => {
+                    clearFilters();
+                    fetchPrice();
+                  }}
+                >
                   <span class="icon is-small">
                     <i class="fas fa-times" />
                   </span>
