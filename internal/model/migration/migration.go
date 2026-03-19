@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/cache"
 	"github.com/ananthakumaran/paisa/internal/model/cii"
 	mutualfundModel "github.com/ananthakumaran/paisa/internal/model/mutualfund/scheme"
@@ -32,6 +33,7 @@ type step struct {
 // steps is the ordered list of all database migrations.
 var steps = []step{
 	{Version: 1, Apply: v1Baseline},
+	{Version: 2, Apply: v2AddQuoteCommodity},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -46,6 +48,54 @@ func v1Baseline(db *gorm.DB) error {
 		&cache.Cache{},
 		&session.Session{},
 	)
+}
+
+// v2AddQuoteCommodity adds the quote_commodity and source columns to the prices
+// table, backfills existing rows with the configured default currency, and
+// creates indexes for efficient pair-aware lookups.
+func v2AddQuoteCommodity(db *gorm.DB) error {
+	// AutoMigrate adds the new columns to any existing prices table; for a
+	// fresh install the table was already created with all columns by v1.
+	if err := db.AutoMigrate(&price.Price{}); err != nil {
+		return fmt.Errorf("v2: AutoMigrate prices failed: %w", err)
+	}
+
+	// Determine the default currency for the backfill.
+	dc := config.DefaultCurrency()
+	if dc == "" {
+		dc = "INR"
+	}
+
+	// Backfill existing rows that pre-date this migration (quote_commodity = '' or NULL).
+	if err := db.Exec(
+		"UPDATE prices SET quote_commodity = ? WHERE quote_commodity IS NULL OR quote_commodity = ''", dc,
+	).Error; err != nil {
+		return fmt.Errorf("v2: backfill quote_commodity failed: %w", err)
+	}
+
+	// Index on commodity_name for fast per-commodity history queries.
+	if err := db.Exec(
+		"CREATE INDEX IF NOT EXISTS idx_prices_commodity_name ON prices(commodity_name)",
+	).Error; err != nil {
+		return fmt.Errorf("v2: create idx_prices_commodity_name failed: %w", err)
+	}
+
+	// Index on quote_commodity for pair-aware queries.
+	if err := db.Exec(
+		"CREATE INDEX IF NOT EXISTS idx_prices_quote_commodity ON prices(quote_commodity)",
+	).Error; err != nil {
+		return fmt.Errorf("v2: create idx_prices_quote_commodity failed: %w", err)
+	}
+
+	// Unique index enforces no duplicate prices per (commodity_type, date, base, quote) tuple.
+	if err := db.Exec(
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_prices_type_date_base_quote " +
+			"ON prices(commodity_type, date, commodity_name, quote_commodity)",
+	).Error; err != nil {
+		return fmt.Errorf("v2: create idx_prices_type_date_base_quote failed: %w", err)
+	}
+
+	return nil
 }
 
 // RunMigrations initializes the schema_versions table, applies any unapplied
