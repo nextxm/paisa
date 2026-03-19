@@ -47,9 +47,10 @@ func loadPriceCache(db *gorm.DB) {
 		log.Fatal(result.Error)
 	}
 
+	dc := config.DefaultCurrency()
 	for commodityName, postings := range lo.GroupBy(postings, func(p posting.Posting) string { return p.Commodity }) {
 		if !utils.IsCurrency(postings[0].Commodity) {
-			result := db.Where("commodity_type = ? and commodity_name = ?", config.Unknown, commodityName).Find(&prices)
+			result := db.Where("commodity_type = ? and commodity_name = ? and (quote_commodity = ? or quote_commodity = '')", config.Unknown, commodityName, dc).Find(&prices)
 			if result.Error != nil {
 				log.Fatal(result.Error)
 			}
