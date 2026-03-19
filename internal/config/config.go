@@ -161,6 +161,14 @@ type Config struct {
 	// clients have migrated to session tokens issued by POST /api/auth/login.
 	AllowLegacyAuth bool `json:"allow_legacy_auth" yaml:"allow_legacy_auth"`
 
+	// DisableMultiCurrencyPrices is a rollback flag that disables the
+	// pair-aware cross-rate resolution and report_currency conversion
+	// introduced in the multi-currency pricing rollout.  When false (the
+	// default) all multi-currency features are active.  Set to true in
+	// paisa.yaml to revert to pre-rollout behaviour if unexpected valuation
+	// regressions are observed after upgrading.
+	DisableMultiCurrencyPrices bool `json:"disable_multi_currency_prices" yaml:"disable_multi_currency_prices"`
+
 	CreditCards []CreditCard `json:"credit_cards" yaml:"credit_cards"`
 }
 
@@ -425,6 +433,14 @@ func EnsureLogFilePath() (string, error) {
 
 func DefaultCurrency() string {
 	return config.DefaultCurrency
+}
+
+// IsMultiCurrencyPricesEnabled returns true (the default) when the
+// disable_multi_currency_prices flag is not set.  Set the flag to true in
+// paisa.yaml to disable cross-rate resolution and report_currency conversion
+// as a rollback mechanism.
+func IsMultiCurrencyPricesEnabled() bool {
+	return !config.DisableMultiCurrencyPrices
 }
 
 func TimeZone() *time.Location {
