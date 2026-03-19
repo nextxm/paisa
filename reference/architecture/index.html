@@ -6,19 +6,19 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="How to use notepad calculator called sheets in Paisa">
+        <meta name="description" content="System architecture of Paisa across CLI, web, and desktop modes">
       
       
         <meta name="author" content="Anantha Kumaran and nextxm contributors">
       
       
-        <link rel="canonical" href="https://paisa.fyi/reference/sheets/">
+        <link rel="canonical" href="https://paisa.fyi/reference/architecture/">
       
       
-        <link rel="prev" href="../recurring/">
+        <link rel="prev" href="../../getting-started/tutorial/">
       
       
-        <link rel="next" href="../config/">
+        <link rel="next" href="../design/">
       
       
       <link rel="icon" href="../../images/favicon.png">
@@ -26,7 +26,7 @@
     
     
       
-        <title>Sheets - Paisa</title>
+        <title>Architecture - Paisa</title>
       
     
     
@@ -98,7 +98,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#sheets" class="md-skip">
+        <a href="#architecture" class="md-skip">
           Skip to content
         </a>
       
@@ -149,7 +149,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Sheets
+              Architecture
             
           </span>
         </div>
@@ -299,7 +299,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../architecture/" class="md-tabs__link">
+        <a href="./" class="md-tabs__link">
           
   
     
@@ -643,10 +643,31 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -656,6 +677,197 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-entry-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      Runtime Entry Points
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Runtime Entry Points">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cli-entry" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLI entry
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#web-server-entry" class="md-nav__link">
+    <span class="md-ellipsis">
+      Web server entry
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#desktop-entry" class="md-nav__link">
+    <span class="md-ellipsis">
+      Desktop entry
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layered-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Layered Structure
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Layered Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#presentation-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Presentation Layer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      API Layer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#domain-and-service-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Domain and Service Layer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-access-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Access Layer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integration-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Integration Layer
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#high-level-data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      High-Level Data Flow
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-architectural-characteristics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Architectural Characteristics
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key Architectural Characteristics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#strengths" class="md-nav__link">
+    <span class="md-ellipsis">
+      Strengths
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#current-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      Current Constraints
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#primary-deployment-surfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      Primary Deployment Surfaces
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#suggested-next-architectural-evolutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Suggested Next Architectural Evolutions
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -907,39 +1119,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Sheets
-    
-  </span>
-  
-    
-  
-  
-    <span class="md-status md-status--new" title="Recently added">
-    </span>
-  
-
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../sheets/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -957,188 +1140,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#introduction" class="md-nav__link">
-    <span class="md-ellipsis">
-      Introduction
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Introduction">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#calculator" class="md-nav__link">
-    <span class="md-ellipsis">
-      Calculator
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#function" class="md-nav__link">
-    <span class="md-ellipsis">
-      Function
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#query" class="md-nav__link">
-    <span class="md-ellipsis">
-      Query
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#syntax" class="md-nav__link">
-    <span class="md-ellipsis">
-      Syntax
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Syntax">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#number" class="md-nav__link">
-    <span class="md-ellipsis">
-      Number
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#operators" class="md-nav__link">
-    <span class="md-ellipsis">
-      Operators
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#variable" class="md-nav__link">
-    <span class="md-ellipsis">
-      Variable
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#function_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Function
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#query_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Query
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#comment" class="md-nav__link">
-    <span class="md-ellipsis">
-      Comment
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#functions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Functions
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Functions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#costq-posting-query-number" class="md-nav__link">
-    <span class="md-ellipsis">
-      cost(q: Posting[] | Query): number
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#balanceq-posting-query-number" class="md-nav__link">
-    <span class="md-ellipsis">
-      balance(q: Posting[] | Query): number
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#fifoq-posting-query-posting" class="md-nav__link">
-    <span class="md-ellipsis">
-      fifo(q: Posting[] | Query): Posting[]
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#negateq-posting-query-posting" class="md-nav__link">
-    <span class="md-ellipsis">
-      negate(q: Posting[] | Query): Posting[]
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2019,37 +2020,46 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#introduction" class="md-nav__link">
+  <a href="#overview" class="md-nav__link">
     <span class="md-ellipsis">
-      Introduction
+      Overview
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Introduction">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-entry-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      Runtime Entry Points
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Runtime Entry Points">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#calculator" class="md-nav__link">
+  <a href="#cli-entry" class="md-nav__link">
     <span class="md-ellipsis">
-      Calculator
+      CLI entry
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#function" class="md-nav__link">
+  <a href="#web-server-entry" class="md-nav__link">
     <span class="md-ellipsis">
-      Function
+      Web server entry
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#query" class="md-nav__link">
+  <a href="#desktop-entry" class="md-nav__link">
     <span class="md-ellipsis">
-      Query
+      Desktop entry
     </span>
   </a>
   
@@ -2061,64 +2071,55 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#syntax" class="md-nav__link">
+  <a href="#layered-structure" class="md-nav__link">
     <span class="md-ellipsis">
-      Syntax
+      Layered Structure
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Syntax">
+    <nav class="md-nav" aria-label="Layered Structure">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#number" class="md-nav__link">
+  <a href="#presentation-layer" class="md-nav__link">
     <span class="md-ellipsis">
-      Number
+      Presentation Layer
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#operators" class="md-nav__link">
+  <a href="#api-layer" class="md-nav__link">
     <span class="md-ellipsis">
-      Operators
+      API Layer
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#variable" class="md-nav__link">
+  <a href="#domain-and-service-layer" class="md-nav__link">
     <span class="md-ellipsis">
-      Variable
+      Domain and Service Layer
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#function_1" class="md-nav__link">
+  <a href="#data-access-layer" class="md-nav__link">
     <span class="md-ellipsis">
-      Function
+      Data Access Layer
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#query_1" class="md-nav__link">
+  <a href="#integration-layer" class="md-nav__link">
     <span class="md-ellipsis">
-      Query
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#comment" class="md-nav__link">
-    <span class="md-ellipsis">
-      Comment
+      Integration Layer
     </span>
   </a>
   
@@ -2130,46 +2131,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#functions" class="md-nav__link">
+  <a href="#high-level-data-flow" class="md-nav__link">
     <span class="md-ellipsis">
-      Functions
+      High-Level Data Flow
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Functions">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-architectural-characteristics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Architectural Characteristics
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key Architectural Characteristics">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#costq-posting-query-number" class="md-nav__link">
+  <a href="#strengths" class="md-nav__link">
     <span class="md-ellipsis">
-      cost(q: Posting[] | Query): number
+      Strengths
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#balanceq-posting-query-number" class="md-nav__link">
+  <a href="#current-constraints" class="md-nav__link">
     <span class="md-ellipsis">
-      balance(q: Posting[] | Query): number
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#fifoq-posting-query-posting" class="md-nav__link">
-    <span class="md-ellipsis">
-      fifo(q: Posting[] | Query): Posting[]
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#negateq-posting-query-posting" class="md-nav__link">
-    <span class="md-ellipsis">
-      negate(q: Posting[] | Query): Posting[]
+      Current Constraints
     </span>
   </a>
   
@@ -2177,6 +2169,24 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#primary-deployment-surfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      Primary Deployment Surfaces
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#suggested-next-architectural-evolutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Suggested Next Architectural Evolutions
+    </span>
+  </a>
   
 </li>
       
@@ -2199,248 +2209,113 @@
   
 
 
-<h1 id="sheets">Sheets<a class="headerlink" href="#sheets" title="Permanent link">&para;</a></h1>
-<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Sheet is a notepad calculator that computes the answer as you type.
-It has full access to your ledger and can be used to calculate the
-answers for a wide variety of financial questions.</p>
-<div class="admonition example">
-<p class="admonition-title">Experimental</p>
-<p>Sheet is an experimental feature. Give it a try and let me know
-how it goes, specially what is missing and what can be improved.
-The syntax and semantics of sheet may change in future releases.</p>
-</div>
-<h4 id="calculator">Calculator<a class="headerlink" href="#calculator" title="Permanent link">&para;</a></h4>
-<p>Sheet can act as a normal calculator. The example below shows how to
-calculate the monthly EMI for a home loan.</p>
-<div class="split-codeview">
-<div class="sheet" markdown>
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gh"># Home Loan</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="err">price </span><span class="o">=</span><span class="err"> </span><span class="m">40,00,000</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="err">down_payment </span><span class="o">=</span><span class="err"> </span><span class="m">20%</span><span class="err"> </span><span class="o">*</span><span class="err"> price</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="err">finance_amount </span><span class="o">=</span><span class="err"> price </span><span class="o">-</span><span class="err"> down_payment</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="err">interest_rate </span><span class="o">=</span><span class="err"> </span><span class="m">8.6%</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="err">term </span><span class="o">=</span><span class="err"> </span><span class="m">30</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="err">n </span><span class="o">=</span><span class="err"> term </span><span class="o">*</span><span class="err"> </span><span class="m">12</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="err">r </span><span class="o">=</span><span class="err"> interest_rate </span><span class="o">/</span><span class="err"> </span><span class="m">12</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="gh"># EMI</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="err">monthly_payment </span><span class="o">=</span><span class="err"> r </span><span class="o">/</span><span class="err"> (</span><span class="m">1</span><span class="err"> </span><span class="o">-</span><span class="err"> (</span><span class="m">1</span><span class="err"> </span><span class="o">+</span><span class="err"> r) </span><span class="o">^</span><span class="err"> (</span><span class="o">-</span><span class="err">n)) </span><span class="o">*</span><span class="err"> finance_amount</span>
-</span></code></pre></div>
-</div>
-<div class="sheet-result sheet-result-1" markdown>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># Home Loan
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>40,00,000
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>8,00,000
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>32,00,000
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>0
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>30
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>360
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>0
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a># EMI
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>24832
-</span></code></pre></div>
-</div>
-</div>
-
-<h4 id="function">Function<a class="headerlink" href="#function" title="Permanent link">&para;</a></h4>
-<p>Sheets comes with a set of <a href="#functions">built-in functions</a>. You can also define
-your own functions. The example below shows how to define a function</p>
-<div class="split-codeview">
-<div class="sheet" markdown>
-
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gh"># Years to Double</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nf">years_to_double</span>(<span class="err">rate) </span><span class="o">=</span><span class="err"> </span><span class="m">72</span><span class="err"> </span><span class="o">/</span><span class="err"> rate</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nf">years_to_double</span>(<span class="m">2</span><span class="err">)</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nf">years_to_double</span>(<span class="m">4</span><span class="err">)</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="nf">years_to_double</span>(<span class="m">6</span><span class="err">)</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="nf">years_to_double</span>(<span class="m">8</span><span class="err">)</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="nf">years_to_double</span>(<span class="m">10</span><span class="err">)</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="nf">years_to_double</span>(<span class="m">12</span><span class="err">)</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="nf">years_to_double</span>(<span class="m">14</span><span class="err">)</span>
-</span></code></pre></div>
-</div>
-<div class="sheet-result sheet-result-2" markdown>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a># Years to Double
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>36
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>18
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>12
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>9
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>7
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>6
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>5
-</span></code></pre></div>
-</div>
-</div>
-
-<h4 id="query">Query<a class="headerlink" href="#query" title="Permanent link">&para;</a></h4>
-<p>Query is what makes sheets powerful. It allows you to query your
-ledger postings and do calculations on them. The example below shows
-how to calculate cost basis of your assets so you can report them to
-Income Tax department.</p>
-<div class="split-codeview">
-<div class="sheet" markdown>
-
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gh"># Schedule AL</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="err">date_query </span><span class="o">=</span><span class="err"> </span><span class="o">{</span><span class="kc">date</span> <span class="o">&lt;=</span> <span class="na">[2023-03-31]</span><span class="o">}</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nf">cost_basis</span>(<span class="err">x) </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="nf">fifo</span>(<span class="err">x </span><span class="k">AND</span><span class="err"> date_query))</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="nf">cost_basis_negative</span>(<span class="err">x) </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="nf">fifo</span>(<span class="nf">negate</span>(<span class="err">x </span><span class="k">AND</span><span class="err"> date_query)))</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="gh"># Immovable</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="err">immovable </span><span class="o">=</span><span class="err"> </span><span class="nf">cost_basis</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=</span> <span class="s">Assets:House</span><span class="o">}</span><span class="err">)</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="gh"># Movable</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="err">metal </span><span class="o">=</span><span class="err"> </span><span class="m">0</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="err">art </span><span class="o">=</span><span class="err"> </span><span class="m">0</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="err">vehicle </span><span class="o">=</span><span class="err"> </span><span class="m">0</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="err">bank </span><span class="o">=</span><span class="err"> </span><span class="nf">cost_basis</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=</span> <span class="s">/^Assets:Checking/</span><span class="o">}</span><span class="err">)</span>
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="err">share </span><span class="o">=</span><span class="err"> </span><span class="nf">cost_basis</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Assets:Equity:.*/</span> <span class="k">OR</span>
-</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>                    <span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Assets:Debt:.*/</span><span class="o">}</span><span class="err">)</span>
-</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="err">insurance </span><span class="o">=</span><span class="err"> </span><span class="m">0</span>
-</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="err">loan </span><span class="o">=</span><span class="err"> </span><span class="m">0</span>
-</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="err">cash </span><span class="o">=</span><span class="err"> </span><span class="m">0</span>
-</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>
-</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="gh"># Liability</span>
-</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="err">liability </span><span class="o">=</span><span class="err"> </span><span class="nf">cost_basis_negative</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Liabilities:Homeloan/</span><span class="o">}</span><span class="err">)</span>
-</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>
-</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="gh"># Total</span>
-</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="err">total </span><span class="o">=</span><span class="err"> immovable </span><span class="o">+</span><span class="err"> metal </span><span class="o">+</span><span class="err"> art </span><span class="o">+</span><span class="err"> vehicle </span><span class="o">+</span><span class="err"> bank </span><span class="o">+</span><span class="err"> share </span><span class="o">+</span><span class="err"> insurance </span><span class="o">+</span><span class="err"> loan </span><span class="o">+</span><span class="err"> cash </span><span class="o">-</span><span class="err"> liability</span>
-</span></code></pre></div>
-</div>
-<div class="sheet-result sheet-result-3" markdown>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># Schedule AL
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a># Immovable
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>25,00,000
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a># Movable
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>0
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>0
-</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>0
-</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>1,21,402
-</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>66,98,880
-</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>
-</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>0
-</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>0
-</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>0
-</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>
-</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a># Liability
-</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>6,21,600
-</span><span id="__span-5-22"><a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>
-</span><span id="__span-5-23"><a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a># Total
-</span><span id="__span-5-24"><a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>86,98,682
-</span></code></pre></div>
-</div>
-</div>
-
-<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<h4 id="number">Number<a class="headerlink" href="#number" title="Permanent link">&para;</a></h4>
-<p>Sheet allows comma as a separator. <code>%</code> is a syntax sugar for dividing
-the number by 100. So <code>8%</code> is same as <code>0.08</code>.</p>
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="m">100,00</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="m">100.00</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="o">-</span><span class="m">100</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="m">8%</span>
-</span></code></pre></div>
-<h4 id="operators">Operators<a class="headerlink" href="#operators" title="Permanent link">&para;</a></h4>
-<p>Sheet supports the following operators. <code>^</code> is the exponentiation operator.</p>
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="m">1</span><span class="err"> </span><span class="o">+</span><span class="err"> </span><span class="m">1</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="m">1</span><span class="err"> </span><span class="o">-</span><span class="err"> </span><span class="m">1</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="m">1</span><span class="err"> </span><span class="o">*</span><span class="err"> </span><span class="m">1</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="m">1</span><span class="err"> </span><span class="o">/</span><span class="err"> </span><span class="m">1</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="m">1</span><span class="err"> </span><span class="o">^</span><span class="err"> </span><span class="m">2</span>
-</span></code></pre></div>
-<h4 id="variable">Variable<a class="headerlink" href="#variable" title="Permanent link">&para;</a></h4>
-<p>You can define variables using <code>=</code> operator. Variables have to be
-defined before they are used.</p>
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="err">x </span><span class="o">=</span><span class="err"> </span><span class="m">1</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="err">y </span><span class="o">=</span><span class="err"> </span><span class="m">2</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="err">z </span><span class="o">=</span><span class="err"> x </span><span class="o">+</span><span class="err"> y</span>
-</span></code></pre></div>
-<h4 id="function_1">Function<a class="headerlink" href="#function_1" title="Permanent link">&para;</a></h4>
-<p>Sheet comes with a set of <a href="#functions">built-in functions</a>. You can also define your
-own functions. Function definition starts with the function name and
-then a list of arguments. The body of the function is a single
-expression. To call a function, use the function name followed by
-arguments.</p>
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nf">sum</span>(<span class="err">a</span><span class="m">,</span><span class="err"> b) </span><span class="o">=</span><span class="err"> a </span><span class="o">+</span><span class="err"> b</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="nf">sum</span>(<span class="m">1,</span><span class="err"> </span><span class="m">2</span><span class="err">)</span>
-</span></code></pre></div>
-<h4 id="query_1">Query<a class="headerlink" href="#query_1" title="Permanent link">&para;</a></h4>
-<p>Query is a first class citizen in sheet. You can think of a query as a
-list of postings that match the conditions. The query syntax is same
-as the <a href="../bulk-edit/#search">search syntax</a> used in postings and transactions pages. It
-has to be enclosed inside a <code>{}</code>. Query can be treated as any other
-value, can be passed as an argument, can be assigned to a variable. In
-fact you can combine two queries using <code class="language-sheet highlight"><span class="k">AND</span></code> and <code class="language-sheet highlight"><span class="k">OR</span></code>
-operator as well.</p>
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="err">query </span><span class="o">=</span><span class="err"> </span><span class="o">{</span><span class="kc">account</span> <span class="o">=</span> <span class="s">Expenses:Utilities</span> <span class="k">AND</span> <span class="kc">payee</span> <span class="o">=~</span> <span class="s">/uber/i</span><span class="o">}</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="err">upto_this_fy </span><span class="o">=</span><span class="err"> </span><span class="o">{</span><span class="kc">date</span> <span class="o">&lt;</span> <span class="na">[2024-04-01]</span><span class="o">}</span>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="err">assets </span><span class="o">=</span><span class="err"> </span><span class="o">{</span> <span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Assets:.*/</span> <span class="o">}</span>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="err">liabilities </span><span class="o">=</span><span class="err"> </span><span class="o">{</span> <span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Liabilities:.*/</span> <span class="o">}</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="err">assets_upto_this_fy </span><span class="o">=</span><span class="err"> upto_this_fy </span><span class="k">AND</span><span class="err"> assets</span>
-</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="err">liabilities_upto_this_fy </span><span class="o">=</span><span class="err"> upto_this_fy </span><span class="k">AND</span><span class="err"> liabilities</span>
-</span></code></pre></div>
-<details>
-<summary>What is posting?</summary>
-<p><div class="language-ledger highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="na">2022/01/01</span> <span class="gh">Salary</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="hll"><span class="s">    Income:Salary:Acme</span><span class="err">        </span><span class="m">-100,000</span><span class="err"> </span><span class="k">INR</span>
-</span></span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="hll"><span class="s">    Assets:Checking</span><span class="err">            </span><span class="m">100,000</span><span class="err"> </span><span class="k">INR</span>
-</span></span></code></pre></div>
-In the above transaction, there are two postings. A transaction consists
-of several postings that sum to zero. If you want to know the cost of
-your checking account, you would use <code class="language-sheet highlight"><span class="nf">cost</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=</span> <span class="s">Assets:Checking</span><span class="o">}</span><span class="err">)</span></code></p>
-</details>
-<h4 id="comment">Comment<a class="headerlink" href="#comment" title="Permanent link">&para;</a></h4>
-<p>Sheet supports single line comments starting with <code>;</code> or <code>//</code>.</p>
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1">// set x</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="err">x </span><span class="o">=</span><span class="err"> </span><span class="m">1</span>
-</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1">; set y</span>
-</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="err">y </span><span class="o">=</span><span class="err"> </span><span class="m">2</span>
-</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
-</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="err">z </span><span class="o">=</span><span class="err"> x </span><span class="o">+</span><span class="err"> y </span><span class="c1">// add x and y</span>
-</span></code></pre></div>
-<h2 id="functions">Functions<a class="headerlink" href="#functions" title="Permanent link">&para;</a></h2>
-<p>You can find the full list of built-in functions here. This list is
-very slim as of now, please start a discussion if you want some
-functions to be added here.</p>
-<h4 id="costq-posting-query-number"><code class="language-typescript highlight"><span class="nx">cost</span><span class="p">(</span><span class="nx">q</span><span class="o">:</span><span class="w"> </span><span class="kt">Posting</span><span class="p">[]</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Query</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span></code><a class="headerlink" href="#costq-posting-query-number" title="Permanent link">&para;</a></h4>
-<p>Returns the sum of the cost of all the postings.</p>
-<h4 id="balanceq-posting-query-number"><code class="language-typescript highlight"><span class="nx">balance</span><span class="p">(</span><span class="nx">q</span><span class="o">:</span><span class="w"> </span><span class="kt">Posting</span><span class="p">[]</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Query</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span></code><a class="headerlink" href="#balanceq-posting-query-number" title="Permanent link">&para;</a></h4>
-<p>Returns the sum of the current market value of all the postings.</p>
-<h4 id="fifoq-posting-query-posting"><code class="language-typescript highlight"><span class="nx">fifo</span><span class="p">(</span><span class="nx">q</span><span class="o">:</span><span class="w"> </span><span class="kt">Posting</span><span class="p">[]</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Query</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Posting</span><span class="p">[]</span></code><a class="headerlink" href="#fifoq-posting-query-posting" title="Permanent link">&para;</a></h4>
-<p>Returns the list of postings after performing a FIFO adjustment. For
-example, assume you have 3 postings</p>
-<div class="language-ledger highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="na">2020/01/01</span> <span class="gh">Buy</span>
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="s">    Assets:Bank:Checking</span><span class="err">   </span><span class="m">100</span><span class="err"> </span><span class="k">USD</span>
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="na">2020/02/01</span> <span class="gh">Buy</span>
-</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="s">    Assets:Bank:Checking</span><span class="err">   </span><span class="m">100</span><span class="err"> </span><span class="k">USD</span>
-</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="na">2020/03/01</span> <span class="gh">Sell</span>
-</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="s">    Assets:Bank:Checking</span><span class="err">   </span><span class="m">-50</span><span class="err"> </span><span class="k">USD</span>
-</span></code></pre></div>
-<p>after FIFO adjustment, you will get the following postings</p>
-<div class="language-ledger highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="na">2020/01/01</span> <span class="gh">Buy</span>
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="s">    Assets:Bank:Checking</span><span class="err">    </span><span class="m">50</span><span class="err"> </span><span class="k">USD</span>
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="na">2020/02/01</span> <span class="gh">Buy</span>
-</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="s">    Assets:Bank:Checking</span><span class="err">   </span><span class="m">100</span><span class="err"> </span><span class="k">USD</span>
-</span></code></pre></div>
-<p>All your sell postings will be adjusted against the oldest buy
-postings and you will have the remaining buy postings.</p>
-<h4 id="negateq-posting-query-posting"><code class="language-typescript highlight"><span class="nx">negate</span><span class="p">(</span><span class="nx">q</span><span class="o">:</span><span class="w"> </span><span class="kt">Posting</span><span class="p">[]</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Query</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Posting</span><span class="p">[]</span></code><a class="headerlink" href="#negateq-posting-query-posting" title="Permanent link">&para;</a></h4>
-<p>Negates the amount and quantity of all the postings. This would be
-useful when you want to do some calculation on liabilities or income
-which are negative in nature.</p>
+<h1 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>Paisa is a personal finance application built around double-entry ledger files, with three execution modes:</p>
+<ol>
+<li>CLI mode for operations like <code>serve</code>, <code>update</code>, and <code>init</code>.</li>
+<li>Web mode that serves a browser SPA and JSON API.</li>
+<li>Desktop mode (Wails) that embeds the same backend API in a native shell.</li>
+</ol>
+<p>The core architecture is a modular monolith:</p>
+<ol>
+<li>A Go backend in <code>internal/</code> for domain logic, data access, and API handlers.</li>
+<li>A SvelteKit frontend in <code>src/</code> that consumes backend APIs.</li>
+<li>SQLite persistence managed through GORM.</li>
+<li>Ledger CLI integration for parsing and validating source journal files.</li>
+</ol>
+<h2 id="runtime-entry-points">Runtime Entry Points<a class="headerlink" href="#runtime-entry-points" title="Permanent link">&para;</a></h2>
+<h3 id="cli-entry">CLI entry<a class="headerlink" href="#cli-entry" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Binary entrypoint: <code>paisa.go</code></li>
+<li>Command composition: <code>cmd/root.go</code></li>
+<li>Operational commands:</li>
+<li><code>cmd/serve.go</code> starts HTTP server.</li>
+<li><code>cmd/update.go</code> syncs journal, prices, and portfolios.</li>
+<li><code>cmd/init.go</code> creates starter/demo data.</li>
+</ul>
+<h3 id="web-server-entry">Web server entry<a class="headerlink" href="#web-server-entry" title="Permanent link">&para;</a></h3>
+<ul>
+<li>HTTP router build and API registration: <code>internal/server/server.go</code></li>
+<li>Listener startup: <code>internal/server/server.go</code> (<code>Listen</code>)</li>
+<li>Static asset embedding: <code>web/web.go</code></li>
+</ul>
+<h3 id="desktop-entry">Desktop entry<a class="headerlink" href="#desktop-entry" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Wails bootstrap: <code>desktop/main.go</code></li>
+<li>Desktop app lifecycle and DB open/migrate: <code>desktop/app.go</code></li>
+<li>The desktop asset server uses the same backend router from <code>internal/server/server.go</code>.</li>
+</ul>
+<h2 id="layered-structure">Layered Structure<a class="headerlink" href="#layered-structure" title="Permanent link">&para;</a></h2>
+<h3 id="presentation-layer">Presentation Layer<a class="headerlink" href="#presentation-layer" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Frontend routes and UI: <code>src/routes/</code>, <code>src/lib/</code></li>
+<li>API calls and auth token handling: <code>src/lib/utils.ts</code></li>
+<li>App-level state stores: <code>src/store.ts</code></li>
+</ul>
+<h3 id="api-layer">API Layer<a class="headerlink" href="#api-layer" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Gin router and middleware: <code>internal/server/server.go</code></li>
+<li>Domain handlers grouped by concern:</li>
+<li>Dashboard, cash flow, budget, net worth, income/expense.</li>
+<li>Ledger editor and sheet editor.</li>
+<li>Portfolio/prices/goals/credit cards.</li>
+</ul>
+<h3 id="domain-and-service-layer">Domain and Service Layer<a class="headerlink" href="#domain-and-service-layer" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Accounting primitives and account views: <code>internal/accounting/</code></li>
+<li>Capital gains, market price and other business workflows: <code>internal/service/</code></li>
+<li>Taxation and forecasting logic: <code>internal/taxation/</code>, <code>internal/prediction/</code>, <code>internal/xirr/</code></li>
+</ul>
+<h3 id="data-access-layer">Data Access Layer<a class="headerlink" href="#data-access-layer" title="Permanent link">&para;</a></h3>
+<ul>
+<li>DB open and helper utilities: <code>internal/utils/utils.go</code></li>
+<li>Models and sync orchestration: <code>internal/model/model.go</code> and related <code>internal/model/*</code></li>
+<li>Query helpers: <code>internal/query/</code></li>
+</ul>
+<h3 id="integration-layer">Integration Layer<a class="headerlink" href="#integration-layer" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Ledger engine wrapper: <code>internal/ledger/</code></li>
+<li>External price/portfolio sources: <code>internal/scraper/</code></li>
+</ul>
+<h2 id="high-level-data-flow">High-Level Data Flow<a class="headerlink" href="#high-level-data-flow" title="Permanent link">&para;</a></h2>
+<ol>
+<li>User action in frontend route triggers API call via <code>ajax</code> in <code>src/lib/utils.ts</code>.</li>
+<li>Request enters Gin router in <code>internal/server/server.go</code>.</li>
+<li>Auth middleware validates optional <code>X-Auth</code> token for <code>/api/*</code> when users are configured.</li>
+<li>Handler delegates to accounting/service/model/query modules.</li>
+<li>Data is loaded from SQLite and/or refreshed via ledger/scraper flows.</li>
+<li>JSON response is sent to frontend and rendered by Svelte components.</li>
+</ol>
+<h2 id="key-architectural-characteristics">Key Architectural Characteristics<a class="headerlink" href="#key-architectural-characteristics" title="Permanent link">&para;</a></h2>
+<h3 id="strengths">Strengths<a class="headerlink" href="#strengths" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Shared backend between web and desktop keeps behavior consistent.</li>
+<li>Clear package boundaries in <code>internal/</code> by functional domain.</li>
+<li>Config schema validation in <code>internal/config/</code> reduces malformed config risk.</li>
+<li>Embed-based static serving simplifies deployment to a single binary.</li>
+</ol>
+<h3 id="current-constraints">Current Constraints<a class="headerlink" href="#current-constraints" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Global mutable config singleton (<code>internal/config/config.go</code>) creates tight coupling.</li>
+<li>HTTP handlers contain orchestration logic and domain calls in a single layer.</li>
+<li>GORM <code>AutoMigrate</code>-driven schema evolution limits explicit migration control.</li>
+<li>Auth is designed for single-user/self-hosted deployments, not multi-tenant SaaS.</li>
+</ol>
+<h2 id="primary-deployment-surfaces">Primary Deployment Surfaces<a class="headerlink" href="#primary-deployment-surfaces" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Native binary (<code>paisa serve</code>), typically reverse-proxied in production.</li>
+<li>Docker images (<code>Dockerfile</code>, <code>Dockerfile.hledger</code>, <code>Dockerfile.beancount</code>, <code>Dockerfile.all</code>).</li>
+<li>Desktop artifacts from Wails in <code>desktop/build/</code>.</li>
+<li>Static/documentation site via MkDocs (<code>mkdocs.yml</code>, <code>docs/</code>).</li>
+</ol>
+<h2 id="suggested-next-architectural-evolutions">Suggested Next Architectural Evolutions<a class="headerlink" href="#suggested-next-architectural-evolutions" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Introduce explicit service interfaces for core domains (sync, reporting, editor).</li>
+<li>Add DB migration versioning rather than relying only on implicit auto-migrations.</li>
+<li>Move mutable write-protection checks to middleware/policy layer.</li>
+<li>Add structured observability primitives (request IDs, metrics, trace correlation).</li>
+</ol>
 
 
 
@@ -2489,7 +2364,7 @@ which are negative in nature.</p>
               
                 
               
-              Thanks for your feedback! Help us improve this page by using our <a href="https://docs.google.com/forms/d/e/1FAIpQLSejpTiljuhsviEvXFBN-Z5rJZ_dkXHV5RaZzqpyCAZF1nIFiQ/viewform?usp=pp_url&entry.1125403938=/reference/sheets/" target="_blank" rel="noopener">feedback form</a>.
+              Thanks for your feedback! Help us improve this page by using our <a href="https://docs.google.com/forms/d/e/1FAIpQLSejpTiljuhsviEvXFBN-Z5rJZ_dkXHV5RaZzqpyCAZF1nIFiQ/viewform?usp=pp_url&entry.1125403938=/reference/architecture/" target="_blank" rel="noopener">feedback form</a>.
             </div>
           
         </div>
@@ -2523,7 +2398,7 @@ which are negative in nature.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../recurring/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Recurring">
+          <a href="../../getting-started/tutorial/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Tutorial">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2533,20 +2408,20 @@ which are negative in nature.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Recurring
+                Tutorial
               </div>
             </div>
           </a>
         
         
           
-          <a href="../config/" class="md-footer__link md-footer__link--next" aria-label="Next: Configuration">
+          <a href="../design/" class="md-footer__link md-footer__link--next" aria-label="Next: Design">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Configuration
+                Design
               </div>
             </div>
             <div class="md-footer__button md-icon">

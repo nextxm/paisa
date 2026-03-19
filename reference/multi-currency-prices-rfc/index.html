@@ -6,19 +6,15 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="How to use notepad calculator called sheets in Paisa">
+        <meta name="description" content="RFC for multi-currency commodity price support, including journal ingestion and export">
       
       
         <meta name="author" content="Anantha Kumaran and nextxm contributors">
       
       
-        <link rel="canonical" href="https://paisa.fyi/reference/sheets/">
+        <link rel="canonical" href="https://paisa.fyi/reference/multi-currency-prices-rfc/">
       
       
-        <link rel="prev" href="../recurring/">
-      
-      
-        <link rel="next" href="../config/">
       
       
       <link rel="icon" href="../../images/favicon.png">
@@ -26,7 +22,7 @@
     
     
       
-        <title>Sheets - Paisa</title>
+        <title>RFC: Multi-Currency Commodity Prices - Paisa</title>
       
     
     
@@ -98,7 +94,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#sheets" class="md-skip">
+        <a href="#rfc-multi-currency-commodity-prices" class="md-skip">
           Skip to content
         </a>
       
@@ -149,7 +145,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Sheets
+              RFC: Multi-Currency Commodity Prices
             
           </span>
         </div>
@@ -293,12 +289,10 @@
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href="../architecture/" class="md-tabs__link">
           
   
@@ -551,10 +545,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -607,20 +599,19 @@
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -632,7 +623,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Reference
@@ -907,39 +898,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Sheets
-    
-  </span>
-  
-    
-  
-  
-    <span class="md-status md-status--new" title="Recently added">
-    </span>
-  
-
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../sheets/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -957,188 +919,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#introduction" class="md-nav__link">
-    <span class="md-ellipsis">
-      Introduction
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Introduction">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#calculator" class="md-nav__link">
-    <span class="md-ellipsis">
-      Calculator
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#function" class="md-nav__link">
-    <span class="md-ellipsis">
-      Function
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#query" class="md-nav__link">
-    <span class="md-ellipsis">
-      Query
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#syntax" class="md-nav__link">
-    <span class="md-ellipsis">
-      Syntax
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Syntax">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#number" class="md-nav__link">
-    <span class="md-ellipsis">
-      Number
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#operators" class="md-nav__link">
-    <span class="md-ellipsis">
-      Operators
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#variable" class="md-nav__link">
-    <span class="md-ellipsis">
-      Variable
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#function_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Function
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#query_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Query
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#comment" class="md-nav__link">
-    <span class="md-ellipsis">
-      Comment
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#functions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Functions
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Functions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#costq-posting-query-number" class="md-nav__link">
-    <span class="md-ellipsis">
-      cost(q: Posting[] | Query): number
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#balanceq-posting-query-number" class="md-nav__link">
-    <span class="md-ellipsis">
-      balance(q: Posting[] | Query): number
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#fifoq-posting-query-posting" class="md-nav__link">
-    <span class="md-ellipsis">
-      fifo(q: Posting[] | Query): Posting[]
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#negateq-posting-query-posting" class="md-nav__link">
-    <span class="md-ellipsis">
-      negate(q: Posting[] | Query): Posting[]
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2019,37 +1799,73 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#introduction" class="md-nav__link">
+  <a href="#summary" class="md-nav__link">
     <span class="md-ellipsis">
-      Introduction
+      Summary
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Introduction">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      Goals
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      Non-Goals
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-behavior-and-gaps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Current Behavior and Gaps
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#proposed-data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Proposed Data Model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ingestion-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      Ingestion Design
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ingestion Design">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#calculator" class="md-nav__link">
+  <a href="#journal" class="md-nav__link">
     <span class="md-ellipsis">
-      Calculator
+      Journal
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#function" class="md-nav__link">
+  <a href="#providers" class="md-nav__link">
     <span class="md-ellipsis">
-      Function
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#query" class="md-nav__link">
-    <span class="md-ellipsis">
-      Query
+      Providers
     </span>
   </a>
   
@@ -2061,64 +1877,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#syntax" class="md-nav__link">
+  <a href="#rate-resolution-and-valuation" class="md-nav__link">
     <span class="md-ellipsis">
-      Syntax
+      Rate Resolution and Valuation
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Syntax">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#export-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      Export Design
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Export Design">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#number" class="md-nav__link">
+  <a href="#inputs" class="md-nav__link">
     <span class="md-ellipsis">
-      Number
+      Inputs
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#operators" class="md-nav__link">
+  <a href="#output-format" class="md-nav__link">
     <span class="md-ellipsis">
-      Operators
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#variable" class="md-nav__link">
-    <span class="md-ellipsis">
-      Variable
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#function_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Function
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#query_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Query
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#comment" class="md-nav__link">
-    <span class="md-ellipsis">
-      Comment
+      Output format
     </span>
   </a>
   
@@ -2130,46 +1919,28 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#functions" class="md-nav__link">
+  <a href="#api-and-cli-proposal" class="md-nav__link">
     <span class="md-ellipsis">
-      Functions
+      API and CLI Proposal
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Functions">
+    <nav class="md-nav" aria-label="API and CLI Proposal">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#costq-posting-query-number" class="md-nav__link">
+  <a href="#api" class="md-nav__link">
     <span class="md-ellipsis">
-      cost(q: Posting[] | Query): number
+      API
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#balanceq-posting-query-number" class="md-nav__link">
+  <a href="#cli" class="md-nav__link">
     <span class="md-ellipsis">
-      balance(q: Posting[] | Query): number
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#fifoq-posting-query-posting" class="md-nav__link">
-    <span class="md-ellipsis">
-      fifo(q: Posting[] | Query): Posting[]
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#negateq-posting-query-posting" class="md-nav__link">
-    <span class="md-ellipsis">
-      negate(q: Posting[] | Query): Posting[]
+      CLI
     </span>
   </a>
   
@@ -2177,6 +1948,198 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      Migration Plan
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Migration Plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-schema-and-dual-write" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 1: Schema and dual-write
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-pair-aware-reads" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 2: Pair-aware reads
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-api-and-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 3: API and UI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-export-and-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 4: Export and cleanup
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#config-additions-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      Config Additions (Optional)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      Testing Plan
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rollout-and-risk-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rollout and Risk Management
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#definition-of-done" class="md-nav__link">
+    <span class="md-ellipsis">
+      Definition of Done
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions-locked" class="md-nav__link">
+    <span class="md-ellipsis">
+      Decisions Locked
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#github-issue-action-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      GitHub Issue Action Plan
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GitHub Issue Action Plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#epic-1-pair-aware-price-schema-and-migration" class="md-nav__link">
+    <span class="md-ellipsis">
+      EPIC 1: Pair-Aware Price Schema and Migration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#epic-2-journal-ingestion-for-full-price-pairs" class="md-nav__link">
+    <span class="md-ellipsis">
+      EPIC 2: Journal Ingestion for Full Price Pairs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#epic-3-provider-contract-upgrade-with-explicit-quote-currency" class="md-nav__link">
+    <span class="md-ellipsis">
+      EPIC 3: Provider Contract Upgrade with Explicit Quote Currency
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#epic-4-pair-aware-resolver-with-one-hop-cross-rate" class="md-nav__link">
+    <span class="md-ellipsis">
+      EPIC 4: Pair-Aware Resolver with One-Hop Cross Rate
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#epic-5-api-enhancements-for-pair-filtering-and-report-currency" class="md-nav__link">
+    <span class="md-ellipsis">
+      EPIC 5: API Enhancements for Pair Filtering and Report Currency
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#epic-6-full-history-export-for-ledger-hledger-and-beancount" class="md-nav__link">
+    <span class="md-ellipsis">
+      EPIC 6: Full-History Export for Ledger, Hledger, and Beancount
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#epic-7-ui-and-ux-for-multi-currency-prices" class="md-nav__link">
+    <span class="md-ellipsis">
+      EPIC 7: UI and UX for Multi-Currency Prices
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#epic-8-testing-rollout-and-compatibility-hardening" class="md-nav__link">
+    <span class="md-ellipsis">
+      EPIC 8: Testing, Rollout, and Compatibility Hardening
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-issue-labels-and-milestone" class="md-nav__link">
+    <span class="md-ellipsis">
+      Recommended Issue Labels and Milestone
+    </span>
+  </a>
   
 </li>
       
@@ -2199,248 +2162,422 @@
   
 
 
-<h1 id="sheets">Sheets<a class="headerlink" href="#sheets" title="Permanent link">&para;</a></h1>
-<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>Sheet is a notepad calculator that computes the answer as you type.
-It has full access to your ledger and can be used to calculate the
-answers for a wide variety of financial questions.</p>
-<div class="admonition example">
-<p class="admonition-title">Experimental</p>
-<p>Sheet is an experimental feature. Give it a try and let me know
-how it goes, specially what is missing and what can be improved.
-The syntax and semantics of sheet may change in future releases.</p>
-</div>
-<h4 id="calculator">Calculator<a class="headerlink" href="#calculator" title="Permanent link">&para;</a></h4>
-<p>Sheet can act as a normal calculator. The example below shows how to
-calculate the monthly EMI for a home loan.</p>
-<div class="split-codeview">
-<div class="sheet" markdown>
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gh"># Home Loan</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="err">price </span><span class="o">=</span><span class="err"> </span><span class="m">40,00,000</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="err">down_payment </span><span class="o">=</span><span class="err"> </span><span class="m">20%</span><span class="err"> </span><span class="o">*</span><span class="err"> price</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="err">finance_amount </span><span class="o">=</span><span class="err"> price </span><span class="o">-</span><span class="err"> down_payment</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="err">interest_rate </span><span class="o">=</span><span class="err"> </span><span class="m">8.6%</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="err">term </span><span class="o">=</span><span class="err"> </span><span class="m">30</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="err">n </span><span class="o">=</span><span class="err"> term </span><span class="o">*</span><span class="err"> </span><span class="m">12</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="err">r </span><span class="o">=</span><span class="err"> interest_rate </span><span class="o">/</span><span class="err"> </span><span class="m">12</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="gh"># EMI</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="err">monthly_payment </span><span class="o">=</span><span class="err"> r </span><span class="o">/</span><span class="err"> (</span><span class="m">1</span><span class="err"> </span><span class="o">-</span><span class="err"> (</span><span class="m">1</span><span class="err"> </span><span class="o">+</span><span class="err"> r) </span><span class="o">^</span><span class="err"> (</span><span class="o">-</span><span class="err">n)) </span><span class="o">*</span><span class="err"> finance_amount</span>
-</span></code></pre></div>
-</div>
-<div class="sheet-result sheet-result-1" markdown>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># Home Loan
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>40,00,000
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>8,00,000
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>32,00,000
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>0
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>30
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>360
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>0
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a># EMI
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>24832
-</span></code></pre></div>
-</div>
-</div>
-
-<h4 id="function">Function<a class="headerlink" href="#function" title="Permanent link">&para;</a></h4>
-<p>Sheets comes with a set of <a href="#functions">built-in functions</a>. You can also define
-your own functions. The example below shows how to define a function</p>
-<div class="split-codeview">
-<div class="sheet" markdown>
-
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gh"># Years to Double</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nf">years_to_double</span>(<span class="err">rate) </span><span class="o">=</span><span class="err"> </span><span class="m">72</span><span class="err"> </span><span class="o">/</span><span class="err"> rate</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nf">years_to_double</span>(<span class="m">2</span><span class="err">)</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nf">years_to_double</span>(<span class="m">4</span><span class="err">)</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="nf">years_to_double</span>(<span class="m">6</span><span class="err">)</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="nf">years_to_double</span>(<span class="m">8</span><span class="err">)</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="nf">years_to_double</span>(<span class="m">10</span><span class="err">)</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="nf">years_to_double</span>(<span class="m">12</span><span class="err">)</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="nf">years_to_double</span>(<span class="m">14</span><span class="err">)</span>
-</span></code></pre></div>
-</div>
-<div class="sheet-result sheet-result-2" markdown>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a># Years to Double
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>36
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>18
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>12
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>9
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>7
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>6
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>5
-</span></code></pre></div>
-</div>
-</div>
-
-<h4 id="query">Query<a class="headerlink" href="#query" title="Permanent link">&para;</a></h4>
-<p>Query is what makes sheets powerful. It allows you to query your
-ledger postings and do calculations on them. The example below shows
-how to calculate cost basis of your assets so you can report them to
-Income Tax department.</p>
-<div class="split-codeview">
-<div class="sheet" markdown>
-
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gh"># Schedule AL</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="err">date_query </span><span class="o">=</span><span class="err"> </span><span class="o">{</span><span class="kc">date</span> <span class="o">&lt;=</span> <span class="na">[2023-03-31]</span><span class="o">}</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nf">cost_basis</span>(<span class="err">x) </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="nf">fifo</span>(<span class="err">x </span><span class="k">AND</span><span class="err"> date_query))</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="nf">cost_basis_negative</span>(<span class="err">x) </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="nf">fifo</span>(<span class="nf">negate</span>(<span class="err">x </span><span class="k">AND</span><span class="err"> date_query)))</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="gh"># Immovable</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="err">immovable </span><span class="o">=</span><span class="err"> </span><span class="nf">cost_basis</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=</span> <span class="s">Assets:House</span><span class="o">}</span><span class="err">)</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="gh"># Movable</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="err">metal </span><span class="o">=</span><span class="err"> </span><span class="m">0</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="err">art </span><span class="o">=</span><span class="err"> </span><span class="m">0</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="err">vehicle </span><span class="o">=</span><span class="err"> </span><span class="m">0</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="err">bank </span><span class="o">=</span><span class="err"> </span><span class="nf">cost_basis</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=</span> <span class="s">/^Assets:Checking/</span><span class="o">}</span><span class="err">)</span>
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="err">share </span><span class="o">=</span><span class="err"> </span><span class="nf">cost_basis</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Assets:Equity:.*/</span> <span class="k">OR</span>
-</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>                    <span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Assets:Debt:.*/</span><span class="o">}</span><span class="err">)</span>
-</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="err">insurance </span><span class="o">=</span><span class="err"> </span><span class="m">0</span>
-</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="err">loan </span><span class="o">=</span><span class="err"> </span><span class="m">0</span>
-</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="err">cash </span><span class="o">=</span><span class="err"> </span><span class="m">0</span>
-</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>
-</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="gh"># Liability</span>
-</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="err">liability </span><span class="o">=</span><span class="err"> </span><span class="nf">cost_basis_negative</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Liabilities:Homeloan/</span><span class="o">}</span><span class="err">)</span>
-</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>
-</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="gh"># Total</span>
-</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="err">total </span><span class="o">=</span><span class="err"> immovable </span><span class="o">+</span><span class="err"> metal </span><span class="o">+</span><span class="err"> art </span><span class="o">+</span><span class="err"> vehicle </span><span class="o">+</span><span class="err"> bank </span><span class="o">+</span><span class="err"> share </span><span class="o">+</span><span class="err"> insurance </span><span class="o">+</span><span class="err"> loan </span><span class="o">+</span><span class="err"> cash </span><span class="o">-</span><span class="err"> liability</span>
-</span></code></pre></div>
-</div>
-<div class="sheet-result sheet-result-3" markdown>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># Schedule AL
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a># Immovable
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>25,00,000
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a># Movable
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>0
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>0
-</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>0
-</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>1,21,402
-</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>66,98,880
-</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>
-</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>0
-</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>0
-</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>0
-</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>
-</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a># Liability
-</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>6,21,600
-</span><span id="__span-5-22"><a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>
-</span><span id="__span-5-23"><a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a># Total
-</span><span id="__span-5-24"><a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>86,98,682
-</span></code></pre></div>
-</div>
-</div>
-
-<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
-<h4 id="number">Number<a class="headerlink" href="#number" title="Permanent link">&para;</a></h4>
-<p>Sheet allows comma as a separator. <code>%</code> is a syntax sugar for dividing
-the number by 100. So <code>8%</code> is same as <code>0.08</code>.</p>
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="m">100,00</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="m">100.00</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="o">-</span><span class="m">100</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="m">8%</span>
-</span></code></pre></div>
-<h4 id="operators">Operators<a class="headerlink" href="#operators" title="Permanent link">&para;</a></h4>
-<p>Sheet supports the following operators. <code>^</code> is the exponentiation operator.</p>
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="m">1</span><span class="err"> </span><span class="o">+</span><span class="err"> </span><span class="m">1</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="m">1</span><span class="err"> </span><span class="o">-</span><span class="err"> </span><span class="m">1</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="m">1</span><span class="err"> </span><span class="o">*</span><span class="err"> </span><span class="m">1</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="m">1</span><span class="err"> </span><span class="o">/</span><span class="err"> </span><span class="m">1</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="m">1</span><span class="err"> </span><span class="o">^</span><span class="err"> </span><span class="m">2</span>
-</span></code></pre></div>
-<h4 id="variable">Variable<a class="headerlink" href="#variable" title="Permanent link">&para;</a></h4>
-<p>You can define variables using <code>=</code> operator. Variables have to be
-defined before they are used.</p>
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="err">x </span><span class="o">=</span><span class="err"> </span><span class="m">1</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="err">y </span><span class="o">=</span><span class="err"> </span><span class="m">2</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="err">z </span><span class="o">=</span><span class="err"> x </span><span class="o">+</span><span class="err"> y</span>
-</span></code></pre></div>
-<h4 id="function_1">Function<a class="headerlink" href="#function_1" title="Permanent link">&para;</a></h4>
-<p>Sheet comes with a set of <a href="#functions">built-in functions</a>. You can also define your
-own functions. Function definition starts with the function name and
-then a list of arguments. The body of the function is a single
-expression. To call a function, use the function name followed by
-arguments.</p>
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nf">sum</span>(<span class="err">a</span><span class="m">,</span><span class="err"> b) </span><span class="o">=</span><span class="err"> a </span><span class="o">+</span><span class="err"> b</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="nf">sum</span>(<span class="m">1,</span><span class="err"> </span><span class="m">2</span><span class="err">)</span>
-</span></code></pre></div>
-<h4 id="query_1">Query<a class="headerlink" href="#query_1" title="Permanent link">&para;</a></h4>
-<p>Query is a first class citizen in sheet. You can think of a query as a
-list of postings that match the conditions. The query syntax is same
-as the <a href="../bulk-edit/#search">search syntax</a> used in postings and transactions pages. It
-has to be enclosed inside a <code>{}</code>. Query can be treated as any other
-value, can be passed as an argument, can be assigned to a variable. In
-fact you can combine two queries using <code class="language-sheet highlight"><span class="k">AND</span></code> and <code class="language-sheet highlight"><span class="k">OR</span></code>
-operator as well.</p>
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="err">query </span><span class="o">=</span><span class="err"> </span><span class="o">{</span><span class="kc">account</span> <span class="o">=</span> <span class="s">Expenses:Utilities</span> <span class="k">AND</span> <span class="kc">payee</span> <span class="o">=~</span> <span class="s">/uber/i</span><span class="o">}</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="err">upto_this_fy </span><span class="o">=</span><span class="err"> </span><span class="o">{</span><span class="kc">date</span> <span class="o">&lt;</span> <span class="na">[2024-04-01]</span><span class="o">}</span>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="err">assets </span><span class="o">=</span><span class="err"> </span><span class="o">{</span> <span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Assets:.*/</span> <span class="o">}</span>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="err">liabilities </span><span class="o">=</span><span class="err"> </span><span class="o">{</span> <span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Liabilities:.*/</span> <span class="o">}</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="err">assets_upto_this_fy </span><span class="o">=</span><span class="err"> upto_this_fy </span><span class="k">AND</span><span class="err"> assets</span>
-</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="err">liabilities_upto_this_fy </span><span class="o">=</span><span class="err"> upto_this_fy </span><span class="k">AND</span><span class="err"> liabilities</span>
-</span></code></pre></div>
-<details>
-<summary>What is posting?</summary>
-<p><div class="language-ledger highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="na">2022/01/01</span> <span class="gh">Salary</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="hll"><span class="s">    Income:Salary:Acme</span><span class="err">        </span><span class="m">-100,000</span><span class="err"> </span><span class="k">INR</span>
-</span></span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="hll"><span class="s">    Assets:Checking</span><span class="err">            </span><span class="m">100,000</span><span class="err"> </span><span class="k">INR</span>
-</span></span></code></pre></div>
-In the above transaction, there are two postings. A transaction consists
-of several postings that sum to zero. If you want to know the cost of
-your checking account, you would use <code class="language-sheet highlight"><span class="nf">cost</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=</span> <span class="s">Assets:Checking</span><span class="o">}</span><span class="err">)</span></code></p>
-</details>
-<h4 id="comment">Comment<a class="headerlink" href="#comment" title="Permanent link">&para;</a></h4>
-<p>Sheet supports single line comments starting with <code>;</code> or <code>//</code>.</p>
-<div class="language-sheet highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1">// set x</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="err">x </span><span class="o">=</span><span class="err"> </span><span class="m">1</span>
-</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1">; set y</span>
-</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="err">y </span><span class="o">=</span><span class="err"> </span><span class="m">2</span>
-</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
-</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="err">z </span><span class="o">=</span><span class="err"> x </span><span class="o">+</span><span class="err"> y </span><span class="c1">// add x and y</span>
-</span></code></pre></div>
-<h2 id="functions">Functions<a class="headerlink" href="#functions" title="Permanent link">&para;</a></h2>
-<p>You can find the full list of built-in functions here. This list is
-very slim as of now, please start a discussion if you want some
-functions to be added here.</p>
-<h4 id="costq-posting-query-number"><code class="language-typescript highlight"><span class="nx">cost</span><span class="p">(</span><span class="nx">q</span><span class="o">:</span><span class="w"> </span><span class="kt">Posting</span><span class="p">[]</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Query</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span></code><a class="headerlink" href="#costq-posting-query-number" title="Permanent link">&para;</a></h4>
-<p>Returns the sum of the cost of all the postings.</p>
-<h4 id="balanceq-posting-query-number"><code class="language-typescript highlight"><span class="nx">balance</span><span class="p">(</span><span class="nx">q</span><span class="o">:</span><span class="w"> </span><span class="kt">Posting</span><span class="p">[]</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Query</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span></code><a class="headerlink" href="#balanceq-posting-query-number" title="Permanent link">&para;</a></h4>
-<p>Returns the sum of the current market value of all the postings.</p>
-<h4 id="fifoq-posting-query-posting"><code class="language-typescript highlight"><span class="nx">fifo</span><span class="p">(</span><span class="nx">q</span><span class="o">:</span><span class="w"> </span><span class="kt">Posting</span><span class="p">[]</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Query</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Posting</span><span class="p">[]</span></code><a class="headerlink" href="#fifoq-posting-query-posting" title="Permanent link">&para;</a></h4>
-<p>Returns the list of postings after performing a FIFO adjustment. For
-example, assume you have 3 postings</p>
-<div class="language-ledger highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="na">2020/01/01</span> <span class="gh">Buy</span>
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="s">    Assets:Bank:Checking</span><span class="err">   </span><span class="m">100</span><span class="err"> </span><span class="k">USD</span>
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="na">2020/02/01</span> <span class="gh">Buy</span>
-</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="s">    Assets:Bank:Checking</span><span class="err">   </span><span class="m">100</span><span class="err"> </span><span class="k">USD</span>
-</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="na">2020/03/01</span> <span class="gh">Sell</span>
-</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="s">    Assets:Bank:Checking</span><span class="err">   </span><span class="m">-50</span><span class="err"> </span><span class="k">USD</span>
-</span></code></pre></div>
-<p>after FIFO adjustment, you will get the following postings</p>
-<div class="language-ledger highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="na">2020/01/01</span> <span class="gh">Buy</span>
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="s">    Assets:Bank:Checking</span><span class="err">    </span><span class="m">50</span><span class="err"> </span><span class="k">USD</span>
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="na">2020/02/01</span> <span class="gh">Buy</span>
-</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="s">    Assets:Bank:Checking</span><span class="err">   </span><span class="m">100</span><span class="err"> </span><span class="k">USD</span>
-</span></code></pre></div>
-<p>All your sell postings will be adjusted against the oldest buy
-postings and you will have the remaining buy postings.</p>
-<h4 id="negateq-posting-query-posting"><code class="language-typescript highlight"><span class="nx">negate</span><span class="p">(</span><span class="nx">q</span><span class="o">:</span><span class="w"> </span><span class="kt">Posting</span><span class="p">[]</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nx">Query</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Posting</span><span class="p">[]</span></code><a class="headerlink" href="#negateq-posting-query-posting" title="Permanent link">&para;</a></h4>
-<p>Negates the amount and quantity of all the postings. This would be
-useful when you want to do some calculation on liabilities or income
-which are negative in nature.</p>
+<h1 id="rfc-multi-currency-commodity-prices">RFC: Multi-Currency Commodity Prices<a class="headerlink" href="#rfc-multi-currency-commodity-prices" title="Permanent link">&para;</a></h1>
+<p>Status: Draft<br />
+Date: 2026-03-18<br />
+Owner: Paisa Core Team</p>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>Add first-class multi-currency commodity pricing across:</p>
+<ol>
+<li>Journal ingestion (ledger, hledger, beancount).</li>
+<li>External provider sync.</li>
+<li>Valuation and analytics.</li>
+<li>Price export back to ledger-family formats.</li>
+</ol>
+<p>The current system stores one value per commodity and effectively treats it as quoted in default currency. This RFC introduces explicit price pairs and quote currency support while preserving backward compatibility.</p>
+<h2 id="goals">Goals<a class="headerlink" href="#goals" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Ingest and persist commodity prices as base and quote currency pairs.</li>
+<li>Support valuation in default currency and arbitrary report currency.</li>
+<li>Preserve round-trip fidelity: DB -&gt; export file -&gt; sync.</li>
+<li>Keep existing users functional without immediate config changes.</li>
+</ol>
+<h2 id="non-goals">Non-Goals<a class="headerlink" href="#non-goals" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Real-time streaming FX pricing.</li>
+<li>Intraday tick-level pricing.</li>
+<li>Automated provider arbitration beyond deterministic precedence rules.</li>
+</ol>
+<h2 id="current-behavior-and-gaps">Current Behavior and Gaps<a class="headerlink" href="#current-behavior-and-gaps" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Journal price parsing filters to default-currency targets for most directives.</li>
+<li>Provider prices are stored without explicit quote currency.</li>
+<li>Price lookup is keyed by commodity only, not pair.</li>
+<li>Currency helper behavior assumes a single default currency.</li>
+</ol>
+<p>This leads to loss of non-default quote information and prevents native multi-currency valuation.</p>
+<h2 id="proposed-data-model">Proposed Data Model<a class="headerlink" href="#proposed-data-model" title="Permanent link">&para;</a></h2>
+<p>Add quote currency and source metadata to the price model.</p>
+<p>Proposed table shape:</p>
+<ol>
+<li>id</li>
+<li>date</li>
+<li>base_commodity</li>
+<li>quote_commodity</li>
+<li>rate</li>
+<li>source_type (journal | provider)</li>
+<li>source_provider (nullable)</li>
+<li>source_ref (nullable, provider code/ticker/scheme)</li>
+<li>created_at</li>
+<li>updated_at</li>
+</ol>
+<p>Proposed uniqueness:</p>
+<ol>
+<li>unique(date, base_commodity, quote_commodity, source_type, source_provider, source_ref)</li>
+</ol>
+<p>Recommended indexes:</p>
+<ol>
+<li>(base_commodity, quote_commodity, date)</li>
+<li>(quote_commodity, base_commodity, date)</li>
+<li>(source_type, source_provider)</li>
+</ol>
+<p>Backward compatibility strategy:</p>
+<ol>
+<li>Existing rows without quote info are migrated with quote_commodity = default currency at migration time.</li>
+</ol>
+<h2 id="ingestion-design">Ingestion Design<a class="headerlink" href="#ingestion-design" title="Permanent link">&para;</a></h2>
+<h3 id="journal">Journal<a class="headerlink" href="#journal" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Parse and keep all price directives (not only default-currency targets).</li>
+<li>Store directed pair base -&gt; quote with rate.</li>
+<li>If parser receives the inverse pattern (for example default currency as commodity with foreign target), normalize into canonical base -&gt; quote direction when deterministic.</li>
+<li>Preserve file date semantics and timezone behavior as today.</li>
+</ol>
+<h3 id="providers">Providers<a class="headerlink" href="#providers" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Extend provider contract to return explicit quote_commodity.</li>
+<li>For providers already converting to default currency (for example some stock providers), either:</li>
+<li>keep conversion behavior but set quote_commodity explicitly, or</li>
+<li>store native quote + FX chain as separate pairs if available.</li>
+<li>For providers that return NAV in known local currency, set quote_commodity explicitly.</li>
+</ol>
+<h2 id="rate-resolution-and-valuation">Rate Resolution and Valuation<a class="headerlink" href="#rate-resolution-and-valuation" title="Permanent link">&para;</a></h2>
+<p>Introduce a pair-aware resolver:</p>
+<ol>
+<li>GetRate(base, quote, date) -&gt; rate record.</li>
+<li>Resolution order:</li>
+<li>direct pair on or before date,</li>
+<li>inverse pair on or before date,</li>
+<li>optional one-hop cross via configured anchor currencies.</li>
+<li>Deterministic precedence when multiple sources exist on same date:</li>
+<li>journal overrides provider by default,</li>
+<li>tie-break by latest updated_at.</li>
+</ol>
+<p>Valuation API behavior:</p>
+<ol>
+<li>Existing valuation endpoints continue to use default currency unless explicitly requested.</li>
+<li>New optional query parameter report_currency enables alternate report currency.</li>
+</ol>
+<h2 id="export-design">Export Design<a class="headerlink" href="#export-design" title="Permanent link">&para;</a></h2>
+<p>Add export that writes DB prices to selected dialect format.</p>
+<h3 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h3>
+<ol>
+<li>dialect: ledger | hledger | beancount</li>
+<li>from_date (optional)</li>
+<li>to_date (optional)</li>
+<li>base_commodities (optional list)</li>
+<li>quote_commodities (optional list)</li>
+<li>source filter (optional)</li>
+</ol>
+<h3 id="output-format">Output format<a class="headerlink" href="#output-format" title="Permanent link">&para;</a></h3>
+<ol>
+<li>ledger: P YYYY/MM/DD HH:MM:SS BASE RATE QUOTE</li>
+<li>hledger: P YYYY-MM-DD BASE RATE QUOTE</li>
+<li>beancount: YYYY-MM-DD price BASE RATE QUOTE</li>
+</ol>
+<p>Notes:</p>
+<ol>
+<li>Keep deterministic sort order by date, base, quote, source.</li>
+<li>Optionally emit source comments where dialect supports comments.</li>
+</ol>
+<h2 id="api-and-cli-proposal">API and CLI Proposal<a class="headerlink" href="#api-and-cli-proposal" title="Permanent link">&para;</a></h2>
+<h3 id="api">API<a class="headerlink" href="#api" title="Permanent link">&para;</a></h3>
+<ol>
+<li>GET /api/price</li>
+<li>add optional filters: base, quote, from, to, report_currency, source</li>
+<li>GET /api/price/export</li>
+<li>returns text output in requested dialect</li>
+<li>POST /api/price/export</li>
+<li>supports larger filter payloads and future options</li>
+</ol>
+<h3 id="cli">CLI<a class="headerlink" href="#cli" title="Permanent link">&para;</a></h3>
+<ol>
+<li>paisa prices export --dialect ledger --from 2020-01-01 --to 2026-12-31 --base NIFTY --quote INR</li>
+<li>paisa prices export --dialect beancount --source journal &gt; prices.beancount</li>
+</ol>
+<h2 id="migration-plan">Migration Plan<a class="headerlink" href="#migration-plan" title="Permanent link">&para;</a></h2>
+<h3 id="phase-1-schema-and-dual-write">Phase 1: Schema and dual-write<a class="headerlink" href="#phase-1-schema-and-dual-write" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Add new columns/table and migration.</li>
+<li>Read old model, write both old and new on sync.</li>
+<li>Add validation logs for pair completeness.</li>
+</ol>
+<h3 id="phase-2-pair-aware-reads">Phase 2: Pair-aware reads<a class="headerlink" href="#phase-2-pair-aware-reads" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Switch service price resolution to pair-aware engine.</li>
+<li>Keep old read path behind fallback flag.</li>
+</ol>
+<h3 id="phase-3-api-and-ui">Phase 3: API and UI<a class="headerlink" href="#phase-3-api-and-ui" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Add pair filters and report currency selector.</li>
+<li>Update price pages/charts for base/quote awareness.</li>
+</ol>
+<h3 id="phase-4-export-and-cleanup">Phase 4: Export and cleanup<a class="headerlink" href="#phase-4-export-and-cleanup" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Ship dialect export endpoint and CLI command.</li>
+<li>Remove old single-commodity assumptions after compatibility window.</li>
+</ol>
+<h2 id="config-additions-optional">Config Additions (Optional)<a class="headerlink" href="#config-additions-optional" title="Permanent link">&para;</a></h2>
+<ol>
+<li>price_anchor_currencies: [USD, EUR]</li>
+<li>price_source_precedence:</li>
+<li>journal</li>
+<li>provider</li>
+<li>allow_cross_rate: true</li>
+</ol>
+<p>Defaults should preserve current behavior for users who do not opt in.</p>
+<h2 id="testing-plan">Testing Plan<a class="headerlink" href="#testing-plan" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Parser tests:</li>
+<li>ledger/hledger/beancount directives with mixed quote currencies.</li>
+<li>Migration tests:</li>
+<li>old DB upgrades and valuation parity in default currency mode.</li>
+<li>Resolver tests:</li>
+<li>direct, inverse, and cross-rate path resolution.</li>
+<li>precedence tie-breaking across journal and provider rows.</li>
+<li>Export tests:</li>
+<li>deterministic output snapshots for all dialects.</li>
+<li>Regression tests:</li>
+<li>existing snapshots remain valid in default settings.</li>
+</ol>
+<h2 id="rollout-and-risk-management">Rollout and Risk Management<a class="headerlink" href="#rollout-and-risk-management" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Feature flag: enable_multi_currency_prices.</li>
+<li>Compatibility mode defaulted on for one release cycle.</li>
+<li>Telemetry/log counters for missing pairs and failed conversions.</li>
+<li>Clear fallback path to old resolver if severe issues are detected.</li>
+</ol>
+<p>Primary risks:</p>
+<ol>
+<li>Ambiguous provider quote currency for some feeds.</li>
+<li>Performance regression from pair-aware lookups.</li>
+<li>Behavioral changes in historical valuation due to richer data.</li>
+</ol>
+<p>Mitigations:</p>
+<ol>
+<li>Require quote currency from providers at ingestion boundary.</li>
+<li>Add indexed query plan checks and cache pair trees.</li>
+<li>Keep source precedence explicit and documented.</li>
+</ol>
+<h2 id="definition-of-done">Definition of Done<a class="headerlink" href="#definition-of-done" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Multi-currency journal prices are persisted without dropping non-default quotes.</li>
+<li>Provider prices include explicit quote currency.</li>
+<li>Valuation works for default currency and requested report currency.</li>
+<li>Export works for ledger, hledger, and beancount formats.</li>
+<li>Existing users can upgrade without manual data edits.</li>
+<li>Regression suite passes with compatibility mode enabled and disabled.</li>
+</ol>
+<h2 id="decisions-locked">Decisions Locked<a class="headerlink" href="#decisions-locked" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Source precedence: journal overrides provider.</li>
+<li>Cross-rate resolution: one hop only.</li>
+<li>Export default: full history.</li>
+</ol>
+<h2 id="github-issue-action-plan">GitHub Issue Action Plan<a class="headerlink" href="#github-issue-action-plan" title="Permanent link">&para;</a></h2>
+<p>The items below are ready to be created as GitHub issues labeled <code>enhancement</code>.</p>
+<h3 id="epic-1-pair-aware-price-schema-and-migration">EPIC 1: Pair-Aware Price Schema and Migration<a class="headerlink" href="#epic-1-pair-aware-price-schema-and-migration" title="Permanent link">&para;</a></h3>
+<p>Suggested title: <code>enhancement: add base/quote price schema with backward-compatible migration</code></p>
+<p>Scope:</p>
+<ol>
+<li>Add pair-aware schema for prices with base commodity, quote commodity, rate, and source metadata.</li>
+<li>Add indexes and uniqueness constraints for deterministic lookups.</li>
+<li>Add migration from existing rows to <code>quote_commodity = default_currency</code>.</li>
+<li>Keep compatibility mode for existing single-currency behavior.</li>
+</ol>
+<p>Acceptance criteria:</p>
+<ol>
+<li>Existing databases migrate successfully without data loss.</li>
+<li>Existing valuations in default currency remain unchanged in compatibility mode.</li>
+<li>New pair-aware rows can be written and queried by date/base/quote.</li>
+</ol>
+<p>Dependencies:</p>
+<ol>
+<li>None.</li>
+</ol>
+<p>Estimate:</p>
+<ol>
+<li>3-5 engineering days.</li>
+</ol>
+<h3 id="epic-2-journal-ingestion-for-full-price-pairs">EPIC 2: Journal Ingestion for Full Price Pairs<a class="headerlink" href="#epic-2-journal-ingestion-for-full-price-pairs" title="Permanent link">&para;</a></h3>
+<p>Suggested title: <code>enhancement: ingest full multi-currency journal price directives</code></p>
+<p>Scope:</p>
+<ol>
+<li>Update ledger/hledger/beancount price parsers to retain non-default quote pairs.</li>
+<li>Normalize parsed prices into canonical base -&gt; quote direction.</li>
+<li>Persist journal prices with source metadata (<code>source_type = journal</code>).</li>
+<li>Add parser fixtures for mixed quote currencies.</li>
+</ol>
+<p>Acceptance criteria:</p>
+<ol>
+<li>Non-default quote prices are no longer dropped during sync.</li>
+<li>Same input journal produces deterministic base/quote output rows.</li>
+<li>Existing parser behavior for default-currency-only journals remains stable.</li>
+</ol>
+<p>Dependencies:</p>
+<ol>
+<li>EPIC 1.</li>
+</ol>
+<p>Estimate:</p>
+<ol>
+<li>3-4 engineering days.</li>
+</ol>
+<h3 id="epic-3-provider-contract-upgrade-with-explicit-quote-currency">EPIC 3: Provider Contract Upgrade with Explicit Quote Currency<a class="headerlink" href="#epic-3-provider-contract-upgrade-with-explicit-quote-currency" title="Permanent link">&para;</a></h3>
+<p>Suggested title: <code>enhancement: require explicit quote currency in price providers</code></p>
+<p>Scope:</p>
+<ol>
+<li>Extend provider contract to return quote commodity explicitly.</li>
+<li>Update all built-in providers to populate quote commodity.</li>
+<li>Persist provider prices with source metadata (<code>source_type = provider</code>).</li>
+<li>Preserve current conversion behavior where already implemented.</li>
+</ol>
+<p>Acceptance criteria:</p>
+<ol>
+<li>Every provider row includes explicit quote commodity.</li>
+<li>Provider sync succeeds across all current provider implementations.</li>
+<li>Missing quote metadata fails fast with actionable errors.</li>
+</ol>
+<p>Dependencies:</p>
+<ol>
+<li>EPIC 1.</li>
+</ol>
+<p>Estimate:</p>
+<ol>
+<li>3-5 engineering days.</li>
+</ol>
+<h3 id="epic-4-pair-aware-resolver-with-one-hop-cross-rate">EPIC 4: Pair-Aware Resolver with One-Hop Cross Rate<a class="headerlink" href="#epic-4-pair-aware-resolver-with-one-hop-cross-rate" title="Permanent link">&para;</a></h3>
+<p>Suggested title: <code>enhancement: implement pair-aware rate resolver with one-hop cross rates</code></p>
+<p>Scope:</p>
+<ol>
+<li>Add <code>GetRate(base, quote, date)</code> style resolver.</li>
+<li>Resolve in this order: direct pair, inverse pair, one-hop cross via anchors.</li>
+<li>Enforce source precedence rule: journal overrides provider.</li>
+<li>Add caching/index-aware lookup path for performance.</li>
+</ol>
+<p>Acceptance criteria:</p>
+<ol>
+<li>Resolver returns deterministic rates for direct, inverse, and one-hop cases.</li>
+<li>When journal and provider both exist, journal value is selected.</li>
+<li>Performance is within acceptable bounds for current dataset sizes.</li>
+</ol>
+<p>Dependencies:</p>
+<ol>
+<li>EPIC 1.</li>
+<li>EPIC 2.</li>
+<li>EPIC 3.</li>
+</ol>
+<p>Estimate:</p>
+<ol>
+<li>4-6 engineering days.</li>
+</ol>
+<h3 id="epic-5-api-enhancements-for-pair-filtering-and-report-currency">EPIC 5: API Enhancements for Pair Filtering and Report Currency<a class="headerlink" href="#epic-5-api-enhancements-for-pair-filtering-and-report-currency" title="Permanent link">&para;</a></h3>
+<p>Suggested title: <code>enhancement: extend price APIs for base/quote filters and report currency</code></p>
+<p>Scope:</p>
+<ol>
+<li>Extend <code>/api/price</code> with base/quote/date/source/report-currency filters.</li>
+<li>Keep old API usage backward compatible where possible.</li>
+<li>Add consistent error envelopes for invalid combinations.</li>
+<li>Update API docs with request/response examples.</li>
+</ol>
+<p>Acceptance criteria:</p>
+<ol>
+<li>API supports pair-aware queries and returns deterministic ordering.</li>
+<li>Existing clients continue to work in compatibility mode.</li>
+<li>Invalid requests return standardized API errors.</li>
+</ol>
+<p>Dependencies:</p>
+<ol>
+<li>EPIC 4.</li>
+</ol>
+<p>Estimate:</p>
+<ol>
+<li>2-3 engineering days.</li>
+</ol>
+<h3 id="epic-6-full-history-export-for-ledger-hledger-and-beancount">EPIC 6: Full-History Export for Ledger, Hledger, and Beancount<a class="headerlink" href="#epic-6-full-history-export-for-ledger-hledger-and-beancount" title="Permanent link">&para;</a></h3>
+<p>Suggested title: <code>enhancement: export full price history from DB to ledger-family formats</code></p>
+<p>Scope:</p>
+<ol>
+<li>Add export endpoint and CLI command for <code>ledger</code>, <code>hledger</code>, <code>beancount</code>.</li>
+<li>Export full history by default.</li>
+<li>Support optional filters (date range, base, quote, source).</li>
+<li>Ensure deterministic sort order for reproducible output.</li>
+</ol>
+<p>Acceptance criteria:</p>
+<ol>
+<li>Export output validates in selected target dialect.</li>
+<li>Default export includes full available history.</li>
+<li>Repeated export on unchanged data yields byte-for-byte stable output.</li>
+</ol>
+<p>Dependencies:</p>
+<ol>
+<li>EPIC 2.</li>
+<li>EPIC 3.</li>
+<li>EPIC 4.</li>
+</ol>
+<p>Estimate:</p>
+<ol>
+<li>3-4 engineering days.</li>
+</ol>
+<h3 id="epic-7-ui-and-ux-for-multi-currency-prices">EPIC 7: UI and UX for Multi-Currency Prices<a class="headerlink" href="#epic-7-ui-and-ux-for-multi-currency-prices" title="Permanent link">&para;</a></h3>
+<p>Suggested title: <code>enhancement: add UI support for base/quote prices and report currency</code></p>
+<p>Scope:</p>
+<ol>
+<li>Add base/quote selectors in relevant price screens.</li>
+<li>Add report-currency selection for valuation views.</li>
+<li>Show source metadata (journal/provider) where relevant.</li>
+<li>Preserve existing UX defaults for current users.</li>
+</ol>
+<p>Acceptance criteria:</p>
+<ol>
+<li>Users can view and filter by base/quote pairs.</li>
+<li>Users can switch report currency without breaking existing dashboards.</li>
+<li>Default views remain compatible with old workflows.</li>
+</ol>
+<p>Dependencies:</p>
+<ol>
+<li>EPIC 5.</li>
+</ol>
+<p>Estimate:</p>
+<ol>
+<li>4-6 engineering days.</li>
+</ol>
+<h3 id="epic-8-testing-rollout-and-compatibility-hardening">EPIC 8: Testing, Rollout, and Compatibility Hardening<a class="headerlink" href="#epic-8-testing-rollout-and-compatibility-hardening" title="Permanent link">&para;</a></h3>
+<p>Suggested title: <code>enhancement: complete test coverage and rollout plan for multi-currency pricing</code></p>
+<p>Scope:</p>
+<ol>
+<li>Add parser, migration, resolver, API, and export regression tests.</li>
+<li>Add feature flag rollout controls and fallback path.</li>
+<li>Add release notes and migration guidance.</li>
+<li>Add observability counters for missing pairs and conversion failures.</li>
+</ol>
+<p>Acceptance criteria:</p>
+<ol>
+<li>Regression suite passes with compatibility mode on and off.</li>
+<li>Upgrade path is documented and validated on fixture datasets.</li>
+<li>Rollback and fallback procedures are documented and tested.</li>
+</ol>
+<p>Dependencies:</p>
+<ol>
+<li>EPIC 1-7.</li>
+</ol>
+<p>Estimate:</p>
+<ol>
+<li>3-5 engineering days.</li>
+</ol>
+<h2 id="recommended-issue-labels-and-milestone">Recommended Issue Labels and Milestone<a class="headerlink" href="#recommended-issue-labels-and-milestone" title="Permanent link">&para;</a></h2>
+<p>Labels:</p>
+<ol>
+<li><code>enhancement</code></li>
+<li><code>backend</code></li>
+<li><code>api</code></li>
+<li><code>frontend</code></li>
+<li><code>migration</code></li>
+<li><code>testing</code></li>
+</ol>
+<p>Milestone suggestion:</p>
+<ol>
+<li><code>Multi-Currency Prices v1</code></li>
+</ol>
 
 
 
@@ -2489,7 +2626,7 @@ which are negative in nature.</p>
               
                 
               
-              Thanks for your feedback! Help us improve this page by using our <a href="https://docs.google.com/forms/d/e/1FAIpQLSejpTiljuhsviEvXFBN-Z5rJZ_dkXHV5RaZzqpyCAZF1nIFiQ/viewform?usp=pp_url&entry.1125403938=/reference/sheets/" target="_blank" rel="noopener">feedback form</a>.
+              Thanks for your feedback! Help us improve this page by using our <a href="https://docs.google.com/forms/d/e/1FAIpQLSejpTiljuhsviEvXFBN-Z5rJZ_dkXHV5RaZzqpyCAZF1nIFiQ/viewform?usp=pp_url&entry.1125403938=/reference/multi-currency-prices-rfc/" target="_blank" rel="noopener">feedback form</a>.
             </div>
           
         </div>
@@ -2518,44 +2655,6 @@ which are negative in nature.</p>
       
         <footer class="md-footer">
   
-    
-      
-      <nav class="md-footer__inner md-grid" aria-label="Footer" >
-        
-          
-          <a href="../recurring/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Recurring">
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
-            </div>
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              <div class="md-ellipsis">
-                Recurring
-              </div>
-            </div>
-          </a>
-        
-        
-          
-          <a href="../config/" class="md-footer__link md-footer__link--next" aria-label="Next: Configuration">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
-                Configuration
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
-            </div>
-          </a>
-        
-      </nav>
     
   
   <div class="md-footer-meta md-typeset">

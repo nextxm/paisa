@@ -17,6 +17,10 @@
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
+         <loc>https://paisa.fyi/roadmap/</loc>
+         <lastmod>1980-01-01</lastmod>
+    </url>
+    <url>
          <loc>https://paisa.fyi/blog/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
@@ -49,6 +53,10 @@
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
+         <loc>https://paisa.fyi/reference/architecture/</loc>
+         <lastmod>1980-01-01</lastmod>
+    </url>
+    <url>
          <loc>https://paisa.fyi/reference/budget/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
@@ -77,7 +85,15 @@
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
+         <loc>https://paisa.fyi/reference/design/</loc>
+         <lastmod>1980-01-01</lastmod>
+    </url>
+    <url>
          <loc>https://paisa.fyi/reference/editor/</loc>
+         <lastmod>1980-01-01</lastmod>
+    </url>
+    <url>
+         <loc>https://paisa.fyi/reference/engineering-review/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
@@ -93,7 +109,15 @@
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
+         <loc>https://paisa.fyi/reference/multi-currency-prices-rfc/</loc>
+         <lastmod>1980-01-01</lastmod>
+    </url>
+    <url>
          <loc>https://paisa.fyi/reference/recurring/</loc>
+         <lastmod>1980-01-01</lastmod>
+    </url>
+    <url>
+         <loc>https://paisa.fyi/reference/roadmap/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
