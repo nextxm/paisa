@@ -7,7 +7,9 @@
         "commodity_type": "unknown",
         "commodity_id": "AAPL",
         "commodity_name": "AAPL",
-        "value": 100
+        "quote_commodity": "INR",
+        "value": 100,
+        "source": ""
       },
       {
         "id": 5,
@@ -15,7 +17,9 @@
         "commodity_type": "unknown",
         "commodity_id": "AAPL",
         "commodity_name": "AAPL",
-        "value": 100
+        "quote_commodity": "INR",
+        "value": 100,
+        "source": ""
       }
     ],
     "ABNB": [],
@@ -26,7 +30,9 @@
         "commodity_type": "unknown",
         "commodity_id": "NIFTY",
         "commodity_name": "NIFTY",
-        "value": 100.273
+        "quote_commodity": "INR",
+        "value": 100.273,
+        "source": ""
       },
       {
         "id": 4,
@@ -34,7 +40,9 @@
         "commodity_type": "unknown",
         "commodity_id": "NIFTY",
         "commodity_name": "NIFTY",
-        "value": 100
+        "quote_commodity": "INR",
+        "value": 100,
+        "source": ""
       },
       {
         "id": 1,
@@ -42,7 +50,9 @@
         "commodity_type": "unknown",
         "commodity_id": "NIFTY",
         "commodity_name": "NIFTY",
-        "value": 100
+        "quote_commodity": "INR",
+        "value": 100,
+        "source": ""
       }
     ],
     "USD": [
@@ -52,7 +62,9 @@
         "commodity_type": "unknown",
         "commodity_id": "USD",
         "commodity_name": "USD",
-        "value": 80.442048
+        "quote_commodity": "INR",
+        "value": 80.442048,
+        "source": ""
       }
     ]
   }

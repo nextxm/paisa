@@ -1,6 +1,7 @@
 package price
 
 import (
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -11,12 +12,14 @@ import (
 )
 
 type Price struct {
-	ID            uint                 `gorm:"primaryKey" json:"id"`
-	Date          time.Time            `json:"date"`
-	CommodityType config.CommodityType `json:"commodity_type"`
-	CommodityID   string               `json:"commodity_id"`
-	CommodityName string               `json:"commodity_name"`
-	Value         decimal.Decimal      `json:"value"`
+	ID             uint                 `gorm:"primaryKey" json:"id"`
+	Date           time.Time            `json:"date"`
+	CommodityType  config.CommodityType `json:"commodity_type"`
+	CommodityID    string               `json:"commodity_id"`
+	CommodityName  string               `json:"commodity_name"`
+	QuoteCommodity string               `json:"quote_commodity"`
+	Value          decimal.Decimal      `json:"value"`
+	Source         string               `json:"source"`
 }
 
 func (p Price) Less(o btree.Item) bool {
@@ -31,6 +34,16 @@ func DeleteAll(db *gorm.DB) error {
 	return nil
 }
 
+// defaultQuoteCommodity returns the default_currency from config, falling back
+// to "INR" if the config has not been initialised (e.g., in tests).
+func defaultQuoteCommodity() string {
+	dc := config.DefaultCurrency()
+	if dc == "" {
+		return "INR"
+	}
+	return dc
+}
+
 func UpsertAllByTypeNameAndID(db *gorm.DB, commodityType config.CommodityType, commodityName string, commodityID string, prices []*Price) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		err := tx.Delete(&Price{}, "commodity_type = ? and (commodity_id = ? or commodity_name = ?)", commodityType, commodityID, commodityName).Error
@@ -38,7 +51,11 @@ func UpsertAllByTypeNameAndID(db *gorm.DB, commodityType config.CommodityType, c
 			return err
 		}
 
+		dc := defaultQuoteCommodity()
 		for _, price := range prices {
+			if price.QuoteCommodity == "" {
+				price.QuoteCommodity = dc
+			}
 			err := tx.Create(price).Error
 			if err != nil {
 				return err
@@ -49,13 +66,43 @@ func UpsertAllByTypeNameAndID(db *gorm.DB, commodityType config.CommodityType, c
 	})
 }
 
+// deduplicatePrices returns a new slice with only the last price seen for each
+// (CommodityName, Date, QuoteCommodity) triple.  Ledger CLIs that infer
+// implicit prices from transaction cost annotations (e.g. hledger
+// --infer-market-prices) can emit multiple identical entries for the same
+// date; keeping only one is safe because they carry the same value.
+func deduplicatePrices(prices []Price) []Price {
+	type key struct {
+		name  string
+		date  time.Time
+		quote string
+	}
+	seen := make(map[key]struct{}, len(prices))
+	out := make([]Price, 0, len(prices))
+	for _, p := range prices {
+		k := key{p.CommodityName, p.Date, p.QuoteCommodity}
+		if _, dup := seen[k]; dup {
+			continue
+		}
+		seen[k] = struct{}{}
+		out = append(out, p)
+	}
+	return out
+}
+
 func UpsertAllByType(db *gorm.DB, commodityType config.CommodityType, prices []Price) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		err := tx.Delete(&Price{}, "commodity_type = ?", commodityType).Error
 		if err != nil {
 			return err
 		}
-		for _, price := range prices {
+		dc := defaultQuoteCommodity()
+		for i := range prices {
+			if prices[i].QuoteCommodity == "" {
+				prices[i].QuoteCommodity = dc
+			}
+		}
+		for _, price := range deduplicatePrices(prices) {
 			err := tx.Create(&price).Error
 			if err != nil {
 				return err
@@ -64,4 +111,21 @@ func UpsertAllByType(db *gorm.DB, commodityType config.CommodityType, prices []P
 
 		return nil
 	})
+}
+
+// FindByDateBaseQuote returns the most-recent price on or before date for the
+// given base/quote commodity pair.  The second return value is false only when
+// no matching row exists; any other database error is returned as-is.
+func FindByDateBaseQuote(db *gorm.DB, date time.Time, baseCommodity, quoteCommodity string) (Price, bool, error) {
+	var p Price
+	result := db.Where("commodity_name = ? AND quote_commodity = ? AND date <= ?", baseCommodity, quoteCommodity, date).
+		Order("date DESC").
+		First(&p)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return Price{}, false, nil
+		}
+		return Price{}, false, result.Error
+	}
+	return p, true, nil
 }
