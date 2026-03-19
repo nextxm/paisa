@@ -1,5 +1,38 @@
 # CHANGELOG
 
+### Unreleased — Multi-currency pricing rollout
+
+#### New features
+* **Multi-currency price schema** — `prices` table gains `quote_commodity` and
+  `source` columns; a backward-compatible migration (v1 → v2) backfills
+  `quote_commodity` from the ledger default currency for all existing rows.
+* **Pair-aware rate resolver** — `service.GetRate` resolves exchange rates via
+  direct pairs, inverse pairs, and one-hop cross rates through the configured
+  default currency (e.g. INR).
+* **Extended price API** — `GET /api/price` accepts optional `base`, `quote`,
+  `from`, `to`, `source`, and `report_currency` query parameters; unfiltered
+  calls continue to return the legacy map-keyed format for backward
+  compatibility.
+* **Price export endpoint** — `GET /api/price/export` exports the full price
+  history as ledger, hledger, or beancount directives.
+* **Rollback flag** — set `disable_multi_currency_prices: true` in `paisa.yaml`
+  to disable cross-rate resolution and `report_currency` conversion and revert
+  to pre-rollout behaviour without downgrading the binary.
+
+#### Upgrade guide
+1. Run `paisa update` (or restart the server) — the database migration runs
+   automatically on startup; no manual steps are required.
+2. Verify prices with `GET /api/price?base=<COMMODITY>` to confirm
+   `quote_commodity` has been backfilled correctly.
+3. If unexpected valuation changes are observed, set
+   `disable_multi_currency_prices: true` in `paisa.yaml` and restart as a
+   rollback measure.
+
+#### Rollback procedure
+1. Add `disable_multi_currency_prices: true` to `paisa.yaml`.
+2. Restart the Paisa server — no database changes are required.
+3. Report the regression so it can be investigated before re-enabling.
+
 ### 0.7.4 (2025-02-23)
 * Update price data domain
 * Fix NixOS build

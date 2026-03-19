@@ -109,8 +109,8 @@ func GetPricesHandler(db *gorm.DB, c *gin.Context) {
 		return
 	}
 
-	// Apply report-currency conversion when requested.
-	if q.ReportCurrency != "" {
+	// Apply report-currency conversion when requested and the feature flag is on.
+	if q.ReportCurrency != "" && config.IsMultiCurrencyPricesEnabled() {
 		prices = convertToReportCurrency(db, prices, q.ReportCurrency)
 	}
 
@@ -131,7 +131,12 @@ func convertToReportCurrency(db *gorm.DB, prices []price.Price, reportCurrency s
 		}
 		rate, ok := service.GetRate(db, p.QuoteCommodity, reportCurrency, p.Date)
 		if !ok {
-			// Cannot convert; include the price unchanged.
+			// Cannot convert; include the price unchanged and log for observability.
+			log.WithFields(log.Fields{
+				"from": p.QuoteCommodity,
+				"to":   reportCurrency,
+				"date": p.Date.Format("2006-01-02"),
+			}).Debug("convertToReportCurrency: no rate found, keeping original price")
 			result = append(result, p)
 			continue
 		}
