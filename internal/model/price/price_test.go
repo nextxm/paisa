@@ -1,0 +1,159 @@
+package price
+
+import (
+	"testing"
+	"time"
+
+	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+)
+
+// openTestDB opens an in-memory SQLite DB and runs AutoMigrate for the Price
+// model only.  We cannot import the migration package here (it imports price),
+// so we migrate the table directly.
+func openTestDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	require.NoError(t, db.AutoMigrate(&Price{}))
+	return db
+}
+
+func mustParseDate(s string) time.Time {
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+func seedPrice(t *testing.T, db *gorm.DB, base, quote, source, date string, val float64) {
+	t.Helper()
+	p := Price{
+		Date:           mustParseDate(date),
+		CommodityType:  config.Unknown,
+		CommodityID:    base,
+		CommodityName:  base,
+		QuoteCommodity: quote,
+		Value:          decimal.NewFromFloat(val),
+		Source:         source,
+	}
+	require.NoError(t, db.Create(&p).Error)
+}
+
+// TestFindFiltered_NoFilter verifies that an empty filter returns all prices.
+func TestFindFiltered_NoFilter(t *testing.T) {
+	db := openTestDB(t)
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0)
+	seedPrice(t, db, "EUR", "INR", "journal", "2024-01-01", 90.0)
+
+	prices, err := FindFiltered(db, PriceFilter{})
+	require.NoError(t, err)
+	assert.Len(t, prices, 2)
+}
+
+// TestFindFiltered_ByBase verifies that filtering by base commodity works.
+func TestFindFiltered_ByBase(t *testing.T) {
+	db := openTestDB(t)
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0)
+	seedPrice(t, db, "EUR", "INR", "journal", "2024-01-01", 90.0)
+	seedPrice(t, db, "USD", "INR", "journal", "2024-06-01", 84.0)
+
+	prices, err := FindFiltered(db, PriceFilter{Base: "USD"})
+	require.NoError(t, err)
+	assert.Len(t, prices, 2)
+	for _, p := range prices {
+		assert.Equal(t, "USD", p.CommodityName)
+	}
+}
+
+// TestFindFiltered_ByQuote verifies that filtering by quote commodity works.
+func TestFindFiltered_ByQuote(t *testing.T) {
+	db := openTestDB(t)
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0)
+	seedPrice(t, db, "USD", "EUR", "journal", "2024-01-01", 0.92)
+
+	prices, err := FindFiltered(db, PriceFilter{Quote: "EUR"})
+	require.NoError(t, err)
+	assert.Len(t, prices, 1)
+	assert.Equal(t, "EUR", prices[0].QuoteCommodity)
+}
+
+// TestFindFiltered_BySource verifies that filtering by source works.
+func TestFindFiltered_BySource(t *testing.T) {
+	db := openTestDB(t)
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0)
+	seedPrice(t, db, "USD", "INR", "com-yahoo", "2024-01-01", 82.5)
+
+	prices, err := FindFiltered(db, PriceFilter{Source: "journal"})
+	require.NoError(t, err)
+	assert.Len(t, prices, 1)
+	assert.Equal(t, "journal", prices[0].Source)
+}
+
+// TestFindFiltered_DateRange verifies that from/to date filtering works.
+func TestFindFiltered_DateRange(t *testing.T) {
+	db := openTestDB(t)
+	seedPrice(t, db, "USD", "INR", "journal", "2023-12-01", 81.0)
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0)
+	seedPrice(t, db, "USD", "INR", "journal", "2024-06-01", 84.0)
+	seedPrice(t, db, "USD", "INR", "journal", "2025-01-01", 85.0)
+
+	prices, err := FindFiltered(db, PriceFilter{
+		From: mustParseDate("2024-01-01"),
+		To:   mustParseDate("2024-12-31"),
+	})
+	require.NoError(t, err)
+	assert.Len(t, prices, 2)
+	assert.True(t, !prices[0].Date.Before(mustParseDate("2024-01-01")))
+	assert.True(t, !prices[len(prices)-1].Date.After(mustParseDate("2024-12-31")))
+}
+
+// TestFindFiltered_DeterministicOrder verifies that results are ordered by
+// (date ASC, commodity_name ASC, quote_commodity ASC, source ASC).
+func TestFindFiltered_DeterministicOrder(t *testing.T) {
+	db := openTestDB(t)
+	seedPrice(t, db, "USD", "INR", "provider", "2024-01-01", 82.0)
+	seedPrice(t, db, "EUR", "INR", "journal", "2024-01-01", 90.0)
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0)
+
+	prices, err := FindFiltered(db, PriceFilter{})
+	require.NoError(t, err)
+	assert.Len(t, prices, 3)
+
+	// EUR before USD (commodity_name ASC), then USD-journal before USD-provider (source ASC).
+	assert.Equal(t, "EUR", prices[0].CommodityName)
+	assert.Equal(t, "USD", prices[1].CommodityName)
+	assert.Equal(t, "journal", prices[1].Source)
+	assert.Equal(t, "USD", prices[2].CommodityName)
+	assert.Equal(t, "provider", prices[2].Source)
+}
+
+// TestFindFiltered_BaseAndQuoteCombined verifies that combining base and quote
+// filters applies both constraints simultaneously.
+func TestFindFiltered_BaseAndQuoteCombined(t *testing.T) {
+	db := openTestDB(t)
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0)
+	seedPrice(t, db, "USD", "EUR", "journal", "2024-01-01", 0.92)
+	seedPrice(t, db, "EUR", "INR", "journal", "2024-01-01", 90.0)
+
+	prices, err := FindFiltered(db, PriceFilter{Base: "USD", Quote: "INR"})
+	require.NoError(t, err)
+	assert.Len(t, prices, 1)
+	assert.Equal(t, "USD", prices[0].CommodityName)
+	assert.Equal(t, "INR", prices[0].QuoteCommodity)
+}
+
+// TestFindFiltered_EmptyResult verifies that filtering with no match returns an empty slice.
+func TestFindFiltered_EmptyResult(t *testing.T) {
+	db := openTestDB(t)
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0)
+
+	prices, err := FindFiltered(db, PriceFilter{Base: "GBP"})
+	require.NoError(t, err)
+	assert.Empty(t, prices)
+}
