@@ -9,7 +9,7 @@
         "commodity_name": "AAPL",
         "quote_commodity": "EUR",
         "value": 10025.05,
-        "source": ""
+        "source": "journal"
       },
       {
         "id": 1,
@@ -19,7 +19,7 @@
         "commodity_name": "AAPL",
         "quote_commodity": "EUR",
         "value": 10005.05,
-        "source": ""
+        "source": "journal"
       }
     ]
   }

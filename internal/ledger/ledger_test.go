@@ -8,57 +8,90 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func assertPriceEqual(t *testing.T, actual price.Price, date string, commodityName string, value float64) {
-	assert.Equal(t, commodityName, actual.CommodityName, "they should be equal")
-	assert.Equal(t, date, actual.Date.Format("2006/01/02"), "they should be equal")
-	assert.Equal(t, value, actual.Value.InexactFloat64(), "they should be equal")
+func assertPriceEqual(t *testing.T, actual price.Price, date string, commodityName string, value float64, quoteCommodity string) {
+	t.Helper()
+	assert.Equal(t, commodityName, actual.CommodityName, "CommodityName should be equal")
+	assert.Equal(t, date, actual.Date.Format("2006/01/02"), "Date should be equal")
+	assert.Equal(t, value, actual.Value.InexactFloat64(), "Value should be equal")
+	assert.Equal(t, quoteCommodity, actual.QuoteCommodity, "QuoteCommodity should be equal")
+	assert.Equal(t, "journal", actual.Source, "Source should be journal")
 }
 
 func TestParseLegerPrices(t *testing.T) {
-	parsedPrices, _ := parseLedgerPrices("P 2023/05/01 00:00:00 USD 0.9 EUR\n", "EUR")
-	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "USD", 0.9)
-	parsedPrices, _ = parseLedgerPrices("P 2023/05/01 00:00:00 EUR $1.1\n", "$")
-	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "EUR", 1.1)
-	parsedPrices, _ = parseLedgerPrices("P 2023/05/01 00:00:00 EUR $-1.1\n", "$")
-	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "EUR", -1.1)
-	parsedPrices, _ = parseLedgerPrices("P 2023/05/01 00:00:00 EUR ₹70\n", "₹")
-	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "EUR", 70)
+	// Default-currency quote prices are retained with correct QuoteCommodity.
+	parsedPrices, _ := parseLedgerPrices("P 2023/05/01 00:00:00 USD 0.9 EUR\n")
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "USD", 0.9, "EUR")
 
-	parsedPrices, _ = parseLedgerPrices("P 2023/05/01 00:00:00 USD 0.9 EUR\n", "INR")
-	assert.Len(t, parsedPrices, 0)
-	parsedPrices, _ = parseLedgerPrices("P 2023/05/01 00:00:00 USD $0.9\n", "INR")
-	assert.Len(t, parsedPrices, 0)
+	parsedPrices, _ = parseLedgerPrices("P 2023/05/01 00:00:00 EUR $1.1\n")
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "EUR", 1.1, "$")
 
-	parsedPrices, _ = parseLedgerPrices("P 2022/01/29 00:50:00 UAH 0.026 EUR\n", "EUR")
-	assertPriceEqual(t, parsedPrices[0], "2022/01/29", "UAH", 0.026)
+	parsedPrices, _ = parseLedgerPrices("P 2023/05/01 00:00:00 EUR $-1.1\n")
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "EUR", -1.1, "$")
+
+	parsedPrices, _ = parseLedgerPrices("P 2023/05/01 00:00:00 EUR ₹70\n")
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "EUR", 70, "₹")
+
+	// Non-default-currency quote prices are now retained (not dropped).
+	parsedPrices, _ = parseLedgerPrices("P 2023/05/01 00:00:00 USD 0.9 EUR\n")
+	assert.Len(t, parsedPrices, 1)
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "USD", 0.9, "EUR")
+
+	parsedPrices, _ = parseLedgerPrices("P 2023/05/01 00:00:00 USD $0.9\n")
+	assert.Len(t, parsedPrices, 1)
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "USD", 0.9, "$")
+
+	parsedPrices, _ = parseLedgerPrices("P 2022/01/29 00:50:00 UAH 0.026 EUR\n")
+	assertPriceEqual(t, parsedPrices[0], "2022/01/29", "UAH", 0.026, "EUR")
+
+	// Mixed multi-currency journal: all price pairs are retained.
+	multiCurrencyInput := "P 2024/01/01 00:00:00 USD 83.0 INR\nP 2024/01/01 00:00:00 EUR 90.0 INR\nP 2024/01/01 00:00:00 GBP 1.15 USD\n"
+	parsedPrices, _ = parseLedgerPrices(multiCurrencyInput)
+	assert.Len(t, parsedPrices, 3)
+	assertPriceEqual(t, parsedPrices[0], "2024/01/01", "USD", 83.0, "INR")
+	assertPriceEqual(t, parsedPrices[1], "2024/01/01", "EUR", 90.0, "INR")
+	assertPriceEqual(t, parsedPrices[2], "2024/01/01", "GBP", 1.15, "USD")
 }
 
 func TestParseHLegerPrices(t *testing.T) {
-	parsedPrices, _ := parseHLedgerPrices("P 2023-05-01 USD 0.9 EUR\n", "EUR")
-	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "USD", 0.9)
-	parsedPrices, _ = parseHLedgerPrices("P 2023-05-01 EUR $1.1\n", "$")
-	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "EUR", 1.1)
+	// Default-currency quote prices are retained with correct QuoteCommodity.
+	parsedPrices, _ := parseHLedgerPrices("P 2023-05-01 USD 0.9 EUR\n")
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "USD", 0.9, "EUR")
 
-	parsedPrices, _ = parseHLedgerPrices("P 2023-05-01 EUR USD 1.1\n", "USD")
-	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "EUR", 1.1)
+	parsedPrices, _ = parseHLedgerPrices("P 2023-05-01 EUR $1.1\n")
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "EUR", 1.1, "$")
 
-	parsedPrices, _ = parseHLedgerPrices("P 2023-05-01 EUR 1.1$\n", "$")
-	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "EUR", 1.1)
+	parsedPrices, _ = parseHLedgerPrices("P 2023-05-01 EUR USD 1.1\n")
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "EUR", 1.1, "USD")
 
-	parsedPrices, _ = parseHLedgerPrices(utils.Dos2Unix("P 2023-05-01 EUR 1.1$\r\n"), "$")
-	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "EUR", 1.1)
+	parsedPrices, _ = parseHLedgerPrices("P 2023-05-01 EUR 1.1$\n")
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "EUR", 1.1, "$")
 
-	parsedPrices, _ = parseHLedgerPrices("P 2023-05-01 \"AAPL0\" \"USD0\" 45.5\n", "USD0")
-	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "AAPL0", 45.5)
+	parsedPrices, _ = parseHLedgerPrices(utils.Dos2Unix("P 2023-05-01 EUR 1.1$\r\n"))
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "EUR", 1.1, "$")
 
-	parsedPrices, _ = parseHLedgerPrices("P 2023-05-01 USD 0.9 EUR\n", "INR")
-	assert.Len(t, parsedPrices, 0)
+	parsedPrices, _ = parseHLedgerPrices("P 2023-05-01 \"AAPL0\" \"USD0\" 45.5\n")
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "AAPL0", 45.5, "USD0")
 
-	parsedPrices, _ = parseHLedgerPrices("P 2023-05-01 USD $0.9\n", "INR")
-	assert.Len(t, parsedPrices, 0)
+	// Non-default-currency quote prices are now retained (not dropped).
+	parsedPrices, _ = parseHLedgerPrices("P 2023-05-01 USD 0.9 EUR\n")
+	assert.Len(t, parsedPrices, 1)
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "USD", 0.9, "EUR")
 
-	parsedPrices, _ = parseHLedgerPrices("P 2023-05-01 USD $0.9\r\n", "INR")
-	assert.Len(t, parsedPrices, 0)
+	parsedPrices, _ = parseHLedgerPrices("P 2023-05-01 USD $0.9\n")
+	assert.Len(t, parsedPrices, 1)
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "USD", 0.9, "$")
+
+	parsedPrices, _ = parseHLedgerPrices(utils.Dos2Unix("P 2023-05-01 USD $0.9\r\n"))
+	assert.Len(t, parsedPrices, 1)
+	assertPriceEqual(t, parsedPrices[0], "2023/05/01", "USD", 0.9, "$")
+
+	// Mixed multi-currency journal: all price pairs are retained.
+	multiCurrencyInput := "P 2024-01-01 USD 83.0 INR\nP 2024-01-01 EUR 90.0 INR\nP 2024-01-01 GBP 1.15 USD\n"
+	parsedPrices, _ = parseHLedgerPrices(multiCurrencyInput)
+	assert.Len(t, parsedPrices, 3)
+	assertPriceEqual(t, parsedPrices[0], "2024/01/01", "USD", 83.0, "INR")
+	assertPriceEqual(t, parsedPrices[1], "2024/01/01", "EUR", 90.0, "INR")
+	assertPriceEqual(t, parsedPrices[2], "2024/01/01", "GBP", 1.15, "USD")
 }
 
 func TestParseAmount(t *testing.T) {

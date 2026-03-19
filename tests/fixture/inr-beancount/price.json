@@ -12,7 +12,7 @@
         "commodity_name": "NIFTY",
         "quote_commodity": "INR",
         "value": 100.273,
-        "source": ""
+        "source": "journal"
       },
       {
         "id": 1,
@@ -22,7 +22,7 @@
         "commodity_name": "NIFTY",
         "quote_commodity": "INR",
         "value": 100,
-        "source": ""
+        "source": "journal"
       }
     ],
     "USD": [
@@ -34,7 +34,7 @@
         "commodity_name": "USD",
         "quote_commodity": "INR",
         "value": 80.442048,
-        "source": ""
+        "source": "journal"
       }
     ]
   }
