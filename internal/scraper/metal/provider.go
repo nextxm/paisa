@@ -85,7 +85,7 @@ func (p *PriceProvider) GetPrices(code string, commodityName string) ([]*price.P
 			return nil, err
 		}
 
-		price := price.Price{Date: date, CommodityType: config.Metal, CommodityID: code, CommodityName: commodityName, Value: data.Close.Div(decimal.NewFromInt(10))}
+		price := price.Price{Date: date, CommodityType: config.Metal, CommodityID: code, CommodityName: commodityName, Value: data.Close.Div(decimal.NewFromInt(10)), QuoteCommodity: "INR"}
 		prices = append(prices, &price)
 	}
 	return prices, nil

@@ -151,11 +151,12 @@ func getHistory(code, commodityName string) ([]*price.Price, error) {
 		}
 
 		prices = append(prices, &price.Price{
-			Date:          dateTime,
-			CommodityType: config.Stock,
-			CommodityID:   code,
-			CommodityName: commodityName,
-			Value:         value,
+			Date:           dateTime,
+			CommodityType:  config.Stock,
+			CommodityID:    code,
+			CommodityName:  commodityName,
+			Value:          value,
+			QuoteCommodity: config.DefaultCurrency(),
 		})
 	}
 

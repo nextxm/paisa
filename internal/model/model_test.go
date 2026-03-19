@@ -197,6 +197,55 @@ func TestPortfolioUpsertAll_OuterTransactionRollback(t *testing.T) {
 	assert.Equal(t, int64(1), count, "fund1 portfolio must not be affected by later rollback")
 }
 
+// TestUpsertAllByTypeNameAndID_PreservesExplicitSourceAndQuote verifies that
+// when provider prices already carry Source="provider" and a non-empty
+// QuoteCommodity, both fields are stored as-is (not overwritten by defaults).
+func TestUpsertAllByTypeNameAndID_PreservesExplicitSourceAndQuote(t *testing.T) {
+	db := openTestDB(t)
+
+	prices := []*price.Price{
+		{
+			Date:           mustParseDate("2024-03-01"),
+			CommodityType:  config.MutualFund,
+			CommodityID:    "scheme-123",
+			CommodityName:  "MyFund",
+			Value:          decimal.NewFromFloat(150.75),
+			QuoteCommodity: "INR",
+			Source:         "provider",
+		},
+	}
+	require.NoError(t, price.UpsertAllByTypeNameAndID(db, config.MutualFund, "MyFund", "scheme-123", prices))
+
+	var stored price.Price
+	require.NoError(t, db.Where("commodity_name = ?", "MyFund").First(&stored).Error)
+	assert.Equal(t, "INR", stored.QuoteCommodity, "explicit QuoteCommodity must be preserved")
+	assert.Equal(t, "provider", stored.Source, "explicit Source must be preserved")
+}
+
+// TestUpsertAllByTypeNameAndID_BackfillsEmptyQuote verifies backward
+// compatibility: prices without QuoteCommodity still get backfilled to the
+// default currency rather than causing a hard failure at the DB layer.
+func TestUpsertAllByTypeNameAndID_BackfillsEmptyQuote(t *testing.T) {
+	db := openTestDB(t)
+
+	prices := []*price.Price{
+		{
+			Date:          mustParseDate("2024-03-01"),
+			CommodityType: config.Stock,
+			CommodityID:   "AAPL",
+			CommodityName: "Apple",
+			Value:         decimal.NewFromFloat(175.0),
+			// QuoteCommodity intentionally left empty – simulates a legacy path.
+		},
+	}
+	require.NoError(t, price.UpsertAllByTypeNameAndID(db, config.Stock, "Apple", "AAPL", prices))
+
+	var stored price.Price
+	require.NoError(t, db.Where("commodity_name = ?", "Apple").First(&stored).Error)
+	// defaultQuoteCommodity() falls back to "INR" when config is uninitialised.
+	assert.Equal(t, "INR", stored.QuoteCommodity, "empty QuoteCommodity must be backfilled to default")
+}
+
 // TestSyncResult_DefaultValues verifies that a zero-value SyncResult
 // represents a not-yet-run sync with no counts and no failed stage.
 func TestSyncResult_DefaultValues(t *testing.T) {

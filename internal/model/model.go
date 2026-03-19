@@ -103,6 +103,31 @@ func SyncCommodities(db *gorm.DB) error {
 			continue
 		}
 
+		// Validate that every returned price carries an explicit quote commodity.
+		// A missing quote_commodity means the provider contract was not fulfilled,
+		// so we fail fast with an actionable error rather than silently backfilling.
+		missingQuote := false
+		for _, p := range prices {
+			if p.QuoteCommodity == "" {
+				log.WithFields(log.Fields{"stage": "commodities", "commodity": name, "provider": commodity.Price.Provider, "date": p.Date.Format("2006-01-02")}).
+					Error("Provider returned price without quote_commodity")
+				errors = append(errors, fmt.Errorf("provider %s returned price for %s on %s without quote_commodity: update the provider or set the quote currency explicitly", commodity.Price.Provider, name, p.Date.Format("2006-01-02")))
+				missingQuote = true
+				break
+			}
+		}
+		if missingQuote {
+			continue
+		}
+
+		// Stamp source metadata before persisting so every provider row is
+		// identifiable as originating from a price provider (not the journal).
+		for i := range prices {
+			if prices[i].Source == "" {
+				prices[i].Source = "provider"
+			}
+		}
+
 		if err := price.UpsertAllByTypeNameAndID(db, commodity.Type, name, code, prices); err != nil {
 			log.WithFields(log.Fields{"stage": "commodities", "commodity": name, "error": err}).Error("Failed to save commodity prices")
 			errors = append(errors, fmt.Errorf("Failed to save price for %s: %w", name, err))
