@@ -4,7 +4,7 @@
 
 **Paisa** is a Personal finance manager. It builds on
 top of the [ledger](https://www.ledger-cli.org/) double entry accounting tool. Checkout
-[documentation](https://paisa.fyi) to get started.
+[documentation](https://paisa.fyi) or view the [Roadmap](./docs/roadmap.md) to see where we're headed.
 
 # Demo
 
