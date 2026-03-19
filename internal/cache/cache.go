@@ -10,6 +10,7 @@ import (
 func Clear() {
 	service.ClearInterestCache()
 	service.ClearPriceCache()
+	service.ClearRateCache()
 	accounting.ClearCache()
 	prediction.ClearCache()
 	transaction.ClearCache()
