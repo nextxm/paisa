@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -216,4 +217,88 @@ func GetPriceAutoCompletions(db *gorm.DB, request AutoCompleteRequest) gin.H {
 	})
 
 	return gin.H{"completions": completions}
+}
+
+// exportFormatToExtension maps an ExportFormat to a suggested file extension.
+var exportFormatToExtension = map[price.ExportFormat]string{
+	price.FormatLedger:    "ledger",
+	price.FormatHLedger:   "journal",
+	price.FormatBeancount: "beancount",
+}
+
+// ExportPricesHandler handles GET /api/price/export.
+//
+// Query parameters:
+//
+//   - format (optional): one of "ledger" (default), "hledger", "beancount".
+//   - base   (optional): filter by base commodity name.
+//   - quote  (optional): filter by quote commodity.
+//   - from   (optional): inclusive lower date bound, YYYY-MM-DD.
+//   - to     (optional): inclusive upper date bound, YYYY-MM-DD.
+//   - source (optional): filter by price source (e.g. "journal", "com-yahoo").
+//
+// The response is text/plain in the requested dialect, suitable for appending
+// directly to a ledger/hledger/beancount journal file.
+func ExportPricesHandler(db *gorm.DB, c *gin.Context) {
+	// --- format parameter ---
+	formatStr := c.DefaultQuery("format", "ledger")
+	format := price.ExportFormat(formatStr)
+	if !price.IsValidExportFormat(format) {
+		RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest,
+			fmt.Sprintf("invalid format %q: must be one of ledger, hledger, beancount", formatStr))
+		return
+	}
+
+	// --- optional filter parameters ---
+	filter := price.PriceFilter{
+		Base:   c.Query("base"),
+		Quote:  c.Query("quote"),
+		Source: c.Query("source"),
+	}
+
+	if fromStr := c.Query("from"); fromStr != "" {
+		t, err := time.Parse(priceQueryLayout, fromStr)
+		if err != nil {
+			RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest,
+				"invalid 'from' date: expected YYYY-MM-DD format")
+			return
+		}
+		filter.From = t
+	}
+	if toStr := c.Query("to"); toStr != "" {
+		t, err := time.Parse(priceQueryLayout, toStr)
+		if err != nil {
+			RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest,
+				"invalid 'to' date: expected YYYY-MM-DD format")
+			return
+		}
+		filter.To = t
+	}
+	if !filter.From.IsZero() && !filter.To.IsZero() && filter.From.After(filter.To) {
+		RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest,
+			"'from' date must not be after 'to' date")
+		return
+	}
+
+	// --- query DB ---
+	prices, err := price.FindFiltered(db, filter)
+	if err != nil {
+		log.WithError(err).Error("ExportPricesHandler: FindFiltered failed")
+		RespondError(c, http.StatusInternalServerError, ErrCodeInternalError,
+			"failed to query prices")
+		return
+	}
+
+	// --- render ---
+	text, err := price.FormatPrices(prices, format)
+	if err != nil {
+		log.WithError(err).Error("ExportPricesHandler: FormatPrices failed")
+		RespondError(c, http.StatusInternalServerError, ErrCodeInternalError,
+			"failed to format prices")
+		return
+	}
+
+	ext := exportFormatToExtension[format]
+	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="prices.%s"`, ext))
+	c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(text))
 }

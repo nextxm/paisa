@@ -156,6 +156,9 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/price", func(c *gin.Context) {
 		GetPricesHandler(db, c)
 	})
+	router.GET("/api/price/export", func(c *gin.Context) {
+		ExportPricesHandler(db, c)
+	})
 	router.GET("/api/price/providers", func(c *gin.Context) {
 		c.JSON(200, GetPriceProviders(db))
 	})
