@@ -121,7 +121,7 @@ func (LedgerCLI) Prices(journalPath string) ([]price.Price, error) {
 		return prices, err
 	}
 
-	return parseLedgerPrices(utils.Dos2Unix(output.String()), config.DefaultCurrency())
+	return parseLedgerPrices(utils.Dos2Unix(output.String()))
 }
 
 func (HLedgerCLI) ValidateFile(journalPath string) ([]LedgerFileError, string, error) {
@@ -214,7 +214,7 @@ func (HLedgerCLI) Prices(journalPath string) ([]price.Price, error) {
 		return prices, err
 	}
 
-	return parseHLedgerPrices(utils.Dos2Unix(output.String()), config.DefaultCurrency())
+	return parseHLedgerPrices(utils.Dos2Unix(output.String()))
 }
 
 func (Beancount) ValidateFile(journalPath string) ([]LedgerFileError, string, error) {
@@ -414,7 +414,7 @@ func (Beancount) Prices(journalPath string) ([]price.Price, error) {
 		return prices, err
 	}
 
-	return parseBeancountPrices(utils.Dos2Unix(output.String()), config.DefaultCurrency())
+	return parseBeancountPrices(utils.Dos2Unix(output.String()))
 }
 
 func parseHLedgerCommodities(journalPath string) ([]string, error) {
@@ -441,7 +441,7 @@ func parseHLedgerCommodities(journalPath string) ([]string, error) {
 	return commodities, nil
 }
 
-func parseLedgerPrices(output string, defaultCurrency string) ([]price.Price, error) {
+func parseLedgerPrices(output string) ([]price.Price, error) {
 	var prices []price.Price
 	re := regexp.MustCompile(`P (\d{4}\/\d{2}\/\d{2}) (?:\d{2}:\d{2}:\d{2}) ([^\s\d.-]+|"[^"]+") ([^\n]+)\n`)
 	matches := re.FindAllStringSubmatch(output, -1)
@@ -452,10 +452,6 @@ func parseLedgerPrices(output string, defaultCurrency string) ([]price.Price, er
 			return nil, err
 		}
 
-		if target != defaultCurrency {
-			continue
-		}
-
 		commodity := utils.UnQuote(match[2])
 
 		date, err := time.ParseInLocation("2006/01/02", match[1], config.TimeZone())
@@ -463,13 +459,13 @@ func parseLedgerPrices(output string, defaultCurrency string) ([]price.Price, er
 			return nil, err
 		}
 
-		prices = append(prices, price.Price{Date: date, CommodityName: commodity, CommodityID: commodity, CommodityType: config.Unknown, Value: value})
+		prices = append(prices, price.Price{Date: date, CommodityName: commodity, CommodityID: commodity, CommodityType: config.Unknown, Value: value, QuoteCommodity: target, Source: "journal"})
 
 	}
 	return prices, nil
 }
 
-func parseHLedgerPrices(output string, defaultCurrency string) ([]price.Price, error) {
+func parseHLedgerPrices(output string) ([]price.Price, error) {
 	var prices []price.Price
 	re := regexp.MustCompile(`P (\d{4}-\d{2}-\d{2}) ([^\s\d.-]+|"[^"]+") ([^\n]+)\n`)
 	matches := re.FindAllStringSubmatch(output, -1)
@@ -481,28 +477,19 @@ func parseHLedgerPrices(output string, defaultCurrency string) ([]price.Price, e
 		}
 
 		commodity := utils.UnQuote(match[2])
-		if target != defaultCurrency {
-			if commodity == defaultCurrency && !value.Equal(decimal.Zero) {
-				commodity = target
-				target = defaultCurrency
-				value = decimal.NewFromInt(1).Div(value)
-			} else {
-				continue
-			}
-		}
 
 		date, err := time.ParseInLocation("2006-01-02", match[1], config.TimeZone())
 		if err != nil {
 			return nil, err
 		}
 
-		prices = append(prices, price.Price{Date: date, CommodityName: commodity, CommodityID: commodity, CommodityType: config.Unknown, Value: value})
+		prices = append(prices, price.Price{Date: date, CommodityName: commodity, CommodityID: commodity, CommodityType: config.Unknown, Value: value, QuoteCommodity: target, Source: "journal"})
 
 	}
 	return prices, nil
 }
 
-func parseBeancountPrices(output string, defaultCurrency string) ([]price.Price, error) {
+func parseBeancountPrices(output string) ([]price.Price, error) {
 	var prices []price.Price
 	re := regexp.MustCompile(`(\d{4}-\d{2}-\d{2}) price ([^ ]+)\s*([^\n]+)\n`)
 	matches := re.FindAllStringSubmatch(output, -1)
@@ -514,22 +501,13 @@ func parseBeancountPrices(output string, defaultCurrency string) ([]price.Price,
 		}
 
 		commodity := utils.UnQuote(match[2])
-		if target != defaultCurrency {
-			if commodity == defaultCurrency && !value.Equal(decimal.Zero) {
-				commodity = target
-				target = defaultCurrency
-				value = decimal.NewFromInt(1).Div(value)
-			} else {
-				continue
-			}
-		}
 
 		date, err := time.ParseInLocation("2006-01-02", match[1], config.TimeZone())
 		if err != nil {
 			return nil, err
 		}
 
-		prices = append(prices, price.Price{Date: date, CommodityName: commodity, CommodityID: commodity, CommodityType: config.Unknown, Value: value})
+		prices = append(prices, price.Price{Date: date, CommodityName: commodity, CommodityID: commodity, CommodityType: config.Unknown, Value: value, QuoteCommodity: target, Source: "journal"})
 
 	}
 	return prices, nil
