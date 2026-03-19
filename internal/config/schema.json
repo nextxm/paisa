@@ -724,6 +724,12 @@
       "description": "Allow legacy username:password authentication via the X-Auth header. Enable during migration from direct credential auth to session tokens; disable once all clients use session tokens.",
       "ui:widget": "hidden"
     },
+    "disable_multi_currency_prices": {
+      "type": "boolean",
+      "default": false,
+      "description": "Rollback flag: set to true to disable pair-aware cross-rate resolution and report_currency conversion (introduced in the multi-currency pricing rollout). Use this if unexpected valuation regressions occur after upgrading.",
+      "ui:widget": "hidden"
+    },
     "goals": {
       "description": "Goals configuration",
       "type": "object",

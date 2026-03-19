@@ -346,3 +346,113 @@ func TestGetPricesHandler_ReportCurrency_NoRateUnchanged(t *testing.T) {
 	v, _ := arr[0].Value.Float64()
 	assert.InDelta(t, 83.0, v, 0.001)
 }
+
+// ---------------------------------------------------------------------------
+// Compatibility-mode tests (disable_multi_currency_prices = true)
+// ---------------------------------------------------------------------------
+
+// loadServerTestConfig loads a minimal config with optional readonly and
+// disable_multi_currency_prices flags, restoring the previous config via
+// t.Cleanup.
+func loadServerTestConfig(t *testing.T, readonly bool, disableMultiCurrency bool) {
+	t.Helper()
+	orig := config.GetConfig()
+
+	readonlyStr := "false"
+	if readonly {
+		readonlyStr = "true"
+	}
+	disableStr := "false"
+	if disableMultiCurrency {
+		disableStr = "true"
+	}
+	yaml := "journal_path: main.ledger\ndb_path: paisa.db\nreadonly: " + readonlyStr +
+		"\ndisable_multi_currency_prices: " + disableStr
+	require.NoError(t, config.LoadConfig([]byte(yaml), ""), "loadServerTestConfig: LoadConfig failed")
+
+	t.Cleanup(func() {
+		_ = config.LoadConfig([]byte("journal_path: "+orig.JournalPath+"\ndb_path: "+orig.DBPath), "")
+	})
+}
+
+// TestGetPricesHandler_ReportCurrency_SkippedWhenFlagDisabled verifies that
+// when disable_multi_currency_prices is true, a report_currency query param
+// is silently ignored and prices are returned in their original quote currency.
+func TestGetPricesHandler_ReportCurrency_SkippedWhenFlagDisabled(t *testing.T) {
+	loadServerTestConfig(t, false, true) // disable_multi_currency_prices = true
+	db := openTestDB(t)
+	service.ClearRateCache()
+
+	// Seed USD→INR = 83.0 and a EUR→INR rate for potential conversion.
+	seedPricesIntoDB(t, db, []price.Price{
+		{CommodityType: config.Unknown, CommodityID: "USD", CommodityName: "USD",
+			QuoteCommodity: "INR", Date: mustParseDate("2024-01-01"),
+			Value: decimal.NewFromFloat(83.0), Source: "journal"},
+		{CommodityType: config.Unknown, CommodityID: "EUR", CommodityName: "EUR",
+			QuoteCommodity: "INR", Date: mustParseDate("2024-01-01"),
+			Value: decimal.NewFromFloat(90.0), Source: "journal"},
+	})
+	r := buildPricesRouter(t, db)
+
+	// Request report_currency=EUR; with flag disabled no conversion must happen.
+	req := httptest.NewRequest(http.MethodGet, "/api/price?base=USD&report_currency=EUR", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var body map[string]json.RawMessage
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&body))
+	var arr []struct {
+		Value          json.Number `json:"value"`
+		QuoteCommodity string      `json:"quote_commodity"`
+	}
+	require.NoError(t, json.Unmarshal(body["prices"], &arr))
+	require.Len(t, arr, 1)
+	// Conversion is skipped → quote remains INR, value remains 83.0.
+	assert.Equal(t, "INR", arr[0].QuoteCommodity,
+		"quote must remain INR when disable_multi_currency_prices is true")
+	v, _ := arr[0].Value.Float64()
+	assert.InDelta(t, 83.0, v, 0.001,
+		"value must remain unconverted when disable_multi_currency_prices is true")
+}
+
+// TestGetPricesHandler_ReportCurrency_EnabledByDefault verifies that
+// report_currency conversion is active when disable_multi_currency_prices is
+// false (the default).
+func TestGetPricesHandler_ReportCurrency_EnabledByDefault(t *testing.T) {
+	loadServerTestConfig(t, false, false) // disable_multi_currency_prices = false (default)
+	db := openTestDB(t)
+	service.ClearRateCache()
+
+	// Seed USD→INR = 83.0 and EUR→INR = 90.0 (so INR→EUR ≈ 0.0111).
+	// Requesting report_currency=EUR should convert INR value to EUR.
+	seedPricesIntoDB(t, db, []price.Price{
+		{CommodityType: config.Unknown, CommodityID: "USD", CommodityName: "USD",
+			QuoteCommodity: "INR", Date: mustParseDate("2024-01-01"),
+			Value: decimal.NewFromFloat(83.0), Source: "journal"},
+		{CommodityType: config.Unknown, CommodityID: "EUR", CommodityName: "EUR",
+			QuoteCommodity: "INR", Date: mustParseDate("2024-01-01"),
+			Value: decimal.NewFromFloat(90.0), Source: "journal"},
+	})
+	r := buildPricesRouter(t, db)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/price?base=USD&report_currency=EUR", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var body map[string]json.RawMessage
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&body))
+	var arr []struct {
+		Value          json.Number `json:"value"`
+		QuoteCommodity string      `json:"quote_commodity"`
+	}
+	require.NoError(t, json.Unmarshal(body["prices"], &arr))
+	require.Len(t, arr, 1)
+	assert.Equal(t, "EUR", arr[0].QuoteCommodity,
+		"quote must be EUR after conversion when disable_multi_currency_prices is false")
+	v, _ := arr[0].Value.Float64()
+	// 83 INR * (1/90 EUR/INR) ≈ 0.922
+	assert.InDelta(t, 0.922, v, 0.01,
+		"converted value must be approximately 83/90")
+}

@@ -269,6 +269,7 @@ func anchorCurrencies() []string {
 //  1. Direct pair (base → quote) on or before date.
 //  2. Inverse pair (quote → base) on or before date, inverted.
 //  3. One-hop cross via each anchor currency: rate(base→anchor) * rate(anchor→quote).
+//     (step 3 is skipped when EnableMultiCurrencyPrices is false)
 //
 // Journal-sourced prices take precedence over provider-sourced prices when both
 // exist for the same (base, quote, date) tuple.  The result is deterministic
@@ -289,17 +290,26 @@ func GetRate(db *gorm.DB, base, quote string, date time.Time) (decimal.Decimal, 
 	}
 
 	// 2 & 3 are handled by lookupRateBetween already for the direct and
-	// inverse cases.  Now attempt one-hop cross via each anchor currency.
-	for _, anchor := range anchorCurrencies() {
-		if anchor == base || anchor == quote {
-			continue
-		}
-		r1, ok1 := lookupRateBetween(base, anchor, date)
-		r2, ok2 := lookupRateBetween(anchor, quote, date)
-		if ok1 && ok2 {
-			return r1.Mul(r2), true
+	// inverse cases.  Now attempt one-hop cross via each anchor currency
+	// (only when the multi-currency feature flag is on).
+	if config.IsMultiCurrencyPricesEnabled() {
+		for _, anchor := range anchorCurrencies() {
+			if anchor == base || anchor == quote {
+				continue
+			}
+			r1, ok1 := lookupRateBetween(base, anchor, date)
+			r2, ok2 := lookupRateBetween(anchor, quote, date)
+			if ok1 && ok2 {
+				return r1.Mul(r2), true
+			}
 		}
 	}
+
+	log.WithFields(log.Fields{
+		"base":  base,
+		"quote": quote,
+		"date":  date.Format("2006-01-02"),
+	}).Debug("GetRate: no price data found for pair")
 
 	return decimal.Zero, false
 }

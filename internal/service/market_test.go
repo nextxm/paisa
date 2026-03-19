@@ -172,3 +172,74 @@ func TestGetRate_ProviderOnlyIsUsedWhenNoJournal(t *testing.T) {
 	assert.True(t, ok, "provider-only price must still be resolved")
 	assert.True(t, decimal.NewFromFloat(21500.0).Equal(rate))
 }
+
+// ---------------------------------------------------------------------------
+// Compatibility-mode tests (disable_multi_currency_prices = true)
+// ---------------------------------------------------------------------------
+
+// loadMarketTestConfig loads a minimal config with the given
+// disable_multi_currency_prices value.  It restores the previous config via
+// t.Cleanup.
+func loadMarketTestConfig(t *testing.T, disableMultiCurrency bool) {
+	t.Helper()
+	orig := config.GetConfig()
+
+	disableStr := "false"
+	if disableMultiCurrency {
+		disableStr = "true"
+	}
+	yaml := "journal_path: main.ledger\ndb_path: paisa.db\ndisable_multi_currency_prices: " + disableStr
+	require.NoError(t, config.LoadConfig([]byte(yaml), ""), "loadMarketTestConfig: LoadConfig failed")
+
+	t.Cleanup(func() {
+		_ = config.LoadConfig([]byte("journal_path: "+orig.JournalPath+"\ndb_path: "+orig.DBPath), "")
+	})
+}
+
+// TestGetRate_CrossRate_DisabledByFlag verifies that when
+// disable_multi_currency_prices is true, GetRate does NOT resolve cross-rate
+// hops and returns (zero, false) for a pair that can only be resolved via an
+// anchor currency.
+func TestGetRate_CrossRate_DisabledByFlag(t *testing.T) {
+	loadMarketTestConfig(t, true) // flag ON → multi-currency disabled
+	db := openTestDB(t)
+	ClearRateCache()
+
+	// Seed legs so a cross-rate would be possible if enabled.
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0, config.Unknown)
+	seedPrice(t, db, "EUR", "INR", "journal", "2024-01-01", 90.0, config.Unknown)
+
+	_, ok := GetRate(db, "USD", "EUR", mustParseDate("2024-06-01"))
+	assert.False(t, ok, "cross-rate must not be resolved when disable_multi_currency_prices is true")
+}
+
+// TestGetRate_DirectPair_StillWorksWhenFlagDisabled verifies that disabling the
+// multi-currency flag does not break direct/inverse pair resolution.
+func TestGetRate_DirectPair_StillWorksWhenFlagDisabled(t *testing.T) {
+	loadMarketTestConfig(t, true) // flag ON → multi-currency disabled
+	db := openTestDB(t)
+	ClearRateCache()
+
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0, config.Unknown)
+
+	rate, ok := GetRate(db, "USD", "INR", mustParseDate("2024-06-01"))
+	assert.True(t, ok, "direct pair must still resolve when disable_multi_currency_prices is true")
+	assert.True(t, decimal.NewFromFloat(83.0).Equal(rate))
+}
+
+// TestGetRate_CrossRate_EnabledByDefault verifies that cross-rate resolution
+// is active when disable_multi_currency_prices is false (the default).
+func TestGetRate_CrossRate_EnabledByDefault(t *testing.T) {
+	loadMarketTestConfig(t, false) // default behaviour: multi-currency enabled
+	db := openTestDB(t)
+	ClearRateCache()
+
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0, config.Unknown)
+	seedPrice(t, db, "EUR", "INR", "journal", "2024-01-01", 90.0, config.Unknown)
+
+	rate, ok := GetRate(db, "USD", "EUR", mustParseDate("2024-06-01"))
+	assert.True(t, ok, "cross-rate must be resolved when disable_multi_currency_prices is false")
+	expected := decimal.NewFromFloat(83.0).Mul(decimal.NewFromInt(1).Div(decimal.NewFromFloat(90.0)))
+	diff := expected.Sub(rate).Abs()
+	assert.True(t, diff.LessThan(decimal.NewFromFloat(0.0001)))
+}
