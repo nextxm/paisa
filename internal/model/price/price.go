@@ -113,6 +113,48 @@ func UpsertAllByType(db *gorm.DB, commodityType config.CommodityType, prices []P
 	})
 }
 
+// PriceFilter holds optional criteria for querying the prices table.
+// Zero values are treated as "no constraint" for each field.
+type PriceFilter struct {
+	// Base filters by commodity_name (base commodity). Empty = no filter.
+	Base string
+	// Quote filters by quote_commodity. Empty = no filter.
+	Quote string
+	// From is an inclusive lower bound on the date column. Zero = no lower bound.
+	From time.Time
+	// To is an inclusive upper bound on the date column. Zero = no upper bound.
+	To time.Time
+	// Source filters by the source field ("journal" or a provider code). Empty = no filter.
+	Source string
+}
+
+// FindFiltered queries the prices table using the given filter and returns
+// results ordered deterministically by (date ASC, commodity_name ASC,
+// quote_commodity ASC, source ASC).
+func FindFiltered(db *gorm.DB, filter PriceFilter) ([]Price, error) {
+	q := db.Order("date ASC, commodity_name ASC, quote_commodity ASC, source ASC")
+	if filter.Base != "" {
+		q = q.Where("commodity_name = ?", filter.Base)
+	}
+	if filter.Quote != "" {
+		q = q.Where("quote_commodity = ?", filter.Quote)
+	}
+	if !filter.From.IsZero() {
+		q = q.Where("date >= ?", filter.From)
+	}
+	if !filter.To.IsZero() {
+		q = q.Where("date <= ?", filter.To)
+	}
+	if filter.Source != "" {
+		q = q.Where("source = ?", filter.Source)
+	}
+	var prices []Price
+	if err := q.Find(&prices).Error; err != nil {
+		return nil, err
+	}
+	return prices, nil
+}
+
 // FindByDateBaseQuote returns the most-recent price on or before date for the
 // given base/quote commodity pair.  The second return value is false only when
 // no matching row exists; any other database error is returned as-is.
