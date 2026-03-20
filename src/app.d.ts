@@ -25,6 +25,20 @@ interface GoalSummary {
   priority: number;
 }
 
+interface DoctorRuleConfig {
+  enabled: "yes" | "no" | "";
+  pattern: string[] | null;
+}
+
+interface DoctorConfig {
+  negative_balance: DoctorRuleConfig;
+  non_credit_account: DoctorRuleConfig;
+  non_debit_account: DoctorRuleConfig;
+  exchange_price_missing: DoctorRuleConfig;
+  unit_price_mismatch: DoctorRuleConfig;
+  asset_allocation_missing: DoctorRuleConfig;
+}
+
 interface UserConfig {
   default_currency: string;
   readonly: boolean;
@@ -40,6 +54,7 @@ interface UserConfig {
     name: string;
     icon: string;
   }[];
+  doctor: DoctorConfig;
 }
 
 interface Runtime {
