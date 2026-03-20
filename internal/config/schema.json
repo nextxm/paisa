@@ -741,8 +741,7 @@
     "disable_multi_currency_prices": {
       "type": "boolean",
       "default": false,
-      "description": "Rollback flag: set to true to disable pair-aware cross-rate resolution and report_currency conversion (introduced in the multi-currency pricing rollout). Use this if unexpected valuation regressions occur after upgrading.",
-      "ui:widget": "hidden"
+      "description": "Set to true to disable pair-aware cross-rate resolution and report_currency conversion. Use this as a rollback if you observe issues with multi-currency pricing."
     },
     "goals": {
       "description": "Goals configuration",
