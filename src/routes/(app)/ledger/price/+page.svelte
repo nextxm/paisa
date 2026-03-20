@@ -28,7 +28,8 @@
   $: isFiltered =
     filterBase !== "" || filterQuote !== "" || filterSource !== "" || reportCurrency !== "";
 
-  function populateOptions() {
+  // Reactively re-derive dropdown options whenever legacyPrices changes.
+  $: {
     availableBases = _.sortBy(Object.keys(legacyPrices));
     const allPrices = _.flatten(Object.values(legacyPrices));
     availableQuotes = _.sortBy(_.uniq(allPrices.map((p) => p.quote_commodity).filter(Boolean)));
@@ -83,7 +84,6 @@
     } else {
       const result: { prices: Record<string, Price[]> } = await ajax("/api/price");
       legacyPrices = _.omitBy(result.prices, (v) => v.length === 0);
-      populateOptions();
     }
   }
 
@@ -101,7 +101,7 @@
 
 <section class="section tab-price">
   <div class="container is-fluid">
-    <div class="columns flex-wrap">
+    <div class="columns is-flex-wrap-wrap">
       <div class="column is-12">
         <div class="box p-3">
           <div class="field is-grouped is-grouped-multiline mb-0">

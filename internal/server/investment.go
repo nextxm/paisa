@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/accounting"
+	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/query"
 	"github.com/ananthakumaran/paisa/internal/service"
@@ -28,7 +29,7 @@ type InvestmentYearlyCard struct {
 	SavingsRate       decimal.Decimal   `json:"savings_rate"`
 }
 
-func GetInvestment(db *gorm.DB) gin.H {
+func GetInvestment(db *gorm.DB, reportCurrency string) gin.H {
 	assets := query.Init(db).Like("Assets:%").NotAccountPrefix("Assets:Checking").
 		Where("transaction_id not in (select transaction_id from postings p where p.account like ? and p.transaction_id = transaction_id)", "Liabilities:%").
 		All()
@@ -41,7 +42,37 @@ func GetInvestment(db *gorm.DB) gin.H {
 	}
 
 	assets = lo.Filter(assets, func(p posting.Posting, _ int) bool { return !service.IsStockSplit(db, p) })
+	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
+		assets = convertPostingsToReportCurrency(db, assets, reportCurrency)
+		incomes = convertPostingsToReportCurrency(db, incomes, reportCurrency)
+		expenses = convertPostingsToReportCurrency(db, expenses, reportCurrency)
+	}
 	return gin.H{"assets": assets, "yearly_cards": computeInvestmentYearlyCard(p.Date, assets, expenses, incomes)}
+}
+
+// convertPostingsToReportCurrency converts each posting's Amount (and MarketAmount)
+// to the report currency by applying the exchange rate from the default currency
+// on the posting's date.  Posting amounts in Paisa are always denominated in the
+// default currency regardless of the p.Commodity field.  When no rate is available
+// for a given date, the posting is kept unchanged so the caller always receives a
+// complete result set.
+func convertPostingsToReportCurrency(db *gorm.DB, postings []posting.Posting, reportCurrency string) []posting.Posting {
+	defaultCurrency := config.DefaultCurrency()
+	result := make([]posting.Posting, 0, len(postings))
+	for _, p := range postings {
+		rate, ok := service.GetRate(db, defaultCurrency, reportCurrency, p.Date)
+		if !ok {
+			result = append(result, p)
+			continue
+		}
+		converted := p
+		converted.Amount = p.Amount.Mul(rate)
+		if !p.MarketAmount.IsZero() {
+			converted.MarketAmount = p.MarketAmount.Mul(rate)
+		}
+		result = append(result, converted)
+	}
+	return result
 }
 
 func computeInvestmentYearlyCard(start time.Time, assets []posting.Posting, expenses []posting.Posting, incomes []posting.Posting) []InvestmentYearlyCard {

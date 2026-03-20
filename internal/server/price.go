@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -160,6 +161,29 @@ func GetPrices(db *gorm.DB) gin.H {
 		prices[commodity] = service.GetAllPrices(db, commodity)
 	}
 	return gin.H{"prices": prices}
+}
+
+// GetPriceCurrencies returns the distinct quote commodities (currencies) present
+// in the prices table.  This is used by the UI to populate report-currency
+// selectors on valuation pages.
+func GetPriceCurrencies(db *gorm.DB, c *gin.Context) {
+	var currencies []string
+	if err := db.Model(&price.Price{}).Distinct().Pluck("quote_commodity", &currencies).Error; err != nil {
+		log.WithError(err).Error("GetPriceCurrencies: query failed")
+		RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, "failed to query currencies")
+		return
+	}
+
+	// Filter out empty strings; sort for a deterministic response.
+	filtered := make([]string, 0, len(currencies))
+	for _, cur := range currencies {
+		if cur != "" {
+			filtered = append(filtered, cur)
+		}
+	}
+	sort.Strings(filtered)
+
+	c.JSON(http.StatusOK, gin.H{"currencies": filtered})
 }
 
 type AutoCompleteRequest struct {

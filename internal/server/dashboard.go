@@ -10,7 +10,7 @@ import (
 
 func GetDashboard(db *gorm.DB) gin.H {
 	return gin.H{
-		"checkingBalances":     assets.GetCheckingBalance(db),
+		"checkingBalances":     assets.GetCheckingBalance(db, ""),
 		"networth":             GetCurrentNetworth(db),
 		"expenses":             GetCurrentExpense(db),
 		"cashFlows":            GetCurrentCashFlow(db),
