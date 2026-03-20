@@ -6,6 +6,7 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
+	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/price"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -243,6 +244,110 @@ func TestGetRate_CrossRate_EnabledByDefault(t *testing.T) {
 	diff := expected.Sub(rate).Abs()
 	assert.True(t, diff.LessThan(decimal.NewFromFloat(0.0001)))
 }
+
+// ---------------------------------------------------------------------------
+// synthesizeDefaultCurrencyPrices tests
+// ---------------------------------------------------------------------------
+
+// seedPosting inserts a minimal posting record for the given commodity.
+func seedPosting(t *testing.T, db *gorm.DB, commodity string) {
+	t.Helper()
+	p := posting.Posting{
+		TransactionID: commodity + "-txn",
+		Date:          mustParseDate("2024-01-01"),
+		Payee:         "test",
+		Account:       "Assets:Test",
+		Commodity:     commodity,
+		Quantity:      decimal.NewFromFloat(1),
+		Amount:        decimal.NewFromFloat(100),
+	}
+	require.NoError(t, db.Create(&p).Error)
+}
+
+// TestGetUnitPrice_SynthesizesProviderPriceFromNativeCurrency verifies that when
+// a commodity has only provider prices in a non-default currency (e.g. USD), and
+// an exchange rate to the default currency (INR) is available, GetUnitPrice
+// returns a price denominated in the default currency.
+func TestGetUnitPrice_SynthesizesProviderPriceFromNativeCurrency(t *testing.T) {
+	loadMarketTestConfig(t, false)
+	db := openTestDB(t)
+	ClearPriceCache()
+	ClearRateCache()
+
+	// AAPL has a provider price in USD only.
+	seedPrice(t, db, "AAPL", "USD", "provider", "2024-01-01", 150.0, config.Stock)
+	// Exchange rate: 1 USD = 83 INR.
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0, config.Unknown)
+
+	pc := GetUnitPrice(db, "AAPL", mustParseDate("2024-06-01"))
+	expected := decimal.NewFromFloat(150.0).Mul(decimal.NewFromFloat(83.0))
+	assert.Equal(t, "INR", pc.QuoteCommodity, "synthesized price must be quoted in default currency")
+	diff := expected.Sub(pc.Value).Abs()
+	assert.Truef(t, diff.LessThan(decimal.NewFromFloat(0.01)),
+		"synthesized price must equal native price × exchange rate, got %s want %s", pc.Value, expected)
+}
+
+// TestGetUnitPrice_NoSynthesisWhenAlreadyInDefaultCurrency verifies that when a
+// commodity already has prices in the default currency, GetUnitPrice returns the
+// original price unchanged.
+func TestGetUnitPrice_NoSynthesisWhenAlreadyInDefaultCurrency(t *testing.T) {
+	loadMarketTestConfig(t, false)
+	db := openTestDB(t)
+	ClearPriceCache()
+	ClearRateCache()
+
+	// NIFTY has a provider price in INR (the default currency).
+	seedPrice(t, db, "NIFTY", "INR", "provider", "2024-01-01", 21500.0, config.Stock)
+
+	pc := GetUnitPrice(db, "NIFTY", mustParseDate("2024-06-01"))
+	assert.Equal(t, "INR", pc.QuoteCommodity)
+	assert.True(t, decimal.NewFromFloat(21500.0).Equal(pc.Value),
+		"price already in default currency must be returned unchanged")
+}
+
+// TestGetUnitPrice_PreservesNativePriceWhenNoRateAvailable verifies that when a
+// commodity has only non-default-currency prices and no exchange rate is
+// available, the original native price is preserved (not dropped).
+func TestGetUnitPrice_PreservesNativePriceWhenNoRateAvailable(t *testing.T) {
+	loadMarketTestConfig(t, false)
+	db := openTestDB(t)
+	ClearPriceCache()
+	ClearRateCache()
+
+	// AAPL has a provider price in USD, but no USD→INR rate is seeded.
+	seedPrice(t, db, "AAPL", "USD", "provider", "2024-01-01", 150.0, config.Stock)
+
+	pc := GetUnitPrice(db, "AAPL", mustParseDate("2024-06-01"))
+	// Without a rate the original native price must be preserved.
+	assert.True(t, decimal.NewFromFloat(150.0).Equal(pc.Value),
+		"native price must be preserved when no exchange rate is available")
+}
+
+// TestGetUnitPrice_SynthesizesJournalPriceFromNativeCurrency verifies that when
+// a commodity has only journal prices in a non-default currency (no provider
+// prices) and an exchange rate is available, GetUnitPrice synthesizes a
+// default-currency price.
+func TestGetUnitPrice_SynthesizesJournalPriceFromNativeCurrency(t *testing.T) {
+	loadMarketTestConfig(t, false)
+	db := openTestDB(t)
+	ClearPriceCache()
+	ClearRateCache()
+
+	// A posting for AAPL is required to trigger the journal-price loading loop.
+	seedPosting(t, db, "AAPL")
+	// Journal price for AAPL in USD only (no INR price).
+	seedPrice(t, db, "AAPL", "USD", "journal", "2024-01-01", 150.0, config.Unknown)
+	// Exchange rate: 1 USD = 83 INR.
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0, config.Unknown)
+
+	pc := GetUnitPrice(db, "AAPL", mustParseDate("2024-06-01"))
+	expected := decimal.NewFromFloat(150.0).Mul(decimal.NewFromFloat(83.0))
+	assert.Equal(t, "INR", pc.QuoteCommodity, "synthesized journal price must be quoted in default currency")
+	diff := expected.Sub(pc.Value).Abs()
+	assert.Truef(t, diff.LessThan(decimal.NewFromFloat(0.01)),
+		"synthesized journal price must equal native price × exchange rate, got %s want %s", pc.Value, expected)
+}
+
 // TestGetAllPrices_MultiCurrency verifies that GetAllPrices returns all prices
 // for a commodity, including those in different quote currencies.
 func TestGetAllPrices_MultiCurrency(t *testing.T) {

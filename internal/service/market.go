@@ -81,8 +81,91 @@ func loadPriceCache(db *gorm.DB) {
 			pcache.postingPricesTree[commodityName] = postingPricesTree
 
 			if pcache.pricesTree[commodityName] == nil {
-				pcache.pricesTree[commodityName] = postingPricesTree
+				// No provider prices: load all journal prices (any quote currency)
+				// so that synthesizeDefaultCurrencyPrices can convert them below.
+				var allJournalPrices []price.Price
+				result2 := db.Where("commodity_type = ? and commodity_name = ?", config.Unknown, commodityName).Find(&allJournalPrices)
+				if result2.Error != nil {
+					log.Fatal(result2.Error)
+				}
+				nativeTree := btree.New(2)
+				for _, p := range allJournalPrices {
+					nativeTree.ReplaceOrInsert(p)
+				}
+				if nativeTree.Len() > 0 {
+					pcache.pricesTree[commodityName] = nativeTree
+				} else {
+					pcache.pricesTree[commodityName] = postingPricesTree
+				}
 			}
+		}
+	}
+
+	// For commodities whose price tree has no entry in the default currency,
+	// synthesize virtual default-currency prices by multiplying each native
+	// price by GetRate(nativeCurrency, dc, date).  This allows GetUnitPrice to
+	// always return values denominated in dc regardless of what currency the
+	// underlying prices are stored in.
+	synthesizeDefaultCurrencyPrices(db, dc)
+}
+
+// isDefaultCurrency reports whether quote matches the configured default
+// currency dc.  A blank quote is treated as equivalent to dc because some
+// legacy price rows omit the quote field and were always assumed to be
+// denominated in the default currency.
+func isDefaultCurrency(quote, dc string) bool {
+	return quote == dc || quote == ""
+}
+
+// synthesizeDefaultCurrencyPrices iterates over every commodity in
+// pcache.pricesTree and, for any tree that contains no price quoted in dc,
+// builds a replacement tree whose values are expressed in dc by multiplying
+// each native price by GetRate(nativeQuote, dc, date).
+// Commodities that already have at least one dc-denominated price are left
+// unchanged.  When no exchange rate can be resolved for a particular entry it
+// is kept in the tree unchanged so that existing fallback behaviour is
+// preserved.
+func synthesizeDefaultCurrencyPrices(db *gorm.DB, dc string) {
+	for commodityName, tree := range pcache.pricesTree {
+		// Check whether the tree already has any price in the default currency.
+		hasDC := false
+		tree.Ascend(func(item btree.Item) bool {
+			p := item.(price.Price)
+			if isDefaultCurrency(p.QuoteCommodity, dc) {
+				hasDC = true
+				return false
+			}
+			return true
+		})
+		if hasDC {
+			continue
+		}
+
+		// No dc prices found: build a synthetic dc tree.
+		out := btree.New(2)
+		tree.Ascend(func(item btree.Item) bool {
+			p := item.(price.Price)
+			if isDefaultCurrency(p.QuoteCommodity, dc) {
+				// Treat blank quote as already-dc; keep as-is.
+				out.ReplaceOrInsert(p)
+				return true
+			}
+			rate, ok := GetRate(db, p.QuoteCommodity, dc, p.Date)
+			if ok && !rate.IsZero() {
+				syn := p
+				syn.QuoteCommodity = dc
+				syn.Value = p.Value.Mul(rate)
+				out.ReplaceOrInsert(syn)
+			} else {
+				// Rate unavailable: keep original entry so callers can still
+				// fall back to the native price rather than getting a zero.
+				out.ReplaceOrInsert(p)
+			}
+			return true
+		})
+
+		if out.Len() > 0 {
+			pcache.pricesTree[commodityName] = out
 		}
 	}
 }
