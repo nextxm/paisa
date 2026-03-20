@@ -22,7 +22,18 @@
         "source": "journal"
       }
     ],
-    "ABNB": [],
+    "ABNB": [
+      {
+        "id": 3,
+        "date": "2022-01-08T00:00:00Z",
+        "commodity_type": "unknown",
+        "commodity_id": "ABNB",
+        "commodity_name": "ABNB",
+        "quote_commodity": "USD",
+        "value": 131.27,
+        "source": "journal"
+      }
+    ],
     "NIFTY": [
       {
         "id": 2,
