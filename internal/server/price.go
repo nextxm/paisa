@@ -13,6 +13,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/cache"
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model"
+	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/price"
 	"github.com/ananthakumaran/paisa/internal/scraper"
 	"github.com/ananthakumaran/paisa/internal/service"
@@ -150,18 +151,9 @@ func convertToReportCurrency(db *gorm.DB, prices []price.Price, reportCurrency s
 
 func GetPrices(db *gorm.DB) gin.H {
 	var commodities []string
-	// Combine commodities from both postings and prices tables to ensure we discover everything.
-	// We exclude the default currency as we did before.
-	dc := config.DefaultCurrency()
-	query := `
-		SELECT DISTINCT commodity FROM postings WHERE commodity != ?
-		UNION
-		SELECT DISTINCT commodity_name FROM prices WHERE commodity_name != ?
-	`
-	result := db.Raw(query, dc, dc).Scan(&commodities)
+	result := db.Model(&posting.Posting{}).Where("commodity != ?", config.DefaultCurrency()).Distinct().Pluck("commodity", &commodities)
 	if result.Error != nil {
-		log.WithError(result.Error).Error("GetPrices: failed to fetch commodities")
-		return gin.H{"prices": make(map[string][]price.Price)}
+		log.Fatal(result.Error)
 	}
 
 	var prices = make(map[string][]price.Price)
