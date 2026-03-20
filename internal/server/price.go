@@ -13,7 +13,6 @@ import (
 	"github.com/ananthakumaran/paisa/internal/cache"
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model"
-	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/price"
 	"github.com/ananthakumaran/paisa/internal/scraper"
 	"github.com/ananthakumaran/paisa/internal/service"
