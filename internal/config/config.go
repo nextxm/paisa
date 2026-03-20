@@ -193,14 +193,14 @@ var configPath string
 var location *time.Location
 
 var defaultConfig = Config{
-	Readonly:                   false,
-	LedgerCli:                  "ledger",
-	DefaultCurrency:            "INR",
-	DisplayPrecision:           0,
-	AmountAlignmentColumn:      52,
-	Locale:                     "en-IN",
-	TimeZone:                   "",
-	Budget:                     Budget{Rollover: Yes},
+	Readonly:              false,
+	LedgerCli:             "ledger",
+	DefaultCurrency:       "INR",
+	DisplayPrecision:      0,
+	AmountAlignmentColumn: 52,
+	Locale:                "en-IN",
+	TimeZone:              "",
+	Budget:                Budget{Rollover: Yes},
 	Doctor: DoctorConfig{
 		NegativeBalance:        DoctorRuleConfig{Enabled: Yes, Pattern: []string{"Assets:%"}},
 		NonCreditAccount:       DoctorRuleConfig{Enabled: Yes, Pattern: []string{"Income:%"}},

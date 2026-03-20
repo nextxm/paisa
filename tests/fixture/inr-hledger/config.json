@@ -38,7 +38,41 @@
       "savings": []
     },
     "user_accounts": [],
-    "credit_cards": []
+    "credit_cards": [],
+    "doctor": {
+      "negative_balance": {
+        "enabled": "yes",
+        "pattern": [
+          "Assets:%"
+        ]
+      },
+      "non_credit_account": {
+        "enabled": "yes",
+        "pattern": [
+          "Income:%"
+        ]
+      },
+      "non_debit_account": {
+        "enabled": "yes",
+        "pattern": [
+          "Expenses:%"
+        ]
+      },
+      "exchange_price_missing": {
+        "enabled": "yes",
+        "pattern": null
+      },
+      "unit_price_mismatch": {
+        "enabled": "yes",
+        "pattern": null
+      },
+      "asset_allocation_missing": {
+        "enabled": "yes",
+        "pattern": [
+          "Assets:%"
+        ]
+      }
+    }
   },
   "now": "2022-02-07T00:00:00Z",
   "schema": {
@@ -1285,6 +1319,147 @@
         "maximum": 6,
         "minimum": 0,
         "type": "integer"
+      },
+      "doctor": {
+        "type": "object",
+        "description": "Doctor configuration",
+        "properties": {
+          "negative_balance": {
+            "type": "object",
+            "description": "Negative Balance rule: checks that asset account balances never go negative.",
+            "properties": {
+              "enabled": {
+                "ui:widget": "boolean",
+                "type": "string",
+                "description": "Enable or disable this rule",
+                "enum": [
+                  "",
+                  "yes",
+                  "no"
+                ]
+              },
+              "pattern": {
+                "type": "array",
+                "description": "Account patterns to check for negative balance",
+                "items": {
+                  "type": "string"
+                },
+                "ui:widget": "accounts"
+              }
+            },
+            "additionalProperties": false
+          },
+          "non_credit_account": {
+            "type": "object",
+            "description": "Non-Credit Account rule: checks that income accounts never have a debit (positive) entry. Income accounts normally carry negative amounts in ledger notation.",
+            "properties": {
+              "enabled": {
+                "ui:widget": "boolean",
+                "type": "string",
+                "description": "Enable or disable this rule",
+                "enum": [
+                  "",
+                  "yes",
+                  "no"
+                ]
+              },
+              "pattern": {
+                "type": "array",
+                "description": "Account patterns to check for unexpected credit entries",
+                "items": {
+                  "type": "string"
+                },
+                "ui:widget": "accounts"
+              }
+            },
+            "additionalProperties": false
+          },
+          "non_debit_account": {
+            "type": "object",
+            "description": "Non-Debit Account rule: checks that expense accounts never have a credit (negative) entry. Expense accounts normally carry positive amounts in ledger notation.",
+            "properties": {
+              "enabled": {
+                "ui:widget": "boolean",
+                "type": "string",
+                "description": "Enable or disable this rule",
+                "enum": [
+                  "",
+                  "yes",
+                  "no"
+                ]
+              },
+              "pattern": {
+                "type": "array",
+                "description": "Account patterns to check for unexpected debit entries",
+                "items": {
+                  "type": "string"
+                },
+                "ui:widget": "accounts"
+              }
+            },
+            "additionalProperties": false
+          },
+          "exchange_price_missing": {
+            "type": "object",
+            "description": "Exchange Price Missing rule: checks that non-currency commodities have an exchange price.",
+            "properties": {
+              "enabled": {
+                "ui:widget": "boolean",
+                "type": "string",
+                "description": "Enable or disable this rule",
+                "enum": [
+                  "",
+                  "yes",
+                  "no"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "unit_price_mismatch": {
+            "type": "object",
+            "description": "Unit Price Mismatch rule: checks that journal prices match prices fetched from external sources.",
+            "properties": {
+              "enabled": {
+                "ui:widget": "boolean",
+                "type": "string",
+                "description": "Enable or disable this rule",
+                "enum": [
+                  "",
+                  "yes",
+                  "no"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "asset_allocation_missing": {
+            "type": "object",
+            "description": "Asset Allocation Missing rule: checks that all asset accounts are included in an allocation target.",
+            "properties": {
+              "enabled": {
+                "ui:widget": "boolean",
+                "type": "string",
+                "description": "Enable or disable this rule",
+                "enum": [
+                  "",
+                  "yes",
+                  "no"
+                ]
+              },
+              "pattern": {
+                "type": "array",
+                "description": "Account patterns to check for missing allocation targets",
+                "items": {
+                  "type": "string"
+                },
+                "ui:widget": "accounts"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
       }
     },
     "required": [
