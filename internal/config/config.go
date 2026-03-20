@@ -109,6 +109,20 @@ type Budget struct {
 	Rollover BoolType `json:"rollover" yaml:"rollover"`
 }
 
+type DoctorRuleConfig struct {
+	Enabled BoolType `json:"enabled" yaml:"enabled"`
+	Pattern []string `json:"pattern" yaml:"pattern"`
+}
+
+type DoctorConfig struct {
+	NegativeBalance        DoctorRuleConfig `json:"negative_balance" yaml:"negative_balance"`
+	NonCreditAccount       DoctorRuleConfig `json:"non_credit_account" yaml:"non_credit_account"`
+	NonDebitAccount        DoctorRuleConfig `json:"non_debit_account" yaml:"non_debit_account"`
+	ExchangePriceMissing   DoctorRuleConfig `json:"exchange_price_missing" yaml:"exchange_price_missing"`
+	UnitPriceMismatch      DoctorRuleConfig `json:"unit_price_mismatch" yaml:"unit_price_mismatch"`
+	AssetAllocationMissing DoctorRuleConfig `json:"asset_allocation_missing" yaml:"asset_allocation_missing"`
+}
+
 type AllocationTarget struct {
 	Name     string   `json:"name" yaml:"name"`
 	Target   float64  `json:"target" yaml:"target"`
@@ -141,6 +155,8 @@ type Config struct {
 	Strict                     BoolType     `json:"strict" yaml:"strict"`
 
 	Budget Budget `json:"budget" yaml:"budget"`
+
+	Doctor DoctorConfig `json:"doctor" yaml:"doctor"`
 
 	ScheduleALs []ScheduleAL `json:"schedule_al" yaml:"schedule_al"`
 
@@ -185,6 +201,14 @@ var defaultConfig = Config{
 	Locale:                     "en-IN",
 	TimeZone:                   "",
 	Budget:                     Budget{Rollover: Yes},
+	Doctor: DoctorConfig{
+		NegativeBalance:        DoctorRuleConfig{Enabled: Yes, Pattern: []string{"Assets:%"}},
+		NonCreditAccount:       DoctorRuleConfig{Enabled: Yes, Pattern: []string{"Income:%"}},
+		NonDebitAccount:        DoctorRuleConfig{Enabled: Yes, Pattern: []string{"Expenses:%"}},
+		ExchangePriceMissing:   DoctorRuleConfig{Enabled: Yes},
+		UnitPriceMismatch:      DoctorRuleConfig{Enabled: Yes},
+		AssetAllocationMissing: DoctorRuleConfig{Enabled: Yes, Pattern: []string{"Assets:%"}},
+	},
 	FinancialYearStartingMonth: 4,
 	Strict:                     No,
 	WeekStartingDay:            0,

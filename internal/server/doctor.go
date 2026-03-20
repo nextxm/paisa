@@ -96,7 +96,11 @@ func GetDiagnosis(db *gorm.DB) gin.H {
 
 func ruleAssetRegisterNonNegative(db *gorm.DB) []error {
 	errs := make([]error, 0)
-	assets := query.Init(db).Like("Assets:%").All()
+	ruleConfig := config.GetConfig().Doctor.NegativeBalance
+	if ruleConfig.Enabled == config.No {
+		return errs
+	}
+	assets := query.Init(db).Like(ruleConfig.Pattern...).All()
 	for account, ps := range lo.GroupBy(assets, func(posting posting.Posting) string { return posting.Account }) {
 		for _, balance := range accounting.Register(ps) {
 			if balance.Quantity.LessThan(decimal.NewFromFloat(0.01).Neg()) {
@@ -110,7 +114,14 @@ func ruleAssetRegisterNonNegative(db *gorm.DB) []error {
 
 func ruleNonCreditAccount(db *gorm.DB) []error {
 	errs := make([]error, 0)
-	incomes := query.Init(db).Like("Income:%").NotLike("Income:CapitalGains:%").All()
+	ruleConfig := config.GetConfig().Doctor.NonCreditAccount
+	if ruleConfig.Enabled == config.No {
+		return errs
+	}
+	// Income:CapitalGains accounts are excluded unconditionally: capital-gain
+	// postings are expected to carry positive amounts, so flagging them here
+	// would always produce false positives regardless of the user's pattern.
+	incomes := query.Init(db).Like(ruleConfig.Pattern...).NotLike("Income:CapitalGains:%").All()
 	for _, p := range incomes {
 		if p.Amount.GreaterThan(decimal.NewFromFloat(0.01)) {
 			errs = append(errs, errors.New(fmt.Sprintf("<b>%.4f</b> got credited to <b>%s</b> on %s", p.Amount.InexactFloat64(), p.Account, p.Date.Format(DATE_FORMAT))))
@@ -121,8 +132,12 @@ func ruleNonCreditAccount(db *gorm.DB) []error {
 
 func ruleNonDebitAccount(db *gorm.DB) []error {
 	errs := make([]error, 0)
-	incomes := query.Init(db).Like("Expenses:%").All()
-	for _, p := range incomes {
+	ruleConfig := config.GetConfig().Doctor.NonDebitAccount
+	if ruleConfig.Enabled == config.No {
+		return errs
+	}
+	expenses := query.Init(db).Like(ruleConfig.Pattern...).All()
+	for _, p := range expenses {
 		if p.Amount.LessThan(decimal.NewFromFloat(0.01).Neg()) {
 			errs = append(errs, errors.New(fmt.Sprintf("<b>%.4f</b> got debited from <b>%s</b> on %s", p.Amount.InexactFloat64(), p.Account, p.Date.Format(DATE_FORMAT))))
 		}
@@ -132,6 +147,9 @@ func ruleNonDebitAccount(db *gorm.DB) []error {
 
 func ruleExchangePriceMissing(db *gorm.DB) []error {
 	errs := make([]error, 0)
+	if config.GetConfig().Doctor.ExchangePriceMissing.Enabled == config.No {
+		return errs
+	}
 	postings := query.Init(db).Desc().All()
 
 	for _, p := range postings {
@@ -147,6 +165,9 @@ func ruleExchangePriceMissing(db *gorm.DB) []error {
 
 func ruleJournalPriceMismatch(db *gorm.DB) []error {
 	errs := make([]error, 0)
+	if config.GetConfig().Doctor.UnitPriceMismatch.Enabled == config.No {
+		return errs
+	}
 	postings := query.Init(db).Desc().All()
 	for _, p := range postings {
 		if !utils.IsCurrency(p.Commodity) {
@@ -178,12 +199,23 @@ func formatPosting(p posting.Posting) string {
 func ruleAllocationTargetMissingAssetAccounts(db *gorm.DB) []error {
 	errs := make([]error, 0)
 
+	ruleConfig := config.GetConfig().Doctor.AssetAllocationMissing
+	if ruleConfig.Enabled == config.No {
+		return errs
+	}
+
 	if len(config.GetConfig().AllocationTargets) == 0 {
 		return errs
 	}
 
 	var accounts []string
-	db.Model(&posting.Posting{}).Where("account like ?", "Assets:%").Distinct().Pluck("Account", &accounts)
+	conditions := make([]string, len(ruleConfig.Pattern))
+	args := make([]interface{}, len(ruleConfig.Pattern))
+	for i, p := range ruleConfig.Pattern {
+		conditions[i] = "account like ?"
+		args[i] = p
+	}
+	db.Model(&posting.Posting{}).Where(strings.Join(conditions, " or "), args...).Distinct().Pluck("Account", &accounts)
 
 	ignoredAccounts := make([]string, 0)
 	for _, account := range accounts {
