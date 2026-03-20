@@ -7,6 +7,7 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/ananthakumaran/paisa/internal/accounting"
+	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/query"
 	"github.com/ananthakumaran/paisa/internal/service"
@@ -27,19 +28,49 @@ type AssetBreakdown struct {
 	AbsoluteReturn   decimal.Decimal `json:"absoluteReturn"`
 }
 
-func GetCheckingBalance(db *gorm.DB) gin.H {
-	return doGetBalance(db, "Assets:Checking:%", false)
+func GetCheckingBalance(db *gorm.DB, reportCurrency string) gin.H {
+	return doGetBalance(db, "Assets:Checking:%", false, reportCurrency)
 }
 
-func GetBalance(db *gorm.DB) gin.H {
-	return doGetBalance(db, "Assets:%", true)
+func GetBalance(db *gorm.DB, reportCurrency string) gin.H {
+	return doGetBalance(db, "Assets:%", true, reportCurrency)
 }
 
-func doGetBalance(db *gorm.DB, pattern string, rollup bool) gin.H {
+func doGetBalance(db *gorm.DB, pattern string, rollup bool, reportCurrency string) gin.H {
 	postings := query.Init(db).Like(pattern, "Income:CapitalGains:%").All()
 	postings = service.PopulateMarketPrice(db, postings)
 	breakdowns := ComputeBreakdowns(db, postings, rollup)
+	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
+		breakdowns = convertBreakdownsToReportCurrency(db, breakdowns, reportCurrency)
+	}
 	return gin.H{"asset_breakdowns": breakdowns}
+}
+
+// convertBreakdownsToReportCurrency multiplies all amount fields in each
+// AssetBreakdown by the current exchange rate from the default currency to
+// reportCurrency.  Rate-insensitive fields (XIRR, AbsoluteReturn, BalanceUnits)
+// are left unchanged.  When no rate is available, breakdowns are returned as-is.
+func convertBreakdownsToReportCurrency(db *gorm.DB, breakdowns map[string]AssetBreakdown, reportCurrency string) map[string]AssetBreakdown {
+	today := utils.EndOfToday()
+	rate, ok := service.GetRate(db, config.DefaultCurrency(), reportCurrency, today)
+	if !ok {
+		return breakdowns
+	}
+	result := make(map[string]AssetBreakdown, len(breakdowns))
+	for k, v := range breakdowns {
+		result[k] = AssetBreakdown{
+			Group:            v.Group,
+			InvestmentAmount: v.InvestmentAmount.Mul(rate),
+			WithdrawalAmount: v.WithdrawalAmount.Mul(rate),
+			MarketAmount:     v.MarketAmount.Mul(rate),
+			BalanceUnits:     v.BalanceUnits,
+			LatestPrice:      v.LatestPrice.Mul(rate),
+			XIRR:             v.XIRR,
+			GainAmount:       v.GainAmount.Mul(rate),
+			AbsoluteReturn:   v.AbsoluteReturn,
+		}
+	}
+	return result
 }
 
 func ComputeBreakdowns(db *gorm.DB, postings []posting.Posting, rollup bool) map[string]AssetBreakdown {

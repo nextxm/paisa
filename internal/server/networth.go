@@ -3,6 +3,7 @@ package server
 import (
 	"time"
 
+	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/query"
 	"github.com/ananthakumaran/paisa/internal/service"
@@ -22,13 +23,41 @@ type Networth struct {
 	NetInvestmentAmount decimal.Decimal `json:"netInvestmentAmount"`
 }
 
-func GetNetworth(db *gorm.DB) gin.H {
+func GetNetworth(db *gorm.DB, reportCurrency string) gin.H {
 	postings := query.Init(db).Like("Assets:%", "Income:CapitalGains:%", "Liabilities:%").UntilToday().All()
 
 	postings = service.PopulateMarketPrice(db, postings)
 	networthTimeline := computeNetworthTimeline(db, postings, false)
 	xirr := service.XIRR(db, postings)
+	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
+		networthTimeline = convertNetworthTimelineToReportCurrency(db, networthTimeline, reportCurrency)
+	}
 	return gin.H{"networthTimeline": networthTimeline, "xirr": xirr}
+}
+
+// convertNetworthTimelineToReportCurrency converts each Networth point's amounts
+// to reportCurrency.  Each point is converted at the exchange rate on that date.
+// When no rate is available for a given date, the point is kept unchanged.
+func convertNetworthTimelineToReportCurrency(db *gorm.DB, timeline []Networth, reportCurrency string) []Networth {
+	result := make([]Networth, 0, len(timeline))
+	defaultCurrency := config.DefaultCurrency()
+	for _, n := range timeline {
+		rate, ok := service.GetRate(db, defaultCurrency, reportCurrency, n.Date)
+		if !ok {
+			result = append(result, n)
+			continue
+		}
+		result = append(result, Networth{
+			Date:                n.Date,
+			InvestmentAmount:    n.InvestmentAmount.Mul(rate),
+			WithdrawalAmount:    n.WithdrawalAmount.Mul(rate),
+			GainAmount:          n.GainAmount.Mul(rate),
+			BalanceAmount:       n.BalanceAmount.Mul(rate),
+			BalanceUnits:        n.BalanceUnits,
+			NetInvestmentAmount: n.NetInvestmentAmount.Mul(rate),
+		})
+	}
+	return result
 }
 
 func GetCurrentNetworth(db *gorm.DB) gin.H {

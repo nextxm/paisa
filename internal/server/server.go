@@ -104,15 +104,15 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.GET("/api/networth", func(c *gin.Context) {
-		c.JSON(200, GetNetworth(db))
+		c.JSON(200, GetNetworth(db, c.Query("report_currency")))
 	})
 
 	router.GET("/api/assets/balance", func(c *gin.Context) {
-		c.JSON(200, assets.GetBalance(db))
+		c.JSON(200, assets.GetBalance(db, c.Query("report_currency")))
 	})
 
 	router.GET("/api/investment", func(c *gin.Context) {
-		c.JSON(200, GetInvestment(db))
+		c.JSON(200, GetInvestment(db, c.Query("report_currency")))
 	})
 	router.GET("/api/gain", func(c *gin.Context) {
 		c.JSON(200, GetGain(db))
@@ -155,6 +155,9 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 	router.GET("/api/price", func(c *gin.Context) {
 		GetPricesHandler(db, c)
+	})
+	router.GET("/api/price/currencies", func(c *gin.Context) {
+		GetPriceCurrencies(db, c)
 	})
 	router.GET("/api/price/export", func(c *gin.Context) {
 		ExportPricesHandler(db, c)

@@ -25,6 +25,8 @@
   let destroy: () => void;
   let points: Networth[] = [];
   let legends: Legend[] = [];
+  let reportCurrency = "";
+  let availableCurrencies: string[] = [];
 
   $: if (!_.isEmpty(points)) {
     if (destroy) {
@@ -46,8 +48,11 @@
     }
   });
 
-  onMount(async () => {
-    const result = await ajax("/api/networth");
+  async function fetchNetworth() {
+    const params = new URLSearchParams();
+    if (reportCurrency) params.set("report_currency", reportCurrency);
+    const query = params.toString();
+    const result = await ajax(query ? `/api/networth?${query}` : "/api/networth");
     points = result.networthTimeline;
     setAllowedDateRange(_.map(points, (p) => p.date));
 
@@ -58,11 +63,53 @@
       gain = current.gainAmount;
     }
     xirr = result.xirr;
+  }
+
+  onMount(async () => {
+    const [, currencyResult] = await Promise.all([
+      fetchNetworth(),
+      ajax("/api/price/currencies")
+    ]);
+    availableCurrencies = currencyResult.currencies || [];
   });
 </script>
 
 <section class="section tab-networth">
   <div class="container is-fluid">
+    {#if availableCurrencies.length > 1}
+      <div class="box p-3 mb-4">
+        <div class="field is-grouped is-grouped-multiline mb-0">
+          <p class="control">
+            <span class="select is-small">
+              <select
+                bind:value={reportCurrency}
+                on:change={() => fetchNetworth()}
+                title="Report Currency"
+              >
+                <option value="">Default Currency</option>
+                {#each availableCurrencies as currency}
+                  <option value={currency}>{currency}</option>
+                {/each}
+              </select>
+            </span>
+          </p>
+          {#if reportCurrency}
+            <p class="control">
+              <button
+                class="button is-small is-light"
+                on:click={() => {
+                  reportCurrency = "";
+                  fetchNetworth();
+                }}
+              >
+                <span class="icon is-small"><i class="fas fa-times" /></span>
+                <span>Reset Currency</span>
+              </button>
+            </p>
+          {/if}
+        </div>
+      </div>
+    {/if}
     <nav class="level {isMobile() && 'grid-2'}">
       <LevelItem title="Net worth" color={COLORS.primary} value={formatCurrency(networth)} />
       <LevelItem
