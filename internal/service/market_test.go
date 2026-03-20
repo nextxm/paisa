@@ -243,3 +243,27 @@ func TestGetRate_CrossRate_EnabledByDefault(t *testing.T) {
 	diff := expected.Sub(rate).Abs()
 	assert.True(t, diff.LessThan(decimal.NewFromFloat(0.0001)))
 }
+// TestGetAllPrices_MultiCurrency verifies that GetAllPrices returns all prices
+// for a commodity, including those in different quote currencies.
+func TestGetAllPrices_MultiCurrency(t *testing.T) {
+	db := openTestDB(t)
+	ClearPriceCache()
+
+	// Seed prices in different currencies for the same commodity.
+	seedPrice(t, db, "AAPL", "USD", "journal", "2024-01-01", 150.0, config.Unknown)
+	seedPrice(t, db, "AAPL", "INR", "journal", "2024-01-01", 12500.0, config.Unknown)
+	seedPrice(t, db, "AAPL", "USD", "journal", "2024-01-02", 155.0, config.Unknown)
+
+	prices := GetAllPrices(db, "AAPL")
+	assert.Len(t, prices, 3, "should return all seeded prices")
+
+	// Order should be date DESC, quote_commodity ASC.
+	assert.Equal(t, mustParseDate("2024-01-02"), prices[0].Date)
+	assert.Equal(t, "USD", prices[0].QuoteCommodity)
+
+	assert.Equal(t, mustParseDate("2024-01-01"), prices[1].Date)
+	assert.Equal(t, "INR", prices[1].QuoteCommodity)
+
+	assert.Equal(t, mustParseDate("2024-01-01"), prices[2].Date)
+	assert.Equal(t, "USD", prices[2].QuoteCommodity)
+}

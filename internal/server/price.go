@@ -151,9 +151,18 @@ func convertToReportCurrency(db *gorm.DB, prices []price.Price, reportCurrency s
 
 func GetPrices(db *gorm.DB) gin.H {
 	var commodities []string
-	result := db.Model(&posting.Posting{}).Where("commodity != ?", config.DefaultCurrency()).Distinct().Pluck("commodity", &commodities)
+	// Combine commodities from both postings and prices tables to ensure we discover everything.
+	// We exclude the default currency as we did before.
+	dc := config.DefaultCurrency()
+	query := `
+		SELECT DISTINCT commodity FROM postings WHERE commodity != ?
+		UNION
+		SELECT DISTINCT commodity_name FROM prices WHERE commodity_name != ?
+	`
+	result := db.Raw(query, dc, dc).Scan(&commodities)
 	if result.Error != nil {
-		log.Fatal(result.Error)
+		log.WithError(result.Error).Error("GetPrices: failed to fetch commodities")
+		return gin.H{"prices": make(map[string][]price.Price)}
 	}
 
 	var prices = make(map[string][]price.Price)

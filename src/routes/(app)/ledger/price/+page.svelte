@@ -101,7 +101,7 @@
 
 <section class="section tab-price">
   <div class="container is-fluid">
-    <div class="columns is-flex-wrap-wrap">
+    <div class="columns is-multiline">
       <div class="column is-12">
         <div class="box p-3">
           <div class="field is-grouped is-grouped-multiline mb-0">
@@ -117,44 +117,44 @@
               </button>
             </p>
             <p class="control">
-              <span class="select is-small">
+              <div class="select is-small">
                 <select bind:value={filterBase} on:change={() => fetchPrice()}>
                   <option value="">All Base</option>
                   {#each availableBases as base}
                     <option value={base}>{base}</option>
                   {/each}
                 </select>
-              </span>
+              </div>
             </p>
             <p class="control">
-              <span class="select is-small">
+              <div class="select is-small">
                 <select bind:value={filterQuote} on:change={() => fetchPrice()}>
                   <option value="">All Quote</option>
                   {#each availableQuotes as quote}
                     <option value={quote}>{quote}</option>
                   {/each}
                 </select>
-              </span>
+              </div>
             </p>
             <p class="control">
-              <span class="select is-small">
+              <div class="select is-small">
                 <select bind:value={filterSource} on:change={() => fetchPrice()}>
                   <option value="">All Sources</option>
                   {#each availableSources as src}
                     <option value={src}>{src}</option>
                   {/each}
                 </select>
-              </span>
+              </div>
             </p>
             <p class="control">
-              <span class="select is-small">
+              <div class="select is-small">
                 <select bind:value={reportCurrency} on:change={() => fetchPrice()}>
                   <option value="">No Conversion</option>
                   {#each availableQuotes as quote}
                     <option value={quote}>{quote}</option>
                   {/each}
                 </select>
-              </span>
+              </div>
             </p>
             {#if isFiltered}
               <p class="control">

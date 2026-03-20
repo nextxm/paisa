@@ -1,7 +1,6 @@
 package service
 
 import (
-	"sort"
 	"sync"
 	"time"
 
@@ -114,35 +113,13 @@ func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
 }
 
 func GetAllPrices(db *gorm.DB, commodity string) []price.Price {
-	pcache.Do(func() { loadPriceCache(db) })
-
-	pt := pcache.postingPricesTree[commodity]
-	if pt == nil {
-		log.Fatal("Price not found ", commodity)
+	var prices []price.Price
+	if err := db.Where("commodity_name = ?", commodity).
+		Order("date DESC, quote_commodity ASC").
+		Find(&prices).Error; err != nil {
+		log.WithError(err).Error("GetAllPrices: query failed")
+		return []price.Price{}
 	}
-
-	pmap := make(map[string]price.Price)
-
-	for _, price := range utils.BTreeToSlice[price.Price](pt) {
-		pmap[price.Date.String()] = price
-	}
-
-	pt = pcache.pricesTree[commodity]
-	if pt == nil {
-		log.Fatal("Price not found ", commodity)
-	}
-
-	for _, price := range utils.BTreeToSlice[price.Price](pt) {
-		pmap[price.Date.String()] = price
-	}
-
-	prices := []price.Price{}
-	keys := lo.Keys(pmap)
-	sort.Sort(sort.Reverse(sort.StringSlice(keys)))
-	for _, key := range keys {
-		prices = append(prices, pmap[key])
-	}
-
 	return prices
 }
 
