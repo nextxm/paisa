@@ -66,10 +66,7 @@
   }
 
   onMount(async () => {
-    const [, currencyResult] = await Promise.all([
-      fetchNetworth(),
-      ajax("/api/price/currencies")
-    ]);
+    const [, currencyResult] = await Promise.all([fetchNetworth(), ajax("/api/price/currencies")]);
     availableCurrencies = currencyResult.currencies || [];
   });
 </script>
