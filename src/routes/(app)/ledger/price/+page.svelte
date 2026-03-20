@@ -117,44 +117,44 @@
               </button>
             </p>
             <p class="control">
-              <div class="select is-small">
+              <span class="select is-small">
                 <select bind:value={filterBase} on:change={() => fetchPrice()}>
                   <option value="">All Base</option>
                   {#each availableBases as base}
                     <option value={base}>{base}</option>
                   {/each}
                 </select>
-              </div>
+              </span>
             </p>
             <p class="control">
-              <div class="select is-small">
+              <span class="select is-small">
                 <select bind:value={filterQuote} on:change={() => fetchPrice()}>
                   <option value="">All Quote</option>
                   {#each availableQuotes as quote}
                     <option value={quote}>{quote}</option>
                   {/each}
                 </select>
-              </div>
+              </span>
             </p>
             <p class="control">
-              <div class="select is-small">
+              <span class="select is-small">
                 <select bind:value={filterSource} on:change={() => fetchPrice()}>
                   <option value="">All Sources</option>
                   {#each availableSources as src}
                     <option value={src}>{src}</option>
                   {/each}
                 </select>
-              </div>
+              </span>
             </p>
             <p class="control">
-              <div class="select is-small">
+              <span class="select is-small">
                 <select bind:value={reportCurrency} on:change={() => fetchPrice()}>
                   <option value="">No Conversion</option>
                   {#each availableQuotes as quote}
                     <option value={quote}>{quote}</option>
                   {/each}
                 </select>
-              </div>
+              </span>
             </p>
             {#if isFiltered}
               <p class="control">
