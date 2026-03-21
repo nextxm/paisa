@@ -123,10 +123,13 @@ func GetPricesHandler(db *gorm.DB, c *gin.Context) {
 
 	grouped := groupPricesByCommodity(prices)
 
-	// When no filters are active, include all non-default commodities from
-	// postings as empty slices so the UI can show them even when no price
-	// data exists for that commodity.
+	// When no filters are active, match the legacy GetPrices behaviour:
+	// - include all non-default commodities from postings as empty slices
+	//   so the UI shows them even when no price data exists; and
+	// - remove the default currency itself, since hledger records reverse
+	//   price entries (e.g. INR→NIFTY) that we don't want to surface here.
 	if !q.hasFilters() {
+		delete(grouped, config.DefaultCurrency())
 		var commodities []string
 		if err := db.Model(&posting.Posting{}).
 			Where("commodity != ?", config.DefaultCurrency()).
