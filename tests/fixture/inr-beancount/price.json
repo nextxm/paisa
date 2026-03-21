@@ -13,16 +13,6 @@
         "quote_commodity": "INR",
         "value": 100.273,
         "source": "journal"
-      },
-      {
-        "id": 1,
-        "date": "2022-01-07T00:00:00Z",
-        "commodity_type": "unknown",
-        "commodity_id": "NIFTY",
-        "commodity_name": "NIFTY",
-        "quote_commodity": "INR",
-        "value": 100,
-        "source": "journal"
       }
     ],
     "USD": [
@@ -37,5 +27,6 @@
         "source": "journal"
       }
     ]
-  }
+  },
+  "history_mode": "latest"
 }
