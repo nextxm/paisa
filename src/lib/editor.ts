@@ -1,4 +1,4 @@
-import { ajax } from "$lib/utils";
+import { ajax, type LedgerFileError } from "$lib/utils";
 import { ledger } from "$lib/parser";
 import { StreamLanguage } from "@codemirror/language";
 import { keymap, type KeyBinding } from "@codemirror/view";
@@ -25,26 +25,40 @@ export { editorState } from "../store";
 async function lint(editor: EditorView): Promise<Diagnostic[]> {
   const doc = editor.state.doc;
   const fileName = get(editorState).fileName;
-  const response = await ajax("/api/editor/validate", {
-    method: "POST",
-    body: JSON.stringify({ name: fileName, content: editor.state.doc.toString() }),
-    background: true
-  });
+  try {
+    const response = await ajax("/api/editor/validate", {
+      method: "POST",
+      body: JSON.stringify({ name: fileName, content: editor.state.doc.toString() }),
+      background: true
+    });
 
-  editorState.update((current) =>
-    _.assign({}, current, { errors: response.errors, output: response.output })
-  );
+    const errors: LedgerFileError[] = response.errors ?? [];
+    const output: string = response.output ?? "";
 
-  return _.map(response.errors, (error) => {
-    const lineFrom = doc.line(error.line_from);
-    const lineTo = doc.line(error.line_to);
-    return {
-      message: error.message,
-      severity: "error",
-      from: lineFrom.from,
-      to: lineTo.to
-    };
-  });
+    editorState.update((current) =>
+      _.assign({}, current, { errors, output })
+    );
+
+    return _.map(errors, (error) => {
+      const lineFrom = doc.line(error.line_from);
+      const lineTo = doc.line(error.line_to);
+      return {
+        message: error.message,
+        severity: "error",
+        from: lineFrom.from,
+        to: lineTo.to
+      };
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    editorState.update((current) =>
+      _.assign({}, current, {
+        errors: [],
+        output: `Validation request failed. ${message}`
+      })
+    );
+    return [];
+  }
 }
 
 export function createDiffEditor(oldContent: string, newContent: string, dom: Element) {

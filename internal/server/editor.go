@@ -85,7 +85,7 @@ func DeleteBackups(file LedgerFile) (gin.H, error) {
 
 func SaveFile(db *gorm.DB, file LedgerFile) gin.H {
 	errors, _, err := validateFile(file)
-	if err != nil {
+	if err != nil || len(errors) > 0 {
 		return gin.H{"errors": errors, "saved": false, "message": "Validation failed"}
 	}
 
