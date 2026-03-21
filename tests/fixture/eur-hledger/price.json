@@ -10,17 +10,8 @@
         "quote_commodity": "EUR",
         "value": 10025.05,
         "source": "journal"
-      },
-      {
-        "id": 1,
-        "date": "2022-01-05T00:00:00Z",
-        "commodity_type": "unknown",
-        "commodity_id": "AAPL",
-        "commodity_name": "AAPL",
-        "quote_commodity": "EUR",
-        "value": 10005.05,
-        "source": "journal"
       }
     ]
-  }
+  },
+  "history_mode": "latest"
 }
