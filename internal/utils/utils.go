@@ -131,6 +131,10 @@ func Now() time.Time {
 	return time.Now()
 }
 
+func UnsetNow() {
+	now = time.Time{}
+}
+
 func IsNowDefined() bool {
 	return !now.Equal(time.Time{})
 }

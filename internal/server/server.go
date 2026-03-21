@@ -150,6 +150,9 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/ledger", func(c *gin.Context) {
 		c.JSON(200, GetLedger(db))
 	})
+	router.GET("/api/sankey", func(c *gin.Context) {
+		GetSankeyHandler(db, c)
+	})
 	writeGroup.POST("/api/price/delete", func(c *gin.Context) {
 		c.JSON(200, ClearPriceCache(db))
 	})
