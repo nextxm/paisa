@@ -3,7 +3,7 @@
   import _ from "lodash";
   import { createEventDispatcher } from "svelte";
 
-  export let files: Array<Directory | LedgerFile>;
+  export let files: Array<Directory | LedgerFile> = [];
   export let path: string;
   export let selectedFileName: string;
   export let hasUnsavedChanges: boolean;
