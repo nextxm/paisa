@@ -1,40 +1,33 @@
 <script lang="ts">
-  import Toggleable from "$lib/components/Toggleable.svelte";
   import ValueChange from "$lib/components/ValueChange.svelte";
-  import { ajax, formatCurrency, type Price } from "$lib/utils";
+  import { ajax, formatCurrency, type Price, type PriceFilters } from "$lib/utils";
   import { toast } from "bulma-toast";
   import _ from "lodash";
   import { onMount } from "svelte";
   import VirtualList from "svelte-tiny-virtual-list";
 
-  // Legacy (backward-compatible) data: keyed by commodity name.
-  let legacyPrices: Record<string, Price[]> = {};
-  // Flat list returned by the filtered API.
-  let filteredPrices: Price[] = [];
+  type HistoryMode = "latest" | "all";
 
-  // Filter state – all empty means "no filter" (backward-compatible mode).
+  let groupedPrices: Record<string, Price[]> = {};
+  let expandedRows: Record<string, boolean> = {};
+  let loadingHistoryRows: Record<string, boolean> = {};
+  let loadedHistoryRows: Record<string, boolean> = {};
+
   let filterBase = "";
   let filterQuote = "";
   let filterSource = "";
   let reportCurrency = "";
+  let historyMode: HistoryMode = "latest";
 
-  // Options for filter dropdowns, derived from the legacy data on first load.
   let availableBases: string[] = [];
   let availableQuotes: string[] = [];
   let availableSources: string[] = [];
 
   const ITEM_SIZE = 18;
 
-  $: isFiltered =
+  $: hasActiveFilters =
     filterBase !== "" || filterQuote !== "" || filterSource !== "" || reportCurrency !== "";
-
-  // Reactively re-derive dropdown options whenever legacyPrices changes.
-  $: {
-    availableBases = _.sortBy(Object.keys(legacyPrices));
-    const allPrices = _.flatten(Object.values(legacyPrices));
-    availableQuotes = _.sortBy(_.uniq(allPrices.map((p) => p.quote_commodity).filter(Boolean)));
-    availableSources = _.sortBy(_.uniq(allPrices.map((p) => p.source).filter(Boolean)));
-  }
+  $: priceEntries = _.sortBy(Object.entries(groupedPrices), ([commodity]) => commodity);
 
   function change(prices: Price[], days: number, tolerance: number) {
     const first = prices[0];
@@ -51,6 +44,25 @@
     return null;
   }
 
+  function buildPriceRoute(base = filterBase, mode: HistoryMode = historyMode) {
+    const params = new URLSearchParams();
+    if (base) params.set("base", base);
+    if (filterQuote) params.set("quote", filterQuote);
+    if (filterSource) params.set("source", filterSource);
+    if (reportCurrency) params.set("report_currency", reportCurrency);
+    if (mode === "all") params.set("history", mode);
+
+    const query = params.toString();
+    return query ? `/api/price?${query}` : "/api/price";
+  }
+
+  async function loadFilterOptions() {
+    const result: PriceFilters = await ajax("/api/price/filters");
+    availableBases = result.bases || [];
+    availableQuotes = result.quotes || [];
+    availableSources = result.sources || [];
+  }
+
   async function clearPriceCache() {
     const { success, message } = await ajax("/api/price/delete", { method: "POST" });
     if (!success) {
@@ -65,25 +77,43 @@
         type: "is-success"
       });
     }
-    await fetchPrice();
+    await Promise.all([fetchPrice(), loadFilterOptions()]);
   }
 
   async function fetchPrice() {
-    // Compute filter state directly so this function always sees latest values,
-    // even when called immediately after clearFilters() in the same event handler.
-    const filtered =
-      filterBase !== "" || filterQuote !== "" || filterSource !== "" || reportCurrency !== "";
-    if (filtered) {
-      const params = new URLSearchParams();
-      if (filterBase) params.set("base", filterBase);
-      if (filterQuote) params.set("quote", filterQuote);
-      if (filterSource) params.set("source", filterSource);
-      if (reportCurrency) params.set("report_currency", reportCurrency);
-      const result: { prices: Price[] } = await ajax(`/api/price?${params.toString()}`);
-      filteredPrices = result.prices || [];
-    } else {
-      const result: { prices: Record<string, Price[]> } = await ajax("/api/price");
-      legacyPrices = _.omitBy(result.prices, (v) => v.length === 0);
+    const result: { prices: Record<string, Price[]> } = await ajax(buildPriceRoute());
+    groupedPrices = _.omitBy(result.prices || {}, (prices) => prices.length === 0);
+    expandedRows = {};
+    loadingHistoryRows = {};
+    loadedHistoryRows =
+      historyMode === "all"
+        ? Object.fromEntries(Object.keys(groupedPrices).map((commodity) => [commodity, true]))
+        : {};
+  }
+
+  async function loadHistoryForCommodity(commodity: string) {
+    if (historyMode === "all" || loadedHistoryRows[commodity] || loadingHistoryRows[commodity]) {
+      return;
+    }
+
+    loadingHistoryRows = { ...loadingHistoryRows, [commodity]: true };
+    try {
+      const result: { prices: Record<string, Price[]> } = await ajax(buildPriceRoute(commodity, "all"));
+      groupedPrices = {
+        ...groupedPrices,
+        [commodity]: result.prices?.[commodity] || groupedPrices[commodity] || []
+      };
+      loadedHistoryRows = { ...loadedHistoryRows, [commodity]: true };
+    } finally {
+      loadingHistoryRows = { ...loadingHistoryRows, [commodity]: false };
+    }
+  }
+
+  async function toggleCommodity(commodity: string) {
+    const isExpanded = !expandedRows[commodity];
+    expandedRows = { ...expandedRows, [commodity]: isExpanded };
+    if (isExpanded) {
+      await loadHistoryForCommodity(commodity);
     }
   }
 
@@ -95,7 +125,7 @@
   }
 
   onMount(async () => {
-    await fetchPrice();
+    await Promise.all([loadFilterOptions(), fetchPrice()]);
   });
 </script>
 
@@ -156,7 +186,15 @@
                 </select>
               </span>
             </p>
-            {#if isFiltered}
+            <p class="control">
+              <span class="select is-small">
+                <select bind:value={historyMode} on:change={() => fetchPrice()}>
+                  <option value="latest">Latest Only</option>
+                  <option value="all">Load History</option>
+                </select>
+              </span>
+            </p>
+            {#if hasActiveFilters}
               <p class="control">
                 <button
                   class="button is-small is-light"
@@ -176,148 +214,101 @@
         </div>
       </div>
 
-      {#if isFiltered}
-        <!-- Filtered flat-list view -->
-        <div class="column is-12">
-          <div class="box overflow-x-auto">
-            <table class="table is-narrow is-fullwidth is-light-border is-hoverable">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Base</th>
-                  <th>Quote</th>
-                  <th class="has-text-right">Value</th>
-                  <th>Source</th>
+      <div class="column is-12">
+        <div class="box overflow-x-auto">
+          <table class="table is-narrow is-fullwidth is-light-border is-hoverable">
+            <thead>
+              <tr>
+                <th />
+                <th>Commodity Name</th>
+                <th>Last Date</th>
+                <th>Quote</th>
+                <th class="has-text-right">Last Price</th>
+                <th class="has-text-right">1 Day</th>
+                <th class="has-text-right">1 Week</th>
+                <th class="has-text-right">4 Weeks</th>
+                <th class="has-text-right">1 Year</th>
+                <th class="has-text-right">3 Years</th>
+                <th class="has-text-right">5 Years</th>
+                <th>Commodity Type</th>
+                <th>Commodity ID</th>
+              </tr>
+            </thead>
+            <tbody class="has-text-grey-dark">
+              {#each priceEntries as [commodity, prices]}
+                {@const latest = prices[0]}
+                <tr
+                  class={expandedRows[commodity] ? "is-active" : ""}
+                  style="cursor: pointer;"
+                  on:click={() => toggleCommodity(commodity)}
+                >
+                  <td>
+                    <span class="icon has-text-link">
+                      {#if loadingHistoryRows[commodity]}
+                        <i class="fas fa-spinner fa-spin" aria-hidden="true" />
+                      {:else}
+                        <i
+                          class="fas {expandedRows[commodity] ? 'fa-chevron-up' : 'fa-chevron-down'}"
+                          aria-hidden="true"
+                        />
+                      {/if}
+                    </span>
+                  </td>
+                  <td>{latest.commodity_name}</td>
+                  <td class="whitespace-nowrap">{latest.date.format("DD MMM YYYY")}</td>
+                  <td>{latest.quote_commodity}</td>
+                  <td class="has-text-right">{formatCurrency(latest.value, 4)}</td>
+                  <td class="has-text-right"><ValueChange value={change(prices, 1, 0)} /></td>
+                  <td class="has-text-right"><ValueChange value={change(prices, 7, 2)} /></td>
+                  <td class="has-text-right"><ValueChange value={change(prices, 28, 4)} /></td>
+                  <td class="has-text-right"><ValueChange value={change(prices, 365, 7)} /></td>
+                  <td class="has-text-right"><ValueChange value={change(prices, 365 * 3, 7)} /></td>
+                  <td class="has-text-right"><ValueChange value={change(prices, 365 * 5, 7)} /></td>
+                  <td>{latest.commodity_type}</td>
+                  <td>{latest.commodity_id}</td>
                 </tr>
-              </thead>
-              <tbody class="has-text-grey-dark">
-                {#each filteredPrices as p}
+                {#if expandedRows[commodity]}
                   <tr>
-                    <td class="whitespace-nowrap">{p.date.format("DD MMM YYYY")}</td>
-                    <td>{p.commodity_name}</td>
-                    <td>{p.quote_commodity}</td>
-                    <td class="has-text-right">{formatCurrency(p.value, 4)}</td>
-                    <td>{p.source}</td>
-                  </tr>
-                {/each}
-                {#if filteredPrices.length === 0}
-                  <tr>
-                    <td colspan="5" class="has-text-centered has-text-grey">No prices found.</td>
+                    <td colspan="13" class="p-0">
+                      <VirtualList
+                        width="100%"
+                        height={_.min([ITEM_SIZE * prices.length, ITEM_SIZE * 20])}
+                        itemCount={prices.length}
+                        itemSize={ITEM_SIZE}
+                      >
+                        <div
+                          slot="item"
+                          let:index
+                          let:style
+                          {style}
+                          class="small-box is-flex is-flex-wrap-wrap is-justify-content-space-between is-size-7"
+                        >
+                          {@const historyPrice = prices[index]}
+                          <div class="pl-1">{historyPrice.date.format("DD MMM YYYY")}</div>
+                          <div class="has-text-grey-light is-size-7 pl-1">
+                            {historyPrice.quote_commodity || ""}
+                          </div>
+                          <div class="has-text-grey-light is-size-7 pl-1">
+                            {historyPrice.source || ""}
+                          </div>
+                          <div class="pr-1 has-text-right">
+                            {formatCurrency(historyPrice.value, 4)}
+                          </div>
+                        </div>
+                      </VirtualList>
+                    </td>
                   </tr>
                 {/if}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      {:else}
-        <!-- Default backward-compatible grouped view -->
-        <div class="column is-12">
-          <div class="box overflow-x-auto">
-            <table class="table is-narrow is-fullwidth is-light-border is-hoverable">
-              <thead>
+              {/each}
+              {#if priceEntries.length === 0}
                 <tr>
-                  <th />
-                  <th>Commodity Name</th>
-                  <th>Last Date</th>
-                  <th class="has-text-right">Last Price</th>
-                  <th class="has-text-right">1 Day</th>
-                  <th class="has-text-right">1 Week</th>
-                  <th class="has-text-right">4 Weeks</th>
-                  <th class="has-text-right">1 Year</th>
-                  <th class="has-text-right">3 Years</th>
-                  <th class="has-text-right">5 Years</th>
-                  <th>Commodity Type</th>
-                  <th>Commodity ID</th>
+                  <td colspan="13" class="has-text-centered has-text-grey">No prices found.</td>
                 </tr>
-              </thead>
-              <tbody class="has-text-grey-dark">
-                {#each Object.keys(legacyPrices) as commodity}
-                  {@const p = legacyPrices[commodity][0]}
-                  <Toggleable>
-                    <tr
-                      class={active ? "is-active" : ""}
-                      style="cursor: pointer;"
-                      slot="toggle"
-                      let:active
-                      let:onclick
-                      on:click={(e) => onclick(e)}
-                    >
-                      <td>
-                        <span class="icon has-text-link">
-                          <i
-                            class="fas {active ? 'fa-chevron-up' : 'fa-chevron-down'}"
-                            aria-hidden="true"
-                          />
-                        </span>
-                      </td>
-
-                      <td>{p.commodity_name}</td>
-                      <td class="whitespace-nowrap">{p.date.format("DD MMM YYYY")}</td>
-                      <td class="has-text-right">{formatCurrency(p.value, 4)}</td>
-                      <td class="has-text-right"
-                        ><ValueChange value={change(legacyPrices[commodity], 1, 0)} /></td
-                      >
-                      <td class="has-text-right"
-                        ><ValueChange value={change(legacyPrices[commodity], 7, 2)} /></td
-                      >
-                      <td class="has-text-right"
-                        ><ValueChange value={change(legacyPrices[commodity], 28, 4)} />
-                      </td>
-                      <td class="has-text-right"
-                        ><ValueChange value={change(legacyPrices[commodity], 365, 7)} />
-                      </td>
-                      <td class="has-text-right"
-                        ><ValueChange value={change(legacyPrices[commodity], 365 * 3, 7)} /></td
-                      >
-                      <td class="has-text-right"
-                        ><ValueChange value={change(legacyPrices[commodity], 365 * 5, 7)} /></td
-                      >
-                      <td>{p.commodity_type}</td>
-                      <td>{p.commodity_id}</td>
-                    </tr>
-                    <tr slot="content">
-                      <td colspan="10" />
-                      <td colspan="2" class="p-0">
-                        <div>
-                          <VirtualList
-                            width="100%"
-                            height={_.min([
-                              ITEM_SIZE * legacyPrices[commodity].length,
-                              ITEM_SIZE * 20
-                            ])}
-                            itemCount={legacyPrices[commodity].length}
-                            itemSize={ITEM_SIZE}
-                          >
-                            <div
-                              slot="item"
-                              let:index
-                              let:style
-                              {style}
-                              class="small-box is-flex is-flex-wrap-wrap is-justify-content-space-between is-size-7"
-                            >
-                              {@const hp = legacyPrices[commodity][index]}
-                              <div class="pl-1">{hp.date.format("DD MMM YYYY")}</div>
-                              <div class="has-text-grey-light is-size-7 pl-1">
-                                {hp.quote_commodity || ""}
-                              </div>
-                              <div class="has-text-grey-light is-size-7 pl-1">
-                                {hp.source || ""}
-                              </div>
-                              <div class="pr-1 has-text-right">
-                                {formatCurrency(hp.value, 4)}
-                              </div>
-                            </div>
-                          </VirtualList>
-                        </div>
-                      </td>
-                    </tr>
-                  </Toggleable>
-                {/each}
-              </tbody>
-            </table>
-          </div>
+              {/if}
+            </tbody>
+          </table>
         </div>
-      {/if}
+      </div>
     </div>
   </div>
 </section>
