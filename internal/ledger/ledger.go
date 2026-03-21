@@ -220,7 +220,7 @@ func (HLedgerCLI) Prices(journalPath string) ([]price.Price, error) {
 func (Beancount) ValidateFile(journalPath string) ([]LedgerFileError, string, error) {
 	errors := []LedgerFileError{}
 
-	path, err := binary.LookPath("bean-check")
+	path, err := binary.BeancountBinaryPath("bean-check")
 	if err != nil {
 		return errors, "", err
 	}
@@ -229,7 +229,7 @@ func (Beancount) ValidateFile(journalPath string) ([]LedgerFileError, string, er
 	err = utils.Exec(path, &output, &error, journalPath)
 	if err == nil {
 
-		path, err = binary.LookPath("bean-report")
+		path, err = binary.BeancountBinaryPath("bean-report")
 		if err != nil {
 			return errors, "", err
 		}
@@ -287,7 +287,7 @@ func (Beancount) Parse(journalPath string, prices []price.Price) ([]*posting.Pos
 	)
 	args := []string{"-f", "csv", journalPath, "select date,payee,narration,account,currency,units(position),cost(position),filename,location,id,flag,ANY_META('recurring'),ANY_META('period')"}
 
-	path, err := binary.LookPath("bean-query")
+	path, err := binary.BeancountBinaryPath("bean-query")
 	if err != nil {
 		return postings, err
 	}
@@ -401,7 +401,7 @@ func (Beancount) Parse(journalPath string, prices []price.Price) ([]*posting.Pos
 
 func (Beancount) Prices(journalPath string) ([]price.Price, error) {
 	var prices []price.Price
-	path, err := binary.LookPath("bean-report")
+	path, err := binary.BeancountBinaryPath("bean-report")
 	if err != nil {
 		log.Error(err)
 		return prices, err

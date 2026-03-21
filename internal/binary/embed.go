@@ -21,6 +21,7 @@ var DEFAULT_PATH = []string{
 }
 
 var cachedLedgerBinaryPath string
+var cachedBeancountBinaryPaths = map[string]string{}
 
 func LookPath(name string) (string, error) {
 	path, err := exec.LookPath(name)
@@ -39,6 +40,52 @@ func LookPath(name string) (string, error) {
 		return "", err
 	}
 
+	return path, nil
+}
+
+func BeancountBinaryPath(name string) (string, error) {
+	if path, ok := cachedBeancountBinaryPaths[name]; ok {
+		return path, nil
+	}
+
+	path, err := LookPath(name)
+	if err == nil {
+		cachedBeancountBinaryPaths[name] = path
+		return path, nil
+	}
+
+	var embeddedBinary []byte
+	switch name {
+	case "bean-check":
+		embeddedBinary = beancheckBinary
+	case "bean-report":
+		embeddedBinary = beanreportBinary
+	case "bean-query":
+		embeddedBinary = beanqueryBinary
+	default:
+		return "", fmt.Errorf("unknown beancount binary: %s", name)
+	}
+
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		log.Error(err)
+		return "", err
+	}
+
+	binDir := filepath.Join(cacheDir, "paisa")
+	binaryPath := name
+	if runtime.GOOS == "windows" {
+		binaryPath += ".exe"
+	}
+
+	path = filepath.Join(binDir, binaryPath)
+	err = stage(path, embeddedBinary, 0750)
+	if err != nil {
+		log.Error(err)
+		return "", err
+	}
+
+	cachedBeancountBinaryPaths[name] = path
 	return path, nil
 }
 
@@ -78,6 +125,15 @@ func LedgerBinaryPath() (string, error) {
 
 //go:embed ledger
 var ledgerBinary []byte
+
+//go:embed bean-check
+var beancheckBinary []byte
+
+//go:embed bean-report
+var beanreportBinary []byte
+
+//go:embed bean-query
+var beanqueryBinary []byte
 
 // EmbeddedBinaryNeedsUpdate returns true if the provided embedded binary file should
 // be updated. This determination is based on the modification times and file sizes of both
