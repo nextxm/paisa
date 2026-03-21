@@ -27,6 +27,14 @@ jobs:
         npm run build
         wget https://github.com/FullofQuarks/Windows-Ledger-Binaries/releases/download/v3.3.2/ledger.exe
         cp ledger.exe internal/binary/ledger
+        pip install beancount pyinstaller
+        $scripts = (python -c "import sysconfig; print(sysconfig.get_path('scripts'))")
+        pyinstaller --onefile --distpath . --name bean-check "$scripts\bean-check-script.py"
+        pyinstaller --onefile --distpath . --name bean-report "$scripts\bean-report-script.py"
+        pyinstaller --onefile --distpath . --name bean-query "$scripts\bean-query-script.py"
+        cp bean-check.exe internal/binary/bean-check
+        cp bean-report.exe internal/binary/bean-report
+        cp bean-query.exe internal/binary/bean-query
         go build
         cp paisa.exe paisa-cli-windows-amd64.exe
         $env:PATH += ";C:\Program Files (x86)\NSIS\Bin"
