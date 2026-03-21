@@ -98,7 +98,9 @@
 
     loadingHistoryRows = { ...loadingHistoryRows, [commodity]: true };
     try {
-      const result: { prices: Record<string, Price[]> } = await ajax(buildPriceRoute(commodity, "all"));
+      const result: { prices: Record<string, Price[]> } = await ajax(
+        buildPriceRoute(commodity, "all")
+      );
       groupedPrices = {
         ...groupedPrices,
         [commodity]: result.prices?.[commodity] || groupedPrices[commodity] || []
@@ -248,7 +250,9 @@
                         <i class="fas fa-spinner fa-spin" aria-hidden="true" />
                       {:else}
                         <i
-                          class="fas {expandedRows[commodity] ? 'fa-chevron-up' : 'fa-chevron-down'}"
+                          class="fas {expandedRows[commodity]
+                            ? 'fa-chevron-up'
+                            : 'fa-chevron-down'}"
                           aria-hidden="true"
                         />
                       {/if}

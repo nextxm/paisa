@@ -13,6 +13,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/cache"
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model"
+	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/price"
 	"github.com/ananthakumaran/paisa/internal/scraper"
 	"github.com/ananthakumaran/paisa/internal/service"
@@ -45,6 +46,15 @@ func (q PriceQuery) historyMode() string {
 		return priceHistoryLatest
 	}
 	return q.History
+}
+
+// hasFilters returns true when at least one filter (other than history mode)
+// has been set: Base, Quote, From, To, Source, or ReportCurrency.  When no
+// filters are active the handler also fills in all non-default commodities
+// from postings so that the caller sees empty slices for commodities that
+// have no price data.
+func (q PriceQuery) hasFilters() bool {
+	return q.Base != "" || q.Quote != "" || q.From != "" || q.To != "" || q.Source != "" || q.ReportCurrency != ""
 }
 
 // GetPricesHandler is the unified handler for GET /api/price.
@@ -111,8 +121,32 @@ func GetPricesHandler(db *gorm.DB, c *gin.Context) {
 		prices = convertToReportCurrency(db, prices, q.ReportCurrency)
 	}
 
+	grouped := groupPricesByCommodity(prices)
+
+	// When no filters are active, match the legacy GetPrices behaviour:
+	// - include all non-default commodities from postings as empty slices
+	//   so the UI shows them even when no price data exists; and
+	// - remove the default currency itself, since hledger records reverse
+	//   price entries (e.g. INR→NIFTY) that we don't want to surface here.
+	if !q.hasFilters() {
+		delete(grouped, config.DefaultCurrency())
+		var commodities []string
+		if err := db.Model(&posting.Posting{}).
+			Where("commodity != ?", config.DefaultCurrency()).
+			Distinct().
+			Pluck("commodity", &commodities).Error; err != nil {
+			log.WithError(err).Warn("GetPricesHandler: failed to load commodities from postings; some commodities without prices may be missing from the response")
+		} else {
+			for _, commodity := range commodities {
+				if _, ok := grouped[commodity]; !ok {
+					grouped[commodity] = []price.Price{}
+				}
+			}
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"prices":      groupPricesByCommodity(prices),
+		"prices":       grouped,
 		"history_mode": q.historyMode(),
 	})
 }
