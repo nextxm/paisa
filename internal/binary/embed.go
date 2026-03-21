@@ -90,7 +90,6 @@ func BeancountBinaryPath(name string) (string, error) {
 }
 
 func LedgerBinaryPath() (string, error) {
-
 	if cachedLedgerBinaryPath != "" {
 		return cachedLedgerBinaryPath, nil
 	}
@@ -134,7 +133,6 @@ var beanreportBinary []byte
 
 //go:embed bean-query
 var beanqueryBinary []byte
-
 
 // EmbeddedBinaryNeedsUpdate returns true if the provided embedded binary file should
 // be updated. This determination is based on the modification times and file sizes of both
