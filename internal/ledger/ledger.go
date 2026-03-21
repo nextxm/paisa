@@ -287,8 +287,7 @@ func (Beancount) Parse(journalPath string, prices []price.Price) ([]*posting.Pos
 	)
 	args := []string{"-f", "csv", journalPath, "select date,payee,narration,account,currency,units(position),cost(position),filename,location,id,flag,ANY_META('recurring'),ANY_META('period')"}
 
-	path, err := binary.LookPath("bean-query")
-		path, err := binary.BeancountBinaryPath("bean-query")
+	path, err := binary.BeancountBinaryPath("bean-query")
 	if err != nil {
 		return postings, err
 	}

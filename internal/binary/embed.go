@@ -125,6 +125,7 @@ func LedgerBinaryPath() (string, error) {
 
 //go:embed ledger
 var ledgerBinary []byte
+
 //go:embed bean-check
 var beancheckBinary []byte
 
