@@ -157,3 +157,19 @@ func TestFindFiltered_EmptyResult(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, prices)
 }
+
+// TestFindFiltered_LatestOnly verifies that latest-only mode returns one row
+// per base commodity using the newest matching price.
+func TestFindFiltered_LatestOnly(t *testing.T) {
+	db := openTestDB(t)
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0)
+	seedPrice(t, db, "USD", "INR", "journal", "2024-06-01", 84.0)
+	seedPrice(t, db, "EUR", "INR", "journal", "2024-02-01", 90.0)
+
+	prices, err := FindFiltered(db, PriceFilter{LatestOnly: true})
+	require.NoError(t, err)
+	assert.Len(t, prices, 2)
+	assert.Equal(t, "EUR", prices[0].CommodityName)
+	assert.Equal(t, "USD", prices[1].CommodityName)
+	assert.Equal(t, mustParseDate("2024-06-01"), prices[1].Date)
+}

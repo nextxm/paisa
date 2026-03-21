@@ -13,7 +13,6 @@ import (
 	"github.com/ananthakumaran/paisa/internal/cache"
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model"
-	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/price"
 	"github.com/ananthakumaran/paisa/internal/scraper"
 	"github.com/ananthakumaran/paisa/internal/service"
@@ -24,6 +23,11 @@ import (
 // priceQueryLayout is the date format accepted by the price filter query parameters.
 const priceQueryLayout = "2006-01-02"
 
+const (
+	priceHistoryLatest = "latest"
+	priceHistoryAll    = "all"
+)
+
 // PriceQuery holds the optional query parameters supported by GET /api/price.
 // All fields are optional; omitting all of them activates backward-compatible mode.
 type PriceQuery struct {
@@ -33,29 +37,21 @@ type PriceQuery struct {
 	To             string `form:"to"`
 	Source         string `form:"source"`
 	ReportCurrency string `form:"report_currency"`
+	History        string `form:"history"`
 }
 
-// isFiltered returns true when at least one filter or conversion parameter has
-// been set.  Note that report_currency is intentionally included: specifying
-// only a report_currency (with no base/quote/date/source filters) is a valid
-// use-case that returns all prices converted to the requested currency, and
-// that response is returned as a flat list rather than the legacy map format.
-func (q PriceQuery) isFiltered() bool {
-	return q.Base != "" || q.Quote != "" || q.From != "" || q.To != "" || q.Source != "" || q.ReportCurrency != ""
+func (q PriceQuery) historyMode() string {
+	if q.History == "" {
+		return priceHistoryLatest
+	}
+	return q.History
 }
 
 // GetPricesHandler is the unified handler for GET /api/price.
 //
-// Backward-compatible mode (no query parameters):
-//
-//	Returns {"prices": {"<commodity>": [Price, ...]}} exactly as before.
-//
-// Filtered mode (any query parameter present):
-//
-//	Returns {"prices": [Price, ...]} as a deterministically-ordered flat list.
-//	Optional filters: base, quote, from (YYYY-MM-DD), to (YYYY-MM-DD), source.
-//	Optional conversion: report_currency converts every price's value to the
-//	requested currency using GetRate; unconvertible prices are returned unchanged.
+// Returns grouped prices keyed by base commodity for both default and filtered
+// requests. By default, only the latest matching row per commodity is loaded;
+// pass history=all to load full history for each matching commodity.
 //
 // Error responses use the standard error envelope (see apierror.go).
 func GetPricesHandler(db *gorm.DB, c *gin.Context) {
@@ -64,18 +60,18 @@ func GetPricesHandler(db *gorm.DB, c *gin.Context) {
 		RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, err.Error())
 		return
 	}
-
-	// No filters → backward-compatible map response.
-	if !q.isFiltered() {
-		c.JSON(http.StatusOK, GetPrices(db))
+	if q.historyMode() != priceHistoryLatest && q.historyMode() != priceHistoryAll {
+		RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest,
+			"invalid 'history' value: expected latest or all")
 		return
 	}
 
 	// Build the model-layer filter, parsing date strings.
 	filter := price.PriceFilter{
-		Base:   q.Base,
-		Quote:  q.Quote,
-		Source: q.Source,
+		Base:       q.Base,
+		Quote:      q.Quote,
+		Source:     q.Source,
+		LatestOnly: q.historyMode() != priceHistoryAll,
 	}
 
 	if q.From != "" {
@@ -115,7 +111,10 @@ func GetPricesHandler(db *gorm.DB, c *gin.Context) {
 		prices = convertToReportCurrency(db, prices, q.ReportCurrency)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"prices": prices})
+	c.JSON(http.StatusOK, gin.H{
+		"prices":      groupPricesByCommodity(prices),
+		"history_mode": q.historyMode(),
+	})
 }
 
 // convertToReportCurrency converts each price's value to the given report
@@ -149,18 +148,28 @@ func convertToReportCurrency(db *gorm.DB, prices []price.Price, reportCurrency s
 	return result
 }
 
-func GetPrices(db *gorm.DB) gin.H {
-	var commodities []string
-	result := db.Model(&posting.Posting{}).Where("commodity != ?", config.DefaultCurrency()).Distinct().Pluck("commodity", &commodities)
-	if result.Error != nil {
-		log.Fatal(result.Error)
+func groupPricesByCommodity(prices []price.Price) map[string][]price.Price {
+	grouped := make(map[string][]price.Price)
+	for _, p := range prices {
+		grouped[p.CommodityName] = append(grouped[p.CommodityName], p)
 	}
-
-	var prices = make(map[string][]price.Price)
-	for _, commodity := range commodities {
-		prices[commodity] = service.GetAllPrices(db, commodity)
+	for commodity := range grouped {
+		sort.Slice(grouped[commodity], func(i, j int) bool {
+			left := grouped[commodity][i]
+			right := grouped[commodity][j]
+			if !left.Date.Equal(right.Date) {
+				return left.Date.After(right.Date)
+			}
+			if left.QuoteCommodity != right.QuoteCommodity {
+				return left.QuoteCommodity < right.QuoteCommodity
+			}
+			if left.Source != right.Source {
+				return left.Source < right.Source
+			}
+			return left.ID > right.ID
+		})
 	}
-	return gin.H{"prices": prices}
+	return grouped
 }
 
 // GetPriceCurrencies returns the distinct quote commodities (currencies) present
@@ -184,6 +193,48 @@ func GetPriceCurrencies(db *gorm.DB, c *gin.Context) {
 	sort.Strings(filtered)
 
 	c.JSON(http.StatusOK, gin.H{"currencies": filtered})
+}
+
+// GetPriceFilters returns the distinct base commodities, quote currencies, and
+// sources present in the prices table for populating the price page filters.
+func GetPriceFilters(db *gorm.DB, c *gin.Context) {
+	var bases []string
+	if err := db.Model(&price.Price{}).Distinct().Pluck("commodity_name", &bases).Error; err != nil {
+		log.WithError(err).Error("GetPriceFilters: base query failed")
+		RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, "failed to query price filters")
+		return
+	}
+
+	var quotes []string
+	if err := db.Model(&price.Price{}).Distinct().Pluck("quote_commodity", &quotes).Error; err != nil {
+		log.WithError(err).Error("GetPriceFilters: quote query failed")
+		RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, "failed to query price filters")
+		return
+	}
+
+	var sources []string
+	if err := db.Model(&price.Price{}).Distinct().Pluck("source", &sources).Error; err != nil {
+		log.WithError(err).Error("GetPriceFilters: source query failed")
+		RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, "failed to query price filters")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"bases":   nonEmptySortedStrings(bases),
+		"quotes":  nonEmptySortedStrings(quotes),
+		"sources": nonEmptySortedStrings(sources),
+	})
+}
+
+func nonEmptySortedStrings(values []string) []string {
+	filtered := make([]string, 0, len(values))
+	for _, value := range values {
+		if value != "" {
+			filtered = append(filtered, value)
+		}
+	}
+	sort.Strings(filtered)
+	return filtered
 }
 
 type AutoCompleteRequest struct {

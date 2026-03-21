@@ -121,6 +121,12 @@ export interface Price {
   source: string;
 }
 
+export interface PriceFilters {
+  bases: string[];
+  quotes: string[];
+  sources: string[];
+}
+
 export interface Networth {
   date: dayjs.Dayjs;
   investmentAmount: number;
@@ -568,6 +574,7 @@ export function ajax(
   route: "/api/liabilities/balance"
 ): Promise<{ liability_breakdowns: LiabilityBreakdown[] }>;
 export function ajax(route: "/api/price"): Promise<{ prices: Record<string, Price[]> }>;
+export function ajax(route: "/api/price/filters"): Promise<PriceFilters>;
 export function ajax(route: "/api/transaction"): Promise<{ transactions: Transaction[] }>;
 export function ajax(
   route: "/api/transaction/balanced"

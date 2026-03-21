@@ -149,13 +149,33 @@ type PriceFilter struct {
 	To time.Time
 	// Source filters by the source field ("journal" or a provider code). Empty = no filter.
 	Source string
+	// LatestOnly returns only the newest matching row per base commodity.
+	LatestOnly bool
 }
 
 // FindFiltered queries the prices table using the given filter and returns
 // results ordered deterministically by (date ASC, commodity_name ASC,
 // quote_commodity ASC, source ASC).
 func FindFiltered(db *gorm.DB, filter PriceFilter) ([]Price, error) {
-	q := db.Order("date ASC, commodity_name ASC, quote_commodity ASC, source ASC")
+	q := applyPriceFilter(db.Model(&Price{}), filter)
+	if filter.LatestOnly {
+		ranked := q.Select(`prices.*, ROW_NUMBER() OVER (
+			PARTITION BY commodity_name
+			ORDER BY date DESC, quote_commodity ASC, source ASC, id DESC
+		) AS row_number`)
+		q = db.Table("(?) as ranked_prices", ranked).
+			Select("id, date, commodity_type, commodity_id, commodity_name, quote_commodity, value, source").
+			Where("row_number = 1")
+	}
+	q = q.Order("date ASC, commodity_name ASC, quote_commodity ASC, source ASC")
+	var prices []Price
+	if err := q.Find(&prices).Error; err != nil {
+		return nil, err
+	}
+	return prices, nil
+}
+
+func applyPriceFilter(q *gorm.DB, filter PriceFilter) *gorm.DB {
 	if filter.Base != "" {
 		q = q.Where("commodity_name = ?", filter.Base)
 	}
@@ -171,11 +191,7 @@ func FindFiltered(db *gorm.DB, filter PriceFilter) ([]Price, error) {
 	if filter.Source != "" {
 		q = q.Where("source = ?", filter.Source)
 	}
-	var prices []Price
-	if err := q.Find(&prices).Error; err != nil {
-		return nil, err
-	}
-	return prices, nil
+	return q
 }
 
 // FindByDateBaseQuote returns the most-recent price on or before date for the
