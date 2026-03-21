@@ -35,9 +35,7 @@ async function lint(editor: EditorView): Promise<Diagnostic[]> {
     const errors: LedgerFileError[] = response.errors ?? [];
     const output: string = response.output ?? "";
 
-    editorState.update((current) =>
-      _.assign({}, current, { errors, output })
-    );
+    editorState.update((current) => _.assign({}, current, { errors, output }));
 
     return _.map(errors, (error) => {
       const lineFrom = doc.line(error.line_from);
