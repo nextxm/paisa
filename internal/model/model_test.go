@@ -246,6 +246,75 @@ func TestUpsertAllByTypeNameAndID_BackfillsEmptyQuote(t *testing.T) {
 	assert.Equal(t, "INR", stored.QuoteCommodity, "empty QuoteCommodity must be backfilled to default")
 }
 
+// TestUpsertAllByTypeNameAndID_CleansUpCompanionRows verifies that when a
+// provider returns companion entries (e.g., exchange-rate rows) alongside main
+// commodity prices, a subsequent upsert correctly removes stale companion rows
+// rather than allowing them to accumulate.
+func TestUpsertAllByTypeNameAndID_CleansUpCompanionRows(t *testing.T) {
+	db := openTestDB(t)
+
+	// Simulate a first Yahoo sync for AAPL: stock prices in USD plus USD→INR exchange rates.
+	firstSync := []*price.Price{
+		{
+			Date:           mustParseDate("2024-01-02"),
+			CommodityType:  config.Stock,
+			CommodityID:    "AAPL",
+			CommodityName:  "Apple",
+			Value:          decimal.NewFromFloat(185.0),
+			QuoteCommodity: "USD",
+		},
+		{
+			Date:           mustParseDate("2024-01-02"),
+			CommodityType:  config.Stock,
+			CommodityID:    "USDINR=X",
+			CommodityName:  "USD",
+			Value:          decimal.NewFromFloat(83.0),
+			QuoteCommodity: "INR",
+			Source:         "com-yahoo",
+		},
+	}
+	require.NoError(t, price.UpsertAllByTypeNameAndID(db, config.Stock, "Apple", "AAPL", firstSync))
+
+	var count int64
+	db.Model(&price.Price{}).Count(&count)
+	assert.Equal(t, int64(2), count, "first sync should insert 2 rows")
+
+	// Simulate a second sync; companion rows from the first sync must be replaced, not doubled.
+	secondSync := []*price.Price{
+		{
+			Date:           mustParseDate("2024-01-03"),
+			CommodityType:  config.Stock,
+			CommodityID:    "AAPL",
+			CommodityName:  "Apple",
+			Value:          decimal.NewFromFloat(186.0),
+			QuoteCommodity: "USD",
+		},
+		{
+			Date:           mustParseDate("2024-01-03"),
+			CommodityType:  config.Stock,
+			CommodityID:    "USDINR=X",
+			CommodityName:  "USD",
+			Value:          decimal.NewFromFloat(83.5),
+			QuoteCommodity: "INR",
+			Source:         "com-yahoo",
+		},
+	}
+	require.NoError(t, price.UpsertAllByTypeNameAndID(db, config.Stock, "Apple", "AAPL", secondSync))
+
+	db.Model(&price.Price{}).Count(&count)
+	assert.Equal(t, int64(2), count, "second sync must replace first sync rows, not accumulate")
+
+	// The exchange rate stored is the one from the second sync.
+	var exRate price.Price
+	require.NoError(t, db.Where("commodity_name = ? AND quote_commodity = ?", "USD", "INR").First(&exRate).Error)
+	assert.True(t, exRate.Value.Equal(decimal.NewFromFloat(83.5)), "exchange rate must reflect the latest sync")
+
+	// Confirm exactly one USD→INR row exists (cleanup worked, no accumulation).
+	var exRateCount int64
+	db.Model(&price.Price{}).Where("commodity_name = ? AND quote_commodity = ?", "USD", "INR").Count(&exRateCount)
+	assert.Equal(t, int64(1), exRateCount, "must be exactly one exchange-rate row after resync")
+}
+
 // TestSyncResult_DefaultValues verifies that a zero-value SyncResult
 // represents a not-yet-run sync with no counts and no failed stage.
 func TestSyncResult_DefaultValues(t *testing.T) {

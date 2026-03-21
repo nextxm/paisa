@@ -46,7 +46,30 @@ func defaultQuoteCommodity() string {
 
 func UpsertAllByTypeNameAndID(db *gorm.DB, commodityType config.CommodityType, commodityName string, commodityID string, prices []*Price) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		err := tx.Delete(&Price{}, "commodity_type = ? and (commodity_id = ? or commodity_name = ?)", commodityType, commodityID, commodityName).Error
+		// Build the complete set of names and IDs to delete.  Providers may
+		// return companion entries (e.g., exchange-rate rows) alongside the
+		// main commodity rows; including them here ensures stale companion
+		// rows are removed on each resync rather than accumulating.
+		nameSet := map[string]struct{}{commodityName: {}}
+		idSet := map[string]struct{}{commodityID: {}}
+		for _, p := range prices {
+			if p.CommodityName != "" {
+				nameSet[p.CommodityName] = struct{}{}
+			}
+			if p.CommodityID != "" {
+				idSet[p.CommodityID] = struct{}{}
+			}
+		}
+		names := make([]string, 0, len(nameSet))
+		for n := range nameSet {
+			names = append(names, n)
+		}
+		ids := make([]string, 0, len(idSet))
+		for id := range idSet {
+			ids = append(ids, id)
+		}
+
+		err := tx.Delete(&Price{}, "commodity_type = ? and (commodity_name IN ? or commodity_id IN ?)", commodityType, names, ids).Error
 		if err != nil {
 			return err
 		}
