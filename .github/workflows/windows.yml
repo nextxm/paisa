@@ -1,6 +1,8 @@
 name: Windows Release
 
 on:
+  workflow_dispatch:
+    
   push:
     branches:
       - ci/windows-*
