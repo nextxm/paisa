@@ -286,6 +286,21 @@
       {/each}
     </div>
   {/if}
+{:else if schema.type === "boolean"}
+  <div class="field is-horizontal">
+    <div class="field-label is-small">
+      <label for="" data-tippy-content={documentation(schema)} class="label">{title}</label>
+    </div>
+    <div class="field-body">
+      <div class="field">
+        <div class="control">
+          <label class="checkbox">
+            <input type="checkbox" bind:checked={value} {disabled} />
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
 {:else if schema.type == "array"}
   <div class="config-header">
     <a
