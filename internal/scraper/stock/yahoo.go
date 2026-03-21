@@ -11,7 +11,6 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/google/btree"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 
@@ -74,15 +73,6 @@ type Response struct {
 	Chart Chart
 }
 
-type ExchangePrice struct {
-	Timestamp int64
-	Close     float64
-}
-
-func (p ExchangePrice) Less(o btree.Item) bool {
-	return p.Timestamp < (o.(ExchangePrice).Timestamp)
-}
-
 func GetHistory(ticker string, commodityName string) ([]*price.Price, error) {
 	log.Info("Fetching stock price history from Yahoo")
 	response, err := getTicker(ticker)
@@ -95,37 +85,50 @@ func GetHistory(ticker string, commodityName string) ([]*price.Price, error) {
 		return nil, fmt.Errorf("Failed to fetch data for %s, is the ticker valid?", ticker)
 	}
 	result := response.Chart.Result[0]
-	needExchangePrice := false
-	var exchangePrice *btree.BTree
+	nativeCurrency := result.Meta.Currency
+	defaultCurrency := config.DefaultCurrency()
+	needExchangePrice := !utils.IsCurrency(nativeCurrency)
 
-	if !utils.IsCurrency(result.Meta.Currency) {
-		needExchangePrice = true
-		exchangeResponse, err := getTicker(fmt.Sprintf("%s%s=X", result.Meta.Currency, config.DefaultCurrency()))
-		if err != nil {
-			return nil, err
-		}
-
-		exchangeResult := exchangeResponse.Chart.Result[0]
-
-		exchangePrice = btree.New(2)
-		for i, t := range exchangeResult.Timestamp {
-			exchangePrice.ReplaceOrInsert(ExchangePrice{Timestamp: t, Close: exchangeResult.Indicators.Quote[0].Close[i]})
-		}
-	}
-
+	// Store stock prices in their native currency.
 	for i, timestamp := range result.Timestamp {
 		date := time.Unix(timestamp, 0)
 		value := result.Indicators.Quote[0].Close[i]
-
-		if needExchangePrice {
-			exchangePrice := utils.BTreeDescendFirstLessOrEqual(exchangePrice, ExchangePrice{Timestamp: timestamp})
-			value = value * exchangePrice.Close
+		p := price.Price{
+			Date:           date,
+			CommodityType:  config.Stock,
+			CommodityID:    ticker,
+			CommodityName:  commodityName,
+			Value:          decimal.NewFromFloat(value),
+			QuoteCommodity: nativeCurrency,
 		}
-
-		price := price.Price{Date: date, CommodityType: config.Stock, CommodityID: ticker, CommodityName: commodityName, Value: decimal.NewFromFloat(value), QuoteCommodity: config.DefaultCurrency()}
-
-		prices = append(prices, &price)
+		prices = append(prices, &p)
 	}
+
+	// When the native currency differs from the default currency, fetch and
+	// store the exchange rate as a separate set of price entries so that the
+	// market-price service can convert native prices to the default currency.
+	if needExchangePrice {
+		exchangeTicker := fmt.Sprintf("%s%s=X", nativeCurrency, defaultCurrency)
+		exchangeResponse, err := getTicker(exchangeTicker)
+		if err != nil {
+			return nil, err
+		}
+		exchangeResult := exchangeResponse.Chart.Result[0]
+		for i, timestamp := range exchangeResult.Timestamp {
+			date := time.Unix(timestamp, 0)
+			ep := price.Price{
+				Date:           date,
+				CommodityType:  config.Stock,
+				CommodityID:    exchangeTicker,
+				CommodityName:  nativeCurrency,
+				Value:          decimal.NewFromFloat(exchangeResult.Indicators.Quote[0].Close[i]),
+				QuoteCommodity: defaultCurrency,
+				Source:         "com-yahoo",
+			}
+			prices = append(prices, &ep)
+		}
+	}
+
 	return prices, nil
 }
 
@@ -171,7 +174,7 @@ func (p *YahooPriceProvider) Label() string {
 }
 
 func (p *YahooPriceProvider) Description() string {
-	return "Supports a large set of stocks, ETFs, mutual funds, currencies, bonds, commodities, and cryptocurrencies. The stock price will be automatically converted to your default currency using the yahoo exchange rate."
+	return "Supports a large set of stocks, ETFs, mutual funds, currencies, bonds, commodities, and cryptocurrencies. Prices are stored in their native currency; exchange rates are saved separately and used for automatic conversion to the default currency."
 }
 
 func (p *YahooPriceProvider) AutoCompleteFields() []price.AutoCompleteField {
