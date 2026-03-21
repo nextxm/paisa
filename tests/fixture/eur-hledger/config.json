@@ -1326,12 +1326,10 @@
       },
       "doctor": {
         "type": "object",
-        "ui:open": true,
         "description": "Doctor configuration",
         "properties": {
           "negative_balance": {
             "type": "object",
-            "ui:open": true,
             "description": "Negative Balance rule: checks that asset account balances never go negative.",
             "properties": {
               "enabled": {
@@ -1357,7 +1355,6 @@
           },
           "non_credit_account": {
             "type": "object",
-            "ui:open": true,
             "description": "Non-Credit Account rule: checks that income accounts never have a debit (positive) entry. Income accounts normally carry negative amounts in ledger notation.",
             "properties": {
               "enabled": {
@@ -1383,7 +1380,6 @@
           },
           "non_debit_account": {
             "type": "object",
-            "ui:open": true,
             "description": "Non-Debit Account rule: checks that expense accounts never have a credit (negative) entry. Expense accounts normally carry positive amounts in ledger notation.",
             "properties": {
               "enabled": {
@@ -1409,7 +1405,6 @@
           },
           "exchange_price_missing": {
             "type": "object",
-            "ui:open": true,
             "description": "Exchange Price Missing rule: checks that non-currency commodities have an exchange price.",
             "properties": {
               "enabled": {
@@ -1438,7 +1433,6 @@
           },
           "unit_price_mismatch": {
             "type": "object",
-            "ui:open": true,
             "description": "Unit Price Mismatch rule: checks that journal prices match prices fetched from external sources.",
             "properties": {
               "enabled": {
@@ -1467,7 +1461,6 @@
           },
           "asset_allocation_missing": {
             "type": "object",
-            "ui:open": true,
             "description": "Asset Allocation Missing rule: checks that all asset accounts are included in an allocation target.",
             "properties": {
               "enabled": {
