@@ -93,3 +93,28 @@ doctor:
 		t.Errorf("UnitPriceMismatch.Enabled = %v, want %v (should default)", cfg.Doctor.UnitPriceMismatch.Enabled, Yes)
 	}
 }
+
+func TestDoctorConfigAllowsNullPatternOnPriceRules(t *testing.T) {
+	err := LoadConfig([]byte(`
+journal_path: /tmp/test.journal
+db_path: /tmp/test.db
+doctor:
+  exchange_price_missing:
+    enabled: "yes"
+    pattern: null
+  unit_price_mismatch:
+    enabled: "yes"
+    pattern: null
+`), "")
+	if err != nil {
+		t.Fatalf("Failed to load config with null patterns on price rules: %v", err)
+	}
+
+	cfg := GetConfig()
+	if cfg.Doctor.ExchangePriceMissing.Pattern != nil {
+		t.Errorf("ExchangePriceMissing.Pattern = %v, want nil", cfg.Doctor.ExchangePriceMissing.Pattern)
+	}
+	if cfg.Doctor.UnitPriceMismatch.Pattern != nil {
+		t.Errorf("UnitPriceMismatch.Pattern = %v, want nil", cfg.Doctor.UnitPriceMismatch.Pattern)
+	}
+}

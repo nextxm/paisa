@@ -11,6 +11,7 @@
     "ui:header"?: string;
     "ui:widget"?: string;
     "ui:order"?: number;
+    "ui:open"?: boolean;
   }
 
   const ICON_MAX_RESULTS = 200;
@@ -27,7 +28,12 @@
 
   export let modalOpen = false;
 
-  let open = depth < 1;
+  let open = false;
+  let openInitialized = false;
+  $: if (!openInitialized && schema) {
+    open = schema["ui:open"] ?? depth < 1;
+    openInitialized = true;
+  }
   $: title = _.startCase(key);
 
   function newItem(schema: any) {
@@ -136,11 +142,11 @@
       <div class="field">
         <div class="control">
           <label class="radio">
-            <input value="yes" bind:group={value} type="radio" name="yes" />
+            <input value="yes" bind:group={value} type="radio" />
             Yes
           </label>
           <label class="radio">
-            <input value="no" bind:group={value} type="radio" name="no" />
+            <input value="no" bind:group={value} type="radio" />
             No
           </label>
         </div>
