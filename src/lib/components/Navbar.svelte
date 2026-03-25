@@ -426,7 +426,12 @@
     {/if}
 
     {#if selectedSubLink?.sankeyPeriodSelector || selectedLink?.sankeyPeriodSelector}
-      <PeriodSelector bind:value={$sankeyPeriod} bind:refDate={$sankeyRefDate} minDate={$dateMin} maxDate={$dateMax} />
+      <PeriodSelector
+        bind:value={$sankeyPeriod}
+        bind:refDate={$sankeyRefDate}
+        minDate={$dateMin}
+        maxDate={$dateMax}
+      />
     {/if}
 
     {#if selectedSubSubLink?.financialYearPicker || selectedSubLink?.financialYearPicker || selectedLink?.financialYearPicker}

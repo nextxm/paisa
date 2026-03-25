@@ -34,8 +34,12 @@
       let url = `/api/sankey?period=${encodeURIComponent(period)}`;
       if (refDate) {
         // Compute explicit from/to dates based on the anchor
-        const start = dayjs(refDate).startOf(period as dayjs.OpUnitType).format("YYYY-MM-DD");
-        const end = dayjs(refDate).endOf(period as dayjs.OpUnitType).format("YYYY-MM-DD");
+        const start = dayjs(refDate)
+          .startOf(period as dayjs.OpUnitType)
+          .format("YYYY-MM-DD");
+        const end = dayjs(refDate)
+          .endOf(period as dayjs.OpUnitType)
+          .format("YYYY-MM-DD");
         url += `&from=${start}&to=${end}`;
       }
       const data = await ajax(url);
@@ -49,7 +53,10 @@
   }
 
   onMount(() => {
-    const store = derived([sankeyPeriod, sankeyRefDate], ([$p, $r]) => ({ period: $p, refDate: $r }));
+    const store = derived([sankeyPeriod, sankeyRefDate], ([$p, $r]) => ({
+      period: $p,
+      refDate: $r
+    }));
     unsubscribe = store.subscribe(({ period, refDate }) => {
       fetchSankey(period, refDate);
     });

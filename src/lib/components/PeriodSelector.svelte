@@ -26,7 +26,7 @@
   }
 
   $: current = refDate ? dayjs(refDate) : dayjs();
-  
+
   $: label = getLabel(value, current);
 
   function getLabel(period: SankeyPeriod, date: dayjs.Dayjs) {
@@ -58,15 +58,30 @@
 
 <div class="is-flex is-align-items-center" style="gap: 0.5rem">
   <BoxedTabs bind:value {options} />
-  
+
   <div class="is-flex is-align-items-center">
-    <button class="button is-small" style="border: none; background: transparent; box-shadow: none;" disabled={!canPrev} on:click={prev}>
+    <button
+      class="button is-small"
+      style="border: none; background: transparent; box-shadow: none;"
+      disabled={!canPrev}
+      on:click={prev}
+    >
       <span class="icon is-small"><i class="fas fa-chevron-left" /></span>
     </button>
-    <a class="has-text-weight-bold has-text-centered has-text-grey-darker is-size-7" style="min-width: 60px;" on:click={reset} aria-label="Reset to current">
+    <a
+      class="has-text-weight-bold has-text-centered has-text-grey-darker is-size-7"
+      style="min-width: 60px;"
+      on:click={reset}
+      aria-label="Reset to current"
+    >
       {label}
     </a>
-    <button class="button is-small" style="border: none; background: transparent; box-shadow: none;" disabled={!canNext || !refDate} on:click={next}>
+    <button
+      class="button is-small"
+      style="border: none; background: transparent; box-shadow: none;"
+      disabled={!canNext || !refDate}
+      on:click={next}
+    >
       <span class="icon is-small"><i class="fas fa-chevron-right" /></span>
     </button>
   </div>
