@@ -1,7 +1,13 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import _ from "lodash";
-  import { ajax, formatCurrency, type SankeyMeta, type SankeyNode, type SankeyLink } from "$lib/utils";
+  import {
+    ajax,
+    formatCurrency,
+    type SankeyMeta,
+    type SankeyNode,
+    type SankeyLink
+  } from "$lib/utils";
   import SankeyDiagram from "$lib/components/SankeyDiagram.svelte";
   import BoxLabel from "$lib/components/BoxLabel.svelte";
   import { dateRange } from "../../../../store";
