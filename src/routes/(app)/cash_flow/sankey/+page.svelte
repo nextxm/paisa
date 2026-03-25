@@ -10,7 +10,11 @@
   } from "$lib/utils";
   import SankeyDiagram from "$lib/components/SankeyDiagram.svelte";
   import BoxLabel from "$lib/components/BoxLabel.svelte";
-  import { sankeyPeriod } from "../../../../persisted_store";
+  import { sankeyPeriod, sankeyRefDate } from "../../../../persisted_store";
+  import { derived } from "svelte/store";
+  import dayjs from "dayjs";
+  import quarterOfYear from "dayjs/plugin/quarterOfYear";
+  dayjs.extend(quarterOfYear);
 
   let nodes: SankeyNode[] = [];
   let links: SankeyLink[] = [];
@@ -20,14 +24,21 @@
   let unsubscribe: (() => void) | undefined;
   let fetchId = 0;
 
-  async function fetchSankey(period: string) {
+  async function fetchSankey(period: string, refDate: string) {
     const id = ++fetchId;
     isLoading = true;
     nodes = [];
     links = [];
     meta = null;
     try {
-      const data = await ajax(`/api/sankey?period=${encodeURIComponent(period)}`);
+      let url = `/api/sankey?period=${encodeURIComponent(period)}`;
+      if (refDate) {
+        // Compute explicit from/to dates based on the anchor
+        const start = dayjs(refDate).startOf(period as dayjs.OpUnitType).format("YYYY-MM-DD");
+        const end = dayjs(refDate).endOf(period as dayjs.OpUnitType).format("YYYY-MM-DD");
+        url += `&from=${start}&to=${end}`;
+      }
+      const data = await ajax(url);
       if (id !== fetchId) return;
       nodes = data.nodes;
       links = data.links;
@@ -38,8 +49,9 @@
   }
 
   onMount(() => {
-    unsubscribe = sankeyPeriod.subscribe((period) => {
-      fetchSankey(period);
+    const store = derived([sankeyPeriod, sankeyRefDate], ([$p, $r]) => ({ period: $p, refDate: $r }));
+    unsubscribe = store.subscribe(({ period, refDate }) => {
+      fetchSankey(period, refDate);
     });
   });
 

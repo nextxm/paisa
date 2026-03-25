@@ -8,7 +8,8 @@
     cashflowIncomeDepth,
     cashflowIncomeDepthAllowed,
     obscure,
-    sankeyPeriod
+    sankeyPeriod,
+    sankeyRefDate
   } from "../../persisted_store";
   import _ from "lodash";
   import { financialYear, forEachFinancialYear, helpUrl, isMobile, now } from "$lib/utils";
@@ -425,7 +426,7 @@
     {/if}
 
     {#if selectedSubLink?.sankeyPeriodSelector || selectedLink?.sankeyPeriodSelector}
-      <PeriodSelector bind:value={$sankeyPeriod} />
+      <PeriodSelector bind:value={$sankeyPeriod} bind:refDate={$sankeyRefDate} minDate={$dateMin} maxDate={$dateMax} />
     {/if}
 
     {#if selectedSubSubLink?.financialYearPicker || selectedSubLink?.financialYearPicker || selectedLink?.financialYearPicker}
