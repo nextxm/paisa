@@ -68,7 +68,8 @@
           help: "recurring",
           monthPicker: true,
           recurringIcons: true
-        }
+        },
+        { label: "Sankey", href: "/sankey" }
       ]
     },
     {

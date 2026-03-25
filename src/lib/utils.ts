@@ -544,6 +544,36 @@ export interface SheetLineResult {
   align?: "left" | "right";
 }
 
+export type SankeyNodeKind = "income" | "asset" | "liability" | "expense" | "equity" | "other";
+
+export interface SankeyNode {
+  id: string;
+  name: string;
+  kind: SankeyNodeKind;
+}
+
+export interface SankeyLink {
+  source: string;
+  target: string;
+  value: number;
+  txnCount: number;
+}
+
+export interface SankeyMeta {
+  from: string;
+  to: string;
+  period: string;
+  currency: string;
+  totalInflow: number;
+  totalOutflow: number;
+}
+
+export interface SankeyResponse {
+  nodes: SankeyNode[];
+  links: SankeyLink[];
+  meta: SankeyMeta;
+}
+
 const tokenKey = "token";
 
 type RequestOptions = RequestInit & {
@@ -644,6 +674,7 @@ export function ajax(route: "/api/budget"): Promise<{
 }>;
 
 export function ajax(route: "/api/cash_flow"): Promise<{ cash_flows: CashFlow[] }>;
+export function ajax(route: "/api/sankey", options?: RequestOptions): Promise<SankeyResponse>;
 export function ajax(
   route: "/api/income_statement"
 ): Promise<{ yearly: Record<string, IncomeStatement> }>;
