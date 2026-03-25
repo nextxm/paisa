@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import _ from "lodash";
   import {
     ajax,
@@ -10,21 +10,41 @@
   } from "$lib/utils";
   import SankeyDiagram from "$lib/components/SankeyDiagram.svelte";
   import BoxLabel from "$lib/components/BoxLabel.svelte";
+  import { sankeyPeriod } from "../../../../persisted_store";
 
   let nodes: SankeyNode[] = [];
   let links: SankeyLink[] = [];
   let meta: SankeyMeta | null = null;
   let isLoading = true;
 
-  onMount(async () => {
+  let unsubscribe: (() => void) | undefined;
+  let fetchId = 0;
+
+  async function fetchSankey(period: string) {
+    const id = ++fetchId;
+    isLoading = true;
+    nodes = [];
+    links = [];
+    meta = null;
     try {
-      const data = await ajax("/api/sankey");
+      const data = await ajax(`/api/sankey?period=${encodeURIComponent(period)}`);
+      if (id !== fetchId) return;
       nodes = data.nodes;
       links = data.links;
       meta = data.meta;
     } finally {
-      isLoading = false;
+      if (id === fetchId) isLoading = false;
     }
+  }
+
+  onMount(() => {
+    unsubscribe = sankeyPeriod.subscribe((period) => {
+      fetchSankey(period);
+    });
+  });
+
+  onDestroy(() => {
+    unsubscribe?.();
   });
 </script>
 
