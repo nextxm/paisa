@@ -8,6 +8,9 @@ export const cashflowExpenseDepth = persisted("cashflowExpenseDepth", 0);
 export const cashflowIncomeDepthAllowed = writable({ min: 1, max: 1 });
 export const cashflowIncomeDepth = persisted("cashflowIncomeDepth", 0);
 
+export type SankeyPeriod = "month" | "quarter" | "year";
+export const sankeyPeriod = persisted<SankeyPeriod>("sankeyPeriod", "month");
+
 export function setCashflowDepthAllowed(expense: number, income: number) {
   cashflowExpenseDepthAllowed.set({ min: 1, max: expense });
   if (get(cashflowExpenseDepth) == 0 || get(cashflowExpenseDepth) > expense) {
