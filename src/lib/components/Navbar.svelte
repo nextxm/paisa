@@ -81,7 +81,8 @@
       children: [
         { label: "Monthly", href: "/monthly", monthPicker: true, dateRangeSelector: true },
         { label: "Yearly", href: "/yearly", financialYearPicker: true },
-        { label: "Budget", href: "/budget", help: "budget", monthPicker: true }
+        { label: "Budget", href: "/budget", help: "budget", monthPicker: true },
+        { label: "Flow", href: "/sankey", dateRangeSelector: true }
       ]
     },
     {
