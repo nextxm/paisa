@@ -7,7 +7,8 @@
   import {
     setCashflowDepthAllowed,
     cashflowExpenseDepth,
-    cashflowIncomeDepth
+    cashflowIncomeDepth,
+    cashflowShowTransfers
   } from "../../../../persisted_store";
   import ZeroState from "$lib/components/ZeroState.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
@@ -47,13 +48,40 @@
     };
   }
 
+  function filterTransfers(graph: Graph): Graph {
+    if (!graph) return graph;
+
+    const nodeById = new Map(graph.nodes.map((n) => [n.id, n]));
+    const isIncomeOrExpenses = (nodeId: number) => {
+      const node = nodeById.get(nodeId);
+      return node != null && (node.name.startsWith("Income") || node.name.startsWith("Expenses"));
+    };
+
+    const filteredLinks = graph.links.filter(
+      (l) => isIncomeOrExpenses(l.source) || isIncomeOrExpenses(l.target)
+    );
+
+    const usedIds = new Set<number>();
+    for (const l of filteredLinks) {
+      usedIds.add(l.source);
+      usedIds.add(l.target);
+    }
+
+    return {
+      nodes: graph.nodes.filter((n) => usedIds.has(n.id)),
+      links: filteredLinks
+    };
+  }
+
   $: if (graph) {
     if (graph[$year] == null) {
       isEmpty = true;
     } else {
-      legends = renderFlow(
-        filter(_.cloneDeep(graph[$year]), $cashflowIncomeDepth, $cashflowExpenseDepth)
-      );
+      let g = filter(_.cloneDeep(graph[$year]), $cashflowIncomeDepth, $cashflowExpenseDepth);
+      if (!$cashflowShowTransfers) {
+        g = filterTransfers(g);
+      }
+      legends = renderFlow(g);
       isEmpty = false;
     }
   }

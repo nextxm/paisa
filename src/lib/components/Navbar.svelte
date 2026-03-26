@@ -7,6 +7,7 @@
     cashflowExpenseDepthAllowed,
     cashflowIncomeDepth,
     cashflowIncomeDepthAllowed,
+    cashflowShowTransfers,
     obscure,
     sankeyPeriod,
     sankeyRefDate
@@ -389,7 +390,7 @@
       </div>
     {/if}
 
-    {#if selectedSubLink?.maxDepthSelector && ($cashflowExpenseDepthAllowed.max > 1 || $cashflowIncomeDepthAllowed.max > 1)}
+    {#if selectedSubLink?.maxDepthSelector}
       <div class="dropdown is-right is-hoverable">
         <div class="dropdown-trigger">
           <button class="button is-small" aria-haspopup="true">
@@ -400,16 +401,22 @@
         </div>
         <div class="dropdown-menu" role="menu">
           <div class="dropdown-content px-2 py-2">
-            <InputRange
-              label="Expenses"
-              bind:value={$cashflowExpenseDepth}
-              allowed={$cashflowExpenseDepthAllowed}
-            />
-            <InputRange
-              label="Income"
-              bind:value={$cashflowIncomeDepth}
-              allowed={$cashflowIncomeDepthAllowed}
-            />
+            {#if $cashflowExpenseDepthAllowed.max > 1 || $cashflowIncomeDepthAllowed.max > 1}
+              <InputRange
+                label="Expenses"
+                bind:value={$cashflowExpenseDepth}
+                allowed={$cashflowExpenseDepthAllowed}
+              />
+              <InputRange
+                label="Income"
+                bind:value={$cashflowIncomeDepth}
+                allowed={$cashflowIncomeDepthAllowed}
+              />
+            {/if}
+            <label class="checkbox is-size-7 mt-1 ml-1">
+              <input type="checkbox" bind:checked={$cashflowShowTransfers} />
+              Show Transfers
+            </label>
           </div>
         </div>
       </div>
