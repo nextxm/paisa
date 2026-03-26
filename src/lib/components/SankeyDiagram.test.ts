@@ -92,7 +92,8 @@ describe("SankeyDiagram – TypeScript interfaces", () => {
       period: "month",
       currency: "USD",
       totalInflow: 5000,
-      totalOutflow: 3000
+      totalOutflow: 3000,
+      hasUnconvertible: false
     };
     const response: SankeyResponse = {
       nodes: [{ id: "Income", name: "Income", kind: "income" }],
@@ -114,7 +115,8 @@ describe("SankeyDiagram – TypeScript interfaces", () => {
         period: "month",
         currency: "USD",
         totalInflow: 0,
-        totalOutflow: 0
+        totalOutflow: 0,
+        hasUnconvertible: false
       }
     };
     expect(response.nodes).toHaveLength(0);

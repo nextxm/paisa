@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/model/posting"
+	"github.com/ananthakumaran/paisa/internal/service"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
@@ -305,11 +306,15 @@ func TestGetSankeyHandler_MultiCurrency(t *testing.T) {
 	loadTestConfig(t, false)
 	db := openTestDB(t)
 
-	// Seed exchange rate: 1 CAD = 60 INR (so 1 INR = 1/60 CAD)
+	// Reset the rate cache so prices seeded below are picked up by GetRate.
+	service.ClearRateCache()
+	t.Cleanup(service.ClearRateCache)
+
+	// Seed exchange rate: 1 CAD = 4 INR (so 1 INR = 0.25 CAD, exact decimal reciprocal)
 	utils.SetNow("2024-03-15")
 	defer utils.UnsetNow()
 
-	rate := decimal.NewFromFloat(60)
+	rate := decimal.NewFromInt(4)
 	require.NoError(t, db.Exec("INSERT INTO prices (date, commodity_name, quote_commodity, value, commodity_type) VALUES (?, ?, ?, ?, ?)",
 		parseTestDay("2024-03-01"), "CAD", "INR", rate, "manual").Error)
 
@@ -338,10 +343,10 @@ func TestGetSankeyHandler_MultiCurrency(t *testing.T) {
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 
 	// The unknown currency is zeroed out and dropped.
-	// 60,000 INR -> CAD = 60,000 / 60 = 1,000 CAD.
+	// 60,000 INR -> CAD = 60,000 * 0.25 = 15,000 CAD (1 CAD = 4 INR, so 1 INR = 0.25 CAD).
 	assert.Len(t, resp.Links, 1, "Only the convertible flow should remain")
-	assert.True(t, resp.Links[0].Value.Equal(decimal.NewFromFloat(1000)), "60k INR should become 1k CAD")
-	assert.True(t, resp.Meta.TotalInflow.Equal(decimal.NewFromFloat(1000)))
+	assert.True(t, resp.Links[0].Value.Equal(decimal.NewFromFloat(15000)), "60k INR should become 15k CAD")
+	assert.True(t, resp.Meta.TotalInflow.Equal(decimal.NewFromFloat(15000)))
 }
 
 // TestGetSankeyHandler_PeriodDefault verifies that omitting all params returns
