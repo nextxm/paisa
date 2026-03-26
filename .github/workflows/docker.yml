@@ -1,8 +1,9 @@
 name: Docker Image Release
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - ci/docker-*
+    #branches:
+     # - ci/docker-*
     tags:
       - '*'
 jobs:
