@@ -16,12 +16,12 @@ jobs:
     strategy:
       matrix:
         include:
-          # - file: Dockerfile
-          #   suffix: ""
-          # - file: Dockerfile.hledger
-          #   suffix: "-hledger"
-          # - file: Dockerfile.beancount
-          #   suffix: "-beancount"
+          - file: Dockerfile
+            suffix: ""
+          - file: Dockerfile.hledger
+            suffix: "-hledger"
+          - file: Dockerfile.beancount
+            suffix: "-beancount"
           - file: Dockerfile.all
             suffix: "-all"
     steps:
