@@ -309,6 +309,15 @@ func GetSankeyHandler(db *gorm.DB, c *gin.Context) {
 		Where("date <= ?", to).
 		All()
 
+	currency := q.Currency
+	if currency == "" {
+		currency = config.DefaultCurrency()
+	}
+
+	if currency != "" && currency != config.DefaultCurrency() {
+		postings = convertPostingsToReportCurrency(db, postings, currency)
+	}
+
 	nodes, links := computeSankeyGraph(postings)
 
 	// Derive totals from links for the meta block.
@@ -323,11 +332,6 @@ func GetSankeyHandler(db *gorm.DB, c *gin.Context) {
 		if dstKind == SankeyKindExpense {
 			totalOutflow = totalOutflow.Add(l.Value)
 		}
-	}
-
-	currency := q.Currency
-	if currency == "" {
-		currency = config.DefaultCurrency()
 	}
 
 	c.JSON(http.StatusOK, SankeyResponse{
