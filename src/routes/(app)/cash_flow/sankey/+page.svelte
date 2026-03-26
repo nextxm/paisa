@@ -9,6 +9,7 @@
     type SankeyLink,
     type SankeyNodeKind
   } from "$lib/utils";
+  import * as toast from "bulma-toast";
   import SankeyDiagram from "$lib/components/SankeyDiagram.svelte";
   import BoxLabel from "$lib/components/BoxLabel.svelte";
   import { sankeyPeriod, sankeyRefDate } from "../../../../persisted_store";
@@ -48,6 +49,16 @@
       nodes = data.nodes;
       links = data.links;
       meta = data.meta;
+
+      if (meta && meta.hasUnconvertible) {
+        toast.toast({
+          message:
+            "Unable to convert some flows due to missing FX rates. These flows have been excluded.",
+          type: "is-warning",
+          duration: 5000,
+          position: "bottom-center"
+        });
+      }
     } finally {
       if (id === fetchId) isLoading = false;
     }
