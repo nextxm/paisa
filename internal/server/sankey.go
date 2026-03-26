@@ -10,6 +10,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/transaction"
 	"github.com/ananthakumaran/paisa/internal/query"
+	"github.com/ananthakumaran/paisa/internal/service"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/lo"
@@ -237,6 +238,28 @@ func computeSankeyGraph(postings []posting.Posting) ([]SankeyNode, []SankeyLink)
 	return nodes, links
 }
 
+// normalizeSankeyCurrency converts each posting's Amount from its native Commodity
+// to the target currency using historical FX rates.
+func normalizeSankeyCurrency(db *gorm.DB, postings []posting.Posting, targetCurrency string) []posting.Posting {
+	for i, p := range postings {
+		if p.Commodity == "" || p.Commodity == targetCurrency {
+			continue
+		}
+		
+		rate, ok := service.GetRate(db, p.Commodity, targetCurrency, p.Date)
+		if !ok {
+			// Fallback: If no FX rate exists on or before the transaction date,
+			// try to fetch the most recent (latest) known rate instead of skipping.
+			rate, ok = service.GetRate(db, p.Commodity, targetCurrency, utils.EndOfToday())
+		}
+		
+		if ok {
+			postings[i].Amount = p.Amount.Mul(rate)
+		}
+	}
+	return postings
+}
+
 // GetSankeyHandler handles GET /api/sankey.
 //
 // Query parameters (all optional):
@@ -314,9 +337,7 @@ func GetSankeyHandler(db *gorm.DB, c *gin.Context) {
 		currency = config.DefaultCurrency()
 	}
 
-	if currency != "" && currency != config.DefaultCurrency() {
-		postings = convertPostingsToReportCurrency(db, postings, currency)
-	}
+	postings = normalizeSankeyCurrency(db, postings, currency)
 
 	nodes, links := computeSankeyGraph(postings)
 
