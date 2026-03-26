@@ -245,14 +245,14 @@ func normalizeSankeyCurrency(db *gorm.DB, postings []posting.Posting, targetCurr
 		if p.Commodity == "" || p.Commodity == targetCurrency {
 			continue
 		}
-		
+
 		rate, ok := service.GetRate(db, p.Commodity, targetCurrency, p.Date)
 		if !ok {
 			// Fallback: If no FX rate exists on or before the transaction date,
 			// try to fetch the most recent (latest) known rate instead of skipping.
 			rate, ok = service.GetRate(db, p.Commodity, targetCurrency, utils.EndOfToday())
 		}
-		
+
 		if ok {
 			postings[i].Amount = p.Amount.Mul(rate)
 		}
