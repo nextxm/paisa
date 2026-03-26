@@ -106,14 +106,14 @@
     const finalLinks: SankeyLink[] = [];
     for (const [key, value] of linkMap.entries()) {
       const [src, tgt] = key.split("\0");
-      
+
       if (!nodeSet.has(src)) {
         nodeSet.set(src, rawNodes.find((n) => n.id.startsWith(src))?.kind || "other");
       }
       if (!nodeSet.has(tgt)) {
         nodeSet.set(tgt, rawNodes.find((n) => n.id.startsWith(tgt))?.kind || "other");
       }
-      
+
       // Use 0 for txnCount as it's aggregated and we don't need it specifically
       finalLinks.push({ source: src, target: tgt, value, txnCount: 0 });
     }
@@ -170,7 +170,10 @@
               <div class="level-item">
                 <div class="field is-horizontal">
                   <div class="field-label is-normal mr-2">
-                    <label class="label has-text-weight-normal is-size-7" style="white-space: nowrap;">Account Depth</label>
+                    <label
+                      class="label has-text-weight-normal is-size-7"
+                      style="white-space: nowrap;">Account Depth</label
+                    >
                   </div>
                   <div class="field-body">
                     <div class="field">
