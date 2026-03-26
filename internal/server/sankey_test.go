@@ -298,6 +298,52 @@ func TestGetSankeyHandler_WithData(t *testing.T) {
 		"totalOutflow must equal the expense flow")
 }
 
+// TestGetSankeyHandler_MultiCurrency verifies that the Sankey handler converts
+// native commodities to the target currency when specified, and zeros-out
+// unconvertible flows.
+func TestGetSankeyHandler_MultiCurrency(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+
+	// Seed exchange rate: 1 CAD = 60 INR (so 1 INR = 1/60 CAD)
+	utils.SetNow("2024-03-15")
+	defer utils.UnsetNow()
+
+	rate := decimal.NewFromFloat(60)
+	require.NoError(t, db.Exec("INSERT INTO prices (date, commodity_name, quote_commodity, value, commodity_type) VALUES (?, ?, ?, ?, ?)",
+		parseTestDay("2024-03-01"), "CAD", "INR", rate, "manual").Error)
+
+	seedPostings(t, db, []posting.Posting{
+		// A transaction in INR: 60,000 INR
+		{TransactionID: "tx1", Date: parseTestDay("2024-03-05"), Account: "Income:Salary",
+			Amount: decimal.NewFromFloat(-60000), Commodity: "INR"},
+		{TransactionID: "tx1", Date: parseTestDay("2024-03-05"), Account: "Assets:Checking",
+			Amount: decimal.NewFromFloat(60000), Commodity: "INR"},
+		// A transaction in an unknown currency
+		{TransactionID: "tx2", Date: parseTestDay("2024-03-10"), Account: "Assets:Checking",
+			Amount: decimal.NewFromFloat(-500), Commodity: "UNKNOWN"},
+		{TransactionID: "tx2", Date: parseTestDay("2024-03-10"), Account: "Expenses:Magic",
+			Amount: decimal.NewFromFloat(500), Commodity: "UNKNOWN"},
+	})
+	r := buildSankeyRouter(t, db)
+
+	// Fetch Sankey in CAD
+	req := httptest.NewRequest(http.MethodGet, "/api/sankey?from=2024-03-01&to=2024-03-31&currency=CAD", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var resp SankeyResponse
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
+
+	// The unknown currency is zeroed out and dropped.
+	// 60,000 INR -> CAD = 60,000 / 60 = 1,000 CAD.
+	assert.Len(t, resp.Links, 1, "Only the convertible flow should remain")
+	assert.True(t, resp.Links[0].Value.Equal(decimal.NewFromFloat(1000)), "60k INR should become 1k CAD")
+	assert.True(t, resp.Meta.TotalInflow.Equal(decimal.NewFromFloat(1000)))
+}
+
 // TestGetSankeyHandler_PeriodDefault verifies that omitting all params returns
 // a response whose meta reflects the current month period.
 func TestGetSankeyHandler_PeriodDefault(t *testing.T) {

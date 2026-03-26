@@ -59,12 +59,13 @@ type SankeyLink struct {
 
 // SankeyMeta holds request metadata echoed back in the response.
 type SankeyMeta struct {
-	From         string          `json:"from"`
-	To           string          `json:"to"`
-	Period       string          `json:"period"`
-	Currency     string          `json:"currency"`
-	TotalInflow  decimal.Decimal `json:"totalInflow"`
-	TotalOutflow decimal.Decimal `json:"totalOutflow"`
+	From             string          `json:"from"`
+	To               string          `json:"to"`
+	Period           string          `json:"period"`
+	Currency         string          `json:"currency"`
+	TotalInflow      decimal.Decimal `json:"totalInflow"`
+	TotalOutflow     decimal.Decimal `json:"totalOutflow"`
+	HasUnconvertible bool            `json:"hasUnconvertible"`
 }
 
 // SankeyResponse is the full payload returned by GET /api/sankey.
@@ -240,24 +241,28 @@ func computeSankeyGraph(postings []posting.Posting) ([]SankeyNode, []SankeyLink)
 
 // normalizeSankeyCurrency converts each posting's Amount from its native Commodity
 // to the target currency using historical FX rates.
-func normalizeSankeyCurrency(db *gorm.DB, postings []posting.Posting, targetCurrency string) []posting.Posting {
+func normalizeSankeyCurrency(db *gorm.DB, postings []posting.Posting, targetCurrency string) ([]posting.Posting, bool) {
+	hasUnconvertible := false
 	for i, p := range postings {
 		if p.Commodity == "" || p.Commodity == targetCurrency {
 			continue
 		}
-		
+
 		rate, ok := service.GetRate(db, p.Commodity, targetCurrency, p.Date)
 		if !ok {
 			// Fallback: If no FX rate exists on or before the transaction date,
 			// try to fetch the most recent (latest) known rate instead of skipping.
 			rate, ok = service.GetRate(db, p.Commodity, targetCurrency, utils.EndOfToday())
 		}
-		
+
 		if ok {
 			postings[i].Amount = p.Amount.Mul(rate)
+		} else {
+			postings[i].Amount = decimal.Zero
+			hasUnconvertible = true
 		}
 	}
-	return postings
+	return postings, hasUnconvertible
 }
 
 // GetSankeyHandler handles GET /api/sankey.
@@ -337,7 +342,7 @@ func GetSankeyHandler(db *gorm.DB, c *gin.Context) {
 		currency = config.DefaultCurrency()
 	}
 
-	postings = normalizeSankeyCurrency(db, postings, currency)
+	postings, hasUnconvertible := normalizeSankeyCurrency(db, postings, currency)
 
 	nodes, links := computeSankeyGraph(postings)
 
@@ -359,12 +364,13 @@ func GetSankeyHandler(db *gorm.DB, c *gin.Context) {
 		Nodes: nodes,
 		Links: links,
 		Meta: SankeyMeta{
-			From:         from.Format(sankeyDateLayout),
-			To:           to.Format(sankeyDateLayout),
-			Period:       period,
-			Currency:     currency,
-			TotalInflow:  totalInflow,
-			TotalOutflow: totalOutflow,
+			From:             from.Format(sankeyDateLayout),
+			To:               to.Format(sankeyDateLayout),
+			Period:           period,
+			Currency:         currency,
+			TotalInflow:      totalInflow,
+			TotalOutflow:     totalOutflow,
+			HasUnconvertible: hasUnconvertible,
 		},
 	})
 }

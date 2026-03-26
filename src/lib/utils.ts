@@ -566,6 +566,7 @@ export interface SankeyMeta {
   currency: string;
   totalInflow: number;
   totalOutflow: number;
+  hasUnconvertible: boolean;
 }
 
 export interface SankeyResponse {
