@@ -75,7 +75,7 @@ func UpsertAllByTypeNameAndID(db *gorm.DB, commodityType config.CommodityType, c
 		}
 
 		dc := defaultQuoteCommodity()
-		for _, price := range prices {
+		for _, price := range deduplicatePricePointers(prices) {
 			if price.QuoteCommodity == "" {
 				price.QuoteCommodity = dc
 			}
@@ -89,25 +89,53 @@ func UpsertAllByTypeNameAndID(db *gorm.DB, commodityType config.CommodityType, c
 	})
 }
 
-// deduplicatePrices returns a new slice with only the last price seen for each
-// (CommodityName, Date, QuoteCommodity) triple.  Ledger CLIs that infer
-// implicit prices from transaction cost annotations (e.g. hledger
-// --infer-market-prices) can emit multiple identical entries for the same
-// date; keeping only one is safe because they carry the same value.
-func deduplicatePrices(prices []Price) []Price {
+// deduplicatePricePointers returns a new slice with only the last price seen
+// for each unique DB key tuple. Providers can emit duplicate rows for the same
+// (commodity_type, date, commodity_name, quote_commodity) combination in a
+// single fetch; keeping only the last row avoids violating the unique index
+// while preserving the latest provider value.
+func deduplicatePricePointers(prices []*Price) []*Price {
 	type key struct {
-		name  string
-		date  time.Time
-		quote string
+		commodityType config.CommodityType
+		name          string
+		date          time.Time
+		quote         string
 	}
-	seen := make(map[key]struct{}, len(prices))
-	out := make([]Price, 0, len(prices))
+	indexByKey := make(map[key]int, len(prices))
+	out := make([]*Price, 0, len(prices))
 	for _, p := range prices {
-		k := key{p.CommodityName, p.Date, p.QuoteCommodity}
-		if _, dup := seen[k]; dup {
+		k := key{p.CommodityType, p.CommodityName, p.Date, p.QuoteCommodity}
+		if idx, ok := indexByKey[k]; ok {
+			out[idx] = p
 			continue
 		}
-		seen[k] = struct{}{}
+		indexByKey[k] = len(out)
+		out = append(out, p)
+	}
+	return out
+}
+
+// deduplicatePrices returns a new slice with only the last price seen for each
+// DB key tuple. Ledger CLIs that infer implicit prices from transaction cost
+// annotations (e.g. hledger --infer-market-prices) can emit multiple
+// identical entries for the same date; keeping only the last one avoids
+// duplicate inserts while preserving the final observed value.
+func deduplicatePrices(prices []Price) []Price {
+	type key struct {
+		commodityType config.CommodityType
+		name          string
+		date          time.Time
+		quote         string
+	}
+	indexByKey := make(map[key]int, len(prices))
+	out := make([]Price, 0, len(prices))
+	for _, p := range prices {
+		k := key{p.CommodityType, p.CommodityName, p.Date, p.QuoteCommodity}
+		if idx, dup := indexByKey[k]; dup {
+			out[idx] = p
+			continue
+		}
+		indexByKey[k] = len(out)
 		out = append(out, p)
 	}
 	return out

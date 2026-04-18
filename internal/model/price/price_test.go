@@ -20,6 +20,7 @@ func openTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	require.NoError(t, err)
 	require.NoError(t, db.AutoMigrate(&Price{}))
+	require.NoError(t, db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_prices_type_date_base_quote ON prices(commodity_type, date, commodity_name, quote_commodity)").Error)
 	return db
 }
 
@@ -172,4 +173,38 @@ func TestFindFiltered_LatestOnly(t *testing.T) {
 	assert.Equal(t, "EUR", prices[0].CommodityName)
 	assert.Equal(t, "USD", prices[1].CommodityName)
 	assert.Equal(t, mustParseDate("2024-06-01"), prices[1].Date)
+}
+
+// TestUpsertAllByTypeNameAndID_DeduplicatesProviderBatch verifies that a
+// single provider sync can include duplicate rows for the same DB key without
+// tripping the production unique index.
+func TestUpsertAllByTypeNameAndID_DeduplicatesProviderBatch(t *testing.T) {
+	db := openTestDB(t)
+	prices := []*Price{
+		{
+			Date:           mustParseDate("2003-12-01"),
+			CommodityType:  config.Stock,
+			CommodityID:    "USDINR=X",
+			CommodityName:  "USD",
+			QuoteCommodity: "INR",
+			Value:          decimal.NewFromFloat(45.70),
+			Source:         "com-yahoo",
+		},
+		{
+			Date:           mustParseDate("2003-12-01"),
+			CommodityType:  config.Stock,
+			CommodityID:    "USDINR=X",
+			CommodityName:  "USD",
+			QuoteCommodity: "INR",
+			Value:          decimal.NewFromFloat(45.71),
+			Source:         "com-yahoo",
+		},
+	}
+
+	require.NoError(t, UpsertAllByTypeNameAndID(db, config.Stock, "QQQ", "QQQ", prices))
+
+	var stored []Price
+	require.NoError(t, db.Where("commodity_name = ? AND quote_commodity = ?", "USD", "INR").Find(&stored).Error)
+	require.Len(t, stored, 1)
+	assert.True(t, stored[0].Value.Equal(decimal.NewFromFloat(45.71)))
 }
