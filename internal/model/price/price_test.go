@@ -88,7 +88,7 @@ func TestFindFiltered_ByQuote(t *testing.T) {
 func TestFindFiltered_BySource(t *testing.T) {
 	db := openTestDB(t)
 	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0)
-	seedPrice(t, db, "USD", "INR", "com-yahoo", "2024-01-01", 82.5)
+	seedPrice(t, db, "USD", "INR", "com-yahoo", "2024-01-02", 82.5)
 
 	prices, err := FindFiltered(db, PriceFilter{Source: "journal"})
 	require.NoError(t, err)
@@ -115,10 +115,11 @@ func TestFindFiltered_DateRange(t *testing.T) {
 }
 
 // TestFindFiltered_DeterministicOrder verifies that results are ordered by
-// (date ASC, commodity_name ASC, quote_commodity ASC, source ASC).
+// (date ASC, commodity_name ASC, quote_commodity ASC, source ASC) using only
+// rows that are valid under the production unique index.
 func TestFindFiltered_DeterministicOrder(t *testing.T) {
 	db := openTestDB(t)
-	seedPrice(t, db, "USD", "INR", "provider", "2024-01-01", 82.0)
+	seedPrice(t, db, "USD", "EUR", "provider", "2024-01-01", 0.92)
 	seedPrice(t, db, "EUR", "INR", "journal", "2024-01-01", 90.0)
 	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0)
 
@@ -126,12 +127,12 @@ func TestFindFiltered_DeterministicOrder(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, prices, 3)
 
-	// EUR before USD (commodity_name ASC), then USD-journal before USD-provider (source ASC).
+	// EUR before USD (commodity_name ASC), then USD/EUR before USD/INR (quote_commodity ASC).
 	assert.Equal(t, "EUR", prices[0].CommodityName)
 	assert.Equal(t, "USD", prices[1].CommodityName)
-	assert.Equal(t, "journal", prices[1].Source)
+	assert.Equal(t, "EUR", prices[1].QuoteCommodity)
 	assert.Equal(t, "USD", prices[2].CommodityName)
-	assert.Equal(t, "provider", prices[2].Source)
+	assert.Equal(t, "INR", prices[2].QuoteCommodity)
 }
 
 // TestFindFiltered_BaseAndQuoteCombined verifies that combining base and quote
