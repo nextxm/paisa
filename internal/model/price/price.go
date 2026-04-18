@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/google/btree"
@@ -79,7 +80,10 @@ func UpsertAllByTypeNameAndID(db *gorm.DB, commodityType config.CommodityType, c
 			if price.QuoteCommodity == "" {
 				price.QuoteCommodity = dc
 			}
-			err := tx.Create(price).Error
+			err := tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "commodity_type"}, {Name: "date"}, {Name: "commodity_name"}, {Name: "quote_commodity"}},
+				UpdateAll: true,
+			}).Create(price).Error
 			if err != nil {
 				return err
 			}
@@ -98,13 +102,14 @@ func deduplicatePricePointers(prices []*Price) []*Price {
 	type key struct {
 		commodityType config.CommodityType
 		name          string
-		date          time.Time
+		unix          int64
 		quote         string
 	}
 	indexByKey := make(map[key]int, len(prices))
 	out := make([]*Price, 0, len(prices))
 	for _, p := range prices {
-		k := key{p.CommodityType, p.CommodityName, p.Date, p.QuoteCommodity}
+		p.Date = p.Date.UTC().Truncate(time.Second)
+		k := key{p.CommodityType, p.CommodityName, p.Date.Unix(), p.QuoteCommodity}
 		if idx, ok := indexByKey[k]; ok {
 			out[idx] = p
 			continue
@@ -124,19 +129,20 @@ func deduplicatePrices(prices []Price) []Price {
 	type key struct {
 		commodityType config.CommodityType
 		name          string
-		date          time.Time
+		unix          int64
 		quote         string
 	}
 	indexByKey := make(map[key]int, len(prices))
 	out := make([]Price, 0, len(prices))
-	for _, p := range prices {
-		k := key{p.CommodityType, p.CommodityName, p.Date, p.QuoteCommodity}
+	for i := range prices {
+		prices[i].Date = prices[i].Date.UTC().Truncate(time.Second)
+		k := key{prices[i].CommodityType, prices[i].CommodityName, prices[i].Date.Unix(), prices[i].QuoteCommodity}
 		if idx, dup := indexByKey[k]; dup {
-			out[idx] = p
+			out[idx] = prices[i]
 			continue
 		}
 		indexByKey[k] = len(out)
-		out = append(out, p)
+		out = append(out, prices[i])
 	}
 	return out
 }
@@ -154,7 +160,10 @@ func UpsertAllByType(db *gorm.DB, commodityType config.CommodityType, prices []P
 			}
 		}
 		for _, price := range deduplicatePrices(prices) {
-			err := tx.Create(&price).Error
+			err := tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "commodity_type"}, {Name: "date"}, {Name: "commodity_name"}, {Name: "quote_commodity"}},
+				UpdateAll: true,
+			}).Create(&price).Error
 			if err != nil {
 				return err
 			}
