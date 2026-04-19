@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/ananthakumaran/paisa/internal/accounting"
@@ -216,6 +217,7 @@ func ruleAllocationTargetMissingAssetAccounts(db *gorm.DB) []error {
 		args[i] = p
 	}
 	db.Model(&posting.Posting{}).Where(strings.Join(conditions, " or "), args...).Distinct().Pluck("Account", &accounts)
+	sort.Strings(accounts)
 
 	ignoredAccounts := make([]string, 0)
 	for _, account := range accounts {

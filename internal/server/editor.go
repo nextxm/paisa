@@ -8,6 +8,7 @@ import (
 
 	"os"
 
+	"github.com/ananthakumaran/paisa/internal/accounting"
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/ledger"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
@@ -27,12 +28,13 @@ type LedgerFile struct {
 }
 
 func GetFiles(db *gorm.DB) gin.H {
-	var accounts []string
+	accounts := accounting.AllAccounts(db)
 	var payees []string
 	var commodities []string
-	db.Model(&posting.Posting{}).Distinct().Pluck("Account", &accounts)
 	db.Model(&posting.Posting{}).Distinct().Pluck("Payee", &payees)
 	db.Model(&posting.Posting{}).Distinct().Pluck("Commodity", &commodities)
+	sort.Strings(payees)
+	sort.Strings(commodities)
 
 	path := config.GetJournalPath()
 
