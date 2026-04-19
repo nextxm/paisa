@@ -321,17 +321,67 @@ func lookupDirectRate(base, quote string, date time.Time) (price.Price, bool) {
 	return p, true
 }
 
-// lookupRateBetween resolves the rate from c1 to c2 by trying the direct pair
-// first and then the inverse pair.  It is used both for the initial direct/inverse
-// resolution in GetRate and for computing each leg of a one-hop cross rate.
-func lookupRateBetween(c1, c2 string, date time.Time) (decimal.Decimal, bool) {
+// ResolutionType identifies how an exchange rate was resolved.
+type ResolutionType string
+
+const (
+	ResolutionDirect  ResolutionType = "direct"
+	ResolutionInverse ResolutionType = "inverse"
+	ResolutionCross   ResolutionType = "cross"
+)
+
+// ResolvedRate holds the computed exchange rate and metadata about how it was resolved.
+type ResolvedRate struct {
+	Rate           decimal.Decimal `json:"rate"`
+	ResolutionType ResolutionType  `json:"resolution_type"`
+	Anchor         string          `json:"anchor,omitempty"`
+}
+
+// lookupRateBetweenDetailed resolves the rate from c1 to c2 by trying the direct pair
+// first and then the inverse pair.  It returns metadata about which leg was found.
+func lookupRateBetweenDetailed(c1, c2 string, date time.Time) (decimal.Decimal, ResolutionType, bool) {
 	if p, ok := lookupDirectRate(c1, c2, date); ok {
-		return p.Value, true
+		return p.Value, ResolutionDirect, true
 	}
 	if p, ok := lookupDirectRate(c2, c1, date); ok && !p.Value.IsZero() {
-		return decimal.NewFromInt(1).Div(p.Value), true
+		return decimal.NewFromInt(1).Div(p.Value), ResolutionInverse, true
 	}
-	return decimal.Zero, false
+	return decimal.Zero, "", false
+}
+
+// GetRateDetails resolves the exchange rate that converts one unit of base into quote
+// on the given date, returning metadata about the resolution path.
+func GetRateDetails(db *gorm.DB, base, quote string, date time.Time) (ResolvedRate, bool) {
+	if base == quote {
+		return ResolvedRate{Rate: decimal.NewFromInt(1), ResolutionType: ResolutionDirect}, true
+	}
+
+	rcache.Do(func() { loadRateCache(db) })
+
+	// 1. Direct or Inverse pair.
+	if rate, resType, ok := lookupRateBetweenDetailed(base, quote, date); ok {
+		return ResolvedRate{Rate: rate, ResolutionType: resType}, true
+	}
+
+	// 2. One-hop cross via each anchor currency.
+	if config.IsMultiCurrencyPricesEnabled() {
+		for _, anchor := range anchorCurrencies() {
+			if anchor == base || anchor == quote {
+				continue
+			}
+			r1, _, ok1 := lookupRateBetweenDetailed(base, anchor, date)
+			r2, _, ok2 := lookupRateBetweenDetailed(anchor, quote, date)
+			if ok1 && ok2 {
+				return ResolvedRate{
+					Rate:           r1.Mul(r2),
+					ResolutionType: ResolutionCross,
+					Anchor:         anchor,
+				}, true
+			}
+		}
+	}
+
+	return ResolvedRate{}, false
 }
 
 // anchorCurrencies returns the ordered list of intermediate currencies used
@@ -360,38 +410,7 @@ func anchorCurrencies() []string {
 // Returns (rate, true) when a rate can be resolved, or (decimal.Zero, false)
 // when no matching price data exists.
 func GetRate(db *gorm.DB, base, quote string, date time.Time) (decimal.Decimal, bool) {
-	if base == quote {
-		return decimal.NewFromInt(1), true
-	}
-
-	rcache.Do(func() { loadRateCache(db) })
-
-	// 1. Direct pair.
-	if rate, ok := lookupRateBetween(base, quote, date); ok {
-		return rate, true
-	}
-
-	// 2 & 3 are handled by lookupRateBetween already for the direct and
-	// inverse cases.  Now attempt one-hop cross via each anchor currency
-	// (only when the multi-currency feature flag is on).
-	if config.IsMultiCurrencyPricesEnabled() {
-		for _, anchor := range anchorCurrencies() {
-			if anchor == base || anchor == quote {
-				continue
-			}
-			r1, ok1 := lookupRateBetween(base, anchor, date)
-			r2, ok2 := lookupRateBetween(anchor, quote, date)
-			if ok1 && ok2 {
-				return r1.Mul(r2), true
-			}
-		}
-	}
-
-	log.WithFields(log.Fields{
-		"base":  base,
-		"quote": quote,
-		"date":  date.Format("2006-01-02"),
-	}).Debug("GetRate: no price data found for pair")
-
-	return decimal.Zero, false
+	res, ok := GetRateDetails(db, base, quote, date)
+	return res.Rate, ok
 }
+
