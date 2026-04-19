@@ -31,7 +31,7 @@ parser:
 lint:
 	./node_modules/.bin/prettier --check src
 	npm run check
-	test -z $$(gofmt -l .)
+	test -z "$$(gofmt -l .)"
 
 regen:
 	go build

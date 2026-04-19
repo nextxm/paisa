@@ -12,13 +12,13 @@ import (
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/glebarez/sqlite"
 	"github.com/google/btree"
 	"github.com/onrik/gorm-logrus"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/constraints"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
