@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/ananthakumaran/paisa/internal/cache"
 	"github.com/ananthakumaran/paisa/internal/model"
+	"github.com/ananthakumaran/paisa/internal/service"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -60,9 +61,15 @@ func Sync(db *gorm.DB, request SyncRequest) gin.H {
 		}
 	}
 
+	// Rebuild in-memory price/rate caches in the background from the freshly
+	// written data.  cache.Clear() above reset them; this restores them
+	// without blocking the HTTP response.
+	service.WarmCaches(db)
+
 	return gin.H{
 		"success":       true,
 		"posting_count": journalResult.PostingCount,
 		"price_count":   journalResult.PriceCount,
 	}
 }
+

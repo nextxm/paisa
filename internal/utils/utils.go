@@ -280,8 +280,32 @@ func UnQuote(str string) string {
 
 func OpenDB() (*gorm.DB, error) {
 	db, err := gorm.Open(sqlite.Open(config.GetDBPath()), &gorm.Config{Logger: gorm_logrus.New()})
-	return db, err
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply SQLite performance PRAGMAs.
+	//
+	// WAL mode: allows concurrent readers without blocking on writes, and
+	// improves write throughput for the regular sync operations.
+	if err := db.Exec("PRAGMA journal_mode=WAL").Error; err != nil {
+		log.Warnf("OpenDB: failed to set WAL journal mode: %v", err)
+	}
+	// NORMAL synchronous: safe for a local single-user application and removes
+	// the fsync overhead of the default FULL mode.
+	if err := db.Exec("PRAGMA synchronous=NORMAL").Error; err != nil {
+		log.Warnf("OpenDB: failed to set synchronous=NORMAL: %v", err)
+	}
+	// Allocate a ~40 MB in-process page cache (10 000 × 4 KB pages).
+	// This reduces redundant I/O for the large full-table scans that many
+	// endpoints perform.
+	if err := db.Exec("PRAGMA cache_size=10000").Error; err != nil {
+		log.Warnf("OpenDB: failed to set cache_size: %v", err)
+	}
+
+	return db, nil
 }
+
 
 func Dos2Unix(str string) string {
 	return strings.ReplaceAll(str, "\r\n", "\n")
