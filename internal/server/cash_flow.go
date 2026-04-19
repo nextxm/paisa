@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	cashFlowForecastMonths  = 12
+	cashFlowForecastMonths   = 12
 	cashFlowHistoricalMonths = 3
 )
 
@@ -50,7 +50,7 @@ func computeCashFlowForecast(db *gorm.DB) []CashFlowForecast {
 	sequences := ComputeRecurringTransactions(query.Init(db).All())
 
 	// Accumulate the recurring portion of income/expense per historical month.
-	histStart := utils.BeginningOfMonth(now).AddDate(0, -(cashFlowHistoricalMonths-1), 0)
+	histStart := utils.BeginningOfMonth(now).AddDate(0, -(cashFlowHistoricalMonths - 1), 0)
 	recurringIncByMonth := make(map[string]decimal.Decimal)
 	recurringExpByMonth := make(map[string]decimal.Decimal)
 
