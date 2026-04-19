@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/ananthakumaran/paisa/internal/accounting"
 	"github.com/ananthakumaran/paisa/internal/cache"
 	"github.com/ananthakumaran/paisa/internal/model"
 	"github.com/ananthakumaran/paisa/internal/service"
@@ -29,6 +30,10 @@ func Sync(db *gorm.DB, request SyncRequest) gin.H {
 				"message":      journalResult.Message,
 			}
 		}
+		// Pre-populate the accounting cache with sorted data immediately
+		// after the journal write so that /api/editor/files and similar
+		// endpoints always see a deterministically-ordered accounts list.
+		accounting.AllAccounts(db)
 	}
 
 	if request.Prices {

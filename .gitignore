@@ -1,4 +1,6 @@
 paisa.db
+*.db-shm
+*.db-wal
 /paisa.yaml
 /Schedule AL.paisa
 /paisa

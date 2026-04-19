@@ -1,5 +1,10 @@
 # CHANGELOG
 
+### Unreleased — Fix deterministic ordering in editor API
+
+#### Bug Fixes
+* **`/api/editor/files` deterministic ordering** — `accounts`, `payees`, and `commodities` arrays are now always returned in sorted (alphabetical) order, preventing non-deterministic diffs across SQLite driver versions and query planners. Updated regression test fixtures to match the new stable ordering.
+
 ### Unreleased — Exchange Rate Viewer
 
 #### New Features
