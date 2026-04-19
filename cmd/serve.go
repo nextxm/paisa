@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 
+	"github.com/ananthakumaran/paisa/internal/accounting"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/ananthakumaran/paisa/internal/server"
 	"github.com/ananthakumaran/paisa/internal/service"
@@ -33,6 +34,9 @@ var serveCmd = &cobra.Command{
 		// Pre-warm the price and rate BTree caches in the background so that
 		// the first API request does not pay the full cold-start cost.
 		service.WarmCaches(db)
+		// Pre-load the accounting cache so the accounts list is sorted
+		// from the very first request, even before an explicit sync.
+		accounting.AllAccounts(db)
 
 		server.Listen(db, port)
 	},
