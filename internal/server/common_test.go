@@ -5,7 +5,7 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 
