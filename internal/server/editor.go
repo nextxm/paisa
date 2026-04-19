@@ -29,10 +29,12 @@ type LedgerFile struct {
 
 func GetFiles(db *gorm.DB) gin.H {
 	accounts := accounting.AllAccounts(db)
+	// Guarantee alphabetical order regardless of cache state or DB planner.
+	sort.Strings(accounts)
 	var payees []string
 	var commodities []string
-	db.Model(&posting.Posting{}).Distinct().Pluck("Payee", &payees)
-	db.Model(&posting.Posting{}).Distinct().Pluck("Commodity", &commodities)
+	db.Model(&posting.Posting{}).Distinct().Order("payee").Pluck("Payee", &payees)
+	db.Model(&posting.Posting{}).Distinct().Order("commodity").Pluck("Commodity", &commodities)
 	sort.Strings(payees)
 	sort.Strings(commodities)
 

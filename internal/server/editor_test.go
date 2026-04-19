@@ -2,13 +2,17 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
+	"github.com/ananthakumaran/paisa/internal/accounting"
+	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -211,4 +215,47 @@ func decodeEditorResponse(t *testing.T, rec *httptest.ResponseRecorder) map[stri
 	var result map[string]json.RawMessage
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&result))
 	return result
+}
+
+// TestGetFiles_AccountsSorted verifies that GetFiles always returns the
+// accounts list in alphabetical order regardless of insertion order in the DB.
+func TestGetFiles_AccountsSorted(t *testing.T) {
+db := openTestDB(t)
+
+// Insert postings in non-alphabetical (insertion) order.
+insertionOrder := []string{
+"Income:Salary:Acme",
+"Assets:Checking",
+"Expenses:Rent",
+"Assets:Equity:NIFTY",
+"Assets:Equity:ABNB",
+}
+for i, acc := range insertionOrder {
+p := posting.Posting{
+Account:       acc,
+TransactionID: fmt.Sprintf("t%d", i),
+Payee:         "test",
+Commodity:     "INR",
+}
+require.NoError(t, db.Create(&p).Error)
+}
+
+// Reset the accounting cache so GetFiles queries fresh data.
+accounting.ClearCache()
+
+result := GetFiles(db)
+raw, err := json.Marshal(result)
+require.NoError(t, err)
+
+var top map[string]json.RawMessage
+require.NoError(t, json.Unmarshal(raw, &top))
+
+var accounts []string
+require.NoError(t, json.Unmarshal(top["accounts"], &accounts))
+
+sorted := make([]string, len(accounts))
+copy(sorted, accounts)
+sort.Strings(sorted)
+
+assert.Equal(t, sorted, accounts, "GetFiles must return accounts in alphabetical order")
 }
