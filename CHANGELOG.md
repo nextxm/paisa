@@ -1,5 +1,14 @@
 # CHANGELOG
 
+### Unreleased — Cash-flow forecast endpoint
+
+#### New features
+* **`GET /api/cash_flow/forecast`** — returns 12 months of projected monthly
+  `income`, `expense`, and running checking-account `balance`. Projections
+  combine recurring `TransactionSequence` schedules (each sequence's day
+  interval is used to count occurrences in every future month) with the
+  trailing 3-month average of non-recurring income and expenses.
+
 ### Unreleased — Performance optimizations
 
 #### Performance
