@@ -148,7 +148,6 @@ func v3PostingsIndexes(db *gorm.DB) error {
 	return nil
 }
 
-
 // RunMigrations initializes the schema_versions table, applies any unapplied
 // migrations in version order, and logs the current schema version.
 // It is safe to call multiple times; already-applied migrations are skipped.

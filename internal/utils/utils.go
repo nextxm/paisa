@@ -306,7 +306,6 @@ func OpenDB() (*gorm.DB, error) {
 	return db, nil
 }
 
-
 func Dos2Unix(str string) string {
 	return strings.ReplaceAll(str, "\r\n", "\n")
 }

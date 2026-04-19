@@ -78,7 +78,6 @@ func GetExpense(db *gorm.DB) gin.H {
 		"graph": graph}
 }
 
-
 func sortGraph(graph Graph) Graph {
 	nodes := graph.Nodes
 	sort.Slice(nodes, func(i, j int) bool {

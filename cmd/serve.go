@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 var port int
 
 var serveCmd = &cobra.Command{
@@ -37,7 +36,6 @@ var serveCmd = &cobra.Command{
 
 		server.Listen(db, port)
 	},
-
 }
 
 func init() {

@@ -87,7 +87,7 @@ func calculateXIRR(transactions []Transaction, initialGuess float64) float64 {
 		return x
 	}
 
-	// 1. Fine-grained search from the negative end to maintain compatibility with 
+	// 1. Fine-grained search from the negative end to maintain compatibility with
 	// existing tests (favors the lower root when multiple exist).
 	// Range: -99.9% to 1,000%.
 	for g := -0.999; g <= 10.0; g += 0.01 {
@@ -129,9 +129,6 @@ func calculateXIRR(transactions []Transaction, initialGuess float64) float64 {
 
 	return 0
 }
-
-
-
 
 func XIRR(cashflows []Cashflow) decimal.Decimal {
 	if len(cashflows) < 2 {

@@ -51,4 +51,3 @@ func GetDashboard(db *gorm.DB) gin.H {
 		"goalSummaries":        goalSummaries,
 	}
 }
-

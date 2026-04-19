@@ -119,5 +119,4 @@ func TestXIRR(t *testing.T) {
 		}
 	}
 
-
 }

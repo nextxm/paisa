@@ -25,7 +25,6 @@ func loadInterestCache(db *gorm.DB) {
 	icache.postings = lo.GroupBy(postings, func(p posting.Posting) int64 { return p.Date.Unix() })
 }
 
-
 type interestRepaymentCache struct {
 	sync.Once
 	postings map[int64][]posting.Posting

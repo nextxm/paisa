@@ -195,7 +195,6 @@ func WarmCaches(db *gorm.DB) {
 	}()
 }
 
-
 func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
 	pcache.Do(func() { loadPriceCache(db) })
 
@@ -413,4 +412,3 @@ func GetRate(db *gorm.DB, base, quote string, date time.Time) (decimal.Decimal, 
 	res, ok := GetRateDetails(db, base, quote, date)
 	return res.Rate, ok
 }
-

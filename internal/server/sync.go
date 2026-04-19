@@ -72,4 +72,3 @@ func Sync(db *gorm.DB, request SyncRequest) gin.H {
 		"price_count":   journalResult.PriceCount,
 	}
 }
-
