@@ -26,28 +26,46 @@ type Cashflow struct {
 	Amount float64
 }
 
+func npv(transactions []Transaction, r float64) float64 {
+	v := 0.0
+	for _, tx := range transactions {
+		v += tx.Amount / math.Pow(1.0+r, tx.Years)
+	}
+	return v
+}
+
 func newtonXIRR(transactions []Transaction, initialGuess float64) (float64, bool) {
 	x := initialGuess
 	const MAX_TRIES = 100
-	const EPSILON = 1.0e-6
+	const EPSILON = 1.0e-9
 
 	for tries := 0; tries < MAX_TRIES; tries++ {
 		fxs := 0.0
 		dfxs := 0.0
 		for _, tx := range transactions {
-			fx := tx.Amount / (math.Pow(1.0+x, tx.Years))
-			dfx := (-tx.Years * tx.Amount) / (math.Pow(1.0+x, tx.Years+1))
+			base := 1.0 + x
+			if base <= 1e-12 {
+				return 0, false
+			}
+
+			powBaseYears := math.Pow(base, tx.Years)
+			fx := tx.Amount / powBaseYears
+			dfx := (-tx.Years * tx.Amount) / (powBaseYears * base)
 			fxs += fx
 			dfxs += dfx
 		}
 
-		xNew := x - fxs/dfxs
-		if math.IsNaN(xNew) {
+		if dfxs == 0 || math.IsNaN(dfxs) {
 			return 0, false
 		}
-		epsilon := math.Abs(xNew - x)
-		if epsilon <= EPSILON {
-			return x, true
+
+		xNew := x - fxs/dfxs
+		if math.IsNaN(xNew) || math.IsInf(xNew, 0) {
+			return 0, false
+		}
+
+		if math.Abs(xNew-x) <= EPSILON {
+			return xNew, true
 		}
 		x = xNew
 	}
@@ -55,25 +73,70 @@ func newtonXIRR(transactions []Transaction, initialGuess float64) (float64, bool
 }
 
 func calculateXIRR(transactions []Transaction, initialGuess float64) float64 {
+	// Try the guess first.
 	if x, ok := newtonXIRR(transactions, initialGuess); ok {
 		return x
 	}
 
-	guess := -0.99
-
-	for guess < 1.0 {
-		if x, ok := newtonXIRR(transactions, guess); ok {
+	// 1. Fine-grained search from the negative end to maintain compatibility with 
+	// existing tests (favors the lower root when multiple exist).
+	// Range: -99.9% to 1,000%.
+	for g := -0.999; g <= 10.0; g += 0.01 {
+		if x, ok := newtonXIRR(transactions, g); ok {
 			return x
 		}
-		guess += 0.01
+	}
+
+	// 2. Extra guesses for extremely high returns (up to 1,000,000%).
+	for _, g := range []float64{20.0, 50.0, 100.0, 1000.0, 10000.0} {
+		if x, ok := newtonXIRR(transactions, g); ok {
+			return x
+		}
+	}
+
+	// 3. Robust bisection fallback.
+	low, high := -0.9999999999, 100000.0
+	fLow, fHigh := npv(transactions, low), npv(transactions, high)
+	if fLow*fHigh < 0 {
+		for i := 0; i < 100; i++ {
+			mid := (low + high) / 2
+			fMid := npv(transactions, mid)
+			if math.Abs(fMid) < 1e-7 || (high-low)/2 < 1e-9 {
+				return mid
+			}
+			if fMid*fLow < 0 {
+				high = mid
+				fHigh = fMid
+			} else {
+				low = mid
+				fLow = fMid
+			}
+		}
 	}
 
 	log.Warn("XIRR didn't converge")
 	return 0
 }
 
+
+
+
 func XIRR(cashflows []Cashflow) decimal.Decimal {
-	if len(cashflows) == 0 {
+	if len(cashflows) < 2 {
+		return decimal.Zero
+	}
+
+	// XIRR only exists if there is at least one positive and one negative cashflow.
+	hasPos := false
+	hasNeg := false
+	for _, cf := range cashflows {
+		if cf.Amount > 0 {
+			hasPos = true
+		} else if cf.Amount < 0 {
+			hasNeg = true
+		}
+	}
+	if !hasPos || !hasNeg {
 		return decimal.Zero
 	}
 
@@ -86,3 +149,4 @@ func XIRR(cashflows []Cashflow) decimal.Decimal {
 	})
 	return decimal.NewFromFloat(calculateXIRR(transactions, 0.1) * 100).Round(2)
 }
+

@@ -21,6 +21,14 @@
   separate full-table scans; it now loads all postings in one query and
   partitions them in-memory, eliminating four redundant DB round-trips.
 
+#### Bug Fixes
+* **Robust XIRR solver** — replaced Newton-only solver with a hybrid
+  Newton-Bisection implementation that handles extreme losses (-99.99%) and
+  high gains (10,000%+) reliably.
+* **Dividend support in XIRR** — `Income:Dividends` and `Income:Dividend`
+  accounts are now recognized as internal gains, ensuring XIRR on the balance
+  page correctly reflects total return for stocks and mutual funds.
+
 ### Unreleased — Multi-currency pricing rollout
 
 #### New features

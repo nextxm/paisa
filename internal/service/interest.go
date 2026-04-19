@@ -20,9 +20,11 @@ type interestCache struct {
 var icache interestCache
 
 func loadInterestCache(db *gorm.DB) {
-	postings := query.Init(db).Like("Income:Interest:%").All()
+	// Gains from interest and dividends are treated as internal and excluded from cashflows.
+	postings := query.Init(db).Like("Income:Interest:%", "Income:Dividends:%", "Income:Dividend:%").All()
 	icache.postings = lo.GroupBy(postings, func(p posting.Posting) int64 { return p.Date.Unix() })
 }
+
 
 type interestRepaymentCache struct {
 	sync.Once

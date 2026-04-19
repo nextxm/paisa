@@ -69,8 +69,8 @@ var XIRR_EXPECTED_VALUES = map[string]float64{
 	"30-46.csv":             -4.74,
 	"30-47.csv":             -61.03,
 	"30-48.csv":             -7.53,
-	// "minus_0_99.csv":        -99.90,
-	// "minus_0_99999.csv":     -99.99,
+	"minus_0_99.csv":        -99.90,
+	"minus_0_99999.csv":     -100.00,
 }
 
 func date(year, month, day int) time.Time {
@@ -114,12 +114,10 @@ func TestXIRR(t *testing.T) {
 		if value, exist := XIRR_EXPECTED_VALUES[f.Name()]; exist {
 			cashflows := readCSV(filepath.Join(dirname, f.Name()))
 			expected := decimal.NewFromFloat(value).Round(2)
-			if !expected.Equal(XIRR(cashflows)) {
-				t.Logf("XIRR(%s) : %s %s", f.Name(), XIRR(cashflows), expected)
-				break
-			}
-			assert.Equal(t, expected, XIRR(cashflows))
+			actual := XIRR(cashflows)
+			assert.Equal(t, expected, actual, "XIRR mismatch for %s", f.Name())
 		}
 	}
+
 
 }
