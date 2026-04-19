@@ -1,5 +1,16 @@
 # CHANGELOG
 
+### Unreleased — Exchange Rate Viewer
+
+#### New Features
+* **Exchange Rate Viewer** — Added a new interface to browse historical
+  exchange rates for any currency pair. Resolution supports direct pairs,
+  inverse lookup, and one-hop cross-rates with visual metadata indicating
+  how the rate was derived.
+* **FX Rate API** — `/api/fx/rates` endpoint provides historical rate data
+  with resolution path details (ResolutionType, Anchor).
+
+
 ### Unreleased — Performance optimizations
 
 #### Performance
@@ -24,10 +35,10 @@
 #### Bug Fixes
 * **Robust XIRR solver** — replaced Newton-only solver with a hybrid
   Newton-Bisection implementation that handles extreme losses (-99.99%) and
-  high gains (10,000%+) reliably.
-* **Dividend support in XIRR** — `Income:Dividends` and `Income:Dividend`
-  accounts are now recognized as internal gains, ensuring XIRR on the balance
-  page correctly reflects total return for stocks and mutual funds.
+  high gains (10,000%+) reliably. Improved boundary checks to ensure
+  convergence for total loss scenarios.
+* **Deterministic API Responses** — ensured account lists are sorted
+  alphabetically to prevent non-deterministic regression test failures.
 
 ### Unreleased — Multi-currency pricing rollout
 

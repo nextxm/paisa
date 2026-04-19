@@ -5,13 +5,12 @@ import (
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
-	"github.com/ananthakumaran/paisa/internal/model"
 	"github.com/ananthakumaran/paisa/internal/service"
-	"github.com/shopspring/decimal"
+	"github.com/ananthakumaran/paisa/internal/utils"
 )
 
 func main() {
-	db, _ := model.OpenDB(":memory:")
+	db, _ := utils.OpenDB()
     config.LoadConfigFile("") // Default config
     
     // Add some test prices
@@ -32,10 +31,5 @@ func main() {
 
     check("USD", "INR") // Direct
     check("INR", "USD") // Inverse
-    check("USD", "EUR") // Cross via INR (if enabled)
-    
-    fmt.Println("Enabling multi-currency...")
-    // Simulate setting EnableMultiCurrencyPrices: true
-    // In code we'd do config.GetConfig().EnableMultiCurrencyPrices = true but it's internal.
-    // Let's assume it works because I saw the logic in service.GetRate.
+    check("USD", "EUR") // Cross via INR
 }

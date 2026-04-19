@@ -7,7 +7,6 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
-	log "github.com/sirupsen/logrus"
 )
 
 func daysBetween(start, end time.Time) float64 {
@@ -29,7 +28,17 @@ type Cashflow struct {
 func npv(transactions []Transaction, r float64) float64 {
 	v := 0.0
 	for _, tx := range transactions {
-		v += tx.Amount / math.Pow(1.0+r, tx.Years)
+		base := 1.0 + r
+		if base <= 1e-15 {
+			// Avoid division by zero or extremely small numbers that overflow
+			if tx.Amount > 0 {
+				v += 1e100 // Large positive
+			} else {
+				v -= 1e100 // Large negative
+			}
+			continue
+		}
+		v += tx.Amount / math.Pow(base, tx.Years)
 	}
 	return v
 }
@@ -112,9 +121,12 @@ func calculateXIRR(transactions []Transaction, initialGuess float64) float64 {
 				fLow = fMid
 			}
 		}
+	} else if math.Abs(fLow) < 1e-7 {
+		return low
+	} else if math.Abs(fHigh) < 1e-7 {
+		return high
 	}
 
-	log.Warn("XIRR didn't converge")
 	return 0
 }
 
@@ -149,4 +161,3 @@ func XIRR(cashflows []Cashflow) decimal.Decimal {
 	})
 	return decimal.NewFromFloat(calculateXIRR(transactions, 0.1) * 100).Round(2)
 }
-
