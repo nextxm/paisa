@@ -1,5 +1,35 @@
 # CHANGELOG
 
+### Unreleased — Cash-flow forecast endpoint
+
+#### New features
+* **`GET /api/cash_flow/forecast`** — returns 12 months of projected monthly
+  `income`, `expense`, and running checking-account `balance`. Projections
+  combine recurring `TransactionSequence` schedules (each sequence's day
+  interval is used to count occurrences in every future month) with the
+  trailing 3-month average of non-recurring income and expenses.
+
+### Unreleased — Performance optimizations
+
+#### Performance
+* **Database indexes on `postings`** (migration v3) — adds four indexes
+  (`account`, `date`, `forecast+date`, `account+date`) to eliminate full
+  table scans on the most common query patterns. Expect 5–50× speedup on
+  endpoints such as `/api/networth`, `/api/expense`, `/api/income`,
+  `/api/investment`, `/api/allocation`, and `/api/dashboard`.
+* **SQLite tuning** — `OpenDB` now applies `PRAGMA journal_mode=WAL`,
+  `synchronous=NORMAL`, and `cache_size=10000` (~40 MB page cache) on every
+  connection, reducing I/O overhead and enabling concurrent reads.
+* **Background cache warm-up** — price and rate BTree indexes are rebuilt in a
+  background goroutine immediately after server startup and after each sync,
+  so the first API request no longer pays the cold-start cost.
+* **Parallel dashboard** — `GET /api/dashboard` now runs its eight independent
+  sub-computations concurrently via `sync.WaitGroup`, reducing wall-clock
+  latency by 2–4×.
+* **Single-query expense endpoint** — `GET /api/expense` previously issued five
+  separate full-table scans; it now loads all postings in one query and
+  partitions them in-memory, eliminating four redundant DB round-trips.
+
 ### Unreleased — Multi-currency pricing rollout
 
 #### New features

@@ -41,14 +41,25 @@ func GetCurrentExpense(db *gorm.DB) map[string][]posting.Posting {
 }
 
 func GetExpense(db *gorm.DB) gin.H {
-	expenses := query.Init(db).Like("Expenses:%").NotAccountPrefix("Expenses:Tax").All()
-	incomes := query.Init(db).Like("Income:%").All()
-	investments := query.Init(db).Like("Assets:%").NotAccountPrefix("Assets:Checking").All()
-	taxes := query.Init(db).AccountPrefix("Expenses:Tax").All()
-	postings := query.Init(db).All()
+	// Load all postings in a single DB query, then partition in-memory.
+	// This replaces 5 separate full-table scans with one, reducing DB round-trips.
+	allPostings := query.Init(db).All()
+
+	expenses := lo.Filter(allPostings, func(p posting.Posting, _ int) bool {
+		return utils.IsParent(p.Account, "Expenses") && !utils.IsSameOrParent(p.Account, "Expenses:Tax")
+	})
+	incomes := lo.Filter(allPostings, func(p posting.Posting, _ int) bool {
+		return utils.IsParent(p.Account, "Income")
+	})
+	investments := lo.Filter(allPostings, func(p posting.Posting, _ int) bool {
+		return utils.IsParent(p.Account, "Assets") && !utils.IsSameOrParent(p.Account, "Assets:Checking")
+	})
+	taxes := lo.Filter(allPostings, func(p posting.Posting, _ int) bool {
+		return utils.IsSameOrParent(p.Account, "Expenses:Tax")
+	})
 
 	graph := make(map[string]Graph)
-	for fy, ps := range utils.GroupByFY(postings) {
+	for fy, ps := range utils.GroupByFY(allPostings) {
 		graph[fy] = sortGraph(computeHierarchyGraph(ps))
 	}
 
@@ -66,6 +77,7 @@ func GetExpense(db *gorm.DB) gin.H {
 			"taxes":       utils.GroupByFY(taxes)},
 		"graph": graph}
 }
+
 
 func sortGraph(graph Graph) Graph {
 	nodes := graph.Nodes

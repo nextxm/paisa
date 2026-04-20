@@ -34,6 +34,7 @@ type step struct {
 var steps = []step{
 	{Version: 1, Apply: v1Baseline},
 	{Version: 2, Apply: v2AddQuoteCommodity},
+	{Version: 3, Apply: v3PostingsIndexes},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -97,6 +98,56 @@ func v2AddQuoteCommodity(db *gorm.DB) error {
 
 	return nil
 }
+
+// v3PostingsIndexes adds indexes on the postings table for the most common
+// query patterns. Almost every API endpoint filters postings by:
+//   - account prefix  (account LIKE 'Assets:%')
+//   - date range      (date < ?)
+//   - forecast flag   (forecast = false / true)
+//
+// Without indexes each of these clauses triggers a full table scan.
+func v3PostingsIndexes(db *gorm.DB) error {
+	// Ensure the postings table exists before attempting to index it.
+	// In production this is guaranteed by v1Baseline; the AutoMigrate call is
+	// a no-op when the table already exists, and protects against partial
+	// install scenarios (e.g., isolated migration tests).
+	if err := db.AutoMigrate(&posting.Posting{}); err != nil {
+		return fmt.Errorf("v3: AutoMigrate postings failed: %w", err)
+	}
+
+	// Single-column index on account for prefix / equality lookups.
+	if err := db.Exec(
+		"CREATE INDEX IF NOT EXISTS idx_postings_account ON postings(account)",
+	).Error; err != nil {
+		return fmt.Errorf("v3: create idx_postings_account failed: %w", err)
+	}
+
+	// Single-column index on date for time-range filtering.
+	if err := db.Exec(
+		"CREATE INDEX IF NOT EXISTS idx_postings_date ON postings(date)",
+	).Error; err != nil {
+		return fmt.Errorf("v3: create idx_postings_date failed: %w", err)
+	}
+
+	// Composite index covers the combined (forecast=false, date<X) filter
+	// present in every query.Init(db).UntilToday() call.
+	if err := db.Exec(
+		"CREATE INDEX IF NOT EXISTS idx_postings_forecast_date ON postings(forecast, date)",
+	).Error; err != nil {
+		return fmt.Errorf("v3: create idx_postings_forecast_date failed: %w", err)
+	}
+
+	// Composite covers account-prefix + date-range queries (most common:
+	// account LIKE 'Assets:%' AND forecast = false AND date < Y).
+	if err := db.Exec(
+		"CREATE INDEX IF NOT EXISTS idx_postings_account_date ON postings(account, date)",
+	).Error; err != nil {
+		return fmt.Errorf("v3: create idx_postings_account_date failed: %w", err)
+	}
+
+	return nil
+}
+
 
 // RunMigrations initializes the schema_versions table, applies any unapplied
 // migrations in version order, and logs the current schema version.

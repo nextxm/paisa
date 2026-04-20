@@ -53,3 +53,4 @@ The project uses a `Makefile` to orchestrate build and development tasks.
 - **Testing:** New features should include both Go unit tests and Svelte component tests where applicable.
 - **Linting:** Strict linting is enforced via `make lint`. Ensure code is formatted with `gofmt` and `prettier`.
 - **Data Format:** Ledger files are the source of truth for financial data. SQLite is used for caching and supplemental metadata.
+- **Changelog:** **Always update `CHANGELOG.md` before committing.** Add an entry under the appropriate `### Unreleased` section describing what changed and why. New unreleased sections should be added at the top of the file above existing unreleased entries.

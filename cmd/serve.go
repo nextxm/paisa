@@ -5,10 +5,12 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/ananthakumaran/paisa/internal/server"
+	"github.com/ananthakumaran/paisa/internal/service"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
+
 
 var port int
 
@@ -29,8 +31,13 @@ var serveCmd = &cobra.Command{
 			db = db.Debug()
 		}
 
+		// Pre-warm the price and rate BTree caches in the background so that
+		// the first API request does not pay the full cold-start cost.
+		service.WarmCaches(db)
+
 		server.Listen(db, port)
 	},
+
 }
 
 func init() {

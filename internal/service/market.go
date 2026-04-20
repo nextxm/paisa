@@ -174,6 +174,28 @@ func ClearPriceCache() {
 	pcache = priceCache{}
 }
 
+// WarmCaches pre-loads the price and rate in-memory BTree indexes in the
+// background so that the first API request after a startup or sync does not
+// pay the full cold-start cost.  It must be called after any database write
+// that changes prices or postings (i.e., after SyncJournal / SyncCommodities).
+// The function resets the existing caches first so stale data is not served
+// during the warm-up window.
+func WarmCaches(db *gorm.DB) {
+	// Reset both caches so they are rebuilt from fresh DB state.
+	pcache = priceCache{}
+	rcache = rateCache{}
+
+	go func() {
+		// Trigger the sync.Once initializers by calling the cheapest public
+		// function that uses each cache.  The cost is paid once here in a
+		// goroutine rather than blocking the next HTTP request.
+		pcache.Do(func() { loadPriceCache(db) })
+		rcache.Do(func() { loadRateCache(db) })
+		log.Info("WarmCaches: price and rate caches are ready")
+	}()
+}
+
+
 func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
 	pcache.Do(func() { loadPriceCache(db) })
 
