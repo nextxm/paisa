@@ -279,28 +279,17 @@ func UnQuote(str string) string {
 }
 
 func OpenDB() (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open(config.GetDBPath()), &gorm.Config{Logger: gorm_logrus.New()})
-	if err != nil {
-		return nil, err
-	}
-
-	// Apply SQLite performance PRAGMAs.
+	// Apply SQLite performance PRAGMAs via DSN to ensure they are set for every
+	// connection in the pool.
 	//
-	// WAL mode: allows concurrent readers without blocking on writes, and
-	// improves write throughput for the regular sync operations.
-	if err := db.Exec("PRAGMA journal_mode=WAL").Error; err != nil {
-		log.Warnf("OpenDB: failed to set WAL journal mode: %v", err)
-	}
+	// WAL mode: allows concurrent readers without blocking on writes.
 	// NORMAL synchronous: safe for a local single-user application and removes
 	// the fsync overhead of the default FULL mode.
-	if err := db.Exec("PRAGMA synchronous=NORMAL").Error; err != nil {
-		log.Warnf("OpenDB: failed to set synchronous=NORMAL: %v", err)
-	}
-	// Allocate a ~40 MB in-process page cache (10 000 × 4 KB pages).
-	// This reduces redundant I/O for the large full-table scans that many
-	// endpoints perform.
-	if err := db.Exec("PRAGMA cache_size=10000").Error; err != nil {
-		log.Warnf("OpenDB: failed to set cache_size: %v", err)
+	// cache_size=-64000: Allocate a ~64 MB in-process page cache.
+	dsn := fmt.Sprintf("file:%s?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=cache_size(-64000)", filepath.ToSlash(config.GetDBPath()))
+	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{Logger: gorm_logrus.New()})
+	if err != nil {
+		return nil, err
 	}
 
 	return db, nil
