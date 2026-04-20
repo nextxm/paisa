@@ -174,6 +174,13 @@ func ClearPriceCache() {
 	pcache = priceCache{}
 }
 
+func WarmCache(db *gorm.DB) {
+	go func() {
+		pcache.Do(func() { loadPriceCache(db) })
+		rcache.Do(func() { loadRateCache(db) })
+	}()
+}
+
 func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
 	pcache.Do(func() { loadPriceCache(db) })
 
