@@ -19,6 +19,9 @@
   to disable cross-rate resolution and `report_currency` conversion and revert
   to pre-rollout behaviour without downgrading the binary.
 
+#### Bug fixes
+* **Assets -> Gain page calculations** — Fixed units-vs-currency mismatch in XIRR, investment, and absolute return calculations by using historical market prices when ledger falls back to units.
+
 #### Upgrade guide
 1. Run `paisa update` (or restart the server) — the database migration runs
    automatically on startup; no manual steps are required.
