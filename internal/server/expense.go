@@ -43,10 +43,10 @@ func GetCurrentExpense(db *gorm.DB) map[string][]posting.Posting {
 func GetExpense(db *gorm.DB) gin.H {
 	postings := query.Init(db).All()
 
-	var expenses []posting.Posting
-	var incomes []posting.Posting
-	var investments []posting.Posting
-	var taxes []posting.Posting
+	expenses := []posting.Posting{}
+	incomes := []posting.Posting{}
+	investments := []posting.Posting{}
+	taxes := []posting.Posting{}
 
 	for _, p := range postings {
 		if utils.IsSameOrParent(p.Account, "Expenses:Tax") {
