@@ -27,3 +27,4 @@ fonts/*
 /result
 brand/*.png
 scripts/*
+*.exe
