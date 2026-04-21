@@ -214,7 +214,7 @@ func GetMarketPrice(db *gorm.DB, p posting.Posting, date time.Time) decimal.Deci
 
 	pc := GetUnitPrice(db, p.Commodity, date)
 	if !pc.Value.Equal(decimal.Zero) {
-		if p.Date.Equal(date) && !p.Amount.Equal(p.Quantity) && !p.Amount.IsZero() {
+		if utils.IsSameDate(p.Date, date) && !p.Amount.Equal(p.Quantity) && !p.Amount.IsZero() {
 			return p.Amount
 		}
 		return p.Quantity.Mul(pc.Value)
