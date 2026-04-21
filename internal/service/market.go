@@ -33,7 +33,10 @@ type rateCache struct {
 	pairTrees map[ratePairKey]*btree.BTree
 }
 
-var rcache rateCache
+var (
+	rcache   rateCache
+	rcacheMu sync.RWMutex
+)
 
 type priceCache struct {
 	sync.Once
@@ -42,12 +45,14 @@ type priceCache struct {
 	dcPricesTree      map[string]*btree.BTree
 }
 
-var pcache priceCache
+var (
+	pcache   priceCache
+	pcacheMu sync.RWMutex
+)
 
 func loadPriceCache(db *gorm.DB) {
-	pcache.pricesTree = make(map[string]*btree.BTree)
-	pcache.postingPricesTree = make(map[string]*btree.BTree)
-	pcache.dcPricesTree = make(map[string]*btree.BTree)
+	pricesTree := make(map[string]*btree.BTree)
+	postingPricesTree := make(map[string]*btree.BTree)
 
 	dc := config.DefaultCurrency()
 	var prices []price.Price
@@ -60,22 +65,28 @@ func loadPriceCache(db *gorm.DB) {
 			p.QuoteCommodity = dc
 		}
 
-		if pcache.pricesTree[p.CommodityName] == nil {
-			pcache.pricesTree[p.CommodityName] = btree.New(2)
+		if pricesTree[p.CommodityName] == nil {
+			pricesTree[p.CommodityName] = btree.New(2)
 		}
-		pcache.pricesTree[p.CommodityName].ReplaceOrInsert(p)
+		pricesTree[p.CommodityName].ReplaceOrInsert(p)
 
 		// postingPricesTree is used specifically for native journal prices
 		// already in the default currency.
 		if p.CommodityType == config.Unknown && p.QuoteCommodity == dc {
-			if pcache.postingPricesTree[p.CommodityName] == nil {
-				pcache.postingPricesTree[p.CommodityName] = btree.New(2)
+			if postingPricesTree[p.CommodityName] == nil {
+				postingPricesTree[p.CommodityName] = btree.New(2)
 			}
-			pcache.postingPricesTree[p.CommodityName].ReplaceOrInsert(p)
+			postingPricesTree[p.CommodityName].ReplaceOrInsert(p)
 		}
 	}
 
-	synthesizeDefaultCurrencyPrices(db, dc)
+	dcPricesTree := synthesizeDefaultCurrencyPrices(db, dc, pricesTree, postingPricesTree)
+
+	pcacheMu.Lock()
+	defer pcacheMu.Unlock()
+	pcache.pricesTree = pricesTree
+	pcache.postingPricesTree = postingPricesTree
+	pcache.dcPricesTree = dcPricesTree
 }
 
 // isDefaultCurrency reports whether quote matches the configured default
@@ -94,8 +105,9 @@ func isDefaultCurrency(quote, dc string) bool {
 // unchanged.  When no exchange rate can be resolved for a particular entry it
 // is kept in the tree unchanged so that existing fallback behaviour is
 // preserved.
-func synthesizeDefaultCurrencyPrices(db *gorm.DB, dc string) {
-	for commodityName, tree := range pcache.pricesTree {
+func synthesizeDefaultCurrencyPrices(db *gorm.DB, dc string, pricesTree, postingPricesTree map[string]*btree.BTree) map[string]*btree.BTree {
+	dcPricesTree := make(map[string]*btree.BTree)
+	for commodityName, tree := range pricesTree {
 		// Build a unified tree in the default currency.
 		// Start by inserting all native prices that are already in dc.
 		out := btree.New(2)
@@ -133,21 +145,24 @@ func synthesizeDefaultCurrencyPrices(db *gorm.DB, dc string) {
 		// If the commodity still has no entries in out, we keep the original
 		// tree as a last-resort fallback (it will still contain native prices).
 		if out.Len() > 0 {
-			pcache.dcPricesTree[commodityName] = out
+			dcPricesTree[commodityName] = out
 		} else {
-			pcache.dcPricesTree[commodityName] = tree
+			dcPricesTree[commodityName] = tree
 		}
 	}
 
 	// Also handle postingPricesTree (specifically used for ledger cost basis)
-	for commodityName, tree := range pcache.postingPricesTree {
-		if pcache.dcPricesTree[commodityName] == nil {
-			pcache.dcPricesTree[commodityName] = tree
+	for commodityName, tree := range postingPricesTree {
+		if dcPricesTree[commodityName] == nil {
+			dcPricesTree[commodityName] = tree
 		}
 	}
+	return dcPricesTree
 }
 
 func ClearPriceCache() {
+	pcacheMu.Lock()
+	defer pcacheMu.Unlock()
 	pcache = priceCache{}
 }
 
@@ -160,6 +175,9 @@ func WarmCache(db *gorm.DB) {
 
 func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
 	pcache.Do(func() { loadPriceCache(db) })
+
+	pcacheMu.RLock()
+	defer pcacheMu.RUnlock()
 
 	pt := pcache.dcPricesTree[commodity]
 	if pt == nil {
@@ -230,7 +248,7 @@ func PopulateMarketPrice(db *gorm.DB, ps []posting.Posting) []posting.Posting {
 // Provider prices are loaded first, then journal prices are inserted on top so
 // that journal values take precedence over provider values for the same date.
 func loadRateCache(db *gorm.DB) {
-	rcache.pairTrees = make(map[ratePairKey]*btree.BTree)
+	pairTrees := make(map[ratePairKey]*btree.BTree)
 
 	dc := config.DefaultCurrency()
 	// Helper that inserts a price into the pair-indexed tree.
@@ -243,10 +261,10 @@ func loadRateCache(db *gorm.DB) {
 			return
 		}
 		k := ratePairKey{Base: p.CommodityName, Quote: quote}
-		if rcache.pairTrees[k] == nil {
-			rcache.pairTrees[k] = btree.New(rateCacheBTreeDegree)
+		if pairTrees[k] == nil {
+			pairTrees[k] = btree.New(rateCacheBTreeDegree)
 		}
-		rcache.pairTrees[k].ReplaceOrInsert(p)
+		pairTrees[k].ReplaceOrInsert(p)
 	}
 
 	// Load provider prices first (lower precedence).
@@ -266,11 +284,17 @@ func loadRateCache(db *gorm.DB) {
 	for _, p := range journalPrices {
 		insert(p)
 	}
+
+	rcacheMu.Lock()
+	defer rcacheMu.Unlock()
+	rcache.pairTrees = pairTrees
 }
 
 // ClearRateCache invalidates the pair-aware rate cache so it is rebuilt on the
 // next call to GetRate.
 func ClearRateCache() {
+	rcacheMu.Lock()
+	defer rcacheMu.Unlock()
 	rcache = rateCache{}
 }
 
@@ -278,6 +302,9 @@ func ClearRateCache() {
 // before date.  It queries only the in-memory pair trees; the cache must be
 // loaded before calling this function.
 func lookupDirectRate(base, quote string, date time.Time) (price.Price, bool) {
+	rcacheMu.RLock()
+	defer rcacheMu.RUnlock()
+
 	k := ratePairKey{Base: base, Quote: quote}
 	pt := rcache.pairTrees[k]
 	if pt == nil {
