@@ -344,6 +344,14 @@ func anchorCurrencies() []string {
 	return []string{dc}
 }
 
+// FXRate represents an exchange rate with metadata indicating if it was
+// resolved via a direct pair or synthesized via a one-hop cross rate.
+type FXRate struct {
+	Date    time.Time       `json:"date"`
+	Rate    decimal.Decimal `json:"rate"`
+	Derived bool            `json:"derived"`
+}
+
 // GetRate resolves the exchange rate that converts one unit of base into quote
 // on the given date.  It attempts resolution in the following order:
 //
@@ -359,15 +367,22 @@ func anchorCurrencies() []string {
 // Returns (rate, true) when a rate can be resolved, or (decimal.Zero, false)
 // when no matching price data exists.
 func GetRate(db *gorm.DB, base, quote string, date time.Time) (decimal.Decimal, bool) {
+	fx, ok := GetFXRate(db, base, quote, date)
+	return fx.Rate, ok
+}
+
+// GetFXRate is the same as GetRate but returns a full FXRate struct including
+// the derived flag.
+func GetFXRate(db *gorm.DB, base, quote string, date time.Time) (FXRate, bool) {
 	if base == quote {
-		return decimal.NewFromInt(1), true
+		return FXRate{Date: date, Rate: decimal.NewFromInt(1), Derived: false}, true
 	}
 
 	rcache.Do(func() { loadRateCache(db) })
 
 	// 1. Direct pair.
 	if rate, ok := lookupRateBetween(base, quote, date); ok {
-		return rate, true
+		return FXRate{Date: date, Rate: rate, Derived: false}, true
 	}
 
 	// 2 & 3 are handled by lookupRateBetween already for the direct and
@@ -381,7 +396,7 @@ func GetRate(db *gorm.DB, base, quote string, date time.Time) (decimal.Decimal, 
 			r1, ok1 := lookupRateBetween(base, anchor, date)
 			r2, ok2 := lookupRateBetween(anchor, quote, date)
 			if ok1 && ok2 {
-				return r1.Mul(r2), true
+				return FXRate{Date: date, Rate: r1.Mul(r2), Derived: true}, true
 			}
 		}
 	}
@@ -392,5 +407,19 @@ func GetRate(db *gorm.DB, base, quote string, date time.Time) (decimal.Decimal, 
 		"date":  date.Format("2006-01-02"),
 	}).Debug("GetRate: no price data found for pair")
 
-	return decimal.Zero, false
+	return FXRate{}, false
+}
+
+// GetFXRates returns the daily exchange rates for the given month and pair.
+func GetFXRates(db *gorm.DB, base, quote string, year, month int) []FXRate {
+	start := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	end := start.AddDate(0, 1, 0).Add(-time.Nanosecond)
+
+	var rates []FXRate
+	for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
+		if rate, ok := GetFXRate(db, base, quote, d); ok {
+			rates = append(rates, rate)
+		}
+	}
+	return rates
 }

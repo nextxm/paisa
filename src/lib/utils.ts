@@ -121,6 +121,12 @@ export interface Price {
   source: string;
 }
 
+export interface FXRate {
+  date: dayjs.Dayjs;
+  rate: number;
+  derived: boolean;
+}
+
 export interface PriceFilters {
   bases: string[];
   quotes: string[];
@@ -605,6 +611,9 @@ export function ajax(
   route: "/api/liabilities/balance"
 ): Promise<{ liability_breakdowns: LiabilityBreakdown[] }>;
 export function ajax(route: "/api/price"): Promise<{ prices: Record<string, Price[]> }>;
+export function ajax(
+  route: "/api/fx-rates"
+): Promise<{ rates: FXRate[]; base: string; quote: string; year: number; month: number }>;
 export function ajax(route: "/api/price/filters"): Promise<PriceFilters>;
 export function ajax(route: "/api/transaction"): Promise<{ transactions: Transaction[] }>;
 export function ajax(
