@@ -171,6 +171,9 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/price/providers", func(c *gin.Context) {
 		c.JSON(200, GetPriceProviders(db))
 	})
+	router.GET("/api/fx-rates", func(c *gin.Context) {
+		GetFXRatesHandler(db, c)
+	})
 
 	writeGroup.POST("/api/price/providers/delete/:provider", func(c *gin.Context) {
 		provider := c.Param("provider")

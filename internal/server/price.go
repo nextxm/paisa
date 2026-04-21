@@ -416,3 +416,44 @@ func ExportPricesHandler(db *gorm.DB, c *gin.Context) {
 	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="prices.%s"`, ext))
 	c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(text))
 }
+
+// GetFXRatesHandler handles GET /api/fx-rates.
+func GetFXRatesHandler(db *gorm.DB, c *gin.Context) {
+	base := c.Query("base")
+	if base == "" {
+		base = "USD"
+	}
+	quote := c.Query("quote")
+	if quote == "" {
+		quote = config.DefaultCurrency()
+	}
+
+	yearStr := c.Query("year")
+	monthStr := c.Query("month")
+
+	now := time.Now()
+	year := now.Year()
+	month := int(now.Month())
+
+	if yearStr != "" {
+		y, err := time.Parse("2006", yearStr)
+		if err == nil {
+			year = y.Year()
+		}
+	}
+	if monthStr != "" {
+		m, err := time.Parse("01", monthStr)
+		if err == nil {
+			month = int(m.Month())
+		}
+	}
+
+	rates := service.GetFXRates(db, base, quote, year, month)
+	c.JSON(http.StatusOK, gin.H{
+		"rates": rates,
+		"base":  base,
+		"quote": quote,
+		"year":  year,
+		"month": month,
+	})
+}
