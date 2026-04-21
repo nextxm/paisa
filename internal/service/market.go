@@ -282,7 +282,10 @@ func lookupDirectRate(base, quote string, date time.Time) (price.Price, bool) {
 	if pt == nil {
 		return price.Price{}, false
 	}
-	p := utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: date, QuoteCommodity: quote})
+	// For exchange rates, we use the end of the day as pivot to handle
+	// fetch race conditions between commodities and FX rates on the same day.
+	pivot := utils.EndOfDay(date)
+	p := utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: pivot, QuoteCommodity: quote})
 	if p.Value.IsZero() {
 		return price.Price{}, false
 	}
