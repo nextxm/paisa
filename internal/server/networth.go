@@ -137,7 +137,8 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 
 	end := utils.EndOfToday()
 	for start := postings[0].Date; start.Before(end); start = start.AddDate(0, 0, 1) {
-		for len(postings) > 0 && (postings[0].Date.Before(start) || postings[0].Date.Equal(start)) {
+		dayEnd := utils.EndOfDay(start)
+		for len(postings) > 0 && !postings[0].Date.After(dayEnd) {
 			p, postings = postings[0], postings[1:]
 			rs := accumulator[p.Commodity]
 			isInterest := service.IsInterest(db, p)
@@ -158,7 +159,7 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 					rs.withdrawal = rs.withdrawal.Add(service.GetMarketPrice(db, p, p.Date).Neg())
 				}
 
-				rs.balance = rs.balance.Add(service.GetMarketPrice(db, p, start))
+				rs.balance = rs.balance.Add(service.GetMarketPrice(db, p, dayEnd))
 				rs.balanceUnits = rs.balanceUnits.Add(p.Quantity)
 			}
 
@@ -181,7 +182,7 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 				if computeBalanceUnits {
 					balanceUnits = balanceUnits.Add(rs.balanceUnits)
 				}
-				price := service.GetUnitPrice(db, commodity, start)
+				price := service.GetUnitPrice(db, commodity, dayEnd)
 				if !price.Value.Equal(decimal.Zero) {
 					balance = balance.Add(rs.balanceUnits.Mul(price.Value))
 				} else {
