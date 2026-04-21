@@ -118,7 +118,8 @@
         { label: "Editor", href: "/editor", help: "editor", disablePreload: true },
         { label: "Transactions", href: "/transaction", help: "bulk-edit" },
         { label: "Postings", href: "/posting" },
-        { label: "Price", href: "/price" }
+        { label: "Price", href: "/price" },
+        { label: "FX Rates", href: "/fx-rates" }
       ]
     },
     {

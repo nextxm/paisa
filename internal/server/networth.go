@@ -63,7 +63,11 @@ func convertNetworthTimelineToReportCurrency(db *gorm.DB, timeline []Networth, r
 func GetCurrentNetworth(db *gorm.DB) gin.H {
 	postings := query.Init(db).Like("Assets:%", "Income:CapitalGains:%", "Liabilities:%").UntilToday().All()
 	postings = service.PopulateMarketPrice(db, postings)
-	networth := computeNetworth(db, postings)
+	networthTimeline := computeNetworthTimeline(db, postings, false)
+	networth := Networth{}
+	if len(networthTimeline) > 0 {
+		networth = networthTimeline[len(networthTimeline)-1]
+	}
 	xirr := service.XIRR(db, postings)
 	return gin.H{"networth": networth, "xirr": xirr}
 }
@@ -137,23 +141,29 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 
 	end := utils.EndOfToday()
 	for start := postings[0].Date; start.Before(end); start = start.AddDate(0, 0, 1) {
-		for len(postings) > 0 && (postings[0].Date.Before(start) || postings[0].Date.Equal(start)) {
+		dayEnd := utils.EndOfDay(start)
+		for len(postings) > 0 && !postings[0].Date.After(dayEnd) {
 			p, postings = postings[0], postings[1:]
 			rs := accumulator[p.Commodity]
-
 			isInterest := service.IsInterest(db, p)
+			isInterestRepayment := service.IsInterestRepayment(db, p)
+			isStockSplit := service.IsStockSplit(db, p)
 			isCapitalGains := service.IsCapitalGains(p)
 
-			if p.Amount.GreaterThan(decimal.Zero) && !isInterest {
-				rs.investment = rs.investment.Add(service.GetMarketPrice(db, p, p.Date))
-			}
+			if isInterest || isInterestRepayment {
+				rs.balance = rs.balance.Add(p.Amount)
+			} else if isCapitalGains {
+				rs.withdrawal = rs.withdrawal.Add(p.Amount.Neg())
+			} else {
+				if p.Amount.GreaterThan(decimal.Zero) && !isStockSplit {
+					rs.investment = rs.investment.Add(service.GetMarketPrice(db, p, p.Date))
+				}
 
-			if p.Amount.LessThan(decimal.Zero) && !isInterest {
-				rs.withdrawal = rs.withdrawal.Add(service.GetMarketPrice(db, p, p.Date).Neg())
-			}
+				if p.Amount.LessThan(decimal.Zero) && !isStockSplit {
+					rs.withdrawal = rs.withdrawal.Add(service.GetMarketPrice(db, p, p.Date).Neg())
+				}
 
-			if !isCapitalGains {
-				rs.balance = rs.balance.Add(service.GetMarketPrice(db, p, start))
+				rs.balance = rs.balance.Add(service.GetMarketPrice(db, p, dayEnd))
 				rs.balanceUnits = rs.balanceUnits.Add(p.Quantity)
 			}
 
@@ -176,7 +186,7 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 				if computeBalanceUnits {
 					balanceUnits = balanceUnits.Add(rs.balanceUnits)
 				}
-				price := service.GetUnitPrice(db, commodity, start)
+				price := service.GetUnitPrice(db, commodity, dayEnd)
 				if !price.Value.Equal(decimal.Zero) {
 					balance = balance.Add(rs.balanceUnits.Mul(price.Value))
 				} else {

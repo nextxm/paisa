@@ -57,6 +57,9 @@ func buildPricesRouter(t *testing.T, db *gorm.DB) *gin.Engine {
 	r.GET("/api/price/filters", func(c *gin.Context) {
 		GetPriceFilters(db, c)
 	})
+	r.GET("/api/fx-rates", func(c *gin.Context) {
+		GetFXRatesHandler(db, c)
+	})
 	return r
 }
 
@@ -408,4 +411,51 @@ func TestGetPriceFilters(t *testing.T) {
 	assert.Equal(t, []string{"EUR", "USD"}, body.Bases)
 	assert.Equal(t, []string{"INR", "USD"}, body.Quotes)
 	assert.Equal(t, []string{"com-yahoo", "journal"}, body.Sources)
+}
+
+func TestGetFXRatesHandler(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+	service.ClearRateCache()
+
+	seedPricesIntoDB(t, db, []price.Price{
+		// Direct USD -> INR
+		{CommodityType: config.Unknown, CommodityID: "USD", CommodityName: "USD",
+			QuoteCommodity: "INR", Date: mustParseDate("2024-01-01"),
+			Value: decimal.NewFromFloat(83.0), Source: "journal"},
+		// Direct EUR -> INR
+		{CommodityType: config.Unknown, CommodityID: "EUR", CommodityName: "EUR",
+			QuoteCommodity: "INR", Date: mustParseDate("2024-01-01"),
+			Value: decimal.NewFromFloat(90.0), Source: "journal"},
+	})
+	r := buildPricesRouter(t, db)
+
+	// Direct quote.
+	req := httptest.NewRequest(http.MethodGet, "/api/fx-rates?base=USD&quote=INR&year=2024&month=01", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var body struct {
+		Rates []service.FXRate `json:"rates"`
+	}
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&body))
+	require.NotEmpty(t, body.Rates)
+	assert.False(t, body.Rates[0].Derived)
+	v, _ := body.Rates[0].Rate.Float64()
+	assert.InDelta(t, 83.0, v, 0.001)
+
+	// Derived quote (USD -> INR <- EUR => USD -> EUR).
+	// USD -> INR is 83, EUR -> INR is 90.
+	// USD -> EUR = (USD -> INR) * (INR -> EUR) = 83 * (1/90) = 0.9222...
+	req = httptest.NewRequest(http.MethodGet, "/api/fx-rates?base=USD&quote=EUR&year=2024&month=01", nil)
+	rec = httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&body))
+	require.NotEmpty(t, body.Rates)
+	assert.True(t, body.Rates[0].Derived)
+	v, _ = body.Rates[0].Rate.Float64()
+	assert.InDelta(t, 0.9222, v, 0.001)
 }
