@@ -63,7 +63,11 @@ func convertNetworthTimelineToReportCurrency(db *gorm.DB, timeline []Networth, r
 func GetCurrentNetworth(db *gorm.DB) gin.H {
 	postings := query.Init(db).Like("Assets:%", "Income:CapitalGains:%", "Liabilities:%").UntilToday().All()
 	postings = service.PopulateMarketPrice(db, postings)
-	networth := computeNetworth(db, postings)
+	networthTimeline := computeNetworthTimeline(db, postings, false)
+	networth := Networth{}
+	if len(networthTimeline) > 0 {
+		networth = networthTimeline[len(networthTimeline)-1]
+	}
 	xirr := service.XIRR(db, postings)
 	return gin.H{"networth": networth, "xirr": xirr}
 }
