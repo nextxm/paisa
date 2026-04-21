@@ -163,7 +163,8 @@ func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
 
 	pt := pcache.dcPricesTree[commodity]
 	if pt == nil {
-		log.Fatal("Price not found ", commodity)
+		log.WithField("commodity", commodity).Warn("Price not found, using 0")
+		return price.Price{}
 	}
 
 	dc := config.DefaultCurrency()
