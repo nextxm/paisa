@@ -78,7 +78,7 @@
   "goalSummaries": [],
   "networth": {
     "networth": {
-      "date": "2022-02-07T23:59:59.999999999Z",
+      "date": "2022-02-07T00:00:00Z",
       "investmentAmount": 229867.183232,
       "withdrawalAmount": 128895.183232,
       "gainAmount": 1183.8113381976295,
@@ -233,7 +233,7 @@
           "payee": "Purchased 0.00000001 BTC",
           "account": "Assets:Coinbase:BTC",
           "commodity": "BTC",
-          "quantity": 1e-8,
+          "quantity": 1e-08,
           "amount": 0,
           "status": "cleared",
           "tag_recurring": "",
