@@ -22,7 +22,7 @@ func XIRR(db *gorm.DB, ps []posting.Posting) decimal.Decimal {
 		if IsInterest(db, p) || IsInterestRepayment(db, p) {
 			return xirr.Cashflow{Date: p.Date, Amount: 0}
 		} else {
-			return xirr.Cashflow{Date: p.Date, Amount: p.Amount.Neg().Round(4).InexactFloat64()}
+			return xirr.Cashflow{Date: p.Date, Amount: GetMarketPrice(db, p, p.Date).Neg().Round(4).InexactFloat64()}
 		}
 	}))
 
@@ -38,7 +38,7 @@ func APR(db *gorm.DB, ps []posting.Posting) decimal.Decimal {
 		return p.MarketAmount
 	})
 	cashflows := lo.Map(ps, func(p posting.Posting, _ int) xirr.Cashflow {
-		return xirr.Cashflow{Date: p.Date, Amount: p.Amount.Round(4).InexactFloat64()}
+		return xirr.Cashflow{Date: p.Date, Amount: GetMarketPrice(db, p, p.Date).Round(4).InexactFloat64()}
 	})
 	cashflows = append(cashflows, xirr.Cashflow{Date: today, Amount: marketAmount.Neg().Round(4).InexactFloat64()})
 

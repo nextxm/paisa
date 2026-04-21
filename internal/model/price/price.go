@@ -24,7 +24,11 @@ type Price struct {
 }
 
 func (p Price) Less(o btree.Item) bool {
-	return p.Date.Before(o.(Price).Date)
+	b := o.(Price)
+	if !p.Date.Equal(b.Date) {
+		return p.Date.Before(b.Date)
+	}
+	return p.QuoteCommodity < b.QuoteCommodity
 }
 
 func DeleteAll(db *gorm.DB) error {

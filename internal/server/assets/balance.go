@@ -112,14 +112,14 @@ func ComputeBreakdown(db *gorm.DB, ps []posting.Posting, leaf bool, group string
 		if utils.IsCheckingAccount(p.Account) || p.Amount.LessThan(decimal.Zero) || service.IsInterest(db, p) || service.IsStockSplit(db, p) || service.IsCapitalGains(p) {
 			return acc
 		} else {
-			return acc.Add(p.Amount)
+			return acc.Add(service.GetMarketPrice(db, p, p.Date))
 		}
 	}, decimal.Zero)
 	withdrawalAmount := lo.Reduce(ps, func(acc decimal.Decimal, p posting.Posting, _ int) decimal.Decimal {
 		if !service.IsCapitalGains(p) && (utils.IsCheckingAccount(p.Account) || p.Amount.GreaterThan(decimal.Zero) || service.IsInterest(db, p) || service.IsStockSplit(db, p)) {
 			return acc
 		} else {
-			return acc.Add(p.Amount.Neg())
+			return acc.Add(service.GetMarketPrice(db, p, p.Date).Neg())
 		}
 	}, decimal.Zero)
 	psWithoutCapitalGains := lo.Filter(ps, func(p posting.Posting, _ int) bool {

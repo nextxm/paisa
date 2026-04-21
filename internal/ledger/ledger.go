@@ -928,7 +928,8 @@ func buildPricesTree(prices []price.Price) map[string]*btree.BTree {
 func lookupPrice(pricesTree map[string]*btree.BTree, commodity string, date time.Time) decimal.Decimal {
 	pt := pricesTree[commodity]
 	if pt != nil {
-		pc := utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: date})
+		dc := config.DefaultCurrency()
+		pc := utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: date, QuoteCommodity: dc})
 		if !pc.Value.Equal(decimal.Zero) {
 			return pc.Value
 		}

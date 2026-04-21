@@ -92,11 +92,11 @@ func computeNetworth(db *gorm.DB, postings []posting.Posting) Networth {
 			withdrawal = withdrawal.Add(p.Amount.Neg())
 		} else {
 			if p.Amount.GreaterThan(decimal.Zero) && !isStockSplit {
-				investment = investment.Add(p.Amount)
+				investment = investment.Add(service.GetMarketPrice(db, p, p.Date))
 			}
 
 			if p.Amount.LessThan(decimal.Zero) && !isStockSplit {
-				withdrawal = withdrawal.Add(p.Amount.Neg())
+				withdrawal = withdrawal.Add(service.GetMarketPrice(db, p, p.Date).Neg())
 			}
 
 			balance = balance.Add(service.GetMarketPrice(db, p, now))
@@ -145,11 +145,11 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 			isCapitalGains := service.IsCapitalGains(p)
 
 			if p.Amount.GreaterThan(decimal.Zero) && !isInterest {
-				rs.investment = rs.investment.Add(p.Amount)
+				rs.investment = rs.investment.Add(service.GetMarketPrice(db, p, p.Date))
 			}
 
 			if p.Amount.LessThan(decimal.Zero) && !isInterest {
-				rs.withdrawal = rs.withdrawal.Add(p.Amount.Neg())
+				rs.withdrawal = rs.withdrawal.Add(service.GetMarketPrice(db, p, p.Date).Neg())
 			}
 
 			if !isCapitalGains {

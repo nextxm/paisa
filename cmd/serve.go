@@ -5,6 +5,7 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/ananthakumaran/paisa/internal/server"
+	"github.com/ananthakumaran/paisa/internal/service"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -29,6 +30,7 @@ var serveCmd = &cobra.Command{
 			db = db.Debug()
 		}
 
+		service.WarmCache(db)
 		server.Listen(db, port)
 	},
 }
