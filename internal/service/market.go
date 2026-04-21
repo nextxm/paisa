@@ -39,6 +39,7 @@ type priceCache struct {
 	sync.Once
 	pricesTree        map[string]*btree.BTree
 	postingPricesTree map[string]*btree.BTree
+	dcPricesTree      map[string]*btree.BTree
 }
 
 var pcache priceCache
@@ -51,6 +52,7 @@ func loadPriceCache(db *gorm.DB) {
 	}
 	pcache.pricesTree = make(map[string]*btree.BTree)
 	pcache.postingPricesTree = make(map[string]*btree.BTree)
+	pcache.dcPricesTree = make(map[string]*btree.BTree)
 
 	for _, price := range prices {
 		if pcache.pricesTree[price.CommodityName] == nil {
@@ -127,45 +129,53 @@ func isDefaultCurrency(quote, dc string) bool {
 // preserved.
 func synthesizeDefaultCurrencyPrices(db *gorm.DB, dc string) {
 	for commodityName, tree := range pcache.pricesTree {
-		// Check whether the tree already has any price in the default currency.
-		hasDC := false
-		tree.Ascend(func(item btree.Item) bool {
-			p := item.(price.Price)
-			if isDefaultCurrency(p.QuoteCommodity, dc) {
-				hasDC = true
-				return false
-			}
-			return true
-		})
-		if hasDC {
-			continue
-		}
-
-		// No dc prices found: build a synthetic dc tree.
+		// Build a unified tree in the default currency.
+		// Start by inserting all native prices that are already in dc.
 		out := btree.New(2)
 		tree.Ascend(func(item btree.Item) bool {
 			p := item.(price.Price)
 			if isDefaultCurrency(p.QuoteCommodity, dc) {
-				// Treat blank quote as already-dc; keep as-is.
 				out.ReplaceOrInsert(p)
+			}
+			return true
+		})
+
+		// Now iterate over every native price again. If it's not in dc,
+		// try to synthesize a dc value.
+		tree.Ascend(func(item btree.Item) bool {
+			p := item.(price.Price)
+			if isDefaultCurrency(p.QuoteCommodity, dc) {
 				return true
 			}
+
 			rate, ok := GetRate(db, p.QuoteCommodity, dc, p.Date)
 			if ok && !rate.IsZero() {
 				syn := p
 				syn.QuoteCommodity = dc
 				syn.Value = p.Value.Mul(rate)
-				out.ReplaceOrInsert(syn)
-			} else {
-				// Rate unavailable: keep original entry so callers can still
-				// fall back to the native price rather than getting a zero.
-				out.ReplaceOrInsert(p)
+
+				// Only insert synthesized price if there isn't already a native
+				// DC price for this exact date.
+				if exists := out.Get(syn); exists == nil {
+					out.ReplaceOrInsert(syn)
+				}
 			}
 			return true
 		})
 
+		// If the commodity still has no entries in out, we keep the original
+		// tree as a last-resort fallback (it will still contain native prices).
 		if out.Len() > 0 {
-			pcache.pricesTree[commodityName] = out
+			pcache.dcPricesTree[commodityName] = out
+		} else {
+			pcache.dcPricesTree[commodityName] = tree
+		}
+	}
+
+	// Also handle postingPricesTree (specifically used for ledger cost basis)
+	for commodityName, tree := range pcache.postingPricesTree {
+		if pcache.dcPricesTree[commodityName] == nil {
+			pcache.dcPricesTree[commodityName] = tree
 		}
 	}
 }
@@ -184,22 +194,20 @@ func WarmCache(db *gorm.DB) {
 func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
 	pcache.Do(func() { loadPriceCache(db) })
 
-	pt := pcache.pricesTree[commodity]
+	pt := pcache.dcPricesTree[commodity]
 	if pt == nil {
 		log.Fatal("Price not found ", commodity)
 	}
 
-	pc := utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: date})
+	dc := config.DefaultCurrency()
+	// Use a 'maximum' pivot for the date to find the latest quote currency entry.
+	// However, since dcPricesTree is synthesized to be DC-only, the simple pivot works.
+	pc := utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: date, QuoteCommodity: dc})
 	if !pc.Value.Equal(decimal.Zero) {
 		return pc
 	}
 
-	pt = pcache.postingPricesTree[commodity]
-	if pt == nil {
-		log.Fatal("Price not found ", commodity)
-	}
-	return utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: date})
-
+	return price.Price{}
 }
 
 func GetAllPrices(db *gorm.DB, commodity string) []price.Price {
@@ -302,7 +310,7 @@ func lookupDirectRate(base, quote string, date time.Time) (price.Price, bool) {
 	if pt == nil {
 		return price.Price{}, false
 	}
-	p := utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: date})
+	p := utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: date, QuoteCommodity: quote})
 	if p.Value.IsZero() {
 		return price.Price{}, false
 	}

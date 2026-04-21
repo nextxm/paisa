@@ -28,3 +28,5 @@ fonts/*
 brand/*.png
 scripts/*
 *.exe
+*.db-shm
+*.db-wal
