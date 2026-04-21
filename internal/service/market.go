@@ -45,69 +45,36 @@ type priceCache struct {
 var pcache priceCache
 
 func loadPriceCache(db *gorm.DB) {
-	var prices []price.Price
-	result := db.Where("commodity_type != ?", config.Unknown).Find(&prices)
-	if result.Error != nil {
-		log.Fatal(result.Error)
-	}
 	pcache.pricesTree = make(map[string]*btree.BTree)
 	pcache.postingPricesTree = make(map[string]*btree.BTree)
 	pcache.dcPricesTree = make(map[string]*btree.BTree)
 
-	for _, price := range prices {
-		if pcache.pricesTree[price.CommodityName] == nil {
-			pcache.pricesTree[price.CommodityName] = btree.New(2)
-		}
-
-		pcache.pricesTree[price.CommodityName].ReplaceOrInsert(price)
-	}
-
-	var postings []posting.Posting
-	result = db.Find(&postings)
-	if result.Error != nil {
-		log.Fatal(result.Error)
-	}
-
 	dc := config.DefaultCurrency()
-	for commodityName, postings := range lo.GroupBy(postings, func(p posting.Posting) string { return p.Commodity }) {
-		if !utils.IsCurrency(postings[0].Commodity) {
-			result := db.Where("commodity_type = ? and commodity_name = ? and (quote_commodity = ? or quote_commodity = '')", config.Unknown, commodityName, dc).Find(&prices)
-			if result.Error != nil {
-				log.Fatal(result.Error)
-			}
+	var prices []price.Price
+	if err := db.Find(&prices).Error; err != nil {
+		log.Fatal(err)
+	}
 
-			postingPricesTree := btree.New(2)
-			for _, price := range prices {
-				postingPricesTree.ReplaceOrInsert(price)
-			}
-			pcache.postingPricesTree[commodityName] = postingPricesTree
+	for _, p := range prices {
+		if p.QuoteCommodity == "" {
+			p.QuoteCommodity = dc
+		}
 
-			if pcache.pricesTree[commodityName] == nil {
-				// No provider prices: load all journal prices (any quote currency)
-				// so that synthesizeDefaultCurrencyPrices can convert them below.
-				var allJournalPrices []price.Price
-				result2 := db.Where("commodity_type = ? and commodity_name = ?", config.Unknown, commodityName).Find(&allJournalPrices)
-				if result2.Error != nil {
-					log.Fatal(result2.Error)
-				}
-				nativeTree := btree.New(2)
-				for _, p := range allJournalPrices {
-					nativeTree.ReplaceOrInsert(p)
-				}
-				if nativeTree.Len() > 0 {
-					pcache.pricesTree[commodityName] = nativeTree
-				} else {
-					pcache.pricesTree[commodityName] = postingPricesTree
-				}
+		if pcache.pricesTree[p.CommodityName] == nil {
+			pcache.pricesTree[p.CommodityName] = btree.New(2)
+		}
+		pcache.pricesTree[p.CommodityName].ReplaceOrInsert(p)
+
+		// postingPricesTree is used specifically for native journal prices
+		// already in the default currency.
+		if p.CommodityType == config.Unknown && p.QuoteCommodity == dc {
+			if pcache.postingPricesTree[p.CommodityName] == nil {
+				pcache.postingPricesTree[p.CommodityName] = btree.New(2)
 			}
+			pcache.postingPricesTree[p.CommodityName].ReplaceOrInsert(p)
 		}
 	}
 
-	// For commodities whose price tree has no entry in the default currency,
-	// synthesize virtual default-currency prices by multiplying each native
-	// price by GetRate(nativeCurrency, dc, date).  This allows GetUnitPrice to
-	// always return values denominated in dc regardless of what currency the
-	// underlying prices are stored in.
 	synthesizeDefaultCurrencyPrices(db, dc)
 }
 
@@ -264,12 +231,17 @@ func PopulateMarketPrice(db *gorm.DB, ps []posting.Posting) []posting.Posting {
 func loadRateCache(db *gorm.DB) {
 	rcache.pairTrees = make(map[ratePairKey]*btree.BTree)
 
+	dc := config.DefaultCurrency()
 	// Helper that inserts a price into the pair-indexed tree.
 	insert := func(p price.Price) {
-		if p.QuoteCommodity == "" {
+		quote := p.QuoteCommodity
+		if quote == "" {
+			quote = dc
+		}
+		if quote == "" {
 			return
 		}
-		k := ratePairKey{Base: p.CommodityName, Quote: p.QuoteCommodity}
+		k := ratePairKey{Base: p.CommodityName, Quote: quote}
 		if rcache.pairTrees[k] == nil {
 			rcache.pairTrees[k] = btree.New(rateCacheBTreeDegree)
 		}
