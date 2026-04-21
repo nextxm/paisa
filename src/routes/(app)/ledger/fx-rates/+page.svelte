@@ -122,7 +122,9 @@
               {/each}
               {#if rates.length === 0}
                 <tr>
-                  <td colspan="3" class="has-text-centered has-text-grey">No exchange rates found for this period.</td>
+                  <td colspan="3" class="has-text-centered has-text-grey"
+                    >No exchange rates found for this period.</td
+                  >
                 </tr>
               {/if}
             </tbody>
