@@ -337,22 +337,16 @@ func IsForeignCurrency(db *gorm.DB, commodity string) bool {
 
 	// Heuristic: currency codes are typically 2-3 uppercase letters (e.g. USD, EUR, GBP, BTC)
 	// Securities are typically longer or contain lowercase (e.g. AAPL, MSFT, VTSAX)
-	len := len(commodity)
-	if len >= 2 && len <= 3 {
-		// Check if it's all uppercase
-		allUppercase := true
-		for _, ch := range commodity {
-			if ch < 'A' || ch > 'Z' {
-				allUppercase = false
-				break
-			}
-		}
-		if allUppercase {
-			return true
+	nameLen := len(commodity)
+	if nameLen < 2 || nameLen > 3 {
+		return false
+	}
+	for _, ch := range commodity {
+		if ch < 'A' || ch > 'Z' {
+			return false
 		}
 	}
-
-	return false
+	return true
 }
 
 // loadRateCache populates rcache.pairTrees from the database.
