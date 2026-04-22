@@ -185,6 +185,11 @@ type Config struct {
 	// regressions are observed after upgrading.
 	DisableMultiCurrencyPrices bool `json:"disable_multi_currency_prices" yaml:"disable_multi_currency_prices"`
 
+	// ProviderDebugHTTP enables request/response logging for outbound HTTP calls
+	// to price and reference-data providers. The flag is read at request time so
+	// updates applied via the config API take effect for subsequent requests.
+	ProviderDebugHTTP bool `json:"provider_debug_http" yaml:"provider_debug_http"`
+
 	CreditCards []CreditCard `json:"credit_cards" yaml:"credit_cards"`
 }
 
@@ -465,6 +470,10 @@ func DefaultCurrency() string {
 // as a rollback mechanism.
 func IsMultiCurrencyPricesEnabled() bool {
 	return !config.DisableMultiCurrencyPrices
+}
+
+func IsProviderHTTPDebugEnabled() bool {
+	return config.ProviderDebugHTTP
 }
 
 func TimeZone() *time.Location {

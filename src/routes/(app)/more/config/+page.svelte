@@ -8,11 +8,12 @@
   import { refresh } from "../../../../store";
   import { sync } from "$lib/sync";
 
-  let lastConfig: UserConfig;
-  let config: UserConfig;
+  let lastConfig: typeof globalThis.USER_CONFIG;
+  let config: typeof globalThis.USER_CONFIG;
   let schema: JSONSchema7;
   let hasChanges = true;
   let isLoading = false;
+  let isTogglingProviderDebug = false;
   let error: string = null;
   let accounts: string[] = [];
   onMount(async () => {
@@ -33,7 +34,7 @@
     }
   }
 
-  async function save(newConfig: UserConfig) {
+  async function save(newConfig: typeof globalThis.USER_CONFIG) {
     isLoading = true;
     try {
       let success = false;
@@ -61,6 +62,37 @@
     }
   }
 
+  async function applyProviderHTTPDebug(enabled: boolean) {
+    isTogglingProviderDebug = true;
+    try {
+      const response: {
+        success?: boolean;
+        enabled?: boolean;
+        error?: { code: string; message: string };
+      } = await ajax("/api/config/provider-debug-http", {
+        method: "POST",
+        body: JSON.stringify({ enabled }),
+        background: true
+      });
+
+      if (response.success) {
+        config.provider_debug_http = enabled;
+        lastConfig.provider_debug_http = enabled;
+        globalThis.USER_CONFIG = _.cloneDeep(config);
+        configUpdated();
+        toast.toast({
+          message: `Provider HTTP debug logging ${enabled ? "enabled" : "disabled"}`,
+          type: "is-success"
+        });
+        error = null;
+      } else if (response.error?.message) {
+        error = response.error.message;
+      }
+    } finally {
+      isTogglingProviderDebug = false;
+    }
+  }
+
   $: hasChanges = !_.isEqual(config, lastConfig);
 </script>
 
@@ -85,22 +117,56 @@
                 </div>
               </article>
             {/if}
+            <article class="message is-warning">
+              <div class="message-body">
+                <div
+                  class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap gap-3"
+                >
+                  <div>
+                    <b>Provider HTTP debug logging</b><br />
+                    Toggle request/response logging immediately for the next provider calls without saving
+                    the full configuration form.
+                  </div>
+                  <div class="field has-addons mb-0">
+                    <div class="control">
+                      <button
+                        on:click={() => applyProviderHTTPDebug(false)}
+                        class="button is-light {isTogglingProviderDebug &&
+                          !config.provider_debug_http &&
+                          'is-loading'}"
+                        disabled={isTogglingProviderDebug || !config.provider_debug_http}
+                        >Disable</button
+                      >
+                    </div>
+                    <div class="control">
+                      <button
+                        on:click={() => applyProviderHTTPDebug(true)}
+                        class="button is-warning {isTogglingProviderDebug &&
+                          config.provider_debug_http &&
+                          'is-loading'}"
+                        disabled={isTogglingProviderDebug || config.provider_debug_http}
+                        >Enable</button
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
             <div class="field is-grouped is-grouped-right">
               <div class="control">
                 <button
-                  on:click={(_e) => save(config)}
+                  on:click={() => save(config)}
                   class="button is-success {isLoading && 'is-loading'}"
                   disabled={!hasChanges}>Save</button
                 >
               </div>
               <div class="control">
-                <button
-                  on:click={(_e) => (config = _.cloneDeep(lastConfig))}
-                  class="button is-light">Cancel</button
+                <button on:click={() => (config = _.cloneDeep(lastConfig))} class="button is-light"
+                  >Cancel</button
                 >
               </div>
               <div class="control">
-                <button on:click={(_e) => resetToDefault()} class="button is-danger"
+                <button on:click={() => resetToDefault()} class="button is-danger"
                   >Reset to Defaults</button
                 >
               </div>

@@ -16,6 +16,7 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/price"
+	"github.com/ananthakumaran/paisa/internal/scraper/httpclient"
 	"github.com/ananthakumaran/paisa/internal/utils"
 )
 
@@ -158,7 +159,7 @@ func getTicker(ticker string) (*Response, error) {
 	agent.Do(func() { selectAgent() })
 	req.Header.Add("User-Agent", agent.name)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpclient.Do(req)
 	if err != nil {
 		return nil, err
 	}

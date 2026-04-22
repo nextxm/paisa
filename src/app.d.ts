@@ -42,6 +42,7 @@ interface DoctorConfig {
 interface UserConfig {
   default_currency: string;
   readonly: boolean;
+  provider_debug_http: boolean;
   locale: string;
   journal_path: string;
   display_precision: number;
