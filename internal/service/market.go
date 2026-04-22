@@ -186,9 +186,11 @@ func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
 	}
 
 	dc := config.DefaultCurrency()
-	// Use a 'maximum' pivot for the date to find the latest quote currency entry.
-	// However, since dcPricesTree is synthesized to be DC-only, the simple pivot works.
-	pc := utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: date, QuoteCommodity: dc})
+	// Provider rows can carry an intra-day timestamp for a trading date (for
+	// example, Yahoo daily candles for LSE symbols). Query with end-of-day so a
+	// same-calendar-day price is still found when callers pass a date at midnight.
+	pivot := utils.EndOfDay(date)
+	pc := utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: pivot, QuoteCommodity: dc})
 	if !pc.Value.Equal(decimal.Zero) {
 		return pc
 	}

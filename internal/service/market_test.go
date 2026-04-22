@@ -323,6 +323,57 @@ func TestGetUnitPrice_PreservesNativePriceWhenNoRateAvailable(t *testing.T) {
 		"native price must be preserved when no exchange rate is available")
 }
 
+// TestGetUnitPrice_FallsBackToLatestPriorPrice verifies that valuation uses the
+// most recent prior provider price when the latest trading date has no row.
+// This is the expected post-fix behavior for Yahoo responses that omit today's
+// close instead of returning a numeric value.
+func TestGetUnitPrice_FallsBackToLatestPriorPrice(t *testing.T) {
+	loadMarketTestConfig(t, false)
+	db := openTestDB(t)
+	ClearPriceCache()
+	ClearRateCache()
+
+	seedPrice(t, db, "VOD.L", "GBP", "provider", "2026-04-20", 116.6, config.Stock)
+
+	pc := GetUnitPrice(db, "VOD.L", mustParseDate("2026-04-21"))
+	assert.Equal(t, "GBP", pc.QuoteCommodity)
+	assert.True(t, decimal.NewFromFloat(116.6).Equal(pc.Value),
+		"missing latest-day row must fall back to the latest prior price, not zero")
+}
+
+// TestGetUnitPrice_UsesSameDayIntradayPrice verifies that a same-calendar-day
+// provider quote with a non-midnight timestamp is still selected for that day.
+func TestGetUnitPrice_UsesSameDayIntradayPrice(t *testing.T) {
+	loadMarketTestConfig(t, false)
+	db := openTestDB(t)
+	ClearPriceCache()
+	ClearRateCache()
+
+	require.NoError(t, db.Create(&price.Price{
+		Date:           time.Date(2026, time.April, 20, 7, 0, 0, 0, time.UTC),
+		CommodityType:  config.Stock,
+		CommodityID:    "VOD.L",
+		CommodityName:  "VOD.L",
+		QuoteCommodity: "GBP",
+		Value:          decimal.NewFromFloat(116.6),
+		Source:         "provider",
+	}).Error)
+	require.NoError(t, db.Create(&price.Price{
+		Date:           time.Date(2026, time.April, 21, 7, 0, 0, 0, time.UTC),
+		CommodityType:  config.Stock,
+		CommodityID:    "VOD.L",
+		CommodityName:  "VOD.L",
+		QuoteCommodity: "GBP",
+		Value:          decimal.NewFromFloat(117.2),
+		Source:         "provider",
+	}).Error)
+
+	pc := GetUnitPrice(db, "VOD.L", mustParseDate("2026-04-21"))
+	assert.Equal(t, "GBP", pc.QuoteCommodity)
+	assert.True(t, decimal.NewFromFloat(117.2).Equal(pc.Value),
+		"same-day intraday provider price must be selected for the requested date")
+}
+
 // TestGetUnitPrice_SynthesizesJournalPriceFromNativeCurrency verifies that when
 // a commodity has only journal prices in a non-default currency (no provider
 // prices) and an exchange rate is available, GetUnitPrice synthesizes a
