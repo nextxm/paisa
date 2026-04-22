@@ -9,7 +9,13 @@
       "latestPrice": 0,
       "xirr": 1.76,
       "gainAmount": 1014.95,
-      "absoluteReturn": 0.1014437708956977
+      "absoluteReturn": 0.1014437708956977,
+      "originalBalances": [
+        {
+          "currency": "EUR",
+          "amount": 11020
+        }
+      ]
     },
     "Assets:Checking": {
       "group": "Assets:Checking",
@@ -20,7 +26,13 @@
       "latestPrice": 0,
       "xirr": 0,
       "gainAmount": 994.95,
-      "absoluteReturn": 0
+      "absoluteReturn": 0,
+      "originalBalances": [
+        {
+          "currency": "EUR",
+          "amount": 994.95
+        }
+      ]
     },
     "Assets:Equity": {
       "group": "Assets:Equity",
@@ -31,7 +43,13 @@
       "latestPrice": 0,
       "xirr": 2.17,
       "gainAmount": 20,
-      "absoluteReturn": 0.0019989905097926
+      "absoluteReturn": 0.0019989905097926,
+      "originalBalances": [
+        {
+          "currency": "EUR",
+          "amount": 10025.05
+        }
+      ]
     },
     "Assets:Equity:AAPL": {
       "group": "Assets:Equity:AAPL",
@@ -42,7 +60,13 @@
       "latestPrice": 0,
       "xirr": 2.17,
       "gainAmount": 20,
-      "absoluteReturn": 0.0019989905097926
+      "absoluteReturn": 0.0019989905097926,
+      "originalBalances": [
+        {
+          "currency": "EUR",
+          "amount": 10025.05
+        }
+      ]
     }
   }
 }
