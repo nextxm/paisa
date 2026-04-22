@@ -18,6 +18,9 @@
     "readonly": false,
     "ledger_cli": "ledger",
     "default_currency": "INR",
+    "currencies": [
+      "USD"
+    ],
     "display_precision": 0,
     "amount_alignment_column": 52,
     "locale": "en-IN",
@@ -113,6 +116,13 @@
       "default_currency": {
         "type": "string",
         "description": "The default currency to use. NOTE: Paisa tries to convert other currencies to default currency, so make sure it's possible to convert to default currency by specifying the exchange rate."
+      },
+      "currencies": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "List of additional commodity names that should be treated as currencies (e.g. USD, EUR, GBP). The default currency is always included. Used to distinguish currency holdings from securities when computing original balances."
       },
       "display_precision": {
         "type": "integer",

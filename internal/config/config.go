@@ -146,6 +146,7 @@ type Config struct {
 	Readonly                   bool         `json:"readonly" yaml:"readonly"`
 	LedgerCli                  string       `json:"ledger_cli" yaml:"ledger_cli"`
 	DefaultCurrency            string       `json:"default_currency" yaml:"default_currency"`
+	Currencies                 []string     `json:"currencies" yaml:"currencies"`
 	DisplayPrecision           int          `json:"display_precision" yaml:"display_precision"`
 	AmountAlignmentColumn      int          `json:"amount_alignment_column" yaml:"amount_alignment_column"`
 	Locale                     string       `json:"locale" yaml:"locale"`
@@ -201,6 +202,7 @@ var defaultConfig = Config{
 	Readonly:              false,
 	LedgerCli:             "ledger",
 	DefaultCurrency:       "INR",
+	Currencies:            []string{},
 	DisplayPrecision:      0,
 	AmountAlignmentColumn: 52,
 	Locale:                "en-IN",
@@ -462,6 +464,22 @@ func EnsureLogFilePath() (string, error) {
 
 func DefaultCurrency() string {
 	return config.DefaultCurrency
+}
+
+// GetCurrencies returns the list of commodities that should be treated as
+// currencies (rather than securities). It always includes the default currency
+// and any additional currencies configured by the user.
+func GetCurrencies() []string {
+	seen := make(map[string]bool)
+	result := []string{config.DefaultCurrency}
+	seen[config.DefaultCurrency] = true
+	for _, c := range config.Currencies {
+		if !seen[c] {
+			result = append(result, c)
+			seen[c] = true
+		}
+	}
+	return result
 }
 
 // IsMultiCurrencyPricesEnabled returns true (the default) when the
