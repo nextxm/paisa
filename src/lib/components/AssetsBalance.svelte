@@ -6,6 +6,7 @@
   import {
     accountName,
     formatCurrencyChange,
+    formatOriginalBalances,
     indendedAssetAccountName,
     nonZeroCurrency,
     nonZeroFloatChange,
@@ -40,6 +41,12 @@
       field: "balanceUnits",
       hozAlign: "right",
       formatter: nonZeroCurrency
+    },
+    {
+      title: "Original Value",
+      field: "originalBalances",
+      hozAlign: "right",
+      formatter: formatOriginalBalances
     },
     { title: "Market Value", field: "marketAmount", hozAlign: "right", formatter: nonZeroCurrency },
     { title: "Change", field: "gainAmount", hozAlign: "right", formatter: formatCurrencyChange },
