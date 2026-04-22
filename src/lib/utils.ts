@@ -178,6 +178,11 @@ export interface AccountTfIdf {
   };
 }
 
+export interface OriginalCurrencyBalance {
+  currency: string;
+  amount: number;
+}
+
 export interface AssetBreakdown {
   group: string;
   investmentAmount: number;
@@ -187,6 +192,7 @@ export interface AssetBreakdown {
   xirr: number;
   gainAmount: number;
   absoluteReturn: number;
+  originalBalances: OriginalCurrencyBalance[];
 }
 
 export interface LiabilityBreakdown {
