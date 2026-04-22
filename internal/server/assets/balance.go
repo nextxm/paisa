@@ -172,11 +172,10 @@ func ComputeBreakdown(db *gorm.DB, ps []posting.Posting, leaf bool, group string
 //
 //   - Default-currency postings contribute their Amount to the default currency
 //     bucket.
-//   - Non-default-currency postings that are identified as securities (stocks,
-//     funds, etc.) contribute Quantity × native-unit-price to the price's quote
-//     currency bucket.
-//   - All other non-default-currency postings (foreign-currency cash) contribute
-//     their Quantity to the commodity-name bucket.
+//   - Foreign-currency postings (foreign cash) contribute their Quantity to the
+//     commodity-name bucket, without any conversion.
+//   - Security postings contribute Quantity × native-unit-price to the price's
+//     quote currency bucket.
 func computeOriginalBalances(db *gorm.DB, ps []posting.Posting) []OriginalCurrencyBalance {
 	dc := config.DefaultCurrency()
 	date := utils.EndOfToday()
@@ -188,12 +187,14 @@ func computeOriginalBalances(db *gorm.DB, ps []posting.Posting) []OriginalCurren
 
 	for _, p := range ps {
 		if utils.IsCurrency(p.Commodity) {
+			// Default currency: use Amount field (already in default currency)
 			currencyAmt[dc] = currencyAmt[dc].Add(p.Amount)
-		} else if service.IsSecurity(db, p.Commodity) {
-			securityQty[p.Commodity] = securityQty[p.Commodity].Add(p.Quantity)
-		} else {
-			// Foreign-currency cash: the Quantity is the amount in the commodity's own currency.
+		} else if service.IsForeignCurrency(db, p.Commodity) {
+			// Foreign cash: use Quantity in the commodity's own currency
 			currencyAmt[p.Commodity] = currencyAmt[p.Commodity].Add(p.Quantity)
+		} else {
+			// Security: will be converted to native currency later
+			securityQty[p.Commodity] = securityQty[p.Commodity].Add(p.Quantity)
 		}
 	}
 
