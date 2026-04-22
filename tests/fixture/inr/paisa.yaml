@@ -1,4 +1,6 @@
 journal_path: main.ledger
 db_path: paisa.db
 ledger_cli: ledger
+currencies:
+  - USD
 

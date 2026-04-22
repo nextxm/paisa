@@ -189,7 +189,7 @@ func computeOriginalBalances(db *gorm.DB, ps []posting.Posting) []OriginalCurren
 		if utils.IsCurrency(p.Commodity) {
 			// Default currency: use Amount field (already in default currency)
 			currencyAmt[dc] = currencyAmt[dc].Add(p.Amount)
-		} else if service.IsForeignCurrency(db, p.Commodity) {
+		} else if service.IsForeignCurrency(p.Commodity) {
 			// Foreign cash: use Quantity in the commodity's own currency
 			currencyAmt[p.Commodity] = currencyAmt[p.Commodity].Add(p.Quantity)
 		} else {

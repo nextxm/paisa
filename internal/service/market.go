@@ -327,31 +327,18 @@ func IsSecurity(db *gorm.DB, commodity string) bool {
 }
 
 // IsForeignCurrency reports whether commodity is a foreign-currency cash
-// holding (not a security). A commodity is likely a currency if its name is a
-// 2-3 character uppercase code (e.g. USD, EUR, INR, BTC).
-// Securities like AAPL are longer or mixed case.
-func IsForeignCurrency(db *gorm.DB, commodity string) bool {
+// holding (not a security). A commodity is a foreign currency if it appears in
+// the configured currencies list (config.GetCurrencies()), which always
+// includes the default currency plus any user-configured currencies.
+func IsForeignCurrency(commodity string) bool {
 	if commodity == config.DefaultCurrency() {
 		return false
 	}
-
-	// Heuristic: currency codes are typically 2-3 uppercase letters (e.g. USD, EUR, GBP, BTC)
-	// Securities are typically longer or contain lowercase (e.g. AAPL, MSFT, VTSAX)
-	len := len(commodity)
-	if len >= 2 && len <= 3 {
-		// Check if it's all uppercase
-		allUppercase := true
-		for _, ch := range commodity {
-			if ch < 'A' || ch > 'Z' {
-				allUppercase = false
-				break
-			}
-		}
-		if allUppercase {
+	for _, c := range config.GetCurrencies() {
+		if c == commodity {
 			return true
 		}
 	}
-
 	return false
 }
 
