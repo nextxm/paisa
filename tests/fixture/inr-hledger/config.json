@@ -39,6 +39,7 @@
     },
     "user_accounts": [],
     "credit_cards": [],
+    "provider_debug_http": false,
     "doctor": {
       "negative_balance": {
         "enabled": "yes",
@@ -819,6 +820,11 @@
         "type": "boolean",
         "default": false,
         "description": "Set to true to disable pair-aware cross-rate resolution and report_currency conversion. Use this as a rollback if you observe issues with multi-currency pricing."
+      },
+      "provider_debug_http": {
+        "type": "boolean",
+        "default": false,
+        "description": "Set to true to log outbound provider HTTP requests and responses, including payload bodies, for subsequent syncs and data fetches."
       },
       "goals": {
         "description": "Goals configuration",
