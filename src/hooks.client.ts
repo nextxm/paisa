@@ -32,7 +32,7 @@ import updateLocale from "dayjs/plugin/updateLocale";
 dayjs.extend(updateLocale);
 
 import * as pdfjs from "pdfjs-dist";
-import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.js?url";
+import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
 
 if (pdfjs.GlobalWorkerOptions) {
   pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
