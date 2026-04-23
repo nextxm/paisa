@@ -12,12 +12,16 @@
       "absoluteReturn": 0.1358193262974935,
       "originalBalances": [
         {
+          "currency": "BTC",
+          "amount": 1e-08
+        },
+        {
           "currency": "INR",
-          "amount": 93387.63
+          "amount": 102217.4
         },
         {
           "currency": "USD",
-          "amount": 109.73
+          "amount": -99.76562772
         }
       ]
     },
@@ -34,7 +38,11 @@
       "originalBalances": [
         {
           "currency": "INR",
-          "amount": 13169.22810619763
+          "amount": 21999
+        },
+        {
+          "currency": "USD",
+          "amount": -109.76562772
         }
       ]
     },
@@ -48,14 +56,19 @@
       "xirr": 0,
       "gainAmount": 0,
       "absoluteReturn": 0,
-      "originalBalances": []
+      "originalBalances": [
+        {
+          "currency": "BTC",
+          "amount": 1e-08
+        }
+      ]
     },
     "Assets:Coinbase:BTC": {
       "group": "Assets:Coinbase:BTC",
       "investmentAmount": 0,
       "withdrawalAmount": 0,
       "marketAmount": 0,
-      "balanceUnits": 1e-8,
+      "balanceUnits": 1e-08,
       "latestPrice": 0,
       "xirr": 0,
       "gainAmount": 0,
@@ -63,7 +76,7 @@
       "originalBalances": [
         {
           "currency": "BTC",
-          "amount": 1e-8
+          "amount": 1e-08
         }
       ]
     },
@@ -98,10 +111,6 @@
         {
           "currency": "INR",
           "amount": 80218.4
-        },
-        {
-          "currency": "USD",
-          "amount": 99.73
         }
       ]
     },
@@ -115,7 +124,7 @@
       "xirr": 167.56,
       "gainAmount": 27,
       "absoluteReturn": 0.0027,
-      "originalBalances": []
+      "originalBalances": null
     },
     "Assets:Equity:ABNB": {
       "group": "Assets:Equity:ABNB",
@@ -127,12 +136,7 @@
       "xirr": 0,
       "gainAmount": 0,
       "absoluteReturn": 0,
-      "originalBalances": [
-        {
-          "currency": "USD",
-          "amount": 99.73
-        }
-      ]
+      "originalBalances": null
     },
     "Assets:Equity:NIFTY": {
       "group": "Assets:Equity:NIFTY",

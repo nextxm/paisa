@@ -13,11 +13,7 @@
       "originalBalances": [
         {
           "currency": "INR",
-          "amount": 84290.64
-        },
-        {
-          "currency": "USD",
-          "amount": 219.53
+          "amount": 101145.7
         }
       ]
     },
@@ -34,7 +30,11 @@
       "originalBalances": [
         {
           "currency": "INR",
-          "amount": 4072.2455057408
+          "amount": 20927.3
+        },
+        {
+          "currency": "USD",
+          "amount": -209.5304
         }
       ]
     },
@@ -72,7 +72,7 @@
         },
         {
           "currency": "USD",
-          "amount": 199.53
+          "amount": 199.5304
         }
       ]
     },
@@ -86,7 +86,7 @@
       "xirr": 170.5,
       "gainAmount": 27.3,
       "absoluteReturn": 0.00273,
-      "originalBalances": []
+      "originalBalances": null
     },
     "Assets:Equity:ABNB": {
       "group": "Assets:Equity:ABNB",
@@ -101,7 +101,7 @@
       "originalBalances": [
         {
           "currency": "USD",
-          "amount": 199.53
+          "amount": 199.5304
         }
       ]
     },
