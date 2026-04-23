@@ -29,53 +29,69 @@
   let showLogout = isLoggedIn();
 </script>
 
-<div class="dropdown ml-2 is-hoverable {isMobile() ? 'is-left' : 'is-right'}">
-  <div class="dropdown-trigger dropdown-icon">
-    <button class="button is-large" aria-haspopup="true">
-      <span class="icon">
-        <i class="fas fa-ellipsis-vertical" />
-      </span>
-    </button>
-  </div>
-  <div class="dropdown-menu" id="dropdown-menu4" role="menu">
-    <div class="dropdown-content">
-      <a on:click={(_e) => syncWithLoader({ journal: true })} class="dropdown-item icon-text">
-        <span class="icon is-small">
-          <i class="fa-regular fa-file-lines" />
+<div class="is-flex is-align-items-center ml-2" style="gap: 0.25rem;">
+  <button
+    class="button is-large"
+    data-tippy-content="<p>Sync Journal</p>"
+    aria-label="Sync Journal"
+    on:click={(_e) => syncWithLoader({ journal: true })}
+  >
+    <span class="icon">
+      <i class="fa-regular fa-file-lines" />
+    </span>
+  </button>
+
+  <button
+    class="button is-large"
+    data-tippy-content="<p>Update Prices</p>"
+    aria-label="Update Prices"
+    on:click={(_e) => syncWithLoader({ prices: true })}
+  >
+    <span class="icon">
+      <i class="fas fa-dollar-sign" />
+    </span>
+  </button>
+
+  <div class="dropdown is-hoverable {isMobile() ? 'is-left' : 'is-right'}">
+    <div class="dropdown-trigger dropdown-icon">
+      <button class="button is-large" aria-haspopup="true" aria-label="More actions">
+        <span class="icon">
+          <i class="fas fa-ellipsis-vertical" />
         </span>
-        <span>Sync Journal</span>
-      </a>
-      <a on:click={(_e) => syncWithLoader({ prices: true })} class="dropdown-item icon-text">
-        <span class="icon is-small">
-          <i class="fas fa-dollar-sign" />
-        </span>
-        <span>Update Prices</span></a
-      >
-      <a on:click={(_e) => syncWithLoader({ portfolios: true })} class="dropdown-item icon-text">
-        <span class="icon is-small">
-          <i class="fas fa-layer-group" />
-        </span>
-        <span>Update Mutual Fund Portfolios</span></a
-      >
-      <hr class="dropdown-divider" />
-      <a class="dropdown-item icon-text">
-        <label for={obscureId} class="cursor-pointer w-full inline-block">
-          <input bind:checked={$obscure} id={obscureId} type="checkbox" class="is-hidden" />
-          <span class="ml-0 icon is-small">
-            <i class="fas {$obscure ? 'fa-eye-slash' : 'fa-eye'}" />
-          </span>
-          <span>{$obscure ? "Show" : "Hide"} numbers</span>
-        </label>
-      </a>
-      {#if showLogout}
-        <hr class="dropdown-divider" />
-        <a on:click={(_e) => doLogout()} class="dropdown-item icon-text">
+      </button>
+    </div>
+    <div class="dropdown-menu" id="dropdown-menu4" role="menu">
+      <div class="dropdown-content">
+        <button
+          type="button"
+          on:click={(_e) => syncWithLoader({ portfolios: true })}
+          class="dropdown-item icon-text"
+        >
           <span class="icon is-small">
-            <i class="fas fa-arrow-right-from-bracket" />
+            <i class="fas fa-layer-group" />
           </span>
-          <span>Logout</span>
+          <span>Update Mutual Fund Portfolios</span>
+        </button>
+        <hr class="dropdown-divider" />
+        <a class="dropdown-item icon-text">
+          <label for={obscureId} class="cursor-pointer w-full inline-block">
+            <input bind:checked={$obscure} id={obscureId} type="checkbox" class="is-hidden" />
+            <span class="ml-0 icon is-small">
+              <i class="fas {$obscure ? 'fa-eye-slash' : 'fa-eye'}" />
+            </span>
+            <span>{$obscure ? "Show" : "Hide"} numbers</span>
+          </label>
         </a>
-      {/if}
+        {#if showLogout}
+          <hr class="dropdown-divider" />
+          <button type="button" on:click={(_e) => doLogout()} class="dropdown-item icon-text">
+            <span class="icon is-small">
+              <i class="fas fa-arrow-right-from-bracket" />
+            </span>
+            <span>Logout</span>
+          </button>
+        {/if}
+      </div>
     </div>
   </div>
 </div>
