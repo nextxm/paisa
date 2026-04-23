@@ -516,6 +516,7 @@ export interface Log {
 export interface CreditCardBill {
   openingBalance: number;
   closingBalance: number;
+  currency: string;
   debits: number;
   credits: number;
   statementStartDate: dayjs.Dayjs;
@@ -530,6 +531,7 @@ export interface CreditCardSummary {
   account: string;
   network: string;
   number: string;
+  currency: string;
   balance: number;
   bills: CreditCardBill[];
   creditLimit: number;

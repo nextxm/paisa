@@ -23,6 +23,7 @@ type CreditCardSummary struct {
 	Account          string                                `json:"account"`
 	Network          string                                `json:"network"`
 	Number           string                                `json:"number"`
+	Currency         string                                `json:"currency"`
 	Balance          decimal.Decimal                       `json:"balance"`
 	Bills            []CreditCardBill                      `json:"bills"`
 	CreditLimit      decimal.Decimal                       `json:"creditLimit"`
@@ -36,6 +37,7 @@ type CreditCardBill struct {
 	StatementEndDate     time.Time       `json:"statementEndDate"`
 	DueDate              time.Time       `json:"dueDate"`
 	PaidDate             *time.Time      `json:"paidDate"`
+	Currency             string          `json:"currency"`
 	Credits              decimal.Decimal `json:"credits"`
 	Debits               decimal.Decimal `json:"debits"`
 	DebitsRunningBalance decimal.Decimal
@@ -83,8 +85,41 @@ func yearlySpends(db *gorm.DB, date time.Time, postings []posting.Posting) map[s
 	return yearlySpends
 }
 
+// getPrimaryCommodity returns the most common commodity in the postings.
+// If no postings, returns the default currency.
+func getPrimaryCommodity(ps []posting.Posting) string {
+	if len(ps) == 0 {
+		return config.DefaultCurrency()
+	}
+
+	commodityCount := make(map[string]int)
+	for _, p := range ps {
+		if utils.IsCurrency(p.Commodity) {
+			commodityCount[config.DefaultCurrency()]++
+		} else {
+			commodityCount[p.Commodity]++
+		}
+	}
+
+	if len(commodityCount) == 0 {
+		return config.DefaultCurrency()
+	}
+
+	maxCommodity := config.DefaultCurrency()
+	maxCount := 0
+	for commodity, count := range commodityCount {
+		if count > maxCount {
+			maxCount = count
+			maxCommodity = commodity
+		}
+	}
+
+	return maxCommodity
+}
+
 func buildCreditCard(db *gorm.DB, creditCardConfig config.CreditCard, ps []posting.Posting, includePostings bool) CreditCardSummary {
-	bills := computeBills(db, creditCardConfig, ps, includePostings)
+	primaryCommodity := getPrimaryCommodity(ps)
+	bills := computeBills(db, creditCardConfig, ps, includePostings, primaryCommodity)
 	balance := decimal.Zero
 	if len(bills) > 0 {
 		balance = bills[len(bills)-1].ClosingBalance
@@ -104,6 +139,7 @@ func buildCreditCard(db *gorm.DB, creditCardConfig config.CreditCard, ps []posti
 		Account:          creditCardConfig.Account,
 		Network:          creditCardConfig.Network,
 		Number:           creditCardConfig.Number,
+		Currency:         primaryCommodity,
 		Balance:          balance,
 		Bills:            bills,
 		CreditLimit:      decimal.NewFromInt(int64(creditCardConfig.CreditLimit)),
@@ -140,10 +176,16 @@ func computeCreditCardOriginalBalances(ps []posting.Posting) []liabilities.Origi
 	return result
 }
 
-func computeBills(db *gorm.DB, creditCardConfig config.CreditCard, ps []posting.Posting, includePostings bool) []CreditCardBill {
+func computeBills(db *gorm.DB, creditCardConfig config.CreditCard, ps []posting.Posting, includePostings bool, primaryCommodity string) []CreditCardBill {
+	// Filter postings to only include the primary commodity
+	filteredPs := lo.Filter(ps, func(p posting.Posting, _ int) bool {
+		return (utils.IsCurrency(p.Commodity) && primaryCommodity == config.DefaultCurrency()) ||
+			(!utils.IsCurrency(p.Commodity) && p.Commodity == primaryCommodity)
+	})
+
 	bills := []CreditCardBill{}
 
-	grouped := accounting.GroupByMonthlyBillingCycle(ps, creditCardConfig.StatementEndDay)
+	grouped := accounting.GroupByMonthlyBillingCycle(filteredPs, creditCardConfig.StatementEndDay)
 
 	balance := decimal.Zero
 	creditsRunningBalance := decimal.Zero
@@ -170,6 +212,7 @@ func computeBills(db *gorm.DB, creditCardConfig config.CreditCard, ps []posting.
 			StatementStartDate: statementStartDate,
 			StatementEndDate:   statementEndDate,
 			DueDate:            dueDate,
+			Currency:           primaryCommodity,
 			OpeningBalance:     balance,
 			Postings:           []posting.Posting{},
 			Transactions:       []transaction.Transaction{},
@@ -178,11 +221,17 @@ func computeBills(db *gorm.DB, creditCardConfig config.CreditCard, ps []posting.
 		transactionIDs := map[string]bool{}
 
 		for _, p := range grouped[month] {
-			balance = balance.Add(p.Amount.Neg())
+			// Use Quantity (original amount) instead of Amount (converted amount)
+			amount := p.Quantity
+			if utils.IsCurrency(p.Commodity) {
+				amount = p.Amount
+			}
 
-			if p.Amount.IsPositive() {
-				creditsRunningBalance = creditsRunningBalance.Add(p.Amount)
-				bill.Credits = bill.Credits.Add(p.Amount)
+			balance = balance.Add(amount.Neg())
+
+			if amount.IsPositive() {
+				creditsRunningBalance = creditsRunningBalance.Add(amount)
+				bill.Credits = bill.Credits.Add(amount)
 				for unpaidBill < len(bills) {
 					if bills[unpaidBill].DebitsRunningBalance.LessThanOrEqual(creditsRunningBalance) {
 						paidDate := p.Date
@@ -193,8 +242,8 @@ func computeBills(db *gorm.DB, creditCardConfig config.CreditCard, ps []posting.
 					}
 				}
 			} else {
-				bill.Debits = bill.Debits.Add(p.Amount.Neg())
-				debitsRunningBalance = debitsRunningBalance.Add(p.Amount.Neg())
+				bill.Debits = bill.Debits.Add(amount.Neg())
+				debitsRunningBalance = debitsRunningBalance.Add(amount.Neg())
 			}
 
 			if includePostings {

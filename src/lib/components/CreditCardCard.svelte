@@ -71,6 +71,7 @@
         </div>
         <div>
           <span class="is-size-4 has-text-grey-dark">{formatCurrency(bill.closingBalance)}</span>
+          <span class="is-size-7 has-text-grey ml-2">{creditCard.currency}</span>
         </div>
         <div class="is-size-7 has-text-grey">
           <DueDate dueDate={bill.dueDate} paidDate={bill.paidDate} />
@@ -82,26 +83,17 @@
         <span class="has-text-grey">Balance</span>
       </div>
       <div class="flex flex-col">
-        <span class="is-size-4 has-text-grey-dark">{formatCurrency(creditCard.balance)}</span>
+        <div class="flex items-center gap-2">
+          <span class="is-size-4 has-text-grey-dark">{formatCurrency(creditCard.balance)}</span>
+          <span class="is-size-7 has-text-grey">{creditCard.currency}</span>
+        </div>
         <span class="is-size-7 has-text-grey"
           >{formatPercentage(creditCard.balance / creditCard.creditLimit)} of {formatCurrency(
             creditCard.creditLimit
-          )}
-        </span>
+          )}</span
+        >
       </div>
     </div>
-    {#if creditCard.originalBalances && creditCard.originalBalances.length > 0}
-      <div class="flex flex-col">
-        <div class="is-size-7">
-          <span class="has-text-grey">Original</span>
-        </div>
-        <div class="is-size-7 has-text-grey-dark" style="white-space: pre-line;">
-          {#each creditCard.originalBalances as balance}
-            <div>{formatCurrency(balance.amount)}&nbsp;{balance.currency}</div>
-          {/each}
-        </div>
-      </div>
-    {/if}
   </div>
   <div class="is-flex justify-between items-end">
     <div class="has-text-weight-bold is-size-5 inline-flex items-center">

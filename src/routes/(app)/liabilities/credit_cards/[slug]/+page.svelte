@@ -66,7 +66,9 @@
               small
               title="Available Credit"
               color={COLORS.neutral}
-              value={formatCurrency(Math.max(creditCard.creditLimit - creditCard.balance, 0))}
+              value={`${formatCurrency(Math.max(creditCard.creditLimit - creditCard.balance, 0))} ${
+                creditCard.currency
+              }`}
             />
 
             <LevelItem
@@ -140,7 +142,7 @@
               narrow
               title="Opening Balance"
               color={COLORS.neutral}
-              value={formatCurrency(currentBill.openingBalance)}
+              value={`${formatCurrency(currentBill.openingBalance)} ${currentBill.currency}`}
             />
             <div class="level-item is-narrow">
               <span class="icon is-size-3">
@@ -152,7 +154,7 @@
               narrow
               title="Debits"
               color={COLORS.expenses}
-              value={formatCurrency(currentBill.debits)}
+              value={`${formatCurrency(currentBill.debits)} ${currentBill.currency}`}
             />
             <div class="level-item is-narrow">
               <span class="icon is-size-3">
@@ -164,7 +166,7 @@
               narrow
               title="Credits"
               color={COLORS.income}
-              value={formatCurrency(currentBill.credits)}
+              value={`${formatCurrency(currentBill.credits)} ${currentBill.currency}`}
             />
             <div class="level-item is-narrow">
               <span class="icon is-size-3">
@@ -176,7 +178,7 @@
               narrow
               title="Amount Due"
               color={COLORS.liabilities}
-              value={formatCurrency(currentBill.closingBalance)}
+              value={`${formatCurrency(currentBill.closingBalance)} ${currentBill.currency}`}
             />
           </nav>
 
