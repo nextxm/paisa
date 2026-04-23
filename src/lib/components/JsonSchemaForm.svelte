@@ -36,8 +36,40 @@
   }
   $: title = _.startCase(key);
 
-  function newItem(schema: any) {
-    return _.cloneDeep(schema.default[0]);
+  function defaultValueForSchema(schema: any): any {
+    if (!schema) return null;
+    if (schema.default !== undefined) return _.cloneDeep(schema.default);
+
+    if (schema.type === "string") return "";
+    if (schema.type === "integer" || schema.type === "number") return 0;
+    if (schema.type === "boolean") return false;
+    if (schema.type === "array") return [];
+    if (schema.type === "object") return {};
+
+    return null;
+  }
+
+  function defaultCurrency(): string {
+    return (globalThis as any)?.USER_CONFIG?.default_currency || "";
+  }
+
+  function newItem(schema: any, fieldKey: string, existingValues: any[] = []) {
+    if (fieldKey === "currencies") {
+      const candidate = defaultCurrency().trim();
+      const alreadyExists = existingValues.some(
+        (v) =>
+          String(v || "")
+            .trim()
+            .toUpperCase() === candidate.toUpperCase()
+      );
+      return alreadyExists ? "" : candidate;
+    }
+
+    if (Array.isArray(schema?.default) && schema.default.length > 0) {
+      return _.cloneDeep(schema.default[0]);
+    }
+
+    return defaultValueForSchema(schema?.items);
   }
 
   function sortedProperties(schema: Schema) {
@@ -320,7 +352,14 @@
       </span>
     </a>
     {#if open}
-      <a on:click={(_e) => (value = [newItem(schema), ...value])} class="config-add">
+      <a
+        on:click={(_e) =>
+          (value = [
+            newItem(schema, key, Array.isArray(value) ? value : []),
+            ...(Array.isArray(value) ? value : [])
+          ])}
+        class="config-add"
+      >
         <span class="icon is-small">
           <i class="fas fa-circle-plus"></i>
         </span>
@@ -330,12 +369,14 @@
 
   {#if open}
     <div class="config-body {depth % 2 == 1 ? 'odd' : 'even'}">
-      {#each value as _item, i}
+      {#each Array.isArray(value) ? value : [] as _item, i}
         <svelte:self
           {allAccounts}
           deletable={() => {
-            value.splice(i, 1);
-            value = [...value];
+            if (Array.isArray(value)) {
+              value.splice(i, 1);
+              value = [...value];
+            }
           }}
           depth={depth + 1}
           key=""
