@@ -90,6 +90,18 @@
         </span>
       </div>
     </div>
+    {#if creditCard.originalBalances && creditCard.originalBalances.length > 0}
+      <div class="flex flex-col">
+        <div class="is-size-7">
+          <span class="has-text-grey">Original</span>
+        </div>
+        <div class="is-size-7 has-text-grey-dark" style="white-space: pre-line;">
+          {#each creditCard.originalBalances as balance}
+            <div>{formatCurrency(balance.amount)}&nbsp;{balance.currency}</div>
+          {/each}
+        </div>
+      </div>
+    {/if}
   </div>
   <div class="is-flex justify-between items-end">
     <div class="has-text-weight-bold is-size-5 inline-flex items-center">

@@ -535,6 +535,7 @@ export interface CreditCardSummary {
   creditLimit: number;
   expirationDate: dayjs.Dayjs;
   yearlySpends: { [year: string]: { [month: string]: number } };
+  originalBalances: OriginalCurrencyBalance[];
 }
 
 export interface GoalSummary {

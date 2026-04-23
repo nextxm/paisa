@@ -1,6 +1,7 @@
 package server
 
 import (
+	"sort"
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/accounting"
@@ -8,6 +9,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/transaction"
 	"github.com/ananthakumaran/paisa/internal/query"
+	"github.com/ananthakumaran/paisa/internal/server/liabilities"
 	"github.com/ananthakumaran/paisa/internal/service"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/gin-gonic/gin"
@@ -18,14 +20,15 @@ import (
 )
 
 type CreditCardSummary struct {
-	Account        string                                `json:"account"`
-	Network        string                                `json:"network"`
-	Number         string                                `json:"number"`
-	Balance        decimal.Decimal                       `json:"balance"`
-	Bills          []CreditCardBill                      `json:"bills"`
-	CreditLimit    decimal.Decimal                       `json:"creditLimit"`
-	YearlySpends   map[string]map[string]decimal.Decimal `json:"yearlySpends"`
-	ExpirationDate time.Time                             `json:"expirationDate"`
+	Account          string                                `json:"account"`
+	Network          string                                `json:"network"`
+	Number           string                                `json:"number"`
+	Balance          decimal.Decimal                       `json:"balance"`
+	Bills            []CreditCardBill                      `json:"bills"`
+	CreditLimit      decimal.Decimal                       `json:"creditLimit"`
+	YearlySpends     map[string]map[string]decimal.Decimal `json:"yearlySpends"`
+	ExpirationDate   time.Time                             `json:"expirationDate"`
+	OriginalBalances []liabilities.OriginalCurrencyBalance `json:"originalBalances"`
 }
 
 type CreditCardBill struct {
@@ -96,16 +99,45 @@ func buildCreditCard(db *gorm.DB, creditCardConfig config.CreditCard, ps []posti
 	if includePostings {
 		ys = yearlySpends(db, expirationDate, ps)
 	}
+	originalBalances := computeCreditCardOriginalBalances(ps)
 	return CreditCardSummary{
-		Account:        creditCardConfig.Account,
-		Network:        creditCardConfig.Network,
-		Number:         creditCardConfig.Number,
-		Balance:        balance,
-		Bills:          bills,
-		CreditLimit:    decimal.NewFromInt(int64(creditCardConfig.CreditLimit)),
-		YearlySpends:   ys,
-		ExpirationDate: expirationDate,
+		Account:          creditCardConfig.Account,
+		Network:          creditCardConfig.Network,
+		Number:           creditCardConfig.Number,
+		Balance:          balance,
+		Bills:            bills,
+		CreditLimit:      decimal.NewFromInt(int64(creditCardConfig.CreditLimit)),
+		YearlySpends:     ys,
+		ExpirationDate:   expirationDate,
+		OriginalBalances: originalBalances,
 	}
+}
+
+// computeCreditCardOriginalBalances aggregates the outstanding balance per
+// native currency without any FX conversion to the default currency.
+func computeCreditCardOriginalBalances(ps []posting.Posting) []liabilities.OriginalCurrencyBalance {
+	dc := config.DefaultCurrency()
+	currencyAmt := make(map[string]decimal.Decimal)
+
+	for _, p := range ps {
+		if utils.IsCurrency(p.Commodity) {
+			currencyAmt[dc] = currencyAmt[dc].Add(p.Amount)
+		} else {
+			currencyAmt[p.Commodity] = currencyAmt[p.Commodity].Add(p.Quantity)
+		}
+	}
+
+	var result []liabilities.OriginalCurrencyBalance
+	for currency, amount := range currencyAmt {
+		negated := amount.Neg()
+		if !negated.IsZero() {
+			result = append(result, liabilities.OriginalCurrencyBalance{Currency: currency, Amount: negated})
+		}
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Currency < result[j].Currency
+	})
+	return result
 }
 
 func computeBills(db *gorm.DB, creditCardConfig config.CreditCard, ps []posting.Posting, includePostings bool) []CreditCardBill {
