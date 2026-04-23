@@ -192,9 +192,13 @@ func computeOriginalBalances(db *gorm.DB, ps []posting.Posting) []OriginalCurren
 		} else if service.IsForeignCurrency(p.Commodity) {
 			// Foreign cash: use Quantity in the commodity's own currency
 			currencyAmt[p.Commodity] = currencyAmt[p.Commodity].Add(p.Quantity)
-		} else {
-			// Security: will be converted to native currency later
+		} else if utils.IsSameOrParent(p.Account, "Assets:Equity") || service.IsSecurity(db, p.Commodity) {
+			// Securities (especially equity holdings) are valued via native unit prices.
 			securityQty[p.Commodity] = securityQty[p.Commodity].Add(p.Quantity)
+		} else {
+			// Non-equity non-default commodities without explicit currency config
+			// are tracked in their own native units (e.g. crypto-like holdings).
+			currencyAmt[p.Commodity] = currencyAmt[p.Commodity].Add(p.Quantity)
 		}
 	}
 
