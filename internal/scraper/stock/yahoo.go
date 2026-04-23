@@ -16,6 +16,7 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/price"
+	"github.com/ananthakumaran/paisa/internal/scraper/httpclient"
 	"github.com/ananthakumaran/paisa/internal/utils"
 )
 
@@ -49,7 +50,7 @@ func selectAgent() {
 }
 
 type Quote struct {
-	Close []float64
+	Close []*float64 `json:"close"`
 }
 
 type Indicators struct {
@@ -90,10 +91,8 @@ func GetHistory(ticker string, commodityName string) ([]*price.Price, error) {
 	needExchangePrice := !utils.IsCurrency(nativeCurrency)
 
 	// Store stock prices in their native currency.
-	for i, timestamp := range result.Timestamp {
-		date := time.Unix(timestamp, 0)
-		value := result.Indicators.Quote[0].Close[i]
-		p := price.Price{
+	prices = appendYahooPrices(prices, result, func(date time.Time, value float64) price.Price {
+		return price.Price{
 			Date:           date,
 			CommodityType:  config.Stock,
 			CommodityID:    ticker,
@@ -101,8 +100,7 @@ func GetHistory(ticker string, commodityName string) ([]*price.Price, error) {
 			Value:          decimal.NewFromFloat(value),
 			QuoteCommodity: nativeCurrency,
 		}
-		prices = append(prices, &p)
-	}
+	})
 
 	// When the native currency differs from the default currency, fetch and
 	// store the exchange rate as a separate set of price entries so that the
@@ -113,23 +111,42 @@ func GetHistory(ticker string, commodityName string) ([]*price.Price, error) {
 		if err != nil {
 			return nil, err
 		}
+		if len(exchangeResponse.Chart.Result) == 0 {
+			return nil, fmt.Errorf("Failed to fetch exchange data for %s", exchangeTicker)
+		}
 		exchangeResult := exchangeResponse.Chart.Result[0]
-		for i, timestamp := range exchangeResult.Timestamp {
-			date := time.Unix(timestamp, 0)
-			ep := price.Price{
+		prices = appendYahooPrices(prices, exchangeResult, func(date time.Time, value float64) price.Price {
+			return price.Price{
 				Date:           date,
 				CommodityType:  config.Stock,
 				CommodityID:    exchangeTicker,
 				CommodityName:  nativeCurrency,
-				Value:          decimal.NewFromFloat(exchangeResult.Indicators.Quote[0].Close[i]),
+				Value:          decimal.NewFromFloat(value),
 				QuoteCommodity: defaultCurrency,
 				Source:         "com-yahoo",
 			}
-			prices = append(prices, &ep)
-		}
+		})
 	}
 
 	return prices, nil
+}
+
+func appendYahooPrices(prices []*price.Price, result Result, build func(time.Time, float64) price.Price) []*price.Price {
+	if len(result.Indicators.Quote) == 0 {
+		return prices
+	}
+
+	closes := result.Indicators.Quote[0].Close
+	for i, timestamp := range result.Timestamp {
+		if i >= len(closes) || closes[i] == nil {
+			continue
+		}
+
+		p := build(time.Unix(timestamp, 0), *closes[i])
+		prices = append(prices, &p)
+	}
+
+	return prices
 }
 
 func getTicker(ticker string) (*Response, error) {
@@ -142,7 +159,7 @@ func getTicker(ticker string) (*Response, error) {
 	agent.Do(func() { selectAgent() })
 	req.Header.Add("User-Agent", agent.name)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpclient.Do(req)
 	if err != nil {
 		return nil, err
 	}

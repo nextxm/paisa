@@ -82,6 +82,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 
 		c.JSON(200, gin.H{"success": true})
 	})
+	writeGroup.POST("/api/config/provider-debug-http", UpdateProviderHTTPDebug())
 
 	writeGroup.POST("/api/init", func(c *gin.Context) {
 		generator.Demo(config.GetConfigDir())
@@ -445,7 +446,6 @@ func TokenAuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 
 		rateLimiter.RateLimitCtx(c.Request.Context(), "user", 1)
 		AbortWithError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Invalid username or password")
-		return
 
 	}
 }

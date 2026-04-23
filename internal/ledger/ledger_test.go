@@ -2,9 +2,12 @@ package ledger
 
 import (
 	"testing"
+	"time"
 
+	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/price"
 	"github.com/ananthakumaran/paisa/internal/utils"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -142,4 +145,30 @@ func TestParseAmount(t *testing.T) {
 	commodity, amount, _ = parseAmount("100E-8    BTC")
 	assert.Equal(t, "BTC", commodity)
 	assert.Equal(t, 1e-06, amount.InexactFloat64())
+}
+
+func TestLookupPrice_UsesSameDayIntradayPrice(t *testing.T) {
+	assert.NoError(t, config.LoadConfig([]byte(`
+journal_path: /tmp/test.journal
+db_path: /tmp/test.db
+default_currency: INR
+`), ""))
+
+	pricesTree := buildPricesTree([]price.Price{
+		{
+			Date:           time.Date(2026, time.April, 20, 7, 0, 0, 0, time.UTC),
+			CommodityName:  "VOD.L",
+			QuoteCommodity: "INR",
+			Value:          decimal.NewFromFloat(116.6),
+		},
+		{
+			Date:           time.Date(2026, time.April, 21, 7, 0, 0, 0, time.UTC),
+			CommodityName:  "VOD.L",
+			QuoteCommodity: "INR",
+			Value:          decimal.NewFromFloat(117.2),
+		},
+	})
+
+	value := lookupPrice(pricesTree, "VOD.L", time.Date(2026, time.April, 21, 0, 0, 0, 0, time.UTC))
+	assert.Equal(t, 117.2, value.InexactFloat64())
 }

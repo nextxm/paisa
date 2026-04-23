@@ -178,6 +178,11 @@ export interface AccountTfIdf {
   };
 }
 
+export interface OriginalCurrencyBalance {
+  currency: string;
+  amount: number;
+}
+
 export interface AssetBreakdown {
   group: string;
   investmentAmount: number;
@@ -187,6 +192,7 @@ export interface AssetBreakdown {
   xirr: number;
   gainAmount: number;
   absoluteReturn: number;
+  originalBalances: OriginalCurrencyBalance[];
 }
 
 export interface LiabilityBreakdown {
@@ -590,6 +596,10 @@ type RequestOptions = RequestInit & {
 export function ajax(
   route: "/api/config"
 ): Promise<{ config: UserConfig; schema: JSONSchema7; now: dayjs.Dayjs; accounts: string[] }>;
+export function ajax(
+  route: "/api/config/provider-debug-http",
+  options?: RequestOptions
+): Promise<{ success?: boolean; enabled?: boolean; error?: { code: string; message: string } }>;
 export function ajax(route: "/api/harvest"): Promise<{ harvestables: Record<string, Harvestable> }>;
 export function ajax(
   route: "/api/capital_gains"
@@ -902,7 +912,7 @@ export function logout() {
     fetch("/api/auth/logout", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Auth": token }
-    }).catch(() => {});
+    }).catch(() => undefined);
   }
   localStorage.removeItem(tokenKey);
 }

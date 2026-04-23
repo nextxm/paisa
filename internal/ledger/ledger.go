@@ -929,7 +929,8 @@ func lookupPrice(pricesTree map[string]*btree.BTree, commodity string, date time
 	pt := pricesTree[commodity]
 	if pt != nil {
 		dc := config.DefaultCurrency()
-		pc := utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: date, QuoteCommodity: dc})
+		pivot := utils.EndOfDay(date)
+		pc := utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: pivot, QuoteCommodity: dc})
 		if !pc.Value.Equal(decimal.Zero) {
 			return pc.Value
 		}

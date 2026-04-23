@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strings"
 	"sync"
 	"time"
 
@@ -186,9 +187,11 @@ func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
 	}
 
 	dc := config.DefaultCurrency()
-	// Use a 'maximum' pivot for the date to find the latest quote currency entry.
-	// However, since dcPricesTree is synthesized to be DC-only, the simple pivot works.
-	pc := utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: date, QuoteCommodity: dc})
+	// Provider rows can carry an intra-day timestamp for a trading date (for
+	// example, Yahoo daily candles for LSE symbols). Query with end-of-day so a
+	// same-calendar-day price is still found when callers pass a date at midnight.
+	pivot := utils.EndOfDay(date)
+	pc := utils.BTreeDescendFirstLessOrEqual(pt, price.Price{Date: pivot, QuoteCommodity: dc})
 	if !pc.Value.Equal(decimal.Zero) {
 		return pc
 	}
@@ -242,6 +245,107 @@ func PopulateMarketPrice(db *gorm.DB, ps []posting.Posting) []posting.Posting {
 		p.MarketAmount = GetMarketPrice(db, p, date)
 		return p
 	})
+}
+
+// GetNativeUnitPrice returns the latest price for a commodity on or before
+// date, preferring a non-default-currency quote when one exists (e.g. AAPL
+// quoted in USD rather than INR).  Falls back to the default-currency price if
+// no foreign-currency price is available.  Returns (value, quoteCurrency, ok).
+func GetNativeUnitPrice(db *gorm.DB, commodity string, date time.Time) (decimal.Decimal, string, bool) {
+	pcache.Do(func() { loadPriceCache(db) })
+
+	pcacheMu.RLock()
+	defer pcacheMu.RUnlock()
+
+	pt := pcache.pricesTree[commodity]
+	if pt == nil {
+		return decimal.Zero, "", false
+	}
+
+	dc := config.DefaultCurrency()
+	pivot := utils.EndOfDay(date)
+	var bestNative, bestDC price.Price
+
+	pt.Descend(func(item btree.Item) bool {
+		p := item.(price.Price)
+		if p.Date.After(pivot) {
+			return true
+		}
+		if !isDefaultCurrency(p.QuoteCommodity, dc) && bestNative.Value.IsZero() {
+			bestNative = p
+		}
+		if isDefaultCurrency(p.QuoteCommodity, dc) && bestDC.Value.IsZero() {
+			bestDC = p
+		}
+		if !bestNative.Value.IsZero() && !bestDC.Value.IsZero() {
+			return false
+		}
+		return true
+	})
+
+	if !bestNative.Value.IsZero() {
+		return bestNative.Value, bestNative.QuoteCommodity, true
+	}
+	if !bestDC.Value.IsZero() {
+		return bestDC.Value, dc, true
+	}
+	return decimal.Zero, "", false
+}
+
+// IsSecurity reports whether commodity should be treated as a financial
+// instrument (stock/fund/metal/etc.) rather than a foreign-currency cash
+// holding.  A commodity is a security when:
+//   - it has price entries with a non-Unknown CommodityType (scraped via a
+//     configured provider), or
+//   - it has price entries with a QuoteCommodity that differs from the default
+//     currency (e.g. AAPL priced in USD in an INR ledger).
+func IsSecurity(db *gorm.DB, commodity string) bool {
+	pcache.Do(func() { loadPriceCache(db) })
+
+	pcacheMu.RLock()
+	defer pcacheMu.RUnlock()
+
+	pt := pcache.pricesTree[commodity]
+	if pt == nil {
+		return false
+	}
+
+	dc := config.DefaultCurrency()
+	isSecurity := false
+	pt.Ascend(func(item btree.Item) bool {
+		p := item.(price.Price)
+		if p.CommodityType != config.Unknown {
+			isSecurity = true
+			return false
+		}
+		if !isDefaultCurrency(p.QuoteCommodity, dc) {
+			isSecurity = true
+			return false
+		}
+		return true
+	})
+	return isSecurity
+}
+
+// IsForeignCurrency reports whether commodity is a foreign-currency cash
+// holding (not a security). A commodity is a foreign currency if it appears in
+// the configured currencies list (config.GetCurrencies()), which always
+// includes the default currency plus any user-configured currencies.
+func IsForeignCurrency(commodity string) bool {
+	normalizedCommodity := strings.ToUpper(strings.TrimSpace(commodity))
+	if normalizedCommodity == "" {
+		return false
+	}
+
+	if normalizedCommodity == strings.ToUpper(strings.TrimSpace(config.DefaultCurrency())) {
+		return false
+	}
+	for _, c := range config.GetCurrencies() {
+		if normalizedCommodity == strings.ToUpper(strings.TrimSpace(c)) {
+			return true
+		}
+	}
+	return false
 }
 
 // loadRateCache populates rcache.pairTrees from the database.

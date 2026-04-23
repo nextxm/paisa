@@ -1,5 +1,6 @@
 import { type CellComponent } from "tabulator-tables";
 import { formatCurrency, formatFloat, formatPercentage, isZero, lastName } from "./utils";
+import type { OriginalCurrencyBalance } from "./utils";
 import { iconText } from "./icon";
 
 export function indendedAssetAccountName(cell: CellComponent) {
@@ -78,4 +79,10 @@ export function formatCurrencyChange(cell: CellComponent) {
   return isZero(value)
     ? ""
     : `<span class="${calculateChangeClass(value)}">${formatCurrency(value)}</span>`;
+}
+
+export function formatOriginalBalances(cell: CellComponent) {
+  const balances: OriginalCurrencyBalance[] = cell.getValue();
+  if (!balances || balances.length === 0) return "";
+  return balances.map((b) => `${formatCurrency(b.amount)}&nbsp;${b.currency}`).join("<br>");
 }

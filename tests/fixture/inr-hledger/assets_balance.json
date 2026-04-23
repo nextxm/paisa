@@ -9,7 +9,13 @@
       "latestPrice": 0,
       "xirr": 12.85,
       "gainAmount": 4317.9455057408,
-      "absoluteReturn": 0.0404093706767309
+      "absoluteReturn": 0.0404093706767309,
+      "originalBalances": [
+        {
+          "currency": "INR",
+          "amount": 101145.7
+        }
+      ]
     },
     "Assets:Checking": {
       "group": "Assets:Checking",
@@ -20,7 +26,17 @@
       "latestPrice": 0,
       "xirr": 65.38,
       "gainAmount": 4072.2455057408,
-      "absoluteReturn": 0
+      "absoluteReturn": 0,
+      "originalBalances": [
+        {
+          "currency": "INR",
+          "amount": 20927.3
+        },
+        {
+          "currency": "USD",
+          "amount": -209.5304
+        }
+      ]
     },
     "Assets:Dollar": {
       "group": "Assets:Dollar",
@@ -31,7 +47,13 @@
       "latestPrice": 0,
       "xirr": 0,
       "gainAmount": 0,
-      "absoluteReturn": 0
+      "absoluteReturn": 0,
+      "originalBalances": [
+        {
+          "currency": "USD",
+          "amount": 10
+        }
+      ]
     },
     "Assets:Equity": {
       "group": "Assets:Equity",
@@ -42,7 +64,17 @@
       "latestPrice": 0,
       "xirr": 3.01,
       "gainAmount": 245.7,
-      "absoluteReturn": 0.0023168178321967
+      "absoluteReturn": 0.0023168178321967,
+      "originalBalances": [
+        {
+          "currency": "INR",
+          "amount": 80218.4
+        },
+        {
+          "currency": "USD",
+          "amount": 199.5304
+        }
+      ]
     },
     "Assets:Equity:AAPL": {
       "group": "Assets:Equity:AAPL",
@@ -53,7 +85,8 @@
       "latestPrice": 0,
       "xirr": 170.5,
       "gainAmount": 27.3,
-      "absoluteReturn": 0.00273
+      "absoluteReturn": 0.00273,
+      "originalBalances": null
     },
     "Assets:Equity:ABNB": {
       "group": "Assets:Equity:ABNB",
@@ -64,7 +97,13 @@
       "latestPrice": 0,
       "xirr": 0,
       "gainAmount": 0,
-      "absoluteReturn": 0
+      "absoluteReturn": 0,
+      "originalBalances": [
+        {
+          "currency": "USD",
+          "amount": 199.5304
+        }
+      ]
     },
     "Assets:Equity:NIFTY": {
       "group": "Assets:Equity:NIFTY",
@@ -75,7 +114,13 @@
       "latestPrice": 0,
       "xirr": 3.21,
       "gainAmount": 218.4,
-      "absoluteReturn": 0.00273
+      "absoluteReturn": 0.00273,
+      "originalBalances": [
+        {
+          "currency": "INR",
+          "amount": 80218.4
+        }
+      ]
     }
   }
 }

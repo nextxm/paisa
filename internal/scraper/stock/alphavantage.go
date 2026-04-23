@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/price"
+	"github.com/ananthakumaran/paisa/internal/scraper/httpclient"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/google/btree"
 	"github.com/samber/lo"
@@ -56,10 +56,11 @@ func (p AlphaVantageExchangePrice) Less(o btree.Item) bool {
 }
 
 func fetch[R any](url string, response *R) error {
-	resp, err := http.Get(url)
+	resp, err := httpclient.Get(url)
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {

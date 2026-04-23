@@ -20,6 +20,9 @@
     "readonly": false,
     "ledger_cli": "beancount",
     "default_currency": "INR",
+    "currencies": [
+      "USD"
+    ],
     "display_precision": 0,
     "amount_alignment_column": 52,
     "locale": "en-IN",
@@ -41,6 +44,7 @@
     },
     "user_accounts": [],
     "credit_cards": [],
+    "provider_debug_http": false,
     "doctor": {
       "negative_balance": {
         "enabled": "yes",
@@ -114,6 +118,13 @@
       "default_currency": {
         "type": "string",
         "description": "The default currency to use. NOTE: Paisa tries to convert other currencies to default currency, so make sure it's possible to convert to default currency by specifying the exchange rate."
+      },
+      "currencies": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "List of additional commodity names that should be treated as currencies (e.g. USD, EUR, GBP). The default currency is always included. Used to distinguish currency holdings from securities when computing original balances."
       },
       "display_precision": {
         "type": "integer",
@@ -821,6 +832,11 @@
         "type": "boolean",
         "default": false,
         "description": "Set to true to disable pair-aware cross-rate resolution and report_currency conversion. Use this as a rollback if you observe issues with multi-currency pricing."
+      },
+      "provider_debug_http": {
+        "type": "boolean",
+        "default": false,
+        "description": "Set to true to log outbound provider HTTP requests and responses, including payload bodies, for subsequent syncs and data fetches."
       },
       "goals": {
         "description": "Goals configuration",
