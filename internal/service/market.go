@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strings"
 	"sync"
 	"time"
 
@@ -331,11 +332,16 @@ func IsSecurity(db *gorm.DB, commodity string) bool {
 // the configured currencies list (config.GetCurrencies()), which always
 // includes the default currency plus any user-configured currencies.
 func IsForeignCurrency(commodity string) bool {
-	if commodity == config.DefaultCurrency() {
+	normalizedCommodity := strings.ToUpper(strings.TrimSpace(commodity))
+	if normalizedCommodity == "" {
+		return false
+	}
+
+	if normalizedCommodity == strings.ToUpper(strings.TrimSpace(config.DefaultCurrency())) {
 		return false
 	}
 	for _, c := range config.GetCurrencies() {
-		if c == commodity {
+		if normalizedCommodity == strings.ToUpper(strings.TrimSpace(c)) {
 			return true
 		}
 	}
