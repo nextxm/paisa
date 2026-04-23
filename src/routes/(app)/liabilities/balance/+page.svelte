@@ -1,6 +1,7 @@
 <script lang="ts">
   import Table from "$lib/components/Table.svelte";
   import {
+    formatOriginalBalances,
     indendedLiabilityAccountName,
     nonZeroCurrency,
     nonZeroFloatChange
@@ -46,6 +47,12 @@
       field: "balance_amount",
       hozAlign: "right",
       formatter: nonZeroCurrency
+    },
+    {
+      title: "Original Value",
+      field: "originalBalances",
+      hozAlign: "right",
+      formatter: formatOriginalBalances
     },
     {
       title: "Interest",

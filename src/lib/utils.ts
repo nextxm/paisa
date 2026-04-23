@@ -202,6 +202,7 @@ export interface LiabilityBreakdown {
   interest_amount: number;
   balance_amount: number;
   apr: number;
+  originalBalances: OriginalCurrencyBalance[];
 }
 
 export interface Aggregate {

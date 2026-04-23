@@ -7,6 +7,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 
+	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/query"
 	"github.com/ananthakumaran/paisa/internal/service"
@@ -15,13 +16,21 @@ import (
 	"gorm.io/gorm"
 )
 
+// OriginalCurrencyBalance holds a balance expressed in a single native
+// currency without FX conversion to the default currency.
+type OriginalCurrencyBalance struct {
+	Currency string          `json:"currency"`
+	Amount   decimal.Decimal `json:"amount"`
+}
+
 type AssetBreakdown struct {
-	Group          string          `json:"group"`
-	DrawnAmount    decimal.Decimal `json:"drawn_amount"`
-	RepaidAmount   decimal.Decimal `json:"repaid_amount"`
-	InterestAmount decimal.Decimal `json:"interest_amount"`
-	BalanceAmount  decimal.Decimal `json:"balance_amount"`
-	APR            decimal.Decimal `json:"apr"`
+	Group            string                    `json:"group"`
+	DrawnAmount      decimal.Decimal           `json:"drawn_amount"`
+	RepaidAmount     decimal.Decimal           `json:"repaid_amount"`
+	InterestAmount   decimal.Decimal           `json:"interest_amount"`
+	BalanceAmount    decimal.Decimal           `json:"balance_amount"`
+	APR              decimal.Decimal           `json:"apr"`
+	OriginalBalances []OriginalCurrencyBalance `json:"originalBalances"`
 }
 
 func GetBalance(db *gorm.DB) gin.H {
@@ -79,9 +88,43 @@ func computeBreakdown(db *gorm.DB, postings, expenses []posting.Posting) map[str
 		interest := balance.Add(repaid).Sub(drawn)
 
 		apr := service.APR(db, ps)
-		breakdown := AssetBreakdown{DrawnAmount: drawn, RepaidAmount: repaid, BalanceAmount: balance, APR: apr, Group: group, InterestAmount: interest}
+		originalBalances := computeLiabilityOriginalBalances(ps)
+		breakdown := AssetBreakdown{DrawnAmount: drawn, RepaidAmount: repaid, BalanceAmount: balance, APR: apr, Group: group, InterestAmount: interest, OriginalBalances: originalBalances}
 		result[group] = breakdown
 	}
 
+	return result
+}
+
+// computeLiabilityOriginalBalances aggregates the outstanding balance per
+// native currency without any FX conversion to the default currency.
+// Interest-expense postings are excluded (they don't affect the principal).
+// Liability postings are negative in the ledger, so the final amounts are
+// negated to match the positive "balance owed" convention used by the UI.
+func computeLiabilityOriginalBalances(ps []posting.Posting) []OriginalCurrencyBalance {
+	dc := config.DefaultCurrency()
+	currencyAmt := make(map[string]decimal.Decimal)
+
+	for _, p := range ps {
+		if utils.IsExpenseInterestAccount(p.Account) {
+			continue
+		}
+		if utils.IsCurrency(p.Commodity) {
+			currencyAmt[dc] = currencyAmt[dc].Add(p.Amount)
+		} else {
+			currencyAmt[p.Commodity] = currencyAmt[p.Commodity].Add(p.Quantity)
+		}
+	}
+
+	var result []OriginalCurrencyBalance
+	for currency, amount := range currencyAmt {
+		negated := amount.Neg()
+		if !negated.IsZero() {
+			result = append(result, OriginalCurrencyBalance{Currency: currency, Amount: negated})
+		}
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Currency < result[j].Currency
+	})
 	return result
 }
