@@ -43,17 +43,19 @@
     <div class="columns">
       <div class="column is-12">
         <div class="box px-3" style="max-width: 1024px;">
-          <table class="table is-narrow is-fullwidth is-hoverable">
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Section</th>
-                <th>Details</th>
-                <th class="has-text-right">Amount</th>
-              </tr>
-            </thead>
-            <tbody class="d3-schedule-al has-text-grey-dark" />
-          </table>
+          <div class="table-container">
+            <table class="table is-narrow is-fullwidth is-hoverable">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Section</th>
+                  <th>Details</th>
+                  <th class="has-text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody class="d3-schedule-al has-text-grey-dark" />
+            </table>
+          </div>
         </div>
       </div>
     </div>
