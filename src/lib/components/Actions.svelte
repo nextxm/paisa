@@ -1,6 +1,6 @@
 <script lang="ts">
   import { sync } from "$lib/sync";
-  import { isLoggedIn, isMobile, logout } from "$lib/utils";
+  import { isLoggedIn, logout } from "$lib/utils";
   import { refresh } from "../../store";
   import { obscure } from "../../persisted_store";
   import { goto } from "$app/navigation";
@@ -13,7 +13,6 @@
     }
   }
 
-  const obscureId = "obscure";
   let last = $obscure;
   obscure.subscribe(() => {
     if ($obscure === last) return;
@@ -27,11 +26,16 @@
   }
 
   let showLogout = isLoggedIn();
+
+  function toggleObscure() {
+    obscure.set(!$obscure);
+    refresh();
+  }
 </script>
 
-<div class="is-flex is-align-items-center ml-2" style="gap: 0.25rem;">
+<div class="is-flex is-align-items-center" style="gap: 0.25rem;">
   <button
-    class="button is-large"
+    class="navbar-action-button"
     data-tippy-content="<p>Sync Journal</p>"
     aria-label="Sync Journal"
     on:click={(_e) => syncWithLoader({ journal: true })}
@@ -42,7 +46,7 @@
   </button>
 
   <button
-    class="button is-large"
+    class="navbar-action-button"
     data-tippy-content="<p>Update Prices</p>"
     aria-label="Update Prices"
     on:click={(_e) => syncWithLoader({ prices: true })}
@@ -52,46 +56,92 @@
     </span>
   </button>
 
-  <div class="dropdown is-hoverable {isMobile() ? 'is-left' : 'is-right'}">
-    <div class="dropdown-trigger dropdown-icon">
-      <button class="button is-large" aria-haspopup="true" aria-label="More actions">
-        <span class="icon">
-          <i class="fas fa-ellipsis-vertical" />
-        </span>
-      </button>
-    </div>
-    <div class="dropdown-menu" id="dropdown-menu4" role="menu">
-      <div class="dropdown-content">
-        <button
-          type="button"
-          on:click={(_e) => syncWithLoader({ portfolios: true })}
-          class="dropdown-item icon-text"
-        >
-          <span class="icon is-small">
-            <i class="fas fa-layer-group" />
-          </span>
-          <span>Update Mutual Fund Portfolios</span>
-        </button>
-        <hr class="dropdown-divider" />
-        <a class="dropdown-item icon-text">
-          <label for={obscureId} class="cursor-pointer w-full inline-block">
-            <input bind:checked={$obscure} id={obscureId} type="checkbox" class="is-hidden" />
-            <span class="ml-0 icon is-small">
-              <i class="fas {$obscure ? 'fa-eye-slash' : 'fa-eye'}" />
-            </span>
-            <span>{$obscure ? "Show" : "Hide"} numbers</span>
-          </label>
-        </a>
-        {#if showLogout}
-          <hr class="dropdown-divider" />
-          <button type="button" on:click={(_e) => doLogout()} class="dropdown-item icon-text">
-            <span class="icon is-small">
-              <i class="fas fa-arrow-right-from-bracket" />
-            </span>
-            <span>Logout</span>
-          </button>
-        {/if}
-      </div>
-    </div>
-  </div>
+  <button
+    type="button"
+    class="navbar-action-button"
+    data-tippy-content="<p>Update Mutual Fund Portfolios</p>"
+    aria-label="Update Mutual Fund Portfolios"
+    on:click={(_e) => syncWithLoader({ portfolios: true })}
+  >
+    <span class="icon">
+      <i class="fas fa-layer-group" />
+    </span>
+  </button>
+
+  <button
+    type="button"
+    class="navbar-action-button"
+    data-tippy-content="<p>{$obscure ? 'Show' : 'Hide'} numbers</p>"
+    aria-label="Toggle obscure numbers"
+    on:click={(_e) => toggleObscure()}
+  >
+    <span class="icon">
+      <i class="fas {$obscure ? 'fa-eye-slash' : 'fa-eye'}" />
+    </span>
+  </button>
+
+  {#if showLogout}
+    <button
+      type="button"
+      class="navbar-action-button"
+      data-tippy-content="<p>Logout</p>"
+      aria-label="Logout"
+      on:click={(_e) => doLogout()}
+    >
+      <span class="icon">
+        <i class="fas fa-arrow-right-from-bracket" />
+      </span>
+    </button>
+  {/if}
 </div>
+
+<style lang="scss">
+  .navbar-action-button {
+    border: none;
+    background: transparent;
+    color: inherit;
+    width: 1.9rem;
+    height: 1.9rem;
+    border-radius: 0.45rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition:
+      background-color 120ms ease,
+      color 120ms ease;
+  }
+
+  .navbar-action-button :global(.icon) {
+    font-size: 0.95rem;
+  }
+
+  .navbar-action-button:hover,
+  .navbar-action-button:focus-visible {
+    background: rgba(127, 127, 127, 0.14);
+  }
+
+  @media screen and (max-width: 1023px) {
+    .navbar-action-button {
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 0.4rem;
+    }
+
+    .navbar-action-button :global(.icon) {
+      font-size: 0.87rem;
+    }
+  }
+
+  @media screen and (max-width: 640px) {
+    .navbar-action-button {
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 0.35rem;
+    }
+
+    .navbar-action-button :global(.icon) {
+      font-size: 0.8rem;
+    }
+  }
+</style>

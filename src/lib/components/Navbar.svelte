@@ -295,24 +295,16 @@
       {/each}
     </div>
     <div class="navbar-end" style="margin-right: 0.3em">
-      <div class="navbar-item">
-        <div class="field is-grouped">
-          {#if readonly}
-            <p class="control">
-              <span
-                class="mt-1 tag is-rounded is-danger is-light invertable"
-                data-tippy-content="<p>Paisa is in readonly mode</p>">readonly</span
-              >
-            </p>
-          {/if}
+      <div class="navbar-item navbar-actions-row">
+        {#if readonly}
+          <span
+            class="mt-1 tag is-rounded is-danger is-light invertable"
+            data-tippy-content="<p>Paisa is in readonly mode</p>">readonly</span
+          >
+        {/if}
 
-          <p class="control">
-            <ThemeSwitcher />
-          </p>
-          <p class="control">
-            <Actions />
-          </p>
-        </div>
+        <ThemeSwitcher />
+        <Actions />
       </div>
     </div>
   </div>
@@ -457,6 +449,43 @@
 </div>
 
 <style lang="scss">
+  .navbar-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .navbar-actions-row :global(.theme-toggle) {
+    --size: 1.9rem;
+    border-radius: 0.45rem;
+  }
+
+  @media screen and (max-width: 1023px) {
+    .navbar-actions-row {
+      gap: 0.25rem;
+      padding-right: 0;
+    }
+
+    .navbar-actions-row :global(.theme-toggle) {
+      --size: 1.75rem;
+      border-radius: 0.4rem;
+    }
+  }
+
+  @media screen and (max-width: 640px) {
+    .navbar-actions-row {
+      gap: 0.2rem;
+      width: 100%;
+      justify-content: flex-end;
+    }
+
+    .navbar-actions-row :global(.theme-toggle) {
+      --size: 1.65rem;
+      border-radius: 0.35rem;
+    }
+  }
+
   li a span.icon {
     margin-top: -5px;
   }

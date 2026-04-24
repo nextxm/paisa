@@ -62,8 +62,8 @@
           <div class="message-body">
             <strong>Oops!</strong> Looks like mutual fund portfolio data is not available<br /><br
             />
-            Use the <strong>Update Mutual Fund Portfolios</strong> menu option at the right corner to
-            update the data.
+            Use the <strong>Update Mutual Fund Portfolios</strong> action in the top navbar to update
+            the data.
           </div>
         </article>
       </div>
