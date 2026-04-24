@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/config"
 	log "github.com/sirupsen/logrus"
 )
 

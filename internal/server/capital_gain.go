@@ -1,12 +1,12 @@
 package server
 
 import (
-	"github.com/ananthakumaran/paisa/internal/config"
-	c "github.com/ananthakumaran/paisa/internal/model/commodity"
-	"github.com/ananthakumaran/paisa/internal/model/posting"
-	"github.com/ananthakumaran/paisa/internal/query"
-	"github.com/ananthakumaran/paisa/internal/taxation"
-	"github.com/ananthakumaran/paisa/internal/utils"
+	"github.com/nextxm/paisa/internal/config"
+	c "github.com/nextxm/paisa/internal/model/commodity"
+	"github.com/nextxm/paisa/internal/model/posting"
+	"github.com/nextxm/paisa/internal/query"
+	"github.com/nextxm/paisa/internal/taxation"
+	"github.com/nextxm/paisa/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"

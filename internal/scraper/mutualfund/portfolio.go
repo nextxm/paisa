@@ -10,9 +10,9 @@ import (
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/ananthakumaran/paisa/internal/config"
-	"github.com/ananthakumaran/paisa/internal/model/portfolio"
-	"github.com/ananthakumaran/paisa/internal/scraper/httpclient"
+	"github.com/nextxm/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/model/portfolio"
+	"github.com/nextxm/paisa/internal/scraper/httpclient"
 )
 
 func GetPortfolio(schemeCode string, commodityName string) ([]*portfolio.Portfolio, error) {

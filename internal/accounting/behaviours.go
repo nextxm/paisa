@@ -1,7 +1,7 @@
 package accounting
 
 import (
-	"github.com/ananthakumaran/paisa/internal/model/posting"
+	"github.com/nextxm/paisa/internal/model/posting"
 	"github.com/samber/lo"
 )
 

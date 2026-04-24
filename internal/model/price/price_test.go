@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/config"
 	"github.com/glebarez/sqlite"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"

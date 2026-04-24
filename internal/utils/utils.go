@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/config"
 	"github.com/glebarez/sqlite"
 	"github.com/google/btree"
 	"github.com/onrik/gorm-logrus"

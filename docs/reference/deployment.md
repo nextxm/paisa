@@ -113,7 +113,7 @@ container.
 ```yaml
 services:
   paisa:
-    image: ananthakumaran/paisa:latest
+    image: nextxm/paisa:latest
     volumes:
       - /home/john/Documents/paisa:/root/Documents/paisa
     # Bind to localhost only – do not publish 7500 to the host network.

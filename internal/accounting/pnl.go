@@ -1,8 +1,8 @@
 package accounting
 
 import (
-	"github.com/ananthakumaran/paisa/internal/model/posting"
-	"github.com/ananthakumaran/paisa/internal/model/transaction"
+	"github.com/nextxm/paisa/internal/model/posting"
+	"github.com/nextxm/paisa/internal/model/transaction"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"

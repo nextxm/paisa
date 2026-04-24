@@ -1092,16 +1092,30 @@ textarea:invalid {
   border-color: $danger;
 }
 
-.dropdown-trigger.dropdown-icon {
-  button {
-    height: 2rem;
-    padding: 0;
-    border: none;
-    background: none;
+.action-button {
+  height: 2rem !important;
+  width: 2rem !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+  color: $grey-dark !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  &:hover {
+    color: $link !important;
+    background: rgba($grey-lighter, 0.2) !important;
   }
 
-  button:hover {
-    color: $link;
+  .icon {
+    font-size: 1rem;
+  }
+}
+
+.dropdown-trigger.dropdown-icon {
+  button {
+    @extend .action-button;
   }
 }
 

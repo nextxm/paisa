@@ -8,14 +8,14 @@ import (
 
 	"sort"
 
-	"github.com/ananthakumaran/paisa/internal/accounting"
-	"github.com/ananthakumaran/paisa/internal/config"
-	"github.com/ananthakumaran/paisa/internal/model/commodity"
-	"github.com/ananthakumaran/paisa/internal/model/portfolio"
-	"github.com/ananthakumaran/paisa/internal/model/posting"
-	"github.com/ananthakumaran/paisa/internal/query"
-	"github.com/ananthakumaran/paisa/internal/service"
-	"github.com/ananthakumaran/paisa/internal/utils"
+	"github.com/nextxm/paisa/internal/accounting"
+	"github.com/nextxm/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/model/commodity"
+	"github.com/nextxm/paisa/internal/model/portfolio"
+	"github.com/nextxm/paisa/internal/model/posting"
+	"github.com/nextxm/paisa/internal/query"
+	"github.com/nextxm/paisa/internal/service"
+	"github.com/nextxm/paisa/internal/utils"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )

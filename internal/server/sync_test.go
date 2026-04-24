@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

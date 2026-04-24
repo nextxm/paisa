@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/ananthakumaran/paisa/cmd"
+	"github.com/nextxm/paisa/cmd"
 	"github.com/shopspring/decimal"
 )
 

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ananthakumaran/paisa/internal/config"
-	"github.com/ananthakumaran/paisa/internal/model/price"
+	"github.com/nextxm/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/model/price"
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"

@@ -5,8 +5,8 @@ import (
 
 	"encoding/json"
 
-	"github.com/ananthakumaran/paisa/internal/model/nps/scheme"
-	"github.com/ananthakumaran/paisa/internal/scraper/httpclient"
+	"github.com/nextxm/paisa/internal/model/nps/scheme"
+	"github.com/nextxm/paisa/internal/scraper/httpclient"
 	log "github.com/sirupsen/logrus"
 )
 

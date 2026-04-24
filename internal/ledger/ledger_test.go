@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ananthakumaran/paisa/internal/config"
-	"github.com/ananthakumaran/paisa/internal/model/price"
-	"github.com/ananthakumaran/paisa/internal/utils"
+	"github.com/nextxm/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/model/price"
+	"github.com/nextxm/paisa/internal/utils"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )

@@ -3,8 +3,8 @@ package mutualfund
 import (
 	"encoding/csv"
 
-	"github.com/ananthakumaran/paisa/internal/model/mutualfund/scheme"
-	"github.com/ananthakumaran/paisa/internal/scraper/httpclient"
+	"github.com/nextxm/paisa/internal/model/mutualfund/scheme"
+	"github.com/nextxm/paisa/internal/scraper/httpclient"
 	log "github.com/sirupsen/logrus"
 )
 

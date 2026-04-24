@@ -6,9 +6,9 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"gorm.io/gorm"
 
-	"github.com/ananthakumaran/paisa/cmd"
-	"github.com/ananthakumaran/paisa/internal/model/migration"
-	"github.com/ananthakumaran/paisa/internal/utils"
+	"github.com/nextxm/paisa/cmd"
+	"github.com/nextxm/paisa/internal/model/migration"
+	"github.com/nextxm/paisa/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 

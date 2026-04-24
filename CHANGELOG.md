@@ -47,11 +47,11 @@
 
 ### 0.7.1 (2024-10-20)
 
-* Fix remote code execution [vulnerability](https://github.com/ananthakumaran/paisa/issues/294)
+* Fix remote code execution [vulnerability](https://github.com/nextxm/paisa/issues/294)
 
 ### 0.7.0 (2024-08-26)
 
-* Add [docker image variant](https://github.com/ananthakumaran/paisa/pull/274) for hledger and beancount
+* Add [docker image variant](https://github.com/nextxm/paisa/pull/274) for hledger and beancount
 * Bug fixes
 
 ### 0.6.6 (2024-02-10)
@@ -63,7 +63,7 @@
 
 ### 0.6.5 (2024-02-02)
 
-* Add Liabilities > [Credit Card](https://paisa.fyi/reference/credit-cards) page
+* Add Liabilities > [Credit Card](https://nextxm.github.io/paisa/reference/credit-cards) page
 * Support password protected XLSX file
 * Allow user to configure timezone
 * Bug fixes
@@ -77,7 +77,7 @@
 
 ### 0.6.3 (2024-01-13)
 
-* Introduce [Sheets](https://paisa.fyi/reference/sheets/): A notepad calculator with access to your ledger
+* Introduce [Sheets](https://nextxm.github.io/paisa/reference/sheets/): A notepad calculator with access to your ledger
 * Remove flat option from cashflow > yearly page
 * Dockerimage now installs paisa to /usr/bin
 * Improve legends rendering on all pages
@@ -95,7 +95,7 @@
 
 ### 0.6.1 (2023-12-16)
 
-* Add new price provider: [Alpha Vantage](https://paisa.fyi/reference/commodities/#alpha-vantage)
+* Add new price provider: [Alpha Vantage](https://nextxm.github.io/paisa/reference/commodities/#alpha-vantage)
 * Make first day of the week configurable
 * Support ledger strict mode
 * Add user login support, go to `User Accounts` section in configuration page to enable it
@@ -105,7 +105,7 @@
 ### 0.6.0 (2023-12-09)
 
 * Add individual account balance on goals page
-* Add [keyboard shortcuts](https://paisa.fyi/reference/editor/) to format/save file on editor page
+* Add [keyboard shortcuts](https://nextxm.github.io/paisa/reference/editor/) to format/save file on editor page
 * Add ability to search posting/transaction by note
 * Add option to reverse the order of generated transactions on import page
 * Add option to clear price cache
@@ -120,20 +120,20 @@
 ### 0.5.8 (2023-11-18)
 
 * Add ability to specify rate, target date or monthly contribution to
-  [savings goal](https://paisa.fyi/reference/goals/savings/)
+  [savings goal](https://nextxm.github.io/paisa/reference/goals/savings/)
 * Improve price page
 * Bug fixes
 
 ### 0.5.7 (2023-11-11)
 
-* Add [goals](https://paisa.fyi/reference/goals)
+* Add [goals](https://nextxm.github.io/paisa/reference/goals)
 * Remove retirement page (available under goals)
 * Bug fixes
 
 #### Breaking Changes :rotating_light:
 
 Retirement page has been moved under goals. If you have used
-retirement, you need to setup a new [retirement goal](https://paisa.fyi/reference/goals)
+retirement, you need to setup a new [retirement goal](https://nextxm.github.io/paisa/reference/goals)
 
 ### 0.5.6 (2023-11-04)
 
@@ -151,7 +151,7 @@ retirement, you need to setup a new [retirement goal](https://paisa.fyi/referenc
 ### 0.5.4 (2023-10-07)
 
 * Add calendar view to recurring page
-* Support [recurring period](https://paisa.fyi/reference/recurring/#period) configuration
+* Support [recurring period](https://nextxm.github.io/paisa/reference/recurring/#period) configuration
 * Support European number format
 * Bug fixes
 
@@ -186,7 +186,7 @@ get the data directly from the db file using the following query
 * The structure of price code configuration has been updated to make
   it easier to add more price provider in the future. In addition to
   the code, the provider name also has to be added. Refer the
-  [config](https://paisa.fyi/reference/config/) documentation for more details
+  [config](https://nextxm.github.io/paisa/reference/config/) documentation for more details
 
 ```diff
      type: mutualfund
@@ -206,7 +206,7 @@ get the data directly from the db file using the following query
 
 ### 0.4.9 (2023-09-09)
 
-* Add [search query](https://paisa.fyi/reference/bulk-edit/#search) support in transaction page
+* Add [search query](https://nextxm.github.io/paisa/reference/bulk-edit/#search) support in transaction page
 * Spends at child accounts level would be included in the budget of
   parent account.
 * Fix the windows build, which was broken by the recent changes to

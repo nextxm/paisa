@@ -1,4 +1,4 @@
-module github.com/ananthakumaran/paisa
+module github.com/nextxm/paisa
 
 go 1.24
 

@@ -6,10 +6,10 @@ import (
 
 	"path/filepath"
 
-	"github.com/ananthakumaran/paisa/internal/model/posting"
-	"github.com/ananthakumaran/paisa/internal/model/transaction"
-	"github.com/ananthakumaran/paisa/internal/service"
-	"github.com/ananthakumaran/paisa/internal/utils"
+	"github.com/nextxm/paisa/internal/model/posting"
+	"github.com/nextxm/paisa/internal/model/transaction"
+	"github.com/nextxm/paisa/internal/service"
+	"github.com/nextxm/paisa/internal/utils"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"

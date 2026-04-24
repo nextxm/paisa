@@ -3,7 +3,7 @@ package server
 import (
 	"net/http"
 
-	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/config"
 	"github.com/gin-gonic/gin"
 )
 

@@ -1,9 +1,9 @@
 package goal
 
 import (
-	"github.com/ananthakumaran/paisa/internal/config"
-	"github.com/ananthakumaran/paisa/internal/query"
-	"github.com/ananthakumaran/paisa/internal/service"
+	"github.com/nextxm/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/query"
+	"github.com/nextxm/paisa/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"

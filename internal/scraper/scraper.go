@@ -1,11 +1,11 @@
 package scraper
 
 import (
-	"github.com/ananthakumaran/paisa/internal/model/price"
-	"github.com/ananthakumaran/paisa/internal/scraper/metal"
-	"github.com/ananthakumaran/paisa/internal/scraper/mutualfund"
-	"github.com/ananthakumaran/paisa/internal/scraper/nps"
-	"github.com/ananthakumaran/paisa/internal/scraper/stock"
+	"github.com/nextxm/paisa/internal/model/price"
+	"github.com/nextxm/paisa/internal/scraper/metal"
+	"github.com/nextxm/paisa/internal/scraper/mutualfund"
+	"github.com/nextxm/paisa/internal/scraper/nps"
+	"github.com/nextxm/paisa/internal/scraper/stock"
 	log "github.com/sirupsen/logrus"
 )
 

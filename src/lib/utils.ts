@@ -1239,7 +1239,7 @@ export function financialYear(date: dayjs.Dayjs) {
 }
 
 export function helpUrl(section: string) {
-  return `https://paisa.fyi/reference/${section}`;
+  return `https://nextxm.github.io/paisa/reference/${section}`;
 }
 
 export function postingUrl(posting: Posting) {

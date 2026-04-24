@@ -1,8 +1,8 @@
 package nps
 
 import (
-	"github.com/ananthakumaran/paisa/internal/model/nps/scheme"
-	"github.com/ananthakumaran/paisa/internal/model/price"
+	"github.com/nextxm/paisa/internal/model/nps/scheme"
+	"github.com/nextxm/paisa/internal/model/price"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )

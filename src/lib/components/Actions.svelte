@@ -31,18 +31,18 @@
 
 <div class="is-flex is-align-items-center ml-2" style="gap: 0.25rem;">
   <button
-    class="button is-large"
+    class="button action-button is-rounded"
     data-tippy-content="<p>Sync Journal</p>"
     aria-label="Sync Journal"
     on:click={(_e) => syncWithLoader({ journal: true })}
   >
     <span class="icon">
-      <i class="fa-regular fa-file-lines" />
+      <i class="fas fa-file-lines" />
     </span>
   </button>
 
   <button
-    class="button is-large"
+    class="button action-button is-rounded"
     data-tippy-content="<p>Update Prices</p>"
     aria-label="Update Prices"
     on:click={(_e) => syncWithLoader({ prices: true })}
@@ -53,8 +53,12 @@
   </button>
 
   <div class="dropdown is-hoverable {isMobile() ? 'is-left' : 'is-right'}">
-    <div class="dropdown-trigger dropdown-icon">
-      <button class="button is-large" aria-haspopup="true" aria-label="More actions">
+    <div class="dropdown-trigger">
+      <button
+        class="button action-button is-rounded"
+        aria-haspopup="true"
+        aria-label="More actions"
+      >
         <span class="icon">
           <i class="fas fa-ellipsis-vertical" />
         </span>

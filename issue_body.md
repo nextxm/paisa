@@ -1,7 +1,7 @@
-﻿## Feature Request
+## Feature Request
 
 ### Current Behavior
-The Cashflow → Yearly chart currently displays all transactions, including transfers between accounts. This creates visual noise with internal account movements.
+The Cashflow ? Yearly chart currently displays all transactions, including transfers between accounts. This creates visual noise with internal account movements.
 
 ### Desired Behavior
 Add a setting/toggle option to hide transfers between accounts in the Cashflow yearly chart. When enabled, the chart should display only:
@@ -32,7 +32,7 @@ This provides a cleaner, more meaningful view of actual cash inflow/outflow, fil
 - [ ] Verify toggle state persists after page refresh
 - [ ] Verify toggle state persists after logout/login
 - [ ] Test with multiple currencies to ensure filtering works correctly
-- [ ] Test with complex transfer chains (A→B→C) to ensure all are filtered
+- [ ] Test with complex transfer chains (A?B?C) to ensure all are filtered
 
 ### Automated Tests (Unit/Integration)
 - [ ] Test filter function correctly identifies transfer transactions

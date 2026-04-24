@@ -4,9 +4,9 @@ import (
 	_ "embed"
 	"os"
 
-	"github.com/ananthakumaran/paisa/cmd"
-	"github.com/ananthakumaran/paisa/desktop/logger"
-	"github.com/ananthakumaran/paisa/internal/server"
+	"github.com/nextxm/paisa/cmd"
+	"github.com/nextxm/paisa/desktop/logger"
+	"github.com/nextxm/paisa/internal/server"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails/v2"
@@ -61,7 +61,7 @@ func main() {
 		Mac: &mac.Options{
 			About: &mac.AboutInfo{
 				Title:   "Paisa",
-				Message: "Version 0.7.4 \nForked from ananthakumaran/paisa\nMaintained at nextxm/paisa\nLicense: GNU AGPL-3.0-or-later",
+				Message: "Version 0.7.4 \nMaintained at nextxm/paisa\nLicense: GNU AGPL-3.0-or-later",
 				Icon:    icon,
 			},
 		},

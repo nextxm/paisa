@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ananthakumaran/paisa/internal/model/migration"
-	"github.com/ananthakumaran/paisa/internal/model/price"
-	"github.com/ananthakumaran/paisa/internal/utils"
+	"github.com/nextxm/paisa/internal/model/migration"
+	"github.com/nextxm/paisa/internal/model/price"
+	"github.com/nextxm/paisa/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

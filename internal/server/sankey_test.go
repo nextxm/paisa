@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ananthakumaran/paisa/internal/model/posting"
-	"github.com/ananthakumaran/paisa/internal/service"
-	"github.com/ananthakumaran/paisa/internal/utils"
+	"github.com/nextxm/paisa/internal/model/posting"
+	"github.com/nextxm/paisa/internal/service"
+	"github.com/nextxm/paisa/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"

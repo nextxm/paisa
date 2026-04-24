@@ -1,7 +1,7 @@
 package commodity
 
 import (
-	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/config"
 	"github.com/samber/lo"
 )
 

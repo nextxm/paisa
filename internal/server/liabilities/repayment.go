@@ -1,8 +1,8 @@
 package liabilities
 
 import (
-	"github.com/ananthakumaran/paisa/internal/query"
-	"github.com/ananthakumaran/paisa/internal/service"
+	"github.com/nextxm/paisa/internal/query"
+	"github.com/nextxm/paisa/internal/service"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )

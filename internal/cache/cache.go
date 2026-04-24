@@ -1,10 +1,10 @@
 package cache
 
 import (
-	"github.com/ananthakumaran/paisa/internal/accounting"
-	"github.com/ananthakumaran/paisa/internal/model/transaction"
-	"github.com/ananthakumaran/paisa/internal/prediction"
-	"github.com/ananthakumaran/paisa/internal/service"
+	"github.com/nextxm/paisa/internal/accounting"
+	"github.com/nextxm/paisa/internal/model/transaction"
+	"github.com/nextxm/paisa/internal/prediction"
+	"github.com/nextxm/paisa/internal/service"
 )
 
 func Clear() {

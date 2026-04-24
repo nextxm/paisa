@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ananthakumaran/paisa/internal/model/posting"
-	"github.com/ananthakumaran/paisa/internal/query"
+	"github.com/nextxm/paisa/internal/model/posting"
+	"github.com/nextxm/paisa/internal/query"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 )

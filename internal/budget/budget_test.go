@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ananthakumaran/paisa/internal/config"
-	"github.com/ananthakumaran/paisa/internal/model/migration"
-	"github.com/ananthakumaran/paisa/internal/model/posting"
+	"github.com/nextxm/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/model/migration"
+	"github.com/nextxm/paisa/internal/model/posting"
 	"github.com/glebarez/sqlite"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"

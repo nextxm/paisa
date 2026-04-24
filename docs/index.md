@@ -68,8 +68,7 @@ hide:
 
 
 <p style="text-align: center; margin-bottom: 3rem">
-  <a class="md-button md-button--primary" style="margin-right: 50px;" href="/getting-started/installation/">Install</a>
-  <a class="md-button md-button--primary" href="https://demo.paisa.fyi">Demo</a>
+  <a class="md-button md-button--primary" href="/getting-started/installation/">Install</a>
 </p>
 
 <div class="features-container" markdown>
@@ -91,12 +90,8 @@ hide:
   decisions.
 </div>
 
-<div class="thumbnail-container app-frame win dark" data-title="Paisa">
-  <div class="thumbnail">
-    <iframe src="https://demo1.paisa.fyi" frameborder="0" scrolling="no"></iframe>
-  </div>
 </div>
-</div>
+
 </div>
 
 

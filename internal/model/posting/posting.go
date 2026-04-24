@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ananthakumaran/paisa/internal/utils"
+	"github.com/nextxm/paisa/internal/utils"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )

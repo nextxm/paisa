@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/ananthakumaran/paisa/internal/budget"
-	"github.com/ananthakumaran/paisa/internal/query"
+	"github.com/nextxm/paisa/internal/budget"
+	"github.com/nextxm/paisa/internal/query"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )

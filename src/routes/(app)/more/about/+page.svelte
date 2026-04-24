@@ -1,7 +1,7 @@
 <script lang="ts">
   import Logo from "$lib/components/Logo.svelte";
   const links = [
-    { name: "Chat", href: "https://matrix.to/#/#paisa:matrix.org", icon: "fa-solid fa-headset" },
+
     { name: "Issue", href: "https://github.com/nextxm/paisa/issues", icon: "fas fa-bug" },
     {
       name: "Discussions",
@@ -14,25 +14,15 @@
       icon: "fa-solid fa-code"
     },
     {
-      name: "Upstream Project",
-      href: "https://github.com/ananthakumaran/paisa",
-      icon: "fa-solid fa-code-branch"
-    },
-    {
       name: "License (AGPL-3.0-or-later)",
       href: "https://www.gnu.org/licenses/agpl-3.0.html",
       icon: "fa-solid fa-scale-balanced"
     },
-    { name: "Documentation", href: "https://paisa.fyi", icon: "fa-solid fa-book" },
+
     {
       name: "Releases",
       href: "https://github.com/nextxm/paisa/releases",
       icon: "fa-solid fa-download"
-    },
-    {
-      name: "Demo",
-      href: "https://demo.paisa.fyi",
-      icon: "fa-solid fa-video"
     }
   ];
 
@@ -56,10 +46,11 @@
             Version: <b>0.7.4</b>
           </div>
           <div class="is-size-7 mt-2">
-            Forked from ananthakumaran/paisa, maintained at nextxm/paisa under GNU
-            AGPL-3.0-or-later.
+            Forked from <a href="https://github.com/ananthakumaran/paisa" on:click|preventDefault={(_e) => externalLink("https://github.com/ananthakumaran/paisa")}>ananthakumaran/paisa</a>,
+            maintained at nextxm/paisa under GNU AGPL-3.0-or-later.
           </div>
         </div>
+
 
         <div class="box px-3 mx-auto" style="max-width: 400px;">
           <h3 class="is-size-5 mb-1">Links</h3>

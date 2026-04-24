@@ -4,5 +4,5 @@ Section: misc
 Priority: optional
 Architecture: amd64
 Maintainer: Anantha Kumaran <ananthakumaran@gmail.com>
-Homepage: https://paisa.fyi
+Homepage: https://nextxm.github.io/paisa
 Description: Personal finance manager

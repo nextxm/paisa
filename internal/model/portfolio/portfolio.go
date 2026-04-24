@@ -1,7 +1,7 @@
 package portfolio
 
 import (
-	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/config"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"

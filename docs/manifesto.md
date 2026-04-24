@@ -17,8 +17,8 @@ possible by choosing open standards and formats.
 ## 2. Privacy :octicons-shield-lock-16:
 
 User's data is private. Paisa will not collect or send any data to any
-server[^1]. Paisa will not use any third party analytics or tracking on
-the app[^2].
+server[^1].
+
 
 > Paisa's source code is open source and could be audited by anyone.
 
@@ -43,6 +43,5 @@ and build a self contained app.
     feature, as you have to explicitly configure Paisa to fetch
     price. VPN could be used if you want to avoid this.
 
-[^2]: This doesn't include the website paisa.fyi, which is hosted on
-    third party servers and has consent based analytics.
+
 

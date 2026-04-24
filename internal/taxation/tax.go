@@ -3,10 +3,10 @@ package taxation
 import (
 	"time"
 
-	"github.com/ananthakumaran/paisa/internal/config"
-	"github.com/ananthakumaran/paisa/internal/model/cii"
-	"github.com/ananthakumaran/paisa/internal/service"
-	"github.com/ananthakumaran/paisa/internal/utils"
+	"github.com/nextxm/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/model/cii"
+	"github.com/nextxm/paisa/internal/service"
+	"github.com/nextxm/paisa/internal/utils"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )

@@ -3,7 +3,7 @@ package accounting
 import (
 	"sync"
 
-	"github.com/ananthakumaran/paisa/internal/model/posting"
+	"github.com/nextxm/paisa/internal/model/posting"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 )

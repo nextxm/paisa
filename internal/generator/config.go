@@ -12,11 +12,11 @@ import (
 
 	"math/rand"
 
-	"github.com/ananthakumaran/paisa/internal/config"
-	"github.com/ananthakumaran/paisa/internal/model/price"
-	"github.com/ananthakumaran/paisa/internal/scraper/mutualfund"
-	"github.com/ananthakumaran/paisa/internal/scraper/nps"
-	"github.com/ananthakumaran/paisa/internal/utils"
+	"github.com/nextxm/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/model/price"
+	"github.com/nextxm/paisa/internal/scraper/mutualfund"
+	"github.com/nextxm/paisa/internal/scraper/nps"
+	"github.com/nextxm/paisa/internal/utils"
 	"github.com/google/btree"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"

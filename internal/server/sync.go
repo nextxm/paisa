@@ -1,9 +1,9 @@
 package server
 
 import (
-	"github.com/ananthakumaran/paisa/internal/cache"
-	"github.com/ananthakumaran/paisa/internal/model"
-	"github.com/ananthakumaran/paisa/internal/service"
+	"github.com/nextxm/paisa/internal/cache"
+	"github.com/nextxm/paisa/internal/model"
+	"github.com/nextxm/paisa/internal/service"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )

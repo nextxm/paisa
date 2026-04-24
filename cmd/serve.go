@@ -3,10 +3,10 @@ package cmd
 import (
 	"os"
 
-	"github.com/ananthakumaran/paisa/internal/model/migration"
-	"github.com/ananthakumaran/paisa/internal/server"
-	"github.com/ananthakumaran/paisa/internal/service"
-	"github.com/ananthakumaran/paisa/internal/utils"
+	"github.com/nextxm/paisa/internal/model/migration"
+	"github.com/nextxm/paisa/internal/server"
+	"github.com/nextxm/paisa/internal/service"
+	"github.com/nextxm/paisa/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

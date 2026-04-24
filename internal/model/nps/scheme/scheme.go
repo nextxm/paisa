@@ -1,7 +1,7 @@
 package scheme
 
 import (
-	"github.com/ananthakumaran/paisa/internal/model/price"
+	"github.com/nextxm/paisa/internal/model/price"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"

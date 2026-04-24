@@ -1,10 +1,10 @@
 package service
 
 import (
-	"github.com/ananthakumaran/paisa/internal/model/cache"
-	"github.com/ananthakumaran/paisa/internal/model/posting"
-	"github.com/ananthakumaran/paisa/internal/utils"
-	"github.com/ananthakumaran/paisa/internal/xirr"
+	"github.com/nextxm/paisa/internal/model/cache"
+	"github.com/nextxm/paisa/internal/model/posting"
+	"github.com/nextxm/paisa/internal/utils"
+	"github.com/nextxm/paisa/internal/xirr"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"

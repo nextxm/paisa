@@ -81,7 +81,7 @@
   "now": "2022-02-07T00:00:00Z",
   "schema": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://paisa.fyi/schema.json",
+    "$id": "https://nextxm.github.io/paisa/schema.json",
     "title": "Paisa",
     "description": "Paisa configuration",
     "type": "object",

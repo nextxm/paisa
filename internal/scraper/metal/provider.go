@@ -6,9 +6,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/ananthakumaran/paisa/internal/config"
-	"github.com/ananthakumaran/paisa/internal/model/price"
-	"github.com/ananthakumaran/paisa/internal/scraper/httpclient"
+	"github.com/nextxm/paisa/internal/config"
+	"github.com/nextxm/paisa/internal/model/price"
+	"github.com/nextxm/paisa/internal/scraper/httpclient"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
