@@ -1,4 +1,5 @@
 /// <reference types="@sveltejs/kit" />
+/// <reference types="vite-plugin-pwa/svelte" />
 // https://github.com/oven-sh/bun/issues/5134
 /// <reference lib="dom" />
 /// <reference lib="dom.iterable" />
