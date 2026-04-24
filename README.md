@@ -4,11 +4,21 @@
 
 **Paisa** is a Personal finance manager. It builds on
 top of the [ledger](https://www.ledger-cli.org/) double entry accounting tool. Checkout
-[documentation](https://paisa.fyi) or view the [Roadmap](./docs/roadmap.md) to see where we're headed.
+[documentation](https://nextxm.github.io/paisa/) or view the [Roadmap](./docs/roadmap.md) to see where we're headed.
 
-# Demo
 
-A demo of the Web UI can be found at [https://demo.paisa.fyi](https://demo.paisa.fyi)
+
+## Scheduled Price Sync
+
+Paisa's backend (`paisa serve`) does not have a built-in background daemon for scheduling tasks. Instead, it exposes the `update` command which is specifically designed for synchronizing data. To schedule periodic updates of commodity prices, use your operating system's task scheduler to run:
+
+```bash
+paisa update --commodity
+```
+
+* **Windows**: Use **Task Scheduler** to create a basic task that runs daily, executing `paisa.exe update --commodity`.
+* **Linux / macOS**: Add a cron job (`crontab -e`) to run it daily, for example: `0 18 * * * /path/to/paisa update --commodity`
+* **Docker**: Use host cron to execute `docker exec <container_name> paisa update -c`, or add a lightweight cron sidecar container sharing the database volume.
 
 ## Status
 

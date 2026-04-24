@@ -43,6 +43,6 @@ and build a self contained app.
     feature, as you have to explicitly configure Paisa to fetch
     price. VPN could be used if you want to avoid this.
 
-[^2]: This doesn't include the website paisa.fyi, which is hosted on
+[^2]: This doesn't include the website nextxm.github.io/paisa, which is hosted on
     third party servers and has consent based analytics.
 

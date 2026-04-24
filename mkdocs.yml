@@ -1,7 +1,7 @@
 site_description: Paisa is an open source personal finance manager. It helps you with tracking investments like mutual funds, stocks etc. It helps with expenses categorization, budgeting and money management in general.
 site_author: Anantha Kumaran and nextxm contributors
 site_name: Paisa
-site_url: https://paisa.fyi
+site_url: https://nextxm.github.io/paisa/
 repo_url: https://github.com/nextxm/paisa
 repo_name: nextxm/paisa
 nav:
@@ -24,6 +24,8 @@ nav:
     - reference/recurring.md
     - reference/sheets.md
     - reference/config.md
+    - reference/sync.md
+    - reference/fx-rates.md
     - 'Goals':
         - reference/goals/index.md
         - reference/goals/retirement.md
@@ -40,7 +42,6 @@ nav:
       - reference/tax/capital-gains.md
       - reference/tax/schedule-al.md
     - reference/changelog.md
-  - 'Demo': 'https://demo.paisa.fyi'
   - manifesto.md
   - faq.md
   - Blog:

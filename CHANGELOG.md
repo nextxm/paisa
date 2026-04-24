@@ -18,9 +18,20 @@
 * **Rollback flag** — set `disable_multi_currency_prices: true` in `paisa.yaml`
   to disable cross-rate resolution and `report_currency` conversion and revert
   to pre-rollout behaviour without downgrading the binary.
+* **UI Enhancements** — Improved Actions and Navbar components, added portfolio sync option to dropdown actions.
+* **Original Balances** — Added currency field and original balance display to Credit Card Summary, Liability breakdown, and asset breakdown for non-equity commodities.
+* **New Configuration Fields** — Added `currencies` field to distinguish currencies from securities, and `provider_debug_http` to log provider HTTP requests.
+* **FX Rates Page** — Added a new page for tracking exchange rates (FX Rates) with derived rate support.
+* **Background Sync** — Implement periodic background sync for backend to improve data freshness, with schedule option for journal and price sync.
 
 #### Bug fixes
 * **Assets -> Gain page calculations** — Fixed units-vs-currency mismatch in XIRR, investment, and absolute return calculations by using historical market prices when ledger falls back to units.
+* **Same-Day Price/Rate Race Conditions** — Fixed by using EndOfDay pivot.
+* **Yahoo Provider Handling** — Fixed handling of nil close values and empty responses.
+* **Currency Detection** — Fixed `IsForeignCurrency` detection by normalizing commodity input.
+* **Net Worth Timeline** — Reconciled net worth discrepancies between dashboard and timeline by including today's transactions and latest prices.
+* **Core Stability** — Fixed server crash in `GetUnitPrice` when prices are missing by replacing `log.Fatal` with a warning, and resolved USD->INR conversion for non-posting commodities and implicit journal quotes.
+* **Dependencies** — Addressed multiple npm dependency vulnerabilities (kit, axios, handlebars, lodash, pdfjs-dist, vite).
 
 #### Upgrade guide
 1. Run `paisa update` (or restart the server) — the database migration runs
@@ -63,7 +74,7 @@
 
 ### 0.6.5 (2024-02-02)
 
-* Add Liabilities > [Credit Card](https://paisa.fyi/reference/credit-cards) page
+* Add Liabilities > [Credit Card](https://nextxm.github.io/paisa/reference/credit-cards) page
 * Support password protected XLSX file
 * Allow user to configure timezone
 * Bug fixes
@@ -77,7 +88,7 @@
 
 ### 0.6.3 (2024-01-13)
 
-* Introduce [Sheets](https://paisa.fyi/reference/sheets/): A notepad calculator with access to your ledger
+* Introduce [Sheets](https://nextxm.github.io/paisa/reference/sheets/): A notepad calculator with access to your ledger
 * Remove flat option from cashflow > yearly page
 * Dockerimage now installs paisa to /usr/bin
 * Improve legends rendering on all pages
@@ -95,7 +106,7 @@
 
 ### 0.6.1 (2023-12-16)
 
-* Add new price provider: [Alpha Vantage](https://paisa.fyi/reference/commodities/#alpha-vantage)
+* Add new price provider: [Alpha Vantage](https://nextxm.github.io/paisa/reference/commodities/#alpha-vantage)
 * Make first day of the week configurable
 * Support ledger strict mode
 * Add user login support, go to `User Accounts` section in configuration page to enable it
@@ -105,7 +116,7 @@
 ### 0.6.0 (2023-12-09)
 
 * Add individual account balance on goals page
-* Add [keyboard shortcuts](https://paisa.fyi/reference/editor/) to format/save file on editor page
+* Add [keyboard shortcuts](https://nextxm.github.io/paisa/reference/editor/) to format/save file on editor page
 * Add ability to search posting/transaction by note
 * Add option to reverse the order of generated transactions on import page
 * Add option to clear price cache
@@ -120,20 +131,20 @@
 ### 0.5.8 (2023-11-18)
 
 * Add ability to specify rate, target date or monthly contribution to
-  [savings goal](https://paisa.fyi/reference/goals/savings/)
+  [savings goal](https://nextxm.github.io/paisa/reference/goals/savings/)
 * Improve price page
 * Bug fixes
 
 ### 0.5.7 (2023-11-11)
 
-* Add [goals](https://paisa.fyi/reference/goals)
+* Add [goals](https://nextxm.github.io/paisa/reference/goals)
 * Remove retirement page (available under goals)
 * Bug fixes
 
 #### Breaking Changes :rotating_light:
 
 Retirement page has been moved under goals. If you have used
-retirement, you need to setup a new [retirement goal](https://paisa.fyi/reference/goals)
+retirement, you need to setup a new [retirement goal](https://nextxm.github.io/paisa/reference/goals)
 
 ### 0.5.6 (2023-11-04)
 
@@ -151,7 +162,7 @@ retirement, you need to setup a new [retirement goal](https://paisa.fyi/referenc
 ### 0.5.4 (2023-10-07)
 
 * Add calendar view to recurring page
-* Support [recurring period](https://paisa.fyi/reference/recurring/#period) configuration
+* Support [recurring period](https://nextxm.github.io/paisa/reference/recurring/#period) configuration
 * Support European number format
 * Bug fixes
 
@@ -186,7 +197,7 @@ get the data directly from the db file using the following query
 * The structure of price code configuration has been updated to make
   it easier to add more price provider in the future. In addition to
   the code, the provider name also has to be added. Refer the
-  [config](https://paisa.fyi/reference/config/) documentation for more details
+  [config](https://nextxm.github.io/paisa/reference/config/) documentation for more details
 
 ```diff
      type: mutualfund
@@ -206,7 +217,7 @@ get the data directly from the db file using the following query
 
 ### 0.4.9 (2023-09-09)
 
-* Add [search query](https://paisa.fyi/reference/bulk-edit/#search) support in transaction page
+* Add [search query](https://nextxm.github.io/paisa/reference/bulk-edit/#search) support in transaction page
 * Spends at child accounts level would be included in the budget of
   parent account.
 * Fix the windows build, which was broken by the recent changes to
