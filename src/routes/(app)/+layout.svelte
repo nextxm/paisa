@@ -4,6 +4,7 @@
   import _ from "lodash";
   import Spinner from "$lib/components/Spinner.svelte";
   import Navbar from "$lib/components/Navbar.svelte";
+  import ReloadPrompt from "$lib/components/ReloadPrompt.svelte";
   import { willClearTippy, willRefresh } from "../../store";
 
   let isBurger: boolean = null;
@@ -62,3 +63,5 @@
     <slot />
   </Spinner>
 {/key}
+
+<ReloadPrompt />

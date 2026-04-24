@@ -15,7 +15,7 @@ const config = {
       }
     }),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       manifest: {
         name: "Paisa – Personal Finance Manager",
         short_name: "Paisa",
