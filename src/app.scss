@@ -169,6 +169,25 @@ body {
   min-height: 100vh;
 }
 
+html {
+  overflow-x: hidden;
+}
+
+@include mobile {
+  // Ensure minimum 44px touch targets on mobile
+  .select.is-small select {
+    height: 44px;
+    font-size: $body-size;
+  }
+
+  .button.is-small {
+    min-height: 44px;
+    padding-left: 0.75em;
+    padding-right: 0.75em;
+    font-size: $body-size;
+  }
+}
+
 .is-primary-color {
   color: #b388ff;
   font-weight: bold;
