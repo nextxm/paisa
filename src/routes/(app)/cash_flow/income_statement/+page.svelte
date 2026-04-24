@@ -195,7 +195,7 @@
   <div class="container is-fluid">
     <div class="columns">
       <div class="column is-12 pb-0">
-        <div class="box pt-0 overflow-x-auto max-h-screen max-w-fit">
+        <div class="box pt-0 overflow-x-auto max-h-screen">
           <table
             class="table is-narrow is-hoverable is-light-border has-sticky-header has-sticky-column"
           >
