@@ -33,7 +33,7 @@
             <div class="flex justify-center items-center mb-2">
               <div class="mt-1 mr-1"><Logo size={32} /></div>
               <div class="is-size-3">
-                <a href="https://paisa.fyi" class="is-primary-color">Paisa</a>
+                <a href="https://nextxm.github.io/paisa/" class="is-primary-color">Paisa</a>
               </div>
             </div>
             <form on:submit|preventDefault={tryLogin}>

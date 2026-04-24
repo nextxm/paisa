@@ -129,6 +129,7 @@ Bank/broker statements (CSV, XLS, XLSX, PDF) are converted to ledger entries ent
 
 - For any important behavior change, bug fix, new endpoint, pricing logic change, parser change, or contract change, add or update the nearest focused test before marking the task complete. Prefer the narrowest regression or behavior-scoped test for the touched slice.
 - After code changes, run validation for the touched area first: the closest unit/package test, then the relevant lint/type/format checks for touched files.
+- Always update CHANGELOG.md with a summary of new features and bug fixes before marking the work complete or making a commit.
 - Always run formatting/lint checks on touched or newly created files before marking work complete or making a commit.
 - Minimum expected checks for touched files:
   - **Go**: `gofmt` on touched `.go` files, then relevant `go test` package(s).

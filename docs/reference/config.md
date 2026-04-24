@@ -59,6 +59,13 @@ ledger_cli: ledger
 # OPTIONAL, DEFAULT: INR
 default_currency: INR
 
+# A list of commodities that should be treated as currencies rather
+# than securities. This is useful for multi-currency environments.
+# The default currency is always implicitly included.
+#
+# OPTIONAL, DEFAULT: []
+currencies: []
+
 # The precision to show in UI. NOTE: This applies only to the UI, not
 # to the entries in journal.
 #
@@ -101,6 +108,12 @@ week_starting_day: 0
 #
 # OPTIONAL, ENUM: yes, no DEFAULT: no
 strict: "no"
+
+# Enables request/response logging for outbound HTTP calls to price and
+# reference-data providers. Helpful for debugging provider issues.
+#
+# OPTIONAL, DEFAULT: false
+provider_debug_http: false
 
 ## Budget
 budget:

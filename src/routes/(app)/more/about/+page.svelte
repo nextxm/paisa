@@ -23,16 +23,11 @@
       href: "https://www.gnu.org/licenses/agpl-3.0.html",
       icon: "fa-solid fa-scale-balanced"
     },
-    { name: "Documentation", href: "https://paisa.fyi", icon: "fa-solid fa-book" },
+    { name: "Documentation", href: "https://nextxm.github.io/paisa/", icon: "fa-solid fa-book" },
     {
       name: "Releases",
       href: "https://github.com/nextxm/paisa/releases",
       icon: "fa-solid fa-download"
-    },
-    {
-      name: "Demo",
-      href: "https://demo.paisa.fyi",
-      icon: "fa-solid fa-video"
     }
   ];
 
