@@ -81,7 +81,11 @@ func loadPriceCache(db *gorm.DB) {
 		}
 	}
 
-	dcPricesTree := synthesizeDefaultCurrencyPrices(db, dc, pricesTree, postingPricesTree)
+	dcPricesTree, missingFXCount := synthesizeDefaultCurrencyPrices(db, dc, pricesTree, postingPricesTree)
+
+	if missingFXCount > 0 {
+		log.WithField("missing_fx_count", missingFXCount).Warn("Some prices could not be converted to the default currency due to missing FX rates")
+	}
 
 	pcacheMu.Lock()
 	defer pcacheMu.Unlock()
@@ -106,8 +110,10 @@ func isDefaultCurrency(quote, dc string) bool {
 // unchanged.  When no exchange rate can be resolved for a particular entry it
 // is kept in the tree unchanged so that existing fallback behaviour is
 // preserved.
-func synthesizeDefaultCurrencyPrices(db *gorm.DB, dc string, pricesTree, postingPricesTree map[string]*btree.BTree) map[string]*btree.BTree {
+func synthesizeDefaultCurrencyPrices(db *gorm.DB, dc string, pricesTree, postingPricesTree map[string]*btree.BTree) (map[string]*btree.BTree, int) {
 	dcPricesTree := make(map[string]*btree.BTree)
+	missingFXCount := 0
+
 	for commodityName, tree := range pricesTree {
 		// Build a unified tree in the default currency.
 		// Start by inserting all native prices that are already in dc.
@@ -139,6 +145,8 @@ func synthesizeDefaultCurrencyPrices(db *gorm.DB, dc string, pricesTree, posting
 				if exists := out.Get(syn); exists == nil {
 					out.ReplaceOrInsert(syn)
 				}
+			} else {
+				missingFXCount++
 			}
 			return true
 		})
@@ -158,7 +166,7 @@ func synthesizeDefaultCurrencyPrices(db *gorm.DB, dc string, pricesTree, posting
 			dcPricesTree[commodityName] = tree
 		}
 	}
-	return dcPricesTree
+	return dcPricesTree, missingFXCount
 }
 
 func ClearPriceCache() {
@@ -182,7 +190,10 @@ func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
 
 	pt := pcache.dcPricesTree[commodity]
 	if pt == nil {
-		log.WithField("commodity", commodity).Warn("Price not found, using 0")
+		log.WithFields(log.Fields{
+			"commodity": commodity,
+			"date":      date.Format("2006-01-02"),
+		}).Warn("Price not found, using 0")
 		return price.Price{}
 	}
 
@@ -196,6 +207,10 @@ func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
 		return pc
 	}
 
+	log.WithFields(log.Fields{
+		"commodity": commodity,
+		"date":      date.Format("2006-01-02"),
+	}).Warn("Price not found, using 0")
 	return price.Price{}
 }
 

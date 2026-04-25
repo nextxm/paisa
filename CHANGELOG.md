@@ -31,6 +31,8 @@
 * **Currency Detection** — Fixed `IsForeignCurrency` detection by normalizing commodity input.
 * **Net Worth Timeline** — Reconciled net worth discrepancies between dashboard and timeline by including today's transactions and latest prices.
 * **Core Stability** — Fixed server crash in `GetUnitPrice` when prices are missing by replacing `log.Fatal` with a warning, and resolved USD->INR conversion for non-posting commodities and implicit journal quotes.
+* **Missing Price & FX Reporting** — Enhanced missing price warnings with dates and added summary counts for missing FX rates during cache warming.
+* **Mobile UI** — Re-enabled zoom functionality on mobile devices.
 * **Dependencies** — Addressed multiple npm dependency vulnerabilities (kit, axios, handlebars, lodash, pdfjs-dist, vite).
 
 #### Upgrade guide
