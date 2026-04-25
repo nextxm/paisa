@@ -14,7 +14,7 @@
   } from "../../persisted_store";
   import _ from "lodash";
   import { financialYear, forEachFinancialYear, helpUrl, isMobile, now } from "$lib/utils";
-  import { onMount } from "svelte";
+  import { onDestroy, onMount, tick } from "svelte";
   import { get } from "svelte/store";
   import DateRange from "./DateRange.svelte";
   import ThemeSwitcher from "./ThemeSwitcher.svelte";
@@ -161,8 +161,106 @@
   let selectedLink: Link = null;
   let selectedSubLink: Link = null;
   let selectedSubSubLink: Link = null;
+  let navMenuEl: HTMLDivElement;
+  let burgerButtonEl: HTMLButtonElement;
+  let previousFocusEl: HTMLElement = null;
+
+  const focusableSelector =
+    'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])';
+
+  function getFocusableMenuElements() {
+    if (!navMenuEl) return [];
+
+    return Array.from(navMenuEl.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+      (el) => el.offsetParent !== null
+    );
+  }
+
+  async function focusFirstMenuItem() {
+    await tick();
+    const focusableEls = getFocusableMenuElements();
+
+    if (focusableEls.length > 0) {
+      focusableEls[0].focus();
+    } else {
+      navMenuEl?.focus();
+    }
+  }
+
+  function restoreBurgerFocus() {
+    if (burgerButtonEl) {
+      burgerButtonEl.focus();
+      return;
+    }
+
+    previousFocusEl?.focus?.();
+  }
+
+  async function toggleBurger() {
+    if (isBurger === true) {
+      closeBurger();
+      return;
+    }
+
+    previousFocusEl = document.activeElement as HTMLElement;
+    isBurger = true;
+    await focusFirstMenuItem();
+  }
+
+  function closeBurger(shouldRestoreFocus = true) {
+    isBurger = null;
+
+    if (shouldRestoreFocus && typeof document !== "undefined") {
+      tick().then(() => restoreBurgerFocus());
+    }
+  }
+
+  function closeBurgerOnItemClick(event: MouseEvent) {
+    if (!isMobile() || isBurger !== true) return;
+
+    const target = event.target as HTMLElement;
+    if (target.closest("a.navbar-item")) {
+      closeBurger(false);
+    }
+  }
+
+  function handleMenuKeydown(event: KeyboardEvent) {
+    if (!isMobile() || isBurger !== true) return;
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeBurger();
+      return;
+    }
+
+    if (event.key !== "Tab") return;
+
+    const focusableEls = getFocusableMenuElements();
+    if (focusableEls.length === 0) return;
+
+    const firstEl = focusableEls[0];
+    const lastEl = focusableEls[focusableEls.length - 1];
+    const activeEl = document.activeElement as HTMLElement;
+
+    if (event.shiftKey && activeEl === firstEl) {
+      event.preventDefault();
+      lastEl.focus();
+      return;
+    }
+
+    if (!event.shiftKey && activeEl === lastEl) {
+      event.preventDefault();
+      firstEl.focus();
+    }
+  }
 
   $: normalizedPath = $page.url.pathname?.replace(/(.+)\/$/, "");
+
+  $: {
+    if (typeof document !== "undefined") {
+      document.body.classList.toggle("mobile-menu-open", isBurger === true && isMobile());
+    }
+  }
 
   $: if (normalizedPath) {
     selectedSubLink = null;
@@ -192,10 +290,41 @@
       }
     }
   }
+
+  onDestroy(() => {
+    if (typeof document !== "undefined") {
+      document.body.classList.remove("mobile-menu-open");
+    }
+
+    navMenuEl?.removeEventListener("click", closeBurgerOnItemClick);
+  });
+
+  onMount(() => {
+    navMenuEl?.addEventListener("click", closeBurgerOnItemClick);
+
+    return () => {
+      navMenuEl?.removeEventListener("click", closeBurgerOnItemClick);
+    };
+  });
 </script>
 
 <nav class="navbar px-2 is-transparent" aria-label="main navigation">
   <div class="navbar-brand">
+    <button
+      type="button"
+      bind:this={burgerButtonEl}
+      class="navbar-burger mobile-drawer-toggle"
+      class:is-active={isBurger === true}
+      on:click={toggleBurger}
+      aria-label="menu"
+      aria-expanded={isBurger === true}
+      aria-controls="primary-nav-menu"
+    >
+      <span aria-hidden="true" />
+      <span aria-hidden="true" />
+      <span aria-hidden="true" />
+    </button>
+
     <a
       href="/"
       class:is-active={normalizedPath == "/"}
@@ -209,23 +338,17 @@
         <Logo size={22} /><span class="ml-1 is-primary-color">Paisa</span>
       {/if}
     </a>
-    <a
-      role="button"
-      tabindex="-1"
-      class="navbar-burger"
-      class:is-active={isBurger === true}
-      on:click|preventDefault={(_e) => (isBurger = !isBurger)}
-      aria-label="menu"
-      aria-expanded="false"
-      data-target="navbarBasicExample"
-    >
-      <span aria-hidden="true" />
-      <span aria-hidden="true" />
-      <span aria-hidden="true" />
-    </a>
   </div>
 
-  <div class="navbar-menu" class:is-active={isBurger === true}>
+  <div
+    id="primary-nav-menu"
+    bind:this={navMenuEl}
+    class="navbar-menu"
+    class:is-active={isBurger === true}
+    tabindex="-1"
+    on:keydown={handleMenuKeydown}
+    aria-hidden={isBurger === true ? "false" : "true"}
+  >
     <div class="navbar-start">
       {#each links as link}
         {#if _.isEmpty(link.children)}
@@ -309,6 +432,15 @@
     </div>
   </div>
 </nav>
+
+{#if isBurger === true && isMobile()}
+  <button
+    type="button"
+    class="mobile-nav-backdrop"
+    aria-label="Close navigation menu"
+    on:click={closeBurger}
+  />
+{/if}
 
 <div class="mt-3 px-3 is-flex is-justify-content-space-between">
   {#if selectedLink}
@@ -449,6 +581,10 @@
 </div>
 
 <style lang="scss">
+  :global(body.mobile-menu-open) {
+    overflow: hidden;
+  }
+
   .navbar-actions-row {
     display: flex;
     flex-wrap: wrap;
@@ -462,6 +598,65 @@
   }
 
   @media screen and (max-width: 1023px) {
+    .navbar-menu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(86vw, 22rem);
+      display: flex !important;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 30;
+      padding-top: 0.75rem;
+      padding-bottom: 0.75rem;
+      border-right: 1px solid rgba(127, 127, 127, 0.2);
+      transform: translateX(calc(-100% - 0.75rem));
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition:
+        transform 220ms ease,
+        opacity 180ms ease,
+        visibility 0s linear 220ms;
+      will-change: transform;
+    }
+
+    .navbar-brand {
+      align-items: center;
+    }
+
+    .mobile-drawer-toggle {
+      margin-left: 0;
+      margin-right: 0.2rem;
+    }
+
+    .mobile-nav-backdrop {
+      position: fixed;
+      inset: 0;
+      border: 0;
+      background: rgba(10, 10, 10, 0.4);
+      z-index: 29;
+      cursor: pointer;
+    }
+
+    .navbar-menu.is-active {
+      transform: translateX(0);
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition:
+        transform 220ms ease,
+        opacity 180ms ease,
+        visibility 0s linear 0s;
+    }
+
+    .navbar-menu.is-active .navbar-end {
+      margin-top: auto;
+      margin-right: 0 !important;
+      padding-bottom: 0.25rem;
+    }
+
     .navbar-actions-row {
       gap: 0.25rem;
       padding-right: 0;
