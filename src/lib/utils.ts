@@ -916,7 +916,7 @@ export function logout() {
     fetch("/api/auth/logout", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Auth": token }
-    }).catch(() => undefined);
+    }).catch((): void => undefined);
   }
   localStorage.removeItem(tokenKey);
 }
