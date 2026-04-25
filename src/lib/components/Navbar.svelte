@@ -438,7 +438,7 @@
     type="button"
     class="mobile-nav-backdrop"
     aria-label="Close navigation menu"
-    on:click={closeBurger}
+    on:click={() => closeBurger()}
   />
 {/if}
 
