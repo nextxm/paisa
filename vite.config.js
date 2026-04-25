@@ -51,21 +51,6 @@ const config = {
         navigateFallbackAllowlist: [/^(?!\/_app\/immutable).*$/],
         runtimeCaching: [
           {
-            urlPattern: /^\/api\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "api-cache",
-              networkTimeoutSeconds: 10,
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 5 * 60
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
             urlPattern: /\.woff2$/i,
             handler: "CacheFirst",
             options: {
@@ -82,7 +67,7 @@ const config = {
         ]
       },
       devOptions: {
-        enabled: false
+        enabled: true
       }
     })
   ],
