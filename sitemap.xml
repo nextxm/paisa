@@ -1,187 +1,199 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://paisa.fyi/</loc>
+         <loc>https://nextxm.github.io/paisa/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/architecture/</loc>
+         <loc>https://nextxm.github.io/paisa/architecture/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/faq/</loc>
+         <loc>https://nextxm.github.io/paisa/faq/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/manifesto/</loc>
+         <loc>https://nextxm.github.io/paisa/manifesto/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/roadmap/</loc>
+         <loc>https://nextxm.github.io/paisa/roadmap-issues-plan/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/blog/</loc>
+         <loc>https://nextxm.github.io/paisa/roadmap/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/blog/2024/01/03/localization/</loc>
+         <loc>https://nextxm.github.io/paisa/blog/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/blog/2024/01/26/sovereign-gold-bond/</loc>
+         <loc>https://nextxm.github.io/paisa/blog/2024/01/03/localization/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/getting-started/installation/</loc>
+         <loc>https://nextxm.github.io/paisa/blog/2024/01/26/sovereign-gold-bond/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/getting-started/tutorial/</loc>
+         <loc>https://nextxm.github.io/paisa/getting-started/installation/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/accounts/</loc>
+         <loc>https://nextxm.github.io/paisa/getting-started/tutorial/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/allocation-targets/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/accounts/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/analysis/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/allocation-targets/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/architecture/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/analysis/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/budget/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/architecture/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/bulk-edit/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/budget/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/changelog/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/bulk-edit/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/commodities/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/changelog/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/config/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/commodities/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/credit-cards/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/config/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/deployment/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/credit-cards/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/design/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/deployment/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/editor/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/design/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/engineering-review/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/editor/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/import/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/engineering-review/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/journal/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/fx-rates/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/ledger-cli/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/import/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/multi-currency-prices-rfc/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/journal/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/recurring/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/ledger-cli/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/roadmap/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/multi-currency-prices-rfc/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/sheets/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/recurring/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/user-authentication/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/roadmap/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/goals/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/sheets/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/goals/retirement/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/sync/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/goals/savings/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/user-authentication/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/tax/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/goals/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/tax/capital-gains/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/goals/retirement/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/tax/schedule-al/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/goals/savings/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/reference/tax/tax-harvesting/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/tax/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/blog/archive/2024/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/tax/capital-gains/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/blog/category/sovereign-gold-bond/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/tax/schedule-al/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/blog/category/gold/</loc>
+         <loc>https://nextxm.github.io/paisa/reference/tax/tax-harvesting/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/blog/category/sgb/</loc>
+         <loc>https://nextxm.github.io/paisa/blog/archive/2024/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/blog/category/price/</loc>
+         <loc>https://nextxm.github.io/paisa/blog/category/sovereign-gold-bond/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/blog/category/configuration/</loc>
+         <loc>https://nextxm.github.io/paisa/blog/category/gold/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
     <url>
-         <loc>https://paisa.fyi/blog/category/locale/</loc>
+         <loc>https://nextxm.github.io/paisa/blog/category/sgb/</loc>
+         <lastmod>1980-01-01</lastmod>
+    </url>
+    <url>
+         <loc>https://nextxm.github.io/paisa/blog/category/price/</loc>
+         <lastmod>1980-01-01</lastmod>
+    </url>
+    <url>
+         <loc>https://nextxm.github.io/paisa/blog/category/configuration/</loc>
+         <lastmod>1980-01-01</lastmod>
+    </url>
+    <url>
+         <loc>https://nextxm.github.io/paisa/blog/category/locale/</loc>
          <lastmod>1980-01-01</lastmod>
     </url>
 </urlset>
