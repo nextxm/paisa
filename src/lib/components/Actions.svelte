@@ -123,25 +123,25 @@
 
   @media screen and (max-width: 1023px) {
     .navbar-action-button {
-      width: 1.75rem;
-      height: 1.75rem;
-      border-radius: 0.4rem;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 0.5rem;
     }
 
     .navbar-action-button :global(.icon) {
-      font-size: 0.87rem;
+      font-size: 1rem;
     }
   }
 
   @media screen and (max-width: 640px) {
     .navbar-action-button {
-      width: 1.65rem;
-      height: 1.65rem;
-      border-radius: 0.35rem;
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 0.5rem;
     }
 
     .navbar-action-button :global(.icon) {
-      font-size: 0.8rem;
+      font-size: 1.1rem;
     }
   }
 </style>

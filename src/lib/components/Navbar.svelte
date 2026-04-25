@@ -663,8 +663,8 @@
     }
 
     .navbar-actions-row :global(.theme-toggle) {
-      --size: 1.75rem;
-      border-radius: 0.4rem;
+      --size: 2rem;
+      border-radius: 0.5rem;
     }
   }
 
@@ -676,8 +676,8 @@
     }
 
     .navbar-actions-row :global(.theme-toggle) {
-      --size: 1.65rem;
-      border-radius: 0.35rem;
+      --size: 2.2rem;
+      border-radius: 0.5rem;
     }
   }
 
