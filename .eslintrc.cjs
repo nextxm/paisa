@@ -18,6 +18,10 @@ module.exports = {
     es2021: true,
     node: true
   },
+  globals: {
+    __BUILD_INFO__: "readonly",
+    USER_CONFIG: "readonly"
+  },
   overrides: [
     {
       files: ["*.svelte"],

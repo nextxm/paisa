@@ -1,9 +1,46 @@
 import { sveltekit } from "@sveltejs/kit/vite";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { VitePWA } from "vite-plugin-pwa";
+import { execSync } from "child_process";
+import fs from "fs";
+
+let commitHash = "";
+let branch = "";
+let tag = "";
+let appVersion = "dev";
+
+try {
+  commitHash = execSync("git rev-parse --short HEAD").toString().trim();
+  branch = execSync("git rev-parse --abbrev-ref HEAD").toString().trim();
+  try {
+    tag = execSync("git describe --tags --exact-match").toString().trim();
+  } catch (e) { }
+  // Use the same logic as Makefile for the main version string
+  appVersion = execSync("git describe --tags --always --dirty").toString().trim();
+} catch (e) {
+  // Fallback to cmd/version.go if git fails
+  try {
+    const versionGo = fs.readFileSync("cmd/version.go", "utf-8");
+    const match = versionGo.match(/var Version = \"([^\"]+)\"/);
+    if (match) {
+      appVersion = match[1];
+    }
+  } catch (e) { }
+}
+
+const buildDate = new Date().toISOString();
 
 /** @type {import('vite').UserConfig} */
 const config = {
+  define: {
+    __BUILD_INFO__: JSON.stringify({
+      version: appVersion,
+      commitHash,
+      branch,
+      tag,
+      buildDate
+    })
+  },
   build: {
     target: "es2021"
   },

@@ -73,6 +73,15 @@ declare var USER_CONFIG: UserConfig;
 // eslint-disable-next-line no-var
 declare var __now: any;
 
+// eslint-disable-next-line no-var
+declare var __BUILD_INFO__: {
+  version: string;
+  commitHash: string;
+  branch: string;
+  tag: string;
+  buildDate: string;
+};
+
 declare namespace App {
   interface Error {
     message: string;

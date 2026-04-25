@@ -1,7 +1,6 @@
 <script lang="ts">
   import Logo from "$lib/components/Logo.svelte";
   const links = [
-    { name: "Chat", href: "https://matrix.to/#/#paisa:matrix.org", icon: "fa-solid fa-headset" },
     { name: "Issue", href: "https://github.com/nextxm/paisa/issues", icon: "fas fa-bug" },
     {
       name: "Discussions",
@@ -38,6 +37,8 @@
       window.open(url, "_blank");
     }
   }
+
+  const buildInfo = __BUILD_INFO__;
 </script>
 
 <section class="section">
@@ -48,7 +49,14 @@
           <div><Logo size={128} /></div>
           <div class="is-size-3 is-primary-color">Paisa</div>
           <div>
-            Version: <b>0.7.4</b>
+            Version: <b>{buildInfo.version}</b>
+          </div>
+          <div class="is-size-7 mt-2 has-text-grey">
+            Build: {buildInfo.buildDate.substring(0, 10)}<br />
+            Branch: {buildInfo.branch} ({buildInfo.commitHash})
+            {#if buildInfo.tag}
+              <br />Tag: {buildInfo.tag}
+            {/if}
           </div>
           <div class="is-size-7 mt-2">
             Forked from ananthakumaran/paisa, maintained at nextxm/paisa under GNU

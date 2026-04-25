@@ -27,6 +27,7 @@ fonts/*
 /result
 brand/*.png
 scripts/*
+!scripts/release.js
 *.exe
 *.db-shm
 *.db-wal

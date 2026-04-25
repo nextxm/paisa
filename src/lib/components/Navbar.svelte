@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from "$app/stores";
+  import { afterNavigate } from "$app/navigation";
   import Actions from "$lib/components/Actions.svelte";
   import { month, year, dateMax, dateMin, dateRangeOption } from "../../store";
   import {
@@ -24,6 +25,10 @@
   import PeriodSelector from "./PeriodSelector.svelte";
   export let isBurger: boolean = null;
   const readonly = USER_CONFIG.readonly;
+
+  afterNavigate(() => {
+    closeBurger(false);
+  });
 
   onMount(async () => {
     if (get(year) == "") {
