@@ -2,9 +2,9 @@
 
 Paisa needs to periodically pull new data from external price providers and your journal file.
 
-## Background Sync
+## Manual Sync
 
-When using `paisa serve`, Paisa runs periodic background syncs to ensure your prices and journal entries are kept fresh. This ensures your dashboard always displays the latest available market data and recent journal modifications without requiring a manual refresh.
+When using the Paisa web interface, you can manually trigger a sync at any time using the action buttons in the navigation bar. This ensures your dashboard displays the latest available market data and recent journal modifications.
 
 ## Scheduled Sync via CLI
 
