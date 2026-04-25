@@ -18,7 +18,7 @@
 * **Rollback flag** — set `disable_multi_currency_prices: true` in `paisa.yaml`
   to disable cross-rate resolution and `report_currency` conversion and revert
   to pre-rollout behaviour without downgrading the binary.
-* **UI Enhancements** — Improved Actions and Navbar components, added portfolio sync option to dropdown actions.
+* **UI Enhancements** — Improved Actions and Navbar components, added portfolio sync option to dropdown actions. Increased size of navbar action icons on mobile devices for better touchability.
 * **Original Balances** — Added currency field and original balance display to Credit Card Summary, Liability breakdown, and asset breakdown for non-equity commodities.
 * **New Configuration Fields** — Added `currencies` field to distinguish currencies from securities, and `provider_debug_http` to log provider HTTP requests.
 * **FX Rates Page** — Added a new page for tracking exchange rates (FX Rates) with derived rate support.
