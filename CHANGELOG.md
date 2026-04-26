@@ -2,6 +2,10 @@
 
 ### Unreleased — Future changes
 
+#### New features
+
+- **SHA-256 file hash utility** — Added `SHA256File(path string) (string, error)` in `internal/utils/hash.go`. Streams file content in chunks for efficient large-file handling, and returns descriptive errors on open/read failures. This utility supports upcoming incremental sync checks (P1.1).
+
 ### 0.8-beta (2026-04-26) — Multi-currency pricing rollout
 
 #### New features
