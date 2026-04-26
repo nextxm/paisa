@@ -104,13 +104,87 @@ func TestSync_JournalFailureResponseShape(t *testing.T) {
 	assert.NotEmpty(t, message, "message must contain the underlying error text")
 }
 
-// TestIntegration_SyncFailure_HTTPResponseShape verifies end-to-end that the
-// POST /api/sync HTTP endpoint returns HTTP 200 with a JSON body containing
-// success=false, failed_stage, and message when journal sync fails.  HTTP 200
-// is correct here: the transport succeeded; only the sync operation itself
-// failed, and the caller must inspect the body to detect that.
-func TestIntegration_SyncFailure_HTTPResponseShape(t *testing.T) {
-	// Use a non-existent journal path so the ledger CLI fails immediately.
+// TestIntegration_SyncAsync_Returns202WithJobID verifies end-to-end that the
+// POST /api/sync HTTP endpoint returns HTTP 202 Accepted with a non-empty
+// job_id.  The sync work is performed asynchronously in the background; the
+// caller polls the job status via GET /api/jobs/:id rather than waiting for the
+// response body to carry the outcome.
+func TestIntegration_SyncAsync_Returns202WithJobID(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+	router := Build(db, false)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/sync",
+		strings.NewReader(`{"journal":false}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusAccepted, rec.Code,
+		"async sync endpoint must return 202 Accepted")
+
+	var body map[string]json.RawMessage
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&body))
+
+	rawJobID, ok := body["job_id"]
+	assert.True(t, ok, "response must contain 'job_id'")
+	var jobID string
+	require.NoError(t, json.Unmarshal(rawJobID, &jobID))
+	assert.NotEmpty(t, jobID, "job_id must be non-empty")
+}
+
+// TestIntegration_GetJob_ReturnsJobStatus verifies that GET /api/jobs/:id
+// returns the job status for a job submitted via POST /api/sync.
+func TestIntegration_GetJob_ReturnsJobStatus(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+	router := Build(db, false)
+
+	// Submit a sync job.
+	req := httptest.NewRequest(http.MethodPost, "/api/sync",
+		strings.NewReader(`{"journal":false}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusAccepted, rec.Code)
+
+	var syncBody map[string]json.RawMessage
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&syncBody))
+	var jobID string
+	require.NoError(t, json.Unmarshal(syncBody["job_id"], &jobID))
+	require.NotEmpty(t, jobID)
+
+	// Poll the job status endpoint.
+	jobReq := httptest.NewRequest(http.MethodGet, "/api/jobs/"+jobID, nil)
+	jobRec := httptest.NewRecorder()
+	router.ServeHTTP(jobRec, jobReq)
+
+	assert.Equal(t, http.StatusOK, jobRec.Code, "GET /api/jobs/:id must return 200")
+
+	var job map[string]json.RawMessage
+	require.NoError(t, json.NewDecoder(jobRec.Body).Decode(&job))
+	assert.Contains(t, job, "id", "job response must include 'id'")
+	assert.Contains(t, job, "status", "job response must include 'status'")
+}
+
+// TestIntegration_GetJob_NotFound verifies that GET /api/jobs/:id returns 404
+// for an unknown job ID.
+func TestIntegration_GetJob_NotFound(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+	router := Build(db, false)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/jobs/does-not-exist", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusNotFound, rec.Code, "unknown job ID must return 404")
+}
+
+// TestIntegration_SyncAsync_FailureStillReturns202 verifies that even when the
+// sync job would fail (e.g. journal not found), the HTTP layer still returns 202
+// immediately.  The failure is observable asynchronously via the job status.
+func TestIntegration_SyncAsync_FailureStillReturns202(t *testing.T) {
 	configWithBrokenJournalPath(t)
 
 	db := openTestDB(t)
@@ -122,26 +196,15 @@ func TestIntegration_SyncFailure_HTTPResponseShape(t *testing.T) {
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 
-	// Transport must succeed (200).
-	assert.Equal(t, http.StatusOK, rec.Code,
-		"sync endpoint must return 200 even when sync fails (failure is in the body)")
+	assert.Equal(t, http.StatusAccepted, rec.Code,
+		"async sync endpoint must return 202 even when the sync job will fail")
 
-	var top map[string]json.RawMessage
-	require.NoError(t, json.NewDecoder(rec.Body).Decode(&top))
+	var body map[string]json.RawMessage
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&body))
 
-	var success bool
-	require.NoError(t, json.Unmarshal(top["success"], &success))
-	assert.False(t, success, "body.success must be false when the journal stage fails")
-
-	rawStage, hasStage := top["failed_stage"]
-	assert.True(t, hasStage, "body must contain 'failed_stage'")
-	var failedStage string
-	require.NoError(t, json.Unmarshal(rawStage, &failedStage))
-	assert.NotEmpty(t, failedStage, "failed_stage must name the broken stage")
-
-	rawMsg, hasMsg := top["message"]
-	assert.True(t, hasMsg, "body must contain 'message'")
-	var message string
-	require.NoError(t, json.Unmarshal(rawMsg, &message))
-	assert.NotEmpty(t, message, "message must carry the underlying error text")
+	rawJobID, ok := body["job_id"]
+	assert.True(t, ok, "response must contain 'job_id'")
+	var jobID string
+	require.NoError(t, json.Unmarshal(rawJobID, &jobID))
+	assert.NotEmpty(t, jobID, "job_id must be non-empty")
 }
