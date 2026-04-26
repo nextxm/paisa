@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Metadata persists arbitrary key/value pairs in the database.
@@ -33,9 +34,13 @@ func GetOrDefault(db *gorm.DB, key, defaultValue string) (string, error) {
 	return val, err
 }
 
-// Set inserts or updates the value for the given key.
+// Set inserts or updates the value for the given key.  The operation is
+// executed as a single atomic statement using INSERT … ON CONFLICT DO UPDATE,
+// so concurrent callers are safe and the value is always written regardless of
+// whether it is the zero value for its type.
 func Set(db *gorm.DB, key, value string) error {
-	return db.Where(Metadata{Key: key}).
-		Assign(Metadata{Value: value}).
-		FirstOrCreate(&Metadata{Key: key}).Error
+	return db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "key"}},
+		DoUpdates: clause.AssignmentColumns([]string{"value"}),
+	}).Create(&Metadata{Key: key, Value: value}).Error
 }
