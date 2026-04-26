@@ -6,13 +6,25 @@ import type { Job } from "./utils";
 // the modules being mocked.
 // ---------------------------------------------------------------------------
 
-// $lib/stores/jobs is re-exported by store.ts (which is loaded via utils.ts).
-// We need to stub it just enough to prevent a "Cannot find module" error.
-// The real singleton from ./stores/jobs will be used via the relative import
-// path that sync.ts uses, so upsert/snapshot calls go to the real store.
-mock.module("$lib/stores/jobs", async () => {
-  const real = await import("./stores/jobs");
-  return { jobs: real.jobs, jobsList: real.jobsList, isJobRunning: real.isJobRunning };
+// Mock ./utils (and its $lib/utils alias) so that loading sync.ts does NOT
+// trigger the utils.ts → ../store → $lib/stores/jobs resolution chain. That
+// chain can fail when other test files have already cached store.ts in a
+// broken state (no $lib/stores/jobs alias registered). The only runtime
+// export from ./utils that sync.ts uses is `ajax`; all tests inject
+// `fetchJob`, so the real ajax is never called.
+mock.module("./utils", async () => {
+  return {
+    ajax: async () => {
+      throw new Error("ajax not mocked");
+    }
+  };
+});
+mock.module("$lib/utils", async () => {
+  return {
+    ajax: async () => {
+      throw new Error("ajax not mocked");
+    }
+  };
 });
 
 mock.module("$app/navigation", () => ({
