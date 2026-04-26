@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +27,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 2, version)
+	assert.Equal(t, 3, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -36,7 +37,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 2, version)
+	assert.Equal(t, 3, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -54,12 +55,12 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	db := openMemoryDB(t)
 
 	// Simulate an existing install that has tables but no schema_versions table.
-	// RunMigrations should create the table and record v2 without error.
+	// RunMigrations should create the table and record v3 without error.
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	// Schema version should be 2 after migration.
-	assert.Equal(t, 2, migration.CurrentVersion(db))
+	// Schema version should be 3 after migration.
+	assert.Equal(t, 3, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -95,9 +96,9 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&migration.SchemaVersion{}))
 	require.NoError(t, db.Create(&migration.SchemaVersion{Version: 1, AppliedAt: time.Now()}).Error)
 
-	// Run migrations – only v2 should execute.
+	// Run migrations – only v2 and v3 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 2, migration.CurrentVersion(db))
+	assert.Equal(t, 3, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -136,4 +137,22 @@ func TestV2Migration_IndexesExist(t *testing.T) {
 	assert.True(t, names["idx_prices_commodity_name"], "commodity_name index must exist")
 	assert.True(t, names["idx_prices_quote_commodity"], "quote_commodity index must exist")
 	assert.True(t, names["idx_prices_type_date_base_quote"], "unique type/date/base/quote index must exist")
+}
+
+// TestV3Migration_MetadataTableExists verifies that after v3 the metadata table
+// exists with a unique index on the key column.
+func TestV3Migration_MetadataTableExists(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	// Confirm the table works via the package API.
+	require.NoError(t, metadata.Set(db, "last_hash", "abc"))
+
+	val, err := metadata.Get(db, "last_hash")
+	require.NoError(t, err)
+	assert.Equal(t, "abc", val)
+
+	// Duplicate key via raw SQL must be rejected by the unique index.
+	err = db.Exec("INSERT INTO metadata (key, value) VALUES (?, ?)", "last_hash", "xyz").Error
+	assert.Error(t, err, "inserting a duplicate key must fail")
 }

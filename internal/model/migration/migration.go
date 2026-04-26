@@ -7,6 +7,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/cache"
 	"github.com/ananthakumaran/paisa/internal/model/cii"
+	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	mutualfundModel "github.com/ananthakumaran/paisa/internal/model/mutualfund/scheme"
 	npsModel "github.com/ananthakumaran/paisa/internal/model/nps/scheme"
 	"github.com/ananthakumaran/paisa/internal/model/portfolio"
@@ -34,6 +35,7 @@ type step struct {
 var steps = []step{
 	{Version: 1, Apply: v1Baseline},
 	{Version: 2, Apply: v2AddQuoteCommodity},
+	{Version: 3, Apply: v3AddMetadata},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -95,6 +97,14 @@ func v2AddQuoteCommodity(db *gorm.DB) error {
 		return fmt.Errorf("v2: create idx_prices_type_date_base_quote failed: %w", err)
 	}
 
+	return nil
+}
+
+// v3AddMetadata creates the metadata key/value table with a unique index on key.
+func v3AddMetadata(db *gorm.DB) error {
+	if err := db.AutoMigrate(&metadata.Metadata{}); err != nil {
+		return fmt.Errorf("v3: AutoMigrate metadata failed: %w", err)
+	}
 	return nil
 }
 

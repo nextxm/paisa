@@ -5,6 +5,7 @@
 #### New features
 
 - **SHA-256 file hash utility** — Added `SHA256File(path string) (string, error)` in `internal/utils/hash.go`. Streams file content in chunks for efficient large-file handling, and returns descriptive errors on open/read failures. This utility supports upcoming incremental sync checks (P1.1).
+- **Metadata key/value table** — New `internal/model/metadata` package adds a `Metadata` model backed by a SQLite table (`metadata`) with a unique index on `key`. Helper functions `Get`, `Set`, and `GetOrDefault` provide safe access. A new schema migration (v3) creates the table for both fresh installs and existing databases.
 
 ### 0.8-beta (2026-04-26) — Multi-currency pricing rollout
 
