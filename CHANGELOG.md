@@ -7,6 +7,7 @@
 - **SHA-256 file hash utility** — Added `SHA256File(path string) (string, error)` in `internal/utils/hash.go`. Streams file content in chunks for efficient large-file handling, and returns descriptive errors on open/read failures. This utility supports upcoming incremental sync checks (P1.1).
 - **Metadata key/value table** — New `internal/model/metadata` package adds a `Metadata` model backed by a SQLite table (`metadata`) with a unique index on `key`. A new schema migration (v3) creates the table for both fresh installs and existing databases.
 - **Metadata persistence API** — `metadata.Get(db, key)` returns the stored value or `gorm.ErrRecordNotFound` for missing keys; `metadata.GetOrDefault(db, key, default)` returns a caller-supplied fallback for missing keys; `metadata.Set(db, key, value)` performs an atomic `INSERT … ON CONFLICT DO UPDATE` upsert, covering both create and update paths consistently.
+- **SyncJournal hash-skip optimisation** — `SyncJournal` now computes the SHA-256 hash of the journal file before invoking any ledger CLI commands. When the hash matches the value stored in the `journal_hash` metadata key from the last successful sync, all CLI validation and parsing work is skipped and the result carries `Skipped: true`. The hash is only persisted after a fully successful sync, so a partial failure never silently suppresses the next run.
 
 ### 0.8-beta (2026-04-26) — Multi-currency pricing rollout
 
