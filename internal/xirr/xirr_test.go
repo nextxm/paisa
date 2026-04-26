@@ -123,3 +123,50 @@ func TestXIRR(t *testing.T) {
 	}
 
 }
+
+// TestXIRRWithConvergence_Converges verifies that XIRRWithConvergence returns
+// the same numeric result as XIRR and reports convergence for well-behaved
+// cashflow inputs.
+func TestXIRRWithConvergence_Converges(t *testing.T) {
+	cashflows := []Cashflow{
+		{Date: date(2008, 01, 01), Amount: -10000.00},
+		{Date: date(2008, 03, 01), Amount: 2750.00},
+		{Date: date(2008, 10, 30), Amount: 4250.00},
+		{Date: date(2009, 02, 15), Amount: 3250.00},
+		{Date: date(2009, 04, 01), Amount: 2750.00},
+	}
+	result, ok := XIRRWithConvergence(cashflows)
+	assert.True(t, ok, "XIRRWithConvergence must report convergence for standard cashflows")
+	assert.Equal(t, XIRR(cashflows), result, "XIRRWithConvergence must return the same value as XIRR")
+}
+
+// TestXIRRWithConvergence_EmptyCashflows verifies that an empty slice is
+// handled gracefully: result is 0 and convergence is reported as true (there
+// is nothing to compute).
+func TestXIRRWithConvergence_EmptyCashflows(t *testing.T) {
+	result, ok := XIRRWithConvergence(nil)
+	assert.True(t, ok, "empty cashflows must be treated as converged")
+	assert.Equal(t, decimal.Zero, result)
+}
+
+// TestXIRRWithConvergence_AgreesWithXIRR checks all fixture files: for any
+// fixture whose expected result is non-zero (i.e. the solver definitely
+// converges), XIRRWithConvergence must return ok=true and the same value.
+func TestXIRRWithConvergence_AgreesWithXIRR(t *testing.T) {
+	_, filename, _, _ := runtime.Caller(0)
+	dirname := filepath.Join(filepath.Dir(filename), "samples")
+
+	files := lo.Must(os.ReadDir(dirname))
+	for _, f := range files {
+		expected, exist := XIRR_EXPECTED_VALUES[f.Name()]
+		if !exist || expected == 0.00 {
+			// Skip fixtures whose expected XIRR is 0 because we cannot
+			// distinguish "true zero" from "non-convergence" at this layer.
+			continue
+		}
+		cashflows := readCSV(filepath.Join(dirname, f.Name()))
+		result, ok := XIRRWithConvergence(cashflows)
+		assert.True(t, ok, "XIRRWithConvergence must converge for fixture %s (expected %.2f)", f.Name(), expected)
+		assert.Equal(t, XIRR(cashflows), result, "XIRRWithConvergence value must match XIRR for fixture %s", f.Name())
+	}
+}

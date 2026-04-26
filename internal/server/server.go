@@ -92,7 +92,8 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	writeGroup.POST("/api/init", func(c *gin.Context) {
 		generator.Demo(config.GetConfigDir())
 		config.LoadConfigFile(config.GetConfigPath())
-		Sync(db, SyncRequest{Journal: true, Prices: true, Portfolios: true})
+		// Ignore the result and details; /api/init is a one-shot bootstrap.
+		_, _ = Sync(db, SyncRequest{Journal: true, Prices: true, Portfolios: true})
 		c.JSON(200, gin.H{"success": true})
 	})
 
@@ -102,19 +103,19 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 			return
 		}
 
-		jobID := registry.Submit(context.Background(), func(_ context.Context) error {
+		jobID := registry.SubmitDetailed(context.Background(), func(_ context.Context) ([]string, error) {
 			// context.Background() is intentional: the sync job must outlive the
 			// HTTP request.  Using c.Request.Context() would cancel the job as
 			// soon as the 202 response is flushed to the client.
-			result := Sync(db, syncRequest)
+			result, details := Sync(db, syncRequest)
 			if success, ok := result["success"].(bool); ok && !success {
 				message, _ := result["message"].(string)
 				if message == "" {
 					message = "sync failed"
 				}
-				return errors.New(message)
+				return details, errors.New(message)
 			}
-			return nil
+			return details, nil
 		})
 
 		c.JSON(http.StatusAccepted, gin.H{"job_id": jobID})

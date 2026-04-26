@@ -72,6 +72,26 @@ func calculateXIRR(transactions []Transaction, initialGuess float64) float64 {
 	return 0
 }
 
+// calculateXIRRWithConvergence is like calculateXIRR but also returns whether
+// the Newton-Raphson iteration converged.  False means the algorithm exhausted
+// all initial guesses without reaching the required epsilon.
+func calculateXIRRWithConvergence(transactions []Transaction, initialGuess float64) (float64, bool) {
+	if x, ok := newtonXIRR(transactions, initialGuess); ok {
+		return x, true
+	}
+
+	guess := -0.99
+	for guess < 1.0 {
+		if x, ok := newtonXIRR(transactions, guess); ok {
+			return x, true
+		}
+		guess += 0.01
+	}
+
+	log.Warn("XIRR didn't converge")
+	return 0, false
+}
+
 func XIRR(cashflows []Cashflow) decimal.Decimal {
 	if len(cashflows) == 0 {
 		return decimal.Zero
@@ -85,4 +105,28 @@ func XIRR(cashflows []Cashflow) decimal.Decimal {
 		}
 	})
 	return decimal.NewFromFloat(calculateXIRR(transactions, 0.1) * 100).Round(2)
+}
+
+// XIRRWithConvergence computes the same result as [XIRR] but also reports
+// whether the Newton-Raphson iteration converged.  The second return value is
+// false when the algorithm exhausted all initial guesses without satisfying the
+// epsilon condition; in that case the returned decimal is 0.
+//
+// Use this variant when you need to distinguish "XIRR is genuinely zero" from
+// "the solver failed to converge".  The plain [XIRR] function silently returns
+// 0 in the non-convergence case after logging a warning.
+func XIRRWithConvergence(cashflows []Cashflow) (decimal.Decimal, bool) {
+	if len(cashflows) == 0 {
+		return decimal.Zero, true
+	}
+
+	sort.Slice(cashflows, func(i, j int) bool { return cashflows[i].Date.Before(cashflows[j].Date) })
+	transactions := lo.Map(cashflows, func(cf Cashflow, _ int) Transaction {
+		return Transaction{
+			Years:  daysBetween(cashflows[0].Date, cf.Date) / 365,
+			Amount: cf.Amount,
+		}
+	})
+	x, ok := calculateXIRRWithConvergence(transactions, 0.1)
+	return decimal.NewFromFloat(x * 100).Round(2), ok
 }
