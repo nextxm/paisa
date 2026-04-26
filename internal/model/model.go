@@ -127,10 +127,19 @@ func SyncJournal(db *gorm.DB) (SyncResult, error) {
 	return result, nil
 }
 
-func SyncCommodities(db *gorm.DB) error {
+// SyncCommoditiesResult holds per-commodity outcomes for a price-scraper sync run.
+type SyncCommoditiesResult struct {
+	// Failures contains one human-readable message for each commodity whose
+	// price could not be fetched or persisted.  An empty slice means all
+	// commodities were synced successfully.
+	Failures []string
+}
+
+func SyncCommodities(db *gorm.DB) (SyncCommoditiesResult, error) {
 	log.WithFields(log.Fields{"stage": "commodities"}).Info("Fetching commodities price history")
 	commodities := lo.Shuffle(commodity.All())
 
+	var result SyncCommoditiesResult
 	var errors []error
 	for _, commodity := range commodities {
 		name := commodity.Name
@@ -144,7 +153,9 @@ func SyncCommodities(db *gorm.DB) error {
 
 		if err != nil {
 			log.WithFields(log.Fields{"stage": "commodities", "commodity": name, "error": err}).Error("Failed to fetch commodity prices")
-			errors = append(errors, fmt.Errorf("Failed to fetch price for %s: %w", name, err))
+			msg := fmt.Sprintf("Failed to fetch price for %s: %s", name, err.Error())
+			errors = append(errors, fmt.Errorf("%s", msg))
+			result.Failures = append(result.Failures, msg)
 			continue
 		}
 
@@ -156,7 +167,9 @@ func SyncCommodities(db *gorm.DB) error {
 			if p.QuoteCommodity == "" {
 				log.WithFields(log.Fields{"stage": "commodities", "commodity": name, "provider": commodity.Price.Provider, "date": p.Date.Format("2006-01-02")}).
 					Error("Provider returned price without quote_commodity")
-				errors = append(errors, fmt.Errorf("provider %s returned price for %s on %s without quote_commodity: update the provider or set the quote currency explicitly", commodity.Price.Provider, name, p.Date.Format("2006-01-02")))
+				msg := fmt.Sprintf("provider %s returned price for %s on %s without quote_commodity: update the provider or set the quote currency explicitly", commodity.Price.Provider, name, p.Date.Format("2006-01-02"))
+				errors = append(errors, fmt.Errorf("%s", msg))
+				result.Failures = append(result.Failures, msg)
 				missingQuote = true
 				break
 			}
@@ -175,7 +188,9 @@ func SyncCommodities(db *gorm.DB) error {
 
 		if err := price.UpsertAllByTypeNameAndID(db, commodity.Type, name, code, prices); err != nil {
 			log.WithFields(log.Fields{"stage": "commodities", "commodity": name, "error": err}).Error("Failed to save commodity prices")
-			errors = append(errors, fmt.Errorf("Failed to save price for %s: %w", name, err))
+			msg := fmt.Sprintf("Failed to save price for %s: %s", name, err.Error())
+			errors = append(errors, fmt.Errorf("%s", msg))
+			result.Failures = append(result.Failures, msg)
 		}
 	}
 
@@ -184,9 +199,9 @@ func SyncCommodities(db *gorm.DB) error {
 		for _, error := range errors {
 			message += error.Error() + "\n"
 		}
-		return fmt.Errorf("%s", strings.Trim(message, "\n"))
+		return result, fmt.Errorf("%s", strings.Trim(message, "\n"))
 	}
-	return nil
+	return result, nil
 }
 
 func SyncCII(db *gorm.DB) error {

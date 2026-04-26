@@ -327,3 +327,85 @@ func TestRegistry_ConcurrentSubmitAndGet(t *testing.T) {
 
 	wg.Wait()
 }
+
+// ---------------------------------------------------------------------------
+// SubmitDetailed tests
+// ---------------------------------------------------------------------------
+
+// TestSubmitDetailed_ReturnsNonEmptyID verifies that SubmitDetailed always
+// returns a non-empty job ID.
+func TestSubmitDetailed_ReturnsNonEmptyID(t *testing.T) {
+	r := worker.NewRegistry()
+	id := r.SubmitDetailed(context.Background(), func(_ context.Context) ([]string, error) {
+		return nil, nil
+	})
+	assert.NotEmpty(t, id, "SubmitDetailed must return a non-empty job ID")
+}
+
+// TestSubmitDetailed_Completed_NoDetails verifies that when the function
+// returns no details and no error the job reaches Completed with an empty
+// Details slice.
+func TestSubmitDetailed_Completed_NoDetails(t *testing.T) {
+	r := worker.NewRegistry()
+	id := r.SubmitDetailed(context.Background(), func(_ context.Context) ([]string, error) {
+		return nil, nil
+	})
+
+	assert.Eventually(t, func() bool {
+		j, _ := r.Get(id)
+		return j.Status == worker.StatusCompleted
+	}, 2*time.Second, 5*time.Millisecond, "job must reach Completed")
+
+	job, ok := r.Get(id)
+	require.True(t, ok)
+	assert.Equal(t, worker.StatusCompleted, job.Status)
+	assert.Empty(t, job.Details, "Details must be empty when no details were returned")
+	assert.Empty(t, job.Error)
+}
+
+// TestSubmitDetailed_Completed_WithDetails verifies that details returned by
+// the function are stored in Job.Details and the job still reaches Completed
+// (details do not cause the job to fail).
+func TestSubmitDetailed_Completed_WithDetails(t *testing.T) {
+	r := worker.NewRegistry()
+	want := []string{"commodity A failed", "commodity B failed"}
+
+	id := r.SubmitDetailed(context.Background(), func(_ context.Context) ([]string, error) {
+		return want, nil
+	})
+
+	assert.Eventually(t, func() bool {
+		j, _ := r.Get(id)
+		return j.Status == worker.StatusCompleted
+	}, 2*time.Second, 5*time.Millisecond, "job must reach Completed")
+
+	job, ok := r.Get(id)
+	require.True(t, ok)
+	assert.Equal(t, worker.StatusCompleted, job.Status)
+	assert.Equal(t, want, job.Details, "Details must match the messages returned by the function")
+}
+
+// TestSubmitDetailed_Failed_WithDetails verifies that when the function returns
+// both details and an error the job reaches Failed, the Error field is populated,
+// and Details are also stored so operators see both the top-level failure and the
+// per-step messages.
+func TestSubmitDetailed_Failed_WithDetails(t *testing.T) {
+	r := worker.NewRegistry()
+	sentinelErr := errors.New("sync failed")
+	want := []string{"XIRR did not converge for account: Assets:Equity:AAPL"}
+
+	id := r.SubmitDetailed(context.Background(), func(_ context.Context) ([]string, error) {
+		return want, sentinelErr
+	})
+
+	assert.Eventually(t, func() bool {
+		j, _ := r.Get(id)
+		return j.Status == worker.StatusFailed
+	}, 2*time.Second, 5*time.Millisecond, "job must reach Failed")
+
+	job, ok := r.Get(id)
+	require.True(t, ok)
+	assert.Equal(t, worker.StatusFailed, job.Status)
+	assert.Equal(t, sentinelErr.Error(), job.Error)
+	assert.Equal(t, want, job.Details, "Details must be stored even when the job fails")
+}

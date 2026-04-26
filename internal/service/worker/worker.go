@@ -61,6 +61,11 @@ type Job struct {
 	Status JobStatus `json:"status"`
 	// Error holds the error message when Status == StatusFailed; otherwise empty.
 	Error string `json:"error,omitempty"`
+	// Details holds per-step diagnostic messages accumulated during job execution.
+	// For example, individual commodity fetch failures from a price-scraper job
+	// are each recorded as a separate entry rather than collapsed into a single
+	// top-level error string.  Present on both successful and failed jobs.
+	Details []string `json:"details,omitempty"`
 	// CreatedAt is the wall-clock time at which the job was submitted.
 	CreatedAt time.Time `json:"created_at"`
 	// StartedAt is the wall-clock time at which the job began executing; zero if still pending.
@@ -164,4 +169,71 @@ func (r *Registry) List() []Job {
 		return cmp.Compare(a.CreatedAt.UnixNano(), b.CreatedAt.UnixNano())
 	})
 	return result
+}
+
+// DetailedJobFn is the function signature accepted by [Registry.SubmitDetailed].
+// It returns a (possibly empty) slice of per-step diagnostic messages in
+// addition to the top-level error so that fine-grained failures (e.g. a price
+// provider failing for one commodity out of many) are observable via the job
+// status API even when the overall job succeeded.
+type DetailedJobFn func(ctx context.Context) (details []string, err error)
+
+// SubmitDetailed enqueues fn as a new background job and returns the job ID.
+// It behaves identically to [Registry.Submit] except that fn returns a
+// (details, error) pair.  The details slice is stored in [Job.Details] so
+// callers can inspect individual per-step failures via the jobs API.
+//
+// SubmitDetailed is non-blocking: fn is executed asynchronously in a separate
+// goroutine.
+func (r *Registry) SubmitDetailed(ctx context.Context, fn DetailedJobFn) string {
+	id, err := uuid.NewV4()
+	if err != nil {
+		log.WithError(err).Fatal("worker: unable to generate job ID")
+	}
+
+	job := &Job{
+		ID:        id.String(),
+		Status:    StatusPending,
+		CreatedAt: time.Now().UTC(),
+	}
+
+	r.mu.Lock()
+	r.jobs[job.ID] = job
+	r.mu.Unlock()
+
+	go r.runDetailed(ctx, job, fn)
+
+	return job.ID
+}
+
+// runDetailed executes fn inside a goroutine, stores any returned details, and
+// updates job state accordingly.
+func (r *Registry) runDetailed(ctx context.Context, job *Job, fn DetailedJobFn) {
+	now := time.Now().UTC()
+
+	r.mu.Lock()
+	transition(job, StatusRunning)
+	job.StartedAt = &now
+	r.mu.Unlock()
+
+	log.WithField("job_id", job.ID).Info("worker: job started")
+
+	details, runErr := fn(ctx)
+
+	finished := time.Now().UTC()
+
+	r.mu.Lock()
+	job.FinishedAt = &finished
+	if len(details) > 0 {
+		job.Details = details
+	}
+	if runErr != nil {
+		transition(job, StatusFailed)
+		job.Error = runErr.Error()
+		log.WithField("job_id", job.ID).WithError(runErr).Warn("worker: job failed")
+	} else {
+		transition(job, StatusCompleted)
+		log.WithField("job_id", job.ID).Info("worker: job completed")
+	}
+	r.mu.Unlock()
 }
