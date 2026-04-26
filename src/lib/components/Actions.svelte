@@ -1,16 +1,14 @@
 <script lang="ts">
-  import { sync } from "$lib/sync";
+  import { sync, startPolling } from "$lib/sync";
   import { isLoggedIn, logout } from "$lib/utils";
   import { refresh } from "../../store";
   import { obscure } from "../../persisted_store";
   import { goto } from "$app/navigation";
 
   async function syncWithLoader(request: Record<string, any>) {
-    try {
-      await sync(request);
-    } finally {
-      refresh();
-    }
+    const jobId = await sync(request);
+    if (!jobId) return;
+    startPolling(jobId, () => refresh());
   }
 
   let last = $obscure;
