@@ -37,7 +37,7 @@ func TestSync_SuccessResponseShape(t *testing.T) {
 	db := openTestDB(t)
 
 	// No sync flags set – all stages are skipped; function must return success.
-	result := Sync(db, SyncRequest{})
+	result, details := Sync(db, SyncRequest{})
 
 	raw, err := json.Marshal(result)
 	require.NoError(t, err)
@@ -61,6 +61,9 @@ func TestSync_SuccessResponseShape(t *testing.T) {
 	var priceCount int
 	require.NoError(t, json.Unmarshal(top["price_count"], &priceCount))
 	assert.Equal(t, 0, priceCount, "price_count must be zero when journal sync was not requested")
+
+	// When no sync stages are requested there should be no diagnostic details.
+	assert.Empty(t, details, "no details expected when no sync stages were requested")
 }
 
 // TestSync_JournalFailureResponseShape verifies that when the journal stage is
@@ -79,7 +82,7 @@ func TestSync_JournalFailureResponseShape(t *testing.T) {
 	// branch of Sync without needing a real ledger binary.
 	configWithBrokenJournalPath(t)
 
-	result := Sync(db, SyncRequest{Journal: true})
+	result, _ := Sync(db, SyncRequest{Journal: true})
 
 	raw, err := json.Marshal(result)
 	require.NoError(t, err)
@@ -207,4 +210,19 @@ func TestIntegration_SyncAsync_FailureStillReturns202(t *testing.T) {
 	var jobID string
 	require.NoError(t, json.Unmarshal(rawJobID, &jobID))
 	assert.NotEmpty(t, jobID, "job_id must be non-empty")
+}
+
+// TestSync_DetailsReturnedOnSuccess verifies that Sync returns a valid
+// details slice (nil is acceptable when there are no per-step failures) even
+// on a fully successful run, and that no stages being requested produces no
+// details.
+func TestSync_DetailsReturnedOnSuccess(t *testing.T) {
+	db := openTestDB(t)
+
+	_, details := Sync(db, SyncRequest{})
+
+	// When no sync stages are requested and there are no investment postings,
+	// WarmXIRRCache is not called, so details is nil (same as empty).
+	// Nil and empty slices are semantically identical for "no details".
+	assert.Empty(t, details, "no details expected when no sync stages were requested")
 }

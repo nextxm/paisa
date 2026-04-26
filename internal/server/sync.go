@@ -14,10 +14,15 @@ type SyncRequest struct {
 	Portfolios bool `json:"portfolios"`
 }
 
-func Sync(db *gorm.DB, request SyncRequest) gin.H {
+// Sync executes the requested sync stages synchronously and returns the
+// response payload together with a (possibly empty) slice of per-step
+// diagnostic messages that should be surfaced to operators via the job
+// Details field.
+func Sync(db *gorm.DB, request SyncRequest) (gin.H, []string) {
 	cache.Clear()
 
 	var journalResult model.SyncResult
+	var details []string
 
 	if request.Journal {
 		var err error
@@ -27,18 +32,21 @@ func Sync(db *gorm.DB, request SyncRequest) gin.H {
 				"success":      false,
 				"failed_stage": journalResult.FailedStage,
 				"message":      journalResult.Message,
-			}
+			}, details
 		}
 	}
 
 	if request.Prices {
-		err := model.SyncCommodities(db)
+		commoditiesResult, err := model.SyncCommodities(db)
+		// Accumulate per-commodity failures into details regardless of whether
+		// the overall sync succeeded or failed.
+		details = append(details, commoditiesResult.Failures...)
 		if err != nil {
 			return gin.H{
 				"success":      false,
 				"failed_stage": "commodities",
 				"message":      err.Error(),
-			}
+			}, details
 		}
 		err = model.SyncCII(db)
 		if err != nil {
@@ -46,7 +54,7 @@ func Sync(db *gorm.DB, request SyncRequest) gin.H {
 				"success":      false,
 				"failed_stage": "cii",
 				"message":      err.Error(),
-			}
+			}, details
 		}
 	}
 
@@ -57,14 +65,31 @@ func Sync(db *gorm.DB, request SyncRequest) gin.H {
 				"success":      false,
 				"failed_stage": "portfolios",
 				"message":      err.Error(),
-			}
+			}, details
 		}
 	}
+
+	// Warm the market price and FX-rate in-memory caches so the first API
+	// request after sync is served quickly.  WarmCache is intentionally
+	// unconditional: the in-memory caches are always cleared by cache.Clear()
+	// at the top of Sync, so they must be re-populated regardless of which
+	// stages ran.
 	service.WarmCache(db)
+
+	// Wrap XIRR calculations in the job flow: pre-compute XIRR for every
+	// investment account and store the results in the SQLite computation cache.
+	// WarmXIRRCache is conditional because it only makes sense when investment
+	// data may have changed (journal or price sync was requested).  Any accounts
+	// whose XIRR solver did not converge are recorded as Details so operators
+	// can investigate without having to inspect server logs.
+	if request.Journal || request.Prices {
+		xirrWarnings := service.WarmXIRRCache(db)
+		details = append(details, xirrWarnings...)
+	}
 
 	return gin.H{
 		"success":       true,
 		"posting_count": journalResult.PostingCount,
 		"price_count":   journalResult.PriceCount,
-	}
+	}, details
 }
