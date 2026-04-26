@@ -120,6 +120,15 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(http.StatusAccepted, gin.H{"job_id": jobID})
 	})
 
+	router.GET("/api/jobs/:id", func(c *gin.Context) {
+		job, ok := registry.Get(c.Param("id"))
+		if !ok {
+			RespondError(c, http.StatusNotFound, ErrCodeInvalidRequest, "job not found")
+			return
+		}
+		c.JSON(http.StatusOK, job)
+	})
+
 	router.GET("/api/dashboard", func(c *gin.Context) {
 		c.JSON(200, GetDashboard(db))
 	})

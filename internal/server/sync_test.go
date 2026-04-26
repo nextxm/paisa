@@ -133,6 +133,54 @@ func TestIntegration_SyncAsync_Returns202WithJobID(t *testing.T) {
 	assert.NotEmpty(t, jobID, "job_id must be non-empty")
 }
 
+// TestIntegration_GetJob_ReturnsJobStatus verifies that GET /api/jobs/:id
+// returns the job status for a job submitted via POST /api/sync.
+func TestIntegration_GetJob_ReturnsJobStatus(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+	router := Build(db, false)
+
+	// Submit a sync job.
+	req := httptest.NewRequest(http.MethodPost, "/api/sync",
+		strings.NewReader(`{"journal":false}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusAccepted, rec.Code)
+
+	var syncBody map[string]json.RawMessage
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&syncBody))
+	var jobID string
+	require.NoError(t, json.Unmarshal(syncBody["job_id"], &jobID))
+	require.NotEmpty(t, jobID)
+
+	// Poll the job status endpoint.
+	jobReq := httptest.NewRequest(http.MethodGet, "/api/jobs/"+jobID, nil)
+	jobRec := httptest.NewRecorder()
+	router.ServeHTTP(jobRec, jobReq)
+
+	assert.Equal(t, http.StatusOK, jobRec.Code, "GET /api/jobs/:id must return 200")
+
+	var job map[string]json.RawMessage
+	require.NoError(t, json.NewDecoder(jobRec.Body).Decode(&job))
+	assert.Contains(t, job, "id", "job response must include 'id'")
+	assert.Contains(t, job, "status", "job response must include 'status'")
+}
+
+// TestIntegration_GetJob_NotFound verifies that GET /api/jobs/:id returns 404
+// for an unknown job ID.
+func TestIntegration_GetJob_NotFound(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+	router := Build(db, false)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/jobs/does-not-exist", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusNotFound, rec.Code, "unknown job ID must return 404")
+}
+
 // TestIntegration_SyncAsync_FailureStillReturns202 verifies that even when the
 // sync job would fail (e.g. journal not found), the HTTP layer still returns 202
 // immediately.  The failure is observable asynchronously via the job status.

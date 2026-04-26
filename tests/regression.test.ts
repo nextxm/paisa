@@ -36,9 +36,21 @@ async function recordAndVerify(dir: string, route: string, name: string) {
 
 async function verifyApi(dir: string) {
   const {
-    data: { success }
+    data: { job_id: jobId }
   } = await axios.post("/api/sync", { journal: true });
-  expect(success).toBe(true);
+  expect(jobId).toBeTruthy();
+
+  // Poll until the background job reaches a terminal state (completed/failed).
+  let jobStatus: string = "";
+  for (let i = 0; i < 60; i++) {
+    const { data: job } = await axios.get(`/api/jobs/${jobId}`);
+    jobStatus = job.status;
+    if (jobStatus === "completed" || jobStatus === "failed") {
+      break;
+    }
+    await Bun.sleep(500);
+  }
+  expect(jobStatus).toBe("completed");
 
   await recordAndVerify(dir, "/api/dashboard", "dashboard");
   await recordAndVerify(dir, "/api/cash_flow", "cash_flow");
