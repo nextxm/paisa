@@ -142,7 +142,39 @@ func TestList_ContainsAllSubmittedJobs(t *testing.T) {
 	close(gate)
 }
 
-// TestSubmit_IDs_AreUnique verifies that every submitted job gets a distinct ID.
+// TestList_OrderedByCreatedAt verifies that List returns jobs sorted by
+// CreatedAt in ascending order (oldest first), regardless of the order in
+// which goroutines complete.
+func TestList_OrderedByCreatedAt(t *testing.T) {
+	r := worker.NewRegistry()
+	const n = 5
+
+	// Gate the workers so none finish before we call List, ensuring we can
+	// rely on CreatedAt ordering rather than completion ordering.
+	gate := make(chan struct{})
+	for range n {
+		r.Submit(context.Background(), func(_ context.Context) error {
+			<-gate
+			return nil
+		})
+		// 1 ms gap ensures strictly increasing CreatedAt values on any OS.
+		time.Sleep(time.Millisecond)
+	}
+
+	jobs := r.List()
+	require.Len(t, jobs, n)
+
+	for i := 1; i < len(jobs); i++ {
+		assert.True(t,
+			!jobs[i].CreatedAt.Before(jobs[i-1].CreatedAt),
+			"job[%d].CreatedAt (%v) must be >= job[%d].CreatedAt (%v)",
+			i, jobs[i].CreatedAt, i-1, jobs[i-1].CreatedAt,
+		)
+	}
+
+	close(gate)
+}
+
 func TestSubmit_IDs_AreUnique(t *testing.T) {
 	r := worker.NewRegistry()
 	const n = 20
@@ -191,9 +223,51 @@ func TestSubmit_ContextCancellation(t *testing.T) {
 // Concurrency
 // ---------------------------------------------------------------------------
 
-// ---------------------------------------------------------------------------
-// State machine helpers
-// ---------------------------------------------------------------------------
+// TestRegistry_ConcurrentList verifies that calling List concurrently with
+// Submit causes no data races.  Run with -race.
+func TestRegistry_ConcurrentList(t *testing.T) {
+	r := worker.NewRegistry()
+	const goroutines = 30
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+
+	for range goroutines {
+		go func() {
+			defer wg.Done()
+			r.Submit(context.Background(), func(_ context.Context) error {
+				return nil
+			})
+			_ = r.List()
+		}()
+	}
+
+	wg.Wait()
+}
+
+// TestRegistry_ConcurrentSubmitGetList is a high-fan-out stress test that
+// hammers Submit, Get, and List from many goroutines simultaneously to
+// surface any data race.  Run with -race.
+func TestRegistry_ConcurrentSubmitGetList(t *testing.T) {
+	r := worker.NewRegistry()
+	const goroutines = 100
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+
+	for range goroutines {
+		go func() {
+			defer wg.Done()
+			id := r.Submit(context.Background(), func(_ context.Context) error {
+				return nil
+			})
+			r.Get(id)
+			r.List()
+		}()
+	}
+
+	wg.Wait()
+}
 
 // TestIsTerminal verifies that only Completed and Failed are terminal states.
 func TestIsTerminal(t *testing.T) {
