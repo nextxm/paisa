@@ -1,8 +1,10 @@
 package worker
 
 import (
+	"cmp"
 	"context"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
@@ -150,7 +152,7 @@ func (r *Registry) Get(id string) (Job, bool) {
 }
 
 // List returns a slice containing a snapshot of every Job known to the
-// registry.  The order is not guaranteed.
+// registry, ordered by CreatedAt ascending (oldest job first).
 func (r *Registry) List() []Job {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -158,5 +160,8 @@ func (r *Registry) List() []Job {
 	for _, j := range r.jobs {
 		result = append(result, *j)
 	}
+	slices.SortFunc(result, func(a, b Job) int {
+		return cmp.Compare(a.CreatedAt.UnixNano(), b.CreatedAt.UnixNano())
+	})
 	return result
 }
