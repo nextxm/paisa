@@ -17,7 +17,7 @@
   let filterQuote = "";
   let filterSource = "";
   let reportCurrency = "";
-  let historyMode: HistoryMode = "latest";
+  let historyMode: HistoryMode = "all";
 
   let availableBases: string[] = [];
   let availableQuotes: string[] = [];

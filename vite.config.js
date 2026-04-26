@@ -9,23 +9,51 @@ let branch = "";
 let tag = "";
 let appVersion = "dev";
 
-try {
-  commitHash = execSync("git rev-parse --short HEAD").toString().trim();
-  branch = execSync("git rev-parse --abbrev-ref HEAD").toString().trim();
+// Helper: read git info directly from .git directory (no git binary needed)
+function readGitFromFiles() {
   try {
-    tag = execSync("git describe --tags --exact-match").toString().trim();
+    const headContent = fs.readFileSync(".git/HEAD", "utf-8").trim();
+    if (headContent.startsWith("ref: ")) {
+      // Attached HEAD: "ref: refs/heads/my-branch"
+      const refPath = headContent.slice(5); // e.g. "refs/heads/my-branch"
+      branch = refPath.replace("refs/heads/", "");
+      try {
+        commitHash = fs.readFileSync(`.git/${refPath}`, "utf-8").trim().slice(0, 7);
+      } catch (e) {
+        // packed-refs fallback
+        try {
+          const packed = fs.readFileSync(".git/packed-refs", "utf-8");
+          const line = packed.split("\n").find((l) => l.endsWith(refPath));
+          if (line) commitHash = line.split(" ")[0].slice(0, 7);
+        } catch (e2) { }
+      }
+    } else {
+      // Detached HEAD: the content is the full commit hash
+      commitHash = headContent.slice(0, 7);
+      branch = "HEAD";
+    }
+  } catch (e) { }
+}
+
+try {
+  commitHash = execSync("git rev-parse --short HEAD", { stdio: "pipe" }).toString().trim();
+  branch = execSync("git rev-parse --abbrev-ref HEAD", { stdio: "pipe" }).toString().trim();
+  try {
+    tag = execSync("git describe --tags --exact-match", { stdio: "pipe" }).toString().trim();
   } catch (e) { }
   // Use the same logic as Makefile for the main version string
-  appVersion = execSync("git describe --tags --always --dirty").toString().trim();
+  appVersion = execSync("git describe --tags --always --dirty", { stdio: "pipe" }).toString().trim();
 } catch (e) {
-  // Fallback to cmd/version.go if git fails
+  // git binary unavailable or not a git repo — fall back to reading .git files directly
+  readGitFromFiles();
+  // Fallback version from cmd/version.go
   try {
     const versionGo = fs.readFileSync("cmd/version.go", "utf-8");
-    const match = versionGo.match(/var Version = \"([^\"]+)\"/);
+    const match = versionGo.match(/var Version = "([^"]+)"/);
     if (match) {
       appVersion = match[1];
     }
-  } catch (e) { }
+  } catch (e2) { }
 }
 
 const buildDate = new Date().toISOString();
