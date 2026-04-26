@@ -2,16 +2,20 @@ package model_test
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model"
 	"github.com/ananthakumaran/paisa/internal/model/cii"
+	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/ananthakumaran/paisa/internal/model/portfolio"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/price"
+	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/glebarez/sqlite"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -323,4 +327,83 @@ func TestSyncResult_DefaultValues(t *testing.T) {
 	assert.Equal(t, 0, result.PriceCount, "PriceCount must default to zero")
 	assert.Empty(t, result.FailedStage, "FailedStage must default to empty string")
 	assert.Empty(t, result.Message, "Message must default to empty string")
+}
+
+// configWithJournalPath loads a minimal paisa config that points JournalPath to
+// the given absolute path so that config.GetJournalPath() returns it.
+func configWithJournalPath(t *testing.T, journalPath string) {
+	t.Helper()
+	// Use a fixed db path inside the same temp directory to avoid any
+	// dependency on the journal file path containing only safe characters.
+	dbPath := t.TempDir() + "/test.db"
+	yaml := fmt.Sprintf("journal_path: %q\ndb_path: %q\n", journalPath, dbPath)
+	err := config.LoadConfig([]byte(yaml), "")
+	require.NoError(t, err, "failed to load test config")
+}
+
+// TestSyncJournal_SkipsOnUnchangedHash verifies that when the journal file hash
+// stored in metadata matches the current file hash, SyncJournal returns
+// SyncResult{Skipped:true} without invoking any ledger CLI commands.
+func TestSyncJournal_SkipsOnUnchangedHash(t *testing.T) {
+	db := openTestDB(t)
+
+	// Write a minimal journal file to a temp location.
+	f, err := os.CreateTemp(t.TempDir(), "journal-*.ledger")
+	require.NoError(t, err)
+	_, err = fmt.Fprintln(f, "; empty journal for hash-skip test")
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+	journalPath := f.Name()
+
+	// Point config at the temp file.
+	configWithJournalPath(t, journalPath)
+
+	// Pre-compute the file hash and seed it into the metadata table.
+	hash, err := utils.SHA256File(journalPath)
+	require.NoError(t, err)
+	require.NoError(t, metadata.Set(db, "journal_hash", hash))
+
+	// SyncJournal must return Skipped:true without attempting any ledger CLI calls.
+	result, err := model.SyncJournal(db)
+	require.NoError(t, err)
+	assert.True(t, result.Skipped, "SyncJournal must set Skipped=true when hash matches")
+	assert.Equal(t, 0, result.PostingCount, "PostingCount must be zero for a skipped sync")
+	assert.Equal(t, 0, result.PriceCount, "PriceCount must be zero for a skipped sync")
+	assert.Empty(t, result.FailedStage, "FailedStage must be empty for a skipped sync")
+}
+
+// TestSyncJournal_ProceedsOnChangedHash verifies that when the metadata hash
+// does not match the current file hash, SyncJournal proceeds past the
+// hash-skip guard (i.e. it does not return Skipped:true).  In this test
+// environment there is no real ledger CLI, so the function is expected to
+// fail at the validate stage rather than skip silently.
+func TestSyncJournal_ProceedsOnChangedHash(t *testing.T) {
+	db := openTestDB(t)
+
+	// Write a minimal journal file.
+	f, err := os.CreateTemp(t.TempDir(), "journal-*.ledger")
+	require.NoError(t, err)
+	_, err = fmt.Fprintln(f, "; journal for changed-hash test")
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+	journalPath := f.Name()
+
+	configWithJournalPath(t, journalPath)
+
+	// Seed a deliberately wrong cached hash so the skip condition is not met.
+	require.NoError(t, metadata.Set(db, "journal_hash", "stale-hash-value"))
+
+	// SyncJournal must NOT return Skipped:true; it proceeds to the ledger CLI
+	// validate step which will fail in a test environment without ledger installed.
+	result, err := model.SyncJournal(db)
+	assert.False(t, result.Skipped, "SyncJournal must not skip when cached hash differs from file hash")
+	// The function is expected to fail at the validate stage (no ledger CLI),
+	// but must not be a hash-skip result.
+	if err == nil {
+		// If ledger happens to be available and the journal validates, that is
+		// also acceptable – just verify Skipped is false.
+		assert.False(t, result.Skipped)
+	} else {
+		assert.NotEmpty(t, result.FailedStage, "a non-skip failure must set FailedStage")
+	}
 }
