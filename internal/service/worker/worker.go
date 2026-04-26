@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -22,6 +23,33 @@ const (
 	// StatusFailed means the job finished with an error.
 	StatusFailed JobStatus = "failed"
 )
+
+// validTransitions maps every JobStatus to the set of states it may legally
+// move to.  Terminal states (Completed, Failed) map to an empty slice.
+var validTransitions = map[JobStatus][]JobStatus{
+	StatusPending:   {StatusRunning},
+	StatusRunning:   {StatusCompleted, StatusFailed},
+	StatusCompleted: {},
+	StatusFailed:    {},
+}
+
+// IsTerminal reports whether s is a terminal state (Completed or Failed).
+// A Job in a terminal state will never change state again.
+func (s JobStatus) IsTerminal() bool {
+	return s == StatusCompleted || s == StatusFailed
+}
+
+// transition moves job to next, panicking if the transition is not permitted
+// by the state machine.  Must be called while holding the registry mutex.
+func transition(job *Job, next JobStatus) {
+	for _, allowed := range validTransitions[job.Status] {
+		if allowed == next {
+			job.Status = next
+			return
+		}
+	}
+	panic(fmt.Sprintf("worker: invalid state transition %s → %s for job %s", job.Status, next, job.ID))
+}
 
 // Job holds all observable state for a single unit of background work.
 type Job struct {
@@ -86,7 +114,7 @@ func (r *Registry) run(ctx context.Context, job *Job, fn func(ctx context.Contex
 	now := time.Now().UTC()
 
 	r.mu.Lock()
-	job.Status = StatusRunning
+	transition(job, StatusRunning)
 	job.StartedAt = &now
 	r.mu.Unlock()
 
@@ -99,11 +127,11 @@ func (r *Registry) run(ctx context.Context, job *Job, fn func(ctx context.Contex
 	r.mu.Lock()
 	job.FinishedAt = &finished
 	if runErr != nil {
-		job.Status = StatusFailed
+		transition(job, StatusFailed)
 		job.Error = runErr.Error()
 		log.WithField("job_id", job.ID).WithError(runErr).Warn("worker: job failed")
 	} else {
-		job.Status = StatusCompleted
+		transition(job, StatusCompleted)
 		log.WithField("job_id", job.ID).Info("worker: job completed")
 	}
 	r.mu.Unlock()
