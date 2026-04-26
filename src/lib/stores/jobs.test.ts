@@ -44,7 +44,8 @@ describe("jobs store", () => {
 
   test("updateById merges partial fields", () => {
     jobs.upsert(makeJob({ status: "pending" }));
-    jobs.updateById("test-id-1", { status: "running" });
+    const updated = jobs.updateById("test-id-1", { status: "running" });
+    expect(updated).toBe(true);
     expect(get(jobs)["test-id-1"].status).toBe("running");
   });
 
@@ -52,14 +53,15 @@ describe("jobs store", () => {
     const job = makeJob({ details: ["step1 ok"] });
     jobs.upsert(job);
     jobs.updateById("test-id-1", { status: "completed" });
-    const updated = get(jobs)["test-id-1"];
-    expect(updated.status).toBe("completed");
-    expect(updated.details).toEqual(["step1 ok"]);
+    const result = get(jobs)["test-id-1"];
+    expect(result.status).toBe("completed");
+    expect(result.details).toEqual(["step1 ok"]);
   });
 
-  test("updateById is a no-op for unknown id", () => {
+  test("updateById returns false and is a no-op for unknown id", () => {
     jobs.upsert(makeJob());
-    jobs.updateById("unknown-id", { status: "completed" });
+    const updated = jobs.updateById("unknown-id", { status: "completed" });
+    expect(updated).toBe(false);
     expect(get(jobs)["test-id-1"].status).toBe("pending");
   });
 

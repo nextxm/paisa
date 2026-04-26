@@ -20,14 +20,17 @@ function createJobsStore() {
 
     /**
      * Shallow-merge partial fields into the job identified by id.
-     * No-ops silently when the id is unknown.
+     * Returns true when the job was found and updated, false when unknown.
      */
-    updateById(id: string, partial: Partial<Job>): void {
+    updateById(id: string, partial: Partial<Job>): boolean {
+      let found = false;
       update((current) => {
         const existing = current[id];
         if (!existing) return current;
+        found = true;
         return { ...current, [id]: { ...existing, ...partial } };
       });
+      return found;
     },
 
     /** Remove all tracked jobs from the store. */
