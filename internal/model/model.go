@@ -140,7 +140,7 @@ func SyncCommodities(db *gorm.DB) (SyncCommoditiesResult, error) {
 	commodities := lo.Shuffle(commodity.All())
 
 	var result SyncCommoditiesResult
-	var errors []error
+	var errs []error
 	for _, commodity := range commodities {
 		name := commodity.Name
 		log.WithFields(log.Fields{"stage": "commodities", "commodity": name}).Info("Fetching commodity")
@@ -154,7 +154,7 @@ func SyncCommodities(db *gorm.DB) (SyncCommoditiesResult, error) {
 		if err != nil {
 			log.WithFields(log.Fields{"stage": "commodities", "commodity": name, "error": err}).Error("Failed to fetch commodity prices")
 			msg := fmt.Sprintf("Failed to fetch price for %s: %s", name, err.Error())
-			errors = append(errors, fmt.Errorf("%s", msg))
+			errs = append(errs, fmt.Errorf("%s", msg))
 			result.Failures = append(result.Failures, msg)
 			continue
 		}
@@ -168,7 +168,7 @@ func SyncCommodities(db *gorm.DB) (SyncCommoditiesResult, error) {
 				log.WithFields(log.Fields{"stage": "commodities", "commodity": name, "provider": commodity.Price.Provider, "date": p.Date.Format("2006-01-02")}).
 					Error("Provider returned price without quote_commodity")
 				msg := fmt.Sprintf("provider %s returned price for %s on %s without quote_commodity: update the provider or set the quote currency explicitly", commodity.Price.Provider, name, p.Date.Format("2006-01-02"))
-				errors = append(errors, fmt.Errorf("%s", msg))
+				errs = append(errs, fmt.Errorf("%s", msg))
 				result.Failures = append(result.Failures, msg)
 				missingQuote = true
 				break
@@ -189,15 +189,15 @@ func SyncCommodities(db *gorm.DB) (SyncCommoditiesResult, error) {
 		if err := price.UpsertAllByTypeNameAndID(db, commodity.Type, name, code, prices); err != nil {
 			log.WithFields(log.Fields{"stage": "commodities", "commodity": name, "error": err}).Error("Failed to save commodity prices")
 			msg := fmt.Sprintf("Failed to save price for %s: %s", name, err.Error())
-			errors = append(errors, fmt.Errorf("%s", msg))
+			errs = append(errs, fmt.Errorf("%s", msg))
 			result.Failures = append(result.Failures, msg)
 		}
 	}
 
-	if len(errors) > 0 {
+	if len(errs) > 0 {
 		var message string
-		for _, error := range errors {
-			message += error.Error() + "\n"
+		for _, e := range errs {
+			message += e.Error() + "\n"
 		}
 		return result, fmt.Errorf("%s", strings.Trim(message, "\n"))
 	}

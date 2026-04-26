@@ -70,13 +70,18 @@ func Sync(db *gorm.DB, request SyncRequest) (gin.H, []string) {
 	}
 
 	// Warm the market price and FX-rate in-memory caches so the first API
-	// request after sync is served quickly.
+	// request after sync is served quickly.  WarmCache is intentionally
+	// unconditional: the in-memory caches are always cleared by cache.Clear()
+	// at the top of Sync, so they must be re-populated regardless of which
+	// stages ran.
 	service.WarmCache(db)
 
 	// Wrap XIRR calculations in the job flow: pre-compute XIRR for every
 	// investment account and store the results in the SQLite computation cache.
-	// Any accounts whose XIRR solver did not converge are recorded as Details
-	// so operators can investigate without having to inspect server logs.
+	// WarmXIRRCache is conditional because it only makes sense when investment
+	// data may have changed (journal or price sync was requested).  Any accounts
+	// whose XIRR solver did not converge are recorded as Details so operators
+	// can investigate without having to inspect server logs.
 	if request.Journal || request.Prices {
 		xirrWarnings := service.WarmXIRRCache(db)
 		details = append(details, xirrWarnings...)
