@@ -191,6 +191,45 @@ func TestSubmit_ContextCancellation(t *testing.T) {
 // Concurrency
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// State machine helpers
+// ---------------------------------------------------------------------------
+
+// TestIsTerminal verifies that only Completed and Failed are terminal states.
+func TestIsTerminal(t *testing.T) {
+	assert.False(t, worker.StatusPending.IsTerminal(), "Pending must not be terminal")
+	assert.False(t, worker.StatusRunning.IsTerminal(), "Running must not be terminal")
+	assert.True(t, worker.StatusCompleted.IsTerminal(), "Completed must be terminal")
+	assert.True(t, worker.StatusFailed.IsTerminal(), "Failed must be terminal")
+	// An unknown/invalid status value must not be treated as terminal.
+	assert.False(t, worker.JobStatus("unknown").IsTerminal(), "unknown status must not be terminal")
+}
+
+// TestJobReachesTerminalState verifies that once a job reaches a terminal
+// state it is not modified again, confirming state monotonicity.
+func TestJobReachesTerminalState_NeverChanges(t *testing.T) {
+	r := worker.NewRegistry()
+
+	id := r.Submit(context.Background(), func(_ context.Context) error {
+		return nil
+	})
+
+	// Wait for terminal state.
+	assert.Eventually(t, func() bool {
+		j, _ := r.Get(id)
+		return j.Status.IsTerminal()
+	}, 2*time.Second, 5*time.Millisecond, "job must reach a terminal state")
+
+	first, _ := r.Get(id)
+	// A short sleep gives any stray goroutine a chance to modify the job (it
+	// should not).
+	time.Sleep(20 * time.Millisecond)
+	second, _ := r.Get(id)
+
+	assert.Equal(t, first.Status, second.Status, "terminal status must not change")
+	assert.Equal(t, first.FinishedAt, second.FinishedAt, "FinishedAt must not change after terminal state")
+}
+
 // TestRegistry_ConcurrentSubmitAndGet verifies that multiple goroutines can
 // call Submit and Get simultaneously without data races.  Run with -race.
 func TestRegistry_ConcurrentSubmitAndGet(t *testing.T) {

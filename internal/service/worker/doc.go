@@ -20,7 +20,13 @@
 // returned, moves the Job to either [StatusCompleted] or [StatusFailed].
 //
 // State transitions are monotonic: once a Job reaches a terminal state
-// (Completed or Failed) its status never changes again.
+// (Completed or Failed) its status never changes again.  Use
+// [JobStatus.IsTerminal] to test whether a given status is terminal.
+//
+// All legal transitions are enumerated in the package-level validTransitions
+// map.  The transition helper enforces this map at runtime: any attempt to
+// move a Job to an unlisted next state causes a panic, making invalid
+// transitions immediately observable during development and testing.
 //
 // # Concurrency
 //
