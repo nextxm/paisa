@@ -147,3 +147,5 @@ export function refresh() {
   willRefresh.update((n) => n + 1);
   return true;
 }
+
+export { jobs, jobsList, isJobRunning } from "$lib/stores/jobs";
