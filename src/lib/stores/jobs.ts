@@ -4,7 +4,7 @@ import type { Job } from "$lib/utils";
 /** Internal map from job ID to Job snapshot. */
 type JobsMap = Record<string, Job>;
 
-function createJobsStore() {
+export function createJobsStore() {
   const { subscribe, update, set } = writable<JobsMap>({});
 
   return {

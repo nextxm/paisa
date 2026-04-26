@@ -1,6 +1,25 @@
 import * as toast from "bulma-toast";
 import { ajax } from "./utils";
 import { jobs } from "./stores/jobs";
+import type { Job } from "./utils";
+
+/** Milliseconds between each job-status poll. */
+export const POLL_INTERVAL_MS = 2000;
+
+/** Maximum number of consecutive network errors before giving up. */
+export const MAX_CONSECUTIVE_ERRORS = 5;
+
+/** Maximum total poll attempts (~5 minutes at 2 s intervals) before giving up. */
+export const MAX_POLLS = 150;
+
+/** Escape HTML special characters so error strings are safe to embed in toast HTML. */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 export async function sync(request: Record<string, any>): Promise<string | null> {
   let job_id: string;
@@ -12,7 +31,7 @@ export async function sync(request: Record<string, any>): Promise<string | null>
   } catch (err) {
     toast.toast({
       message: `<b>Failed to submit sync request</b>\n${
-        err instanceof Error ? err.message : String(err)
+        err instanceof Error ? escapeHtml(err.message) : escapeHtml(String(err))
       }`,
       type: "is-danger",
       duration: 10000
@@ -27,4 +46,75 @@ export async function sync(request: Record<string, any>): Promise<string | null>
   });
 
   return job_id;
+}
+
+/**
+ * Start polling `GET /api/jobs/:id` until the job reaches a terminal state
+ * (completed or failed), or until the polling limits are exhausted.
+ *
+ * On each successful response the jobs store is updated. On a terminal state
+ * the optional `onTerminal` callback is invoked (useful for triggering a
+ * data refresh). On failure a toast is shown.
+ *
+ * @param jobId - The ID of the job to track.
+ * @param onTerminal - Called with the final Job when it reaches a terminal state.
+ * @param options - Injectable dependencies for testability.
+ */
+export function startPolling(
+  jobId: string,
+  onTerminal?: (job: Job) => void,
+  options?: {
+    /** Override the job-fetch function (for tests, avoids real HTTP). */
+    fetchJob?: (id: string) => Promise<Job>;
+    /** Override the poll interval in ms (for tests). */
+    intervalMs?: number;
+    /** Override the max consecutive errors before giving up. */
+    maxErrors?: number;
+    /** Override the max total polls before giving up. */
+    maxPolls?: number;
+  }
+): void {
+  const fetchJob =
+    options?.fetchJob ?? ((id: string) => ajax("/api/jobs/:id", { background: true }, { id }));
+  const intervalMs = options?.intervalMs ?? POLL_INTERVAL_MS;
+  const maxErrors = options?.maxErrors ?? MAX_CONSECUTIVE_ERRORS;
+  const maxPolls = options?.maxPolls ?? MAX_POLLS;
+
+  let consecutiveErrors = 0;
+  let pollCount = 0;
+
+  async function poll() {
+    if (pollCount >= maxPolls) {
+      return;
+    }
+    pollCount++;
+
+    try {
+      const job = await fetchJob(jobId);
+      consecutiveErrors = 0;
+      jobs.upsert(job);
+
+      if (job.status === "completed" || job.status === "failed") {
+        if (job.status === "failed") {
+          toast.toast({
+            message: `<b>Sync failed</b>${job.error ? `\n${escapeHtml(job.error)}` : ""}`,
+            type: "is-danger",
+            duration: 10000
+          });
+        }
+        onTerminal?.(job);
+        return;
+      }
+
+      setTimeout(poll, intervalMs);
+    } catch (_err) {
+      consecutiveErrors++;
+      if (consecutiveErrors >= maxErrors) {
+        return;
+      }
+      setTimeout(poll, intervalMs);
+    }
+  }
+
+  setTimeout(poll, intervalMs);
 }
