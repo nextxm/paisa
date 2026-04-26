@@ -1,6 +1,8 @@
 # CHANGELOG
 
-### Unreleased — Multi-currency pricing rollout
+### Unreleased — Future changes
+
+### 0.8-beta (2026-04-26) — Multi-currency pricing rollout
 
 #### New features
 
