@@ -19,16 +19,16 @@ mock.module("$app/navigation", () => ({
   goto: async () => {}
 }));
 
-const toastMock = mock(() => {});
+const toastMock = mock((_arg: { message: string; type: string; duration?: number }) => {});
 mock.module("bulma-toast", () => ({ toast: toastMock }));
 
 // Import the module under test after mocks are in place.
 const { startPolling, POLL_INTERVAL_MS, MAX_CONSECUTIVE_ERRORS, MAX_POLLS } = await import(
-  "./sync.ts"
+  "./sync"
 );
 
 // Import the real jobs store — same module instance that sync.ts uses.
-const { jobs } = await import("./stores/jobs.ts");
+const { jobs } = await import("./stores/jobs");
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -162,7 +162,7 @@ describe("startPolling — store updates and terminal detection", () => {
     await Bun.sleep(50);
 
     expect(toastMock).toHaveBeenCalledTimes(1);
-    const callArg = toastMock.mock.calls[0][0] as { message: string; type: string };
+    const callArg = toastMock.mock.calls[0][0];
     expect(callArg.type).toBe("is-danger");
     expect(callArg.message).toContain("Sync failed");
   });
