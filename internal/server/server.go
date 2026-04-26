@@ -1,7 +1,9 @@
 package server
 
 import (
+	"context"
 	"crypto/subtle"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,6 +19,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/server/assets"
 	"github.com/ananthakumaran/paisa/internal/server/goal"
 	"github.com/ananthakumaran/paisa/internal/server/liabilities"
+	"github.com/ananthakumaran/paisa/internal/service/worker"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/ananthakumaran/paisa/web"
 
@@ -30,6 +33,8 @@ import (
 
 func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
+
+	registry := worker.NewRegistry()
 
 	router := gin.New()
 	if enableCompression {
@@ -97,7 +102,22 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 			return
 		}
 
-		c.JSON(200, Sync(db, syncRequest))
+		jobID := registry.Submit(context.Background(), func(_ context.Context) error {
+			// context.Background() is intentional: the sync job must outlive the
+			// HTTP request.  Using c.Request.Context() would cancel the job as
+			// soon as the 202 response is flushed to the client.
+			result := Sync(db, syncRequest)
+			if success, ok := result["success"].(bool); ok && !success {
+				message, _ := result["message"].(string)
+				if message == "" {
+					message = "sync failed"
+				}
+				return errors.New(message)
+			}
+			return nil
+		})
+
+		c.JSON(http.StatusAccepted, gin.H{"job_id": jobID})
 	})
 
 	router.GET("/api/dashboard", func(c *gin.Context) {
