@@ -513,6 +513,24 @@ export interface Log {
   msg: string;
 }
 
+/** Mirrors the JobStatus constants from internal/service/worker/worker.go. */
+export type JobStatus = "pending" | "running" | "completed" | "failed";
+
+/**
+ * Frontend mirror of the worker.Job struct.
+ * Date fields (created_at, started_at, finished_at) are kept as ISO strings
+ * because the ajax reviver only converts keys matching /Date|date|time|now/.
+ */
+export interface Job {
+  id: string;
+  status: JobStatus;
+  error?: string;
+  details?: string[];
+  created_at: string;
+  started_at?: string;
+  finished_at?: string;
+}
+
 export interface CreditCardBill {
   openingBalance: number;
   closingBalance: number;
@@ -800,10 +818,14 @@ export function ajax(
   options?: RequestOptions
 ): Promise<{ success: boolean; message: string }>;
 
+export function ajax(route: "/api/sync", options?: RequestOptions): Promise<{ job_id: string }>;
+
 export function ajax(
-  route: "/api/sync",
-  options?: RequestOptions
-): Promise<{ success: boolean; message: string }>;
+  route: "/api/jobs/:id",
+  options?: RequestOptions,
+  params?: Record<string, string>
+): Promise<Job>;
+
 export function ajax(
   route: "/api/price/providers",
   options?: RequestOptions
