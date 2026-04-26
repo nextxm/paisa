@@ -23,6 +23,7 @@
   import Logo from "./Logo.svelte";
   import InputRange from "./InputRange.svelte";
   import PeriodSelector from "./PeriodSelector.svelte";
+  import SyncingIndicator from "./SyncingIndicator.svelte";
   export let isBurger: boolean = null;
   const readonly = USER_CONFIG.readonly;
 
@@ -431,6 +432,7 @@
           >
         {/if}
 
+        <SyncingIndicator />
         <ThemeSwitcher />
         <Actions />
       </div>
