@@ -105,23 +105,6 @@
     </div>
     <div data-md-component="announce">
       
-        <aside class="md-banner">
-          <div class="md-banner__inner md-grid md-typeset">
-            
-              <button class="md-banner__button md-icon" aria-label="Don't show this again">
-                
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-              </button>
-            
-            
-<p><span>Prefer a simpler way to manage double-entry accounting without editing text files? Try </span><a class="finbodhi" href="https://finbodhi.com" target="_blank">FinBodhi</a></p>
-
-          </div>
-          
-            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
-          
-        </aside>
-      
     </div>
     
     
@@ -997,9 +980,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#background-sync" class="md-nav__link">
+  <a href="#manual-sync" class="md-nav__link">
     <span class="md-ellipsis">
-      Background Sync
+      Manual Sync
     </span>
   </a>
   
@@ -1892,9 +1875,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#background-sync" class="md-nav__link">
+  <a href="#manual-sync" class="md-nav__link">
     <span class="md-ellipsis">
-      Background Sync
+      Manual Sync
     </span>
   </a>
   
@@ -1945,8 +1928,8 @@
 
 <h1 id="data-synchronization">Data Synchronization<a class="headerlink" href="#data-synchronization" title="Permanent link">&para;</a></h1>
 <p>Paisa needs to periodically pull new data from external price providers and your journal file.</p>
-<h2 id="background-sync">Background Sync<a class="headerlink" href="#background-sync" title="Permanent link">&para;</a></h2>
-<p>When using <code>paisa serve</code>, Paisa runs periodic background syncs to ensure your prices and journal entries are kept fresh. This ensures your dashboard always displays the latest available market data and recent journal modifications without requiring a manual refresh.</p>
+<h2 id="manual-sync">Manual Sync<a class="headerlink" href="#manual-sync" title="Permanent link">&para;</a></h2>
+<p>When using the Paisa web interface, you can manually trigger a sync at any time using the action buttons in the navigation bar. This ensures your dashboard displays the latest available market data and recent journal modifications.</p>
 <h2 id="scheduled-sync-via-cli">Scheduled Sync via CLI<a class="headerlink" href="#scheduled-sync-via-cli" title="Permanent link">&para;</a></h2>
 <p>For automated periodic updates outside of the running application (e.g., pulling nightly mutual fund prices or syncing an external ledger file), you can schedule the <code>paisa update</code> command using your operating system's built-in tools.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Sync journal, commodities, and portfolios</span>

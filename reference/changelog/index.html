@@ -105,23 +105,6 @@
     </div>
     <div data-md-component="announce">
       
-        <aside class="md-banner">
-          <div class="md-banner__inner md-grid md-typeset">
-            
-              <button class="md-banner__button md-icon" aria-label="Don't show this again">
-                
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-              </button>
-            
-            
-<p><span>Prefer a simpler way to manage double-entry accounting without editing text files? Try </span><a class="finbodhi" href="https://finbodhi.com" target="_blank">FinBodhi</a></p>
-
-          </div>
-          
-            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
-          
-        </aside>
-      
     </div>
     
     
@@ -2502,7 +2485,7 @@
 <li><strong>Rollback flag</strong> — set <code>disable_multi_currency_prices: true</code> in <code>paisa.yaml</code>
   to disable cross-rate resolution and <code>report_currency</code> conversion and revert
   to pre-rollout behaviour without downgrading the binary.</li>
-<li><strong>UI Enhancements</strong> — Improved Actions and Navbar components, added portfolio sync option to dropdown actions.</li>
+<li><strong>UI Enhancements</strong> — Improved Actions and Navbar components, added portfolio sync option to dropdown actions. Increased size of navbar action icons on mobile devices for better touchability.</li>
 <li><strong>Original Balances</strong> — Added currency field and original balance display to Credit Card Summary, Liability breakdown, and asset breakdown for non-equity commodities.</li>
 <li><strong>New Configuration Fields</strong> — Added <code>currencies</code> field to distinguish currencies from securities, and <code>provider_debug_http</code> to log provider HTTP requests.</li>
 <li><strong>FX Rates Page</strong> — Added a new page for tracking exchange rates (FX Rates) with derived rate support.</li>
@@ -2516,6 +2499,8 @@
 <li><strong>Currency Detection</strong> — Fixed <code>IsForeignCurrency</code> detection by normalizing commodity input.</li>
 <li><strong>Net Worth Timeline</strong> — Reconciled net worth discrepancies between dashboard and timeline by including today's transactions and latest prices.</li>
 <li><strong>Core Stability</strong> — Fixed server crash in <code>GetUnitPrice</code> when prices are missing by replacing <code>log.Fatal</code> with a warning, and resolved USD-&gt;INR conversion for non-posting commodities and implicit journal quotes.</li>
+<li><strong>Missing Price &amp; FX Reporting</strong> — Enhanced missing price warnings with dates and added summary counts for missing FX rates during cache warming.</li>
+<li><strong>Mobile UI</strong> — Re-enabled zoom functionality on mobile devices.</li>
 <li><strong>Dependencies</strong> — Addressed multiple npm dependency vulnerabilities (kit, axios, handlebars, lodash, pdfjs-dist, vite).</li>
 </ul>
 <h4 id="upgrade-guide">Upgrade guide<a class="headerlink" href="#upgrade-guide" title="Permanent link">&para;</a></h4>
