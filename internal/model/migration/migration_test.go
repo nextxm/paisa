@@ -26,7 +26,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 2, version)
+	assert.Equal(t, 3, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -36,7 +36,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 2, version)
+	assert.Equal(t, 3, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -58,8 +58,8 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	// Schema version should be 2 after migration.
-	assert.Equal(t, 2, migration.CurrentVersion(db))
+	// Schema version should be 3 after migration.
+	assert.Equal(t, 3, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -95,9 +95,9 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&migration.SchemaVersion{}))
 	require.NoError(t, db.Create(&migration.SchemaVersion{Version: 1, AppliedAt: time.Now()}).Error)
 
-	// Run migrations – only v2 should execute.
+	// Run migrations – only v2 and v3 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 2, migration.CurrentVersion(db))
+	assert.Equal(t, 3, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -136,4 +136,23 @@ func TestV2Migration_IndexesExist(t *testing.T) {
 	assert.True(t, names["idx_prices_commodity_name"], "commodity_name index must exist")
 	assert.True(t, names["idx_prices_quote_commodity"], "quote_commodity index must exist")
 	assert.True(t, names["idx_prices_type_date_base_quote"], "unique type/date/base/quote index must exist")
+}
+
+// TestV3Migration_MetadataTableExists verifies that the metadata table is
+// created by the v3 migration and that the key uniqueness constraint is active.
+func TestV3Migration_MetadataTableExists(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	// Table should exist.
+	var tableCount int64
+	require.NoError(t, db.Raw(
+		"SELECT count(*) FROM sqlite_master WHERE type='table' AND name='metadata'",
+	).Scan(&tableCount).Error)
+	assert.Equal(t, int64(1), tableCount, "metadata table must exist after v3 migration")
+
+	// Insert a row; a duplicate key should fail.
+	require.NoError(t, db.Exec("INSERT INTO metadata (key, value) VALUES ('k', 'v1')").Error)
+	err := db.Exec("INSERT INTO metadata (key, value) VALUES ('k', 'v2')").Error
+	assert.Error(t, err, "duplicate key must be rejected by the unique constraint")
 }

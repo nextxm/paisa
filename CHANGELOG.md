@@ -2,6 +2,11 @@
 
 ### Unreleased — Future changes
 
+- **Metadata table** — new `metadata` SQLite table (schema v3 migration) stores
+  arbitrary key/value application state (e.g. `last_hash`). The table enforces
+  key uniqueness via a unique index. Helper functions `Get`, `Set`, and `Delete`
+  are provided in `internal/model/metadata`.
+
 ### 0.8-beta (2026-04-26) — Multi-currency pricing rollout
 
 #### New features
