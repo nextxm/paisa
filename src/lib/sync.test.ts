@@ -10,9 +10,8 @@ import type { Job } from "./utils";
 // We need to stub it just enough to prevent a "Cannot find module" error.
 // The real singleton from ./stores/jobs will be used via the relative import
 // path that sync.ts uses, so upsert/snapshot calls go to the real store.
-mock.module("$lib/stores/jobs", () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const real = require("./stores/jobs");
+mock.module("$lib/stores/jobs", async () => {
+  const real = await import("./stores/jobs");
   return { jobs: real.jobs, jobsList: real.jobsList, isJobRunning: real.isJobRunning };
 });
 

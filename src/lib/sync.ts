@@ -12,6 +12,15 @@ export const MAX_CONSECUTIVE_ERRORS = 5;
 /** Maximum total poll attempts (~5 minutes at 2 s intervals) before giving up. */
 export const MAX_POLLS = 150;
 
+/** Escape HTML special characters so error strings are safe to embed in toast HTML. */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export async function sync(request: Record<string, any>): Promise<string | null> {
   let job_id: string;
   try {
@@ -22,7 +31,7 @@ export async function sync(request: Record<string, any>): Promise<string | null>
   } catch (err) {
     toast.toast({
       message: `<b>Failed to submit sync request</b>\n${
-        err instanceof Error ? err.message : String(err)
+        err instanceof Error ? escapeHtml(err.message) : escapeHtml(String(err))
       }`,
       type: "is-danger",
       duration: 10000
@@ -88,7 +97,7 @@ export function startPolling(
       if (job.status === "completed" || job.status === "failed") {
         if (job.status === "failed") {
           toast.toast({
-            message: `<b>Sync failed</b>${job.error ? `\n${job.error}` : ""}`,
+            message: `<b>Sync failed</b>${job.error ? `\n${escapeHtml(job.error)}` : ""}`,
             type: "is-danger",
             duration: 10000
           });
