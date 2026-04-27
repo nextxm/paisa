@@ -18,8 +18,11 @@ import type { Message } from "@bufbuild/protobuf";
 /**
  * Describes the file api.proto.
  */
-export const file_api: GenFile = /*@__PURE__*/
-  fileDesc("CglhcGkucHJvdG8SCHBhaXNhLnYxIqIBCgtUcmFuc2FjdGlvbhIKCgJpZBgBIAEoCRIMCgRkYXRlGAIgASgJEg0KBXBheWVlGAMgASgJEiMKCHBvc3RpbmdzGAQgAygLMhEucGFpc2EudjEuUG9zdGluZxISCgpiZWdpbl9saW5lGAUgASgDEhAKCGVuZF9saW5lGAYgASgDEhEKCWZpbGVfbmFtZRgHIAEoCRIMCgRub3RlGAggASgJIsACCgdQb3N0aW5nEgoKAmlkGAEgASgEEgwKBGRhdGUYAiABKAkSDQoFcGF5ZWUYAyABKAkSDwoHYWNjb3VudBgEIAEoCRIRCgljb21tb2RpdHkYBSABKAkSEAoIcXVhbnRpdHkYBiABKAkSDgoGYW1vdW50GAcgASgJEg4KBnN0YXR1cxgIIAEoCRIVCg10YWdfcmVjdXJyaW5nGAkgASgJEh4KFnRyYW5zYWN0aW9uX2JlZ2luX2xpbmUYCiABKAMSHAoUdHJhbnNhY3Rpb25fZW5kX2xpbmUYCyABKAMSEQoJZmlsZV9uYW1lGAwgASgJEgwKBG5vdGUYDSABKAkSGAoQdHJhbnNhY3Rpb25fbm90ZRgOIAEoCRIVCg1tYXJrZXRfYW1vdW50GA8gASgJEg8KB2JhbGFuY2UYECABKAkiRAoOQWNjb3VudEJhbGFuY2USDwoHYWNjb3VudBgBIAEoCRIPCgdiYWxhbmNlGAIgASgJEhAKCGN1cnJlbmN5GAMgASgJImgKC0FjY291bnROb2RlEgwKBG5hbWUYASABKAkSEQoJZnVsbF9uYW1lGAIgASgJEg8KB2lzX2xlYWYYAyABKAgSJwoIY2hpbGRyZW4YBCADKAsyFS5wYWlzYS52MS5BY2NvdW50Tm9kZSIXChVHZXRBY2NvdW50VHJlZVJlcXVlc3QiQQoWR2V0QWNjb3VudFRyZWVSZXNwb25zZRInCghhY2NvdW50cxgBIAMoCzIVLnBhaXNhLnYxLkFjY291bnROb2RlMmMKDFBhaXNhU2VydmljZRJTCg5HZXRBY2NvdW50VHJlZRIfLnBhaXNhLnYxLkdldEFjY291bnRUcmVlUmVxdWVzdBogLnBhaXNhLnYxLkdldEFjY291bnRUcmVlUmVzcG9uc2VCP1o9Z2l0aHViLmNvbS9hbmFudGhha3VtYXJhbi9wYWlzYS9pbnRlcm5hbC9nZW4vcGFpc2EvdjE7cGFpc2F2MWIGcHJvdG8z");
+export const file_api: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "CglhcGkucHJvdG8SCHBhaXNhLnYxIqIBCgtUcmFuc2FjdGlvbhIKCgJpZBgBIAEoCRIMCgRkYXRlGAIgASgJEg0KBXBheWVlGAMgASgJEiMKCHBvc3RpbmdzGAQgAygLMhEucGFpc2EudjEuUG9zdGluZxISCgpiZWdpbl9saW5lGAUgASgDEhAKCGVuZF9saW5lGAYgASgDEhEKCWZpbGVfbmFtZRgHIAEoCRIMCgRub3RlGAggASgJIsACCgdQb3N0aW5nEgoKAmlkGAEgASgEEgwKBGRhdGUYAiABKAkSDQoFcGF5ZWUYAyABKAkSDwoHYWNjb3VudBgEIAEoCRIRCgljb21tb2RpdHkYBSABKAkSEAoIcXVhbnRpdHkYBiABKAkSDgoGYW1vdW50GAcgASgJEg4KBnN0YXR1cxgIIAEoCRIVCg10YWdfcmVjdXJyaW5nGAkgASgJEh4KFnRyYW5zYWN0aW9uX2JlZ2luX2xpbmUYCiABKAMSHAoUdHJhbnNhY3Rpb25fZW5kX2xpbmUYCyABKAMSEQoJZmlsZV9uYW1lGAwgASgJEgwKBG5vdGUYDSABKAkSGAoQdHJhbnNhY3Rpb25fbm90ZRgOIAEoCRIVCg1tYXJrZXRfYW1vdW50GA8gASgJEg8KB2JhbGFuY2UYECABKAkiRAoOQWNjb3VudEJhbGFuY2USDwoHYWNjb3VudBgBIAEoCRIPCgdiYWxhbmNlGAIgASgJEhAKCGN1cnJlbmN5GAMgASgJImgKC0FjY291bnROb2RlEgwKBG5hbWUYASABKAkSEQoJZnVsbF9uYW1lGAIgASgJEg8KB2lzX2xlYWYYAyABKAgSJwoIY2hpbGRyZW4YBCADKAsyFS5wYWlzYS52MS5BY2NvdW50Tm9kZSIXChVHZXRBY2NvdW50VHJlZVJlcXVlc3QiQQoWR2V0QWNjb3VudFRyZWVSZXNwb25zZRInCghhY2NvdW50cxgBIAMoCzIVLnBhaXNhLnYxLkFjY291bnROb2RlMmMKDFBhaXNhU2VydmljZRJTCg5HZXRBY2NvdW50VHJlZRIfLnBhaXNhLnYxLkdldEFjY291bnRUcmVlUmVxdWVzdBogLnBhaXNhLnYxLkdldEFjY291bnRUcmVlUmVzcG9uc2VCP1o9Z2l0aHViLmNvbS9hbmFudGhha3VtYXJhbi9wYWlzYS9pbnRlcm5hbC9nZW4vcGFpc2EvdjE7cGFpc2F2MWIGcHJvdG8z"
+  );
 
 /**
  * Transaction represents a double-entry ledger transaction.
@@ -88,8 +91,7 @@ export type Transaction = Message<"paisa.v1.Transaction"> & {
  * Describes the message paisa.v1.Transaction.
  * Use `create(TransactionSchema)` to create a new message.
  */
-export const TransactionSchema: GenMessage<Transaction> = /*@__PURE__*/
-  messageDesc(file_api, 0);
+export const TransactionSchema: GenMessage<Transaction> = /*@__PURE__*/ messageDesc(file_api, 0);
 
 /**
  * Posting is a single debit or credit entry within a Transaction.
@@ -214,8 +216,7 @@ export type Posting = Message<"paisa.v1.Posting"> & {
  * Describes the message paisa.v1.Posting.
  * Use `create(PostingSchema)` to create a new message.
  */
-export const PostingSchema: GenMessage<Posting> = /*@__PURE__*/
-  messageDesc(file_api, 1);
+export const PostingSchema: GenMessage<Posting> = /*@__PURE__*/ messageDesc(file_api, 1);
 
 /**
  * AccountBalance holds a point-in-time balance for a single account.
@@ -249,7 +250,8 @@ export type AccountBalance = Message<"paisa.v1.AccountBalance"> & {
  * Describes the message paisa.v1.AccountBalance.
  * Use `create(AccountBalanceSchema)` to create a new message.
  */
-export const AccountBalanceSchema: GenMessage<AccountBalance> = /*@__PURE__*/
+export const AccountBalanceSchema: GenMessage<AccountBalance> =
+  /*@__PURE__*/
   messageDesc(file_api, 2);
 
 /**
@@ -291,22 +293,21 @@ export type AccountNode = Message<"paisa.v1.AccountNode"> & {
  * Describes the message paisa.v1.AccountNode.
  * Use `create(AccountNodeSchema)` to create a new message.
  */
-export const AccountNodeSchema: GenMessage<AccountNode> = /*@__PURE__*/
-  messageDesc(file_api, 3);
+export const AccountNodeSchema: GenMessage<AccountNode> = /*@__PURE__*/ messageDesc(file_api, 3);
 
 /**
  * GetAccountTreeRequest is currently empty; future versions may add filters.
  *
  * @generated from message paisa.v1.GetAccountTreeRequest
  */
-export type GetAccountTreeRequest = Message<"paisa.v1.GetAccountTreeRequest"> & {
-};
+export type GetAccountTreeRequest = Message<"paisa.v1.GetAccountTreeRequest"> & {};
 
 /**
  * Describes the message paisa.v1.GetAccountTreeRequest.
  * Use `create(GetAccountTreeRequestSchema)` to create a new message.
  */
-export const GetAccountTreeRequestSchema: GenMessage<GetAccountTreeRequest> = /*@__PURE__*/
+export const GetAccountTreeRequestSchema: GenMessage<GetAccountTreeRequest> =
+  /*@__PURE__*/
   messageDesc(file_api, 4);
 
 /**
@@ -327,7 +328,8 @@ export type GetAccountTreeResponse = Message<"paisa.v1.GetAccountTreeResponse"> 
  * Describes the message paisa.v1.GetAccountTreeResponse.
  * Use `create(GetAccountTreeResponseSchema)` to create a new message.
  */
-export const GetAccountTreeResponseSchema: GenMessage<GetAccountTreeResponse> = /*@__PURE__*/
+export const GetAccountTreeResponseSchema: GenMessage<GetAccountTreeResponse> =
+  /*@__PURE__*/
   messageDesc(file_api, 5);
 
 /**
@@ -347,7 +349,5 @@ export const PaisaService: GenService<{
     methodKind: "unary";
     input: typeof GetAccountTreeRequestSchema;
     output: typeof GetAccountTreeResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_api, 0);
-
+  };
+}> = /*@__PURE__*/ serviceDesc(file_api, 0);
