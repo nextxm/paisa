@@ -12,11 +12,15 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --compiler-warnings 'a11y-aria-attributes:ignore,a11y-incorrect-aria-attribute-type:ignore,a11y-unknown-aria-attribute:ignore,a11y-hidden:ignore,a11y-misplaced-role:ignore,a11y-unknown-role:ignore,a11y-no-abstract-role:ignore,a11y-no-redundant-roles:ignore,a11y-role-has-required-aria-props:ignore,a11y-accesskey:ignore,a11y-autofocus:ignore,a11y-misplaced-scope:ignore,a11y-positive-tabindex:ignore,a11y-invalid-attribute:ignore,a11y-missing-attribute:ignore,a11y-img-redundant-alt:ignore,a11y-label-has-associated-control:ignore,a11y-media-has-caption:ignore,a11y-distracting-elements:ignore,a11y-structure:ignore,a11y-mouse-events-have-key-events:ignore,a11y-missing-content:ignore,a11y-click-events-have-key-events:ignore,a11y-no-static-element-interactions:ignore'",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch --compiler-warnings 'a11y-aria-attributes:ignore,a11y-incorrect-aria-attribute-type:ignore,a11y-unknown-aria-attribute:ignore,a11y-hidden:ignore,a11y-misplaced-role:ignore,a11y-unknown-role:ignore,a11y-no-abstract-role:ignore,a11y-no-redundant-roles:ignore,a11y-role-has-required-aria-props:ignore,a11y-accesskey:ignore,a11y-autofocus:ignore,a11y-misplaced-scope:ignore,a11y-positive-tabindex:ignore,a11y-invalid-attribute:ignore,a11y-missing-attribute:ignore,a11y-img-redundant-alt:ignore,a11y-label-has-associated-control:ignore,a11y-media-has-caption:ignore,a11y-distracting-elements:ignore,a11y-structure:ignore,a11y-mouse-events-have-key-events:ignore,a11y-missing-content:ignore,a11y-click-events-have-key-events:ignore,a11y-no-static-element-interactions:ignore'",
     "lint": "prettier --plugin-search-dir . --check . && eslint .",
-    "format": "prettier --plugin-search-dir . --write ."
+    "format": "prettier --plugin-search-dir . --write .",
+    "generate:proto": "protoc --proto_path=proto --es_out=src/lib/gen --es_opt=target=ts proto/api.proto"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.12.0",
     "@cityssm/bulma-sticky-table": "^2.1.0",
     "@codemirror/autocomplete": "^6.4.2",
+    "@connectrpc/connect": "^2.1.1",
+    "@connectrpc/connect-web": "^2.1.1",
     "@datasert/cronjs-matcher": "^1.2.0",
     "@datasert/cronjs-parser": "^1.2.0",
     "@egjs/svelte-grid": "^1.14.2",
@@ -63,7 +67,9 @@
     "xlsx-populate": "^1.21.0"
   },
   "devDependencies": {
+    "@bufbuild/protoc-gen-es": "^2.12.0",
     "@codemirror/merge": "^6.1.1",
+    "@connectrpc/protoc-gen-connect-es": "^1.7.0",
     "@happy-dom/global-registrator": "^17.4.6",
     "@iconify/json": "^2.2.124",
     "@iconify/tools": "^3.0.5",
