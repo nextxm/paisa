@@ -9,13 +9,19 @@
   $: displayJobs = [...$jobsList].reverse();
 </script>
 
-<Modal bind:active={open} width="min(680px, 100vw)" footerClass="is-justify-content-right">
+<Modal bind:active={open} width="min(680px, 100vw)" footerClass="justify-end">
   <svelte:fragment slot="head" let:close>
-    <p class="modal-card-title">
+    <p class="text-base font-semibold flex-1">
       <span class="icon is-small mr-1"><i class="fa-solid fa-clock-rotate-left" /></span>
       Sync History
     </p>
-    <button class="delete" aria-label="Close sync history" on:click={(e) => close(e)} />
+    <button
+      class="du-btn du-btn-sm du-btn-circle du-btn-ghost"
+      aria-label="Close sync history"
+      onclick={() => close()}
+    >
+      <i class="fas fa-times" aria-hidden="true" />
+    </button>
   </svelte:fragment>
 
   <div slot="body">
@@ -98,13 +104,13 @@
 
   <svelte:fragment slot="foot" let:close>
     <button
-      class="button is-light"
+      class="du-btn du-btn-ghost du-btn-sm"
       disabled={displayJobs.length === 0}
-      on:click={() => jobs.reset()}
+      onclick={() => jobs.reset()}
     >
       Clear history
     </button>
-    <button class="button" on:click={(e) => close(e)}>Close</button>
+    <button class="du-btn du-btn-sm" onclick={() => close()}>Close</button>
   </svelte:fragment>
 </Modal>
 
