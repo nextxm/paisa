@@ -4,6 +4,14 @@
 
 #### New features
 
+- **Svelte 5 upgrade & UI modernization (P2.2)** — Upgrades the frontend framework to Svelte 5 and begins the incremental migration to rune-based reactivity:
+  - **Svelte 5** (`^5.0.0`), **svelte-check** (`^4.0.0`), **@sveltejs/vite-plugin-svelte** (`^4.0.0`), and **eslint-plugin-svelte** (`^3.0.0`) bumped in `package.json` (#226).
+  - **Svelte 4 compatibility layer** enabled in `svelte.config.js` via `compilerOptions.compatibility.componentApi: 4`, allowing all existing components to keep working while new ones adopt runes (#227).
+  - **Modal.svelte migrated to Svelte 5 runes** — props use `$props()` / `$bindable()`; internal state uses `$state()`; `on:click` replaced with `onclick`. Bulma structural classes (`modal`, `modal-background`, `modal-card`, `modal-card-head/body/foot`, `is-active`) replaced with DaisyUI equivalents (`du-modal`, `du-modal-box`, `du-modal-backdrop`, `du-modal-open`) and Tailwind flex utilities (#228 #229).
+  - **BoxedTabs.svelte migrated to Svelte 5 runes** — `export let` replaced with `$props()` / `$bindable()`; `$:` block replaced with `$effect()`; `on:click` replaced with `onclick` (#229).
+  - **AccountTree.svelte** — new Svelte 5 rune-based component that renders a hierarchical `AccountNode[]` tree with keyboard-accessible expand/collapse and single-node selection via a `$bindable` `selected` prop. Depth-limited auto-expansion (first two levels open by default) and focus ring via DaisyUI/Tailwind utilities (#230).
+  - **Modal callers updated** — `FileModal`, `DiffViewModal`, `PriceCodeSearchModal`, and `SyncHistoryOverlay` updated to use DaisyUI button classes (`du-btn`), Tailwind layout utilities, and the new `onclick` event syntax.
+
 - **Local JSON price provider** — A new built-in price provider (`local-json`) allows users to maintain custom commodity prices in a plain JSON file on the local filesystem. No network access is required; the file is read on every price-update run. The code field in `paisa.yaml` is the path to the JSON file (absolute, or relative to the config directory). See [Commodities](docs/reference/commodities.md) for the full JSON format specification and examples.
 - **Extensible PriceProvider interface** — `internal/model/price.PriceProvider` is now fully documented with explicit return-value semantics for every method, making it straightforward to implement a custom provider. Compile-time interface-satisfaction checks (`var _ price.PriceProvider = ...`) have been added to every built-in provider package to catch drift early.
 

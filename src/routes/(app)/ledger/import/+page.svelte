@@ -221,8 +221,14 @@
 
 <Modal bind:active={templateCreateModalOpen}>
   <svelte:fragment slot="head" let:close>
-    <p class="modal-card-title">Create Template</p>
-    <button class="delete" aria-label="close" on:click={(e) => close(e)} />
+    <p class="text-base font-semibold flex-1">Create Template</p>
+    <button
+      class="du-btn du-btn-sm du-btn-circle du-btn-ghost"
+      aria-label="close"
+      onclick={() => close()}
+    >
+      <i class="fas fa-times" aria-hidden="true" />
+    </button>
   </svelte:fragment>
   <div class="field" slot="body">
     <label class="label" for="save-filename">Template Name</label>
@@ -235,11 +241,11 @@
   </div>
   <svelte:fragment slot="foot" let:close>
     <button
-      class="button is-success"
+      class="du-btn du-btn-success du-btn-sm"
       disabled={_.isEmpty(saveAsName) || saveAsNameDuplicate}
-      on:click={(e) => save() && close(e)}>Create</button
+      onclick={() => save() && close()}>Create</button
     >
-    <button class="button" on:click={(e) => close(e)}>Cancel</button>
+    <button class="du-btn du-btn-sm" onclick={() => close()}>Cancel</button>
   </svelte:fragment>
 </Modal>
 
@@ -253,7 +259,7 @@
           <div class="field is-grouped mb-0">
             <p class="control">
               <span data-tippy-content="Create" data-tippy-followCursor="false">
-                <button class="button" on:click={(_e) => openTemplateCreateModal()}>
+                <button class="button" onclick={() => openTemplateCreateModal()}>
                   <span class="icon">
                     <i class="fas fa-file-circle-plus" />
                   </span>
@@ -269,7 +275,7 @@
               >
                 <button
                   class="button"
-                  on:click={(_e) => save()}
+                  onclick={() => save()}
                   disabled={$templateEditorState.hasUnsavedChanges == false ||
                     selectedTemplate?.template_type == "builtin"}
                 >
@@ -285,7 +291,7 @@
               >
                 <button
                   class="button"
-                  on:click={(_e) => remove()}
+                  onclick={() => remove()}
                   disabled={selectedTemplate?.template_type == "builtin"}
                 >
                   <span class="icon">
@@ -305,7 +311,7 @@
                 searchable={true}
                 clearable={false}
                 floatingConfig={{ strategy: "fixed" }}
-                on:change={(_e) => {
+                on:change={() => {
                   saveAsName = selectedTemplate.name;
                 }}
               >
@@ -338,7 +344,7 @@
                 data-tippy-content="Copy to Clipboard"
                 class="button clipboard"
                 disabled={_.isEmpty(preview)}
-                on:click={copyToClipboard}
+                onclick={copyToClipboard}
               >
                 <span class="icon">
                   <i class="fas fa-copy" />
@@ -349,7 +355,7 @@
                 data-tippy-content="Save"
                 class="button save"
                 disabled={_.isEmpty(preview)}
-                on:click={openSaveModal}
+                onclick={openSaveModal}
               >
                 <span class="icon">
                   <i class="fas fa-floppy-disk" />
