@@ -12,6 +12,14 @@ const config = {
     handler(warning);
   },
 
+  // Keep Svelte 4 component API so existing code continues to work while
+  // components are incrementally migrated to Svelte 5 runes.
+  compilerOptions: {
+    compatibility: {
+      componentApi: 4
+    }
+  },
+
   kit: {
     adapter: adapter({
       pages: "web/static",
