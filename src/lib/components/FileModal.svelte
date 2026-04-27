@@ -14,8 +14,14 @@
 
 <Modal bind:active={open}>
   <svelte:fragment slot="head" let:close>
-    <p class="modal-card-title">{label}</p>
-    <button class="delete" aria-label="close" on:click={(e) => close(e)} />
+    <p class="text-base font-semibold flex-1">{label}</p>
+    <button
+      class="du-btn du-btn-sm du-btn-circle du-btn-ghost"
+      aria-label="close"
+      onclick={() => close()}
+    >
+      <i class="fas fa-times" aria-hidden="true" />
+    </button>
   </svelte:fragment>
   <div class="field" slot="body">
     <label class="label" for="save-filename">File Name</label>
@@ -26,10 +32,10 @@
   </div>
   <svelte:fragment slot="foot" let:close>
     <button
-      class="button is-success"
+      class="du-btn du-btn-success du-btn-sm"
       disabled={_.isEmpty(destinationFile)}
-      on:click={(e) => dispatch("save", destinationFile) && close(e)}>{label}</button
+      onclick={() => dispatch("save", destinationFile) && close()}>{label}</button
     >
-    <button class="button" on:click={(e) => close(e)}>Cancel</button>
+    <button class="du-btn du-btn-sm" onclick={() => close()}>Cancel</button>
   </svelte:fragment>
 </Modal>
