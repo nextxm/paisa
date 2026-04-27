@@ -17,6 +17,8 @@
 
 #### Bug fixes
 
+- **Docker build fix** — Replaced `svelte-file-dropzone` (incompatible with Svelte 5) with a local self-contained `Dropzone.svelte` component in `src/lib/components/`. The local component matches the same API (`multiple`, `accept`, `inputElement` props; dispatches `drop` event with `{ acceptedFiles, fileRejections }`).
+
 - **AutoComplete no longer crashes the server** — The `in-mfapi` (MF API) and `com-purifiedbytes-nps` providers previously called `log.Fatal` when the autocomplete cache could not be populated, killing the server process. They now log the error at `Error` level and return an empty suggestion list instead.
 
 - **Typed API via Protobuf/Connect (P3.1)** — Eliminates hand-maintained TypeScript interfaces and `ajax` fetch wrappers for selected endpoints by driving the API contract from a `.proto` schema, giving compile-time type safety on both sides.
