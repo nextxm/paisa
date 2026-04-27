@@ -1,8 +1,11 @@
 module github.com/ananthakumaran/paisa
 
-go 1.24
+go 1.24.0
+
+toolchain go1.24.13
 
 require (
+	connectrpc.com/connect v1.19.2
 	dario.cat/mergo v1.0.0
 	github.com/adrg/xdg v0.4.0
 	github.com/bmatcuk/doublestar/v4 v4.6.1
@@ -25,6 +28,7 @@ require (
 	github.com/throttled/throttled/v2 v2.12.0
 	github.com/wailsapp/wails/v2 v2.6.0
 	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848
+	google.golang.org/protobuf v1.36.9
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/gorm v1.25.7
 )
@@ -81,7 +85,6 @@ require (
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	modernc.org/libc v1.22.5 // indirect
 	modernc.org/mathutil v1.5.0 // indirect

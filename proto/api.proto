@@ -1,0 +1,112 @@
+// api.proto defines the typed transport schema for the Paisa API.
+//
+// Use `buf generate` (or the Makefile `proto` target) to regenerate the Go
+// and TypeScript client stubs whenever this file changes.
+//
+//   Backend (Go):   internal/gen/paisa/v1/
+//   Frontend (TS):  src/lib/gen/
+//
+syntax = "proto3";
+
+package paisa.v1;
+
+option go_package = "github.com/ananthakumaran/paisa/internal/gen/paisa/v1;paisav1";
+
+// PaisaService exposes typed, schema-driven endpoints.
+// Endpoints are mounted at /connect/ alongside the existing REST API.
+service PaisaService {
+  // GetAccountTree returns the full hierarchical account tree derived from
+  // all postings currently stored in the database.
+  rpc GetAccountTree(GetAccountTreeRequest) returns (GetAccountTreeResponse);
+}
+
+// ─── Domain messages ─────────────────────────────────────────────────────────
+
+// Transaction represents a double-entry ledger transaction.
+message Transaction {
+  // Unique opaque identifier for the transaction.
+  string id = 1;
+  // ISO 8601 date string (YYYY-MM-DD).
+  string date = 2;
+  // Human-readable payee / description.
+  string payee = 3;
+  // Individual postings that make up the transaction.
+  repeated Posting postings = 4;
+  // 1-based line number of the first line of this transaction in the file.
+  int64 begin_line = 5;
+  // 1-based line number of the last line of this transaction in the file.
+  int64 end_line = 6;
+  // Source file path (relative to the journal root).
+  string file_name = 7;
+  // Optional transaction-level note / comment.
+  string note = 8;
+}
+
+// Posting is a single debit or credit entry within a Transaction.
+message Posting {
+  // Database primary key (monotonically increasing, stable within a sync).
+  uint64 id = 1;
+  // ISO 8601 date string inherited from the parent Transaction.
+  string date = 2;
+  // Payee inherited from the parent Transaction.
+  string payee = 3;
+  // Full colon-separated account name (e.g. "Assets:Checking:SBI").
+  string account = 4;
+  // Commodity / currency code (e.g. "INR", "AAPL").
+  string commodity = 5;
+  // Number of commodity units as a decimal string.
+  string quantity = 6;
+  // Base-currency amount as a decimal string.
+  string amount = 7;
+  // Ledger cleared/pending status ("", "*", "!").
+  string status = 8;
+  // tag_recurring value from the posting metadata.
+  string tag_recurring = 9;
+  // 1-based line number of the first line of the parent transaction.
+  int64 transaction_begin_line = 10;
+  // 1-based line number of the last line of the parent transaction.
+  int64 transaction_end_line = 11;
+  // Source file path.
+  string file_name = 12;
+  // Optional posting-level note.
+  string note = 13;
+  // Optional transaction-level note.
+  string transaction_note = 14;
+  // Market value in the reporting currency (decimal string); computed on read.
+  string market_amount = 15;
+  // Running balance after this posting (decimal string); computed on read.
+  string balance = 16;
+}
+
+// AccountBalance holds a point-in-time balance for a single account.
+message AccountBalance {
+  // Full colon-separated account name.
+  string account = 1;
+  // Balance amount as a decimal string.
+  string balance = 2;
+  // Currency / commodity code of the balance.
+  string currency = 3;
+}
+
+// AccountNode is one node in the hierarchical account tree.
+message AccountNode {
+  // Leaf segment of the account name (e.g. "Checking" for "Assets:Checking").
+  string name = 1;
+  // Full colon-separated account path (e.g. "Assets:Checking").
+  string full_name = 2;
+  // Whether this node corresponds to an actual leaf account with postings.
+  bool is_leaf = 3;
+  // Child account nodes, sorted alphabetically by name.
+  repeated AccountNode children = 4;
+}
+
+// ─── RPC messages ────────────────────────────────────────────────────────────
+
+// GetAccountTreeRequest is currently empty; future versions may add filters.
+message GetAccountTreeRequest {}
+
+// GetAccountTreeResponse carries the top-level account nodes.
+message GetAccountTreeResponse {
+  // Top-level account nodes (e.g. Assets, Expenses, Income, …).
+  repeated AccountNode accounts = 1;
+}

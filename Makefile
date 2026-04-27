@@ -31,6 +31,17 @@ publish:
 parser:
 	npm run parser-build-debug
 
+proto:
+	PATH="$(PWD)/node_modules/.bin:$(PATH)" protoc \
+	  --proto_path=proto \
+	  --go_out=internal/gen \
+	  --go_opt=module=github.com/ananthakumaran/paisa/internal/gen \
+	  --connect-go_out=internal/gen \
+	  --connect-go_opt=module=github.com/ananthakumaran/paisa/internal/gen \
+	  --es_out=src/lib/gen \
+	  --es_opt=target=ts \
+	  proto/api.proto
+
 lint:
 	./node_modules/.bin/prettier --check src
 	npm run check

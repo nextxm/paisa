@@ -12,6 +12,7 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/accounting"
 	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/ananthakumaran/paisa/internal/gen/paisa/v1/paisav1connect"
 	"github.com/ananthakumaran/paisa/internal/generator"
 	"github.com/ananthakumaran/paisa/internal/model/session"
 	"github.com/ananthakumaran/paisa/internal/model/template"
@@ -396,6 +397,14 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, GetCreditCard(db, c.Param("account")))
 	})
 
+	// ── Connect-RPC (typed) endpoints ────────────────────────────────────────
+	// Mount the Connect handler under /connect/.  Auth is handled by the shared
+	// TokenAuthMiddleware which already guards both /api/ and /connect/ prefixes.
+	connectPath, connectHandler := paisav1connect.NewPaisaServiceHandler(
+		&paisaServiceServer{db: db},
+	)
+	router.Any("/connect"+connectPath+"*action", gin.WrapH(http.StripPrefix("/connect", connectHandler)))
+
 	router.NoRoute(func(c *gin.Context) {
 		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(web.Index))
 	})
@@ -431,7 +440,9 @@ func TokenAuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		userAccounts := config.GetConfig().UserAccounts
-		if len(userAccounts) == 0 || !strings.HasPrefix(c.Request.URL.Path, "/api") {
+		path := c.Request.URL.Path
+		isProtected := strings.HasPrefix(path, "/api/") || strings.HasPrefix(path, "/connect/")
+		if len(userAccounts) == 0 || !isProtected {
 			c.Next()
 			return
 		}
