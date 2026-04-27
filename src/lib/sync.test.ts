@@ -35,9 +35,8 @@ const toastMock = mock((_arg: { message: string; type: string; duration?: number
 mock.module("bulma-toast", () => ({ toast: toastMock }));
 
 // Import the module under test after mocks are in place.
-const { startPolling, POLL_INTERVAL_MS, MAX_CONSECUTIVE_ERRORS, MAX_POLLS } = await import(
-  "./sync"
-);
+const { startPolling, clearToastedFailures, POLL_INTERVAL_MS, MAX_CONSECUTIVE_ERRORS, MAX_POLLS } =
+  await import("./sync");
 
 // Import the real jobs store — same module instance that sync.ts uses.
 const { jobs } = await import("./stores/jobs");
@@ -80,6 +79,7 @@ describe("startPolling — store updates and terminal detection", () => {
   beforeEach(() => {
     jobs.reset();
     toastMock.mockClear();
+    clearToastedFailures();
   });
 
   test("calls onTerminal with completed job when status is completed", async () => {
@@ -194,6 +194,7 @@ describe("startPolling — error handling and retry", () => {
   beforeEach(() => {
     jobs.reset();
     toastMock.mockClear();
+    clearToastedFailures();
   });
 
   test("retries after a transient network error", async () => {
@@ -262,5 +263,93 @@ describe("startPolling — error handling and retry", () => {
     await Bun.sleep(100);
 
     expect(callCount).toBe(5);
+  });
+});
+
+describe("startPolling — failure toast deduplication", () => {
+  beforeEach(() => {
+    jobs.reset();
+    toastMock.mockClear();
+    clearToastedFailures();
+  });
+
+  test("shows toast only once when startPolling is called twice for the same failed job", async () => {
+    const fetchJob = mock(
+      async (_id: string): Promise<Job> =>
+        makeJob({ status: "failed", error: "ledger parse error" })
+    );
+
+    startPolling("test-job-1", undefined, { ...fastOptions, fetchJob });
+    await Bun.sleep(50);
+
+    // Second call for the same job (simulates re-mount or navigation)
+    startPolling("test-job-1", undefined, { ...fastOptions, fetchJob });
+    await Bun.sleep(50);
+
+    expect(toastMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("shows a toast for each distinct failed job", async () => {
+    const fetchJobA = mock(
+      async (_id: string): Promise<Job> =>
+        makeJob({ id: "job-a", status: "failed", error: "error A" })
+    );
+    const fetchJobB = mock(
+      async (_id: string): Promise<Job> =>
+        makeJob({ id: "job-b", status: "failed", error: "error B" })
+    );
+
+    startPolling("job-a", undefined, { ...fastOptions, fetchJob: fetchJobA });
+    startPolling("job-b", undefined, { ...fastOptions, fetchJob: fetchJobB });
+    await Bun.sleep(50);
+
+    expect(toastMock).toHaveBeenCalledTimes(2);
+  });
+
+  test("clearToastedFailures resets deduplication so a second poll shows a new toast", async () => {
+    const fetchJob = mock(
+      async (_id: string): Promise<Job> => makeJob({ status: "failed", error: "oops" })
+    );
+
+    startPolling("test-job-1", undefined, { ...fastOptions, fetchJob });
+    await Bun.sleep(50);
+    expect(toastMock).toHaveBeenCalledTimes(1);
+
+    // After clearing, the same job ID can produce a new toast
+    clearToastedFailures();
+    toastMock.mockClear();
+
+    startPolling("test-job-1", undefined, { ...fastOptions, fetchJob });
+    await Bun.sleep(50);
+    expect(toastMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("toast message includes the failure reason", async () => {
+    const fetchJob = mock(
+      async (_id: string): Promise<Job> =>
+        makeJob({ status: "failed", error: "Ledger parse error at line 42" })
+    );
+
+    startPolling("test-job-1", undefined, { ...fastOptions, fetchJob });
+    await Bun.sleep(50);
+
+    expect(toastMock).toHaveBeenCalledTimes(1);
+    const callArg = toastMock.mock.calls[0][0];
+    expect(callArg.message).toContain("Ledger parse error at line 42");
+  });
+
+  test("toast message escapes HTML in the failure reason", async () => {
+    const fetchJob = mock(
+      async (_id: string): Promise<Job> =>
+        makeJob({ status: "failed", error: "<script>alert('xss')</script>" })
+    );
+
+    startPolling("test-job-1", undefined, { ...fastOptions, fetchJob });
+    await Bun.sleep(50);
+
+    expect(toastMock).toHaveBeenCalledTimes(1);
+    const callArg = toastMock.mock.calls[0][0];
+    expect(callArg.message).not.toContain("<script>");
+    expect(callArg.message).toContain("&lt;script&gt;");
   });
 });
