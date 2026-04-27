@@ -78,10 +78,16 @@
   const dispatch = createEventDispatcher();
 </script>
 
-<Modal bind:active={open} footerClass="is-justify-content-space-between">
+<Modal bind:active={open} footerClass="justify-between">
   <svelte:fragment slot="head" let:close>
-    <p class="modal-card-title">{label}</p>
-    <button class="delete" aria-label="close" on:click={(e) => close(e)} />
+    <p class="text-base font-semibold flex-1">{label}</p>
+    <button
+      class="du-btn du-btn-sm du-btn-circle du-btn-ghost"
+      aria-label="close"
+      onclick={() => close()}
+    >
+      <i class="fas fa-times" aria-hidden="true" />
+    </button>
   </svelte:fragment>
   <div style="min-height: 500px;" slot="body">
     {#if selectedProvider}
@@ -89,7 +95,7 @@
         <label class="label" for="">Provider</label>
         <div class="control">
           <div class="select">
-            <select bind:value={selectedProvider} required on:change={(_e) => reset()}>
+            <select bind:value={selectedProvider} required onchange={() => reset()}>
               {#each providers as provider}
                 <option value={provider}>{provider.label}</option>
               {/each}
@@ -146,23 +152,23 @@
     {/if}
   </div>
   <svelte:fragment slot="foot" let:close>
-    <div>
+    <div class="flex gap-2">
       <button
-        class="button is-success"
+        class="du-btn du-btn-success du-btn-sm"
         disabled={_.isEmpty(code)}
-        on:click={(e) => {
+        onclick={() => {
           dispatch("select", { code: code, provider: selectedProvider.code });
           reset();
-          close(e);
+          close();
         }}>Select</button
       >
-      <button class="button" on:click={(e) => close(e)}>Cancel</button>
+      <button class="du-btn du-btn-sm" onclick={() => close()}>Cancel</button>
     </div>
 
     <div>
       <button
-        on:click={(_e) => clearProviderCache()}
-        class="button is-danger {isLoading && 'is-loading'}"
+        onclick={() => clearProviderCache()}
+        class="du-btn du-btn-error du-btn-sm {isLoading ? 'du-loading' : ''}"
         disabled={!selectedProvider}>Clear Provider Cache</button
       >
     </div>

@@ -47,10 +47,10 @@
   width="min(1300px, 100vw)"
   bodyClass="p-0 min-h-[500px]"
   headerClass="pt-1 pb-1"
-  footerClass="is-justify-content-right"
+  footerClass="justify-end"
 >
   <svelte:fragment slot="head" let:close>
-    <p class="modal-card-title">
+    <p class="text-base font-semibold flex-1">
       {#if changedOldFiles.length > 0}
         {changedOldFiles[selectedFileIndex]?.name}
         [{selectedFileIndex + 1}/{changedNewFiles.length}]
@@ -58,36 +58,38 @@
         No Changes
       {/if}
     </p>
-    <div class="field has-addons mt-3 mr-3">
+    <div class="flex items-center gap-2 mr-3">
       {#if changedOldFiles.length > 0}
-        <div class="mr-3 mt-2"><b>{updatedTransactionsCount}</b> transaction(s) changed</div>
+        <span class="text-sm mt-2"><b>{updatedTransactionsCount}</b> transaction(s) changed</span>
       {/if}
-      <p class="control">
-        <button
-          class="button"
-          disabled={selectedFileIndex <= 0}
-          on:click={(_e) => selectedFileIndex--}
-        >
-          <span class="icon is-small">
-            <i class="fas fa-chevron-left"></i>
-          </span>
-          <span>Prev</span>
-        </button>
-      </p>
-      <p class="control">
-        <button
-          class="button"
-          disabled={selectedFileIndex >= changedNewFiles.length - 1}
-          on:click={(_e) => selectedFileIndex++}
-        >
-          <span>Next</span>
-          <span class="icon is-small">
-            <i class="fas fa-chevron-right"></i>
-          </span>
-        </button>
-      </p>
+      <button
+        class="du-btn du-btn-sm"
+        disabled={selectedFileIndex <= 0}
+        onclick={() => selectedFileIndex--}
+      >
+        <span class="icon is-small">
+          <i class="fas fa-chevron-left"></i>
+        </span>
+        <span>Prev</span>
+      </button>
+      <button
+        class="du-btn du-btn-sm"
+        disabled={selectedFileIndex >= changedNewFiles.length - 1}
+        onclick={() => selectedFileIndex++}
+      >
+        <span>Next</span>
+        <span class="icon is-small">
+          <i class="fas fa-chevron-right"></i>
+        </span>
+      </button>
     </div>
-    <button class="delete" aria-label="close" on:click={(e) => close(e)} />
+    <button
+      class="du-btn du-btn-sm du-btn-circle du-btn-ghost"
+      aria-label="close"
+      onclick={() => close()}
+    >
+      <i class="fas fa-times" aria-hidden="true" />
+    </button>
   </svelte:fragment>
   <div class="field" slot="body">
     <div class="box py-0">
@@ -100,11 +102,11 @@
     </div>
   </div>
   <svelte:fragment slot="foot" let:close>
-    <button class="button" on:click={(e) => close(e)}>Cancel</button>
+    <button class="du-btn du-btn-sm" onclick={() => close()}>Cancel</button>
     {#if changedOldFiles.length > 0}
       <button
-        class="button is-success"
-        on:click={(e) => dispatch("save", changedNewFiles) && close(e)}>Save All</button
+        class="du-btn du-btn-success du-btn-sm"
+        onclick={() => dispatch("save", changedNewFiles) && close()}>Save All</button
       >
     {/if}
   </svelte:fragment>
