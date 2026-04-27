@@ -32,6 +32,11 @@
     inputValue = "";
   }
 
+  let _idCounter = 0;
+  function nextId(): string {
+    return `qb-${Date.now()}-${++_idCounter}`;
+  }
+
   function addFilter() {
     const needsValue = selectedOperator !== "is_set" && selectedOperator !== "is_not_set";
     if (needsValue && inputValue.trim() === "") return;
@@ -39,7 +44,7 @@
     filters = [
       ...filters,
       {
-        id: crypto.randomUUID(),
+        id: nextId(),
         type: selectedType,
         operator: selectedOperator,
         value: inputValue.trim()
@@ -63,7 +68,10 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === "Enter") addFilter();
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addFilter();
+    }
     if (e.key === "Escape") {
       showForm = false;
       inputValue = "";
