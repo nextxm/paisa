@@ -3,6 +3,21 @@ import { ajax } from "./utils";
 import { jobs } from "./stores/jobs";
 import type { Job } from "./utils";
 
+/**
+ * Set of job IDs for which a failure toast has already been shown.
+ * Guards against duplicate toasts when startPolling is called more than
+ * once for the same job (e.g. after a page navigation or component re-mount).
+ */
+const toastedFailureIds = new Set<string>();
+
+/**
+ * Clear the deduplication set.
+ * Exported exclusively for use in tests — do not call in production code.
+ */
+export function clearToastedFailures(): void {
+  toastedFailureIds.clear();
+}
+
 /** Milliseconds between each job-status poll. */
 export const POLL_INTERVAL_MS = 2000;
 
@@ -95,7 +110,8 @@ export function startPolling(
       jobs.upsert(job);
 
       if (job.status === "completed" || job.status === "failed") {
-        if (job.status === "failed") {
+        if (job.status === "failed" && !toastedFailureIds.has(jobId)) {
+          toastedFailureIds.add(jobId);
           toast.toast({
             message: `<b>Sync failed</b>${job.error ? `\n${escapeHtml(job.error)}` : ""}`,
             type: "is-danger",
