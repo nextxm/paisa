@@ -145,6 +145,9 @@ const config = {
     fs: {
       allow: ["./fonts"]
     }
+  },
+  optimizeDeps: {
+    exclude: ["svelte-tiny-virtual-list"]
   }
 };
 

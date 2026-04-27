@@ -1,7 +1,7 @@
 package server
 
 import (
-	"encoding/json"
+
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -205,10 +205,3 @@ func buildEditorTestRouter() *gin.Engine {
 	return router
 }
 
-// decodeEditorResponse decodes a generic JSON map from the response body.
-func decodeEditorResponse(t *testing.T, rec *httptest.ResponseRecorder) map[string]json.RawMessage {
-	t.Helper()
-	var result map[string]json.RawMessage
-	require.NoError(t, json.NewDecoder(rec.Body).Decode(&result))
-	return result
-}

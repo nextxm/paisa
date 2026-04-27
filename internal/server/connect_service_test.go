@@ -3,7 +3,6 @@ package server
 import (
 	"testing"
 
-	v1 "github.com/ananthakumaran/paisa/internal/gen/paisa/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -115,12 +114,3 @@ func TestBuildAccountTree_FullNamePreserved(t *testing.T) {
 	assert.True(t, aapl.IsLeaf)
 }
 
-// findNode is a test helper that finds a top-level node by name.
-func findNode(nodes []*v1.AccountNode, name string) *v1.AccountNode {
-	for _, n := range nodes {
-		if n.Name == name {
-			return n
-		}
-	}
-	return nil
-}
