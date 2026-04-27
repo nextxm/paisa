@@ -14,6 +14,9 @@ import (
 	"gorm.io/gorm"
 )
 
+// Compile-time check: PriceProvider must satisfy price.PriceProvider.
+var _ price.PriceProvider = (*PriceProvider)(nil)
+
 type PriceProvider struct {
 }
 

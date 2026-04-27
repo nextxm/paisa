@@ -7,6 +7,9 @@ import (
 	"gorm.io/gorm"
 )
 
+// Compile-time check: PriceProvider must satisfy price.PriceProvider.
+var _ price.PriceProvider = (*PriceProvider)(nil)
+
 type PriceProvider struct {
 }
 
@@ -34,7 +37,8 @@ func (p *PriceProvider) AutoComplete(db *gorm.DB, field string, filter map[strin
 	if count == 0 {
 		schemes, err := GetSchemes()
 		if err != nil {
-			log.Fatal(err)
+			log.Error("Failed to fetch NPS schemes: ", err)
+			return []price.AutoCompleteItem{}
 		}
 		scheme.UpsertAll(db, schemes)
 	} else {

@@ -18,6 +18,9 @@ import (
 	"gorm.io/gorm"
 )
 
+// Compile-time check: AlphaVantagePriceProvider must satisfy price.PriceProvider.
+var _ price.PriceProvider = (*AlphaVantagePriceProvider)(nil)
+
 type Match struct {
 	Symbol   string `json:"1. symbol"`
 	Name     string `json:"2. name"`
