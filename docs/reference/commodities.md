@@ -219,6 +219,82 @@ P 2023/05/01 00:00:00 USD 81.75 INR
     Assets:Checking
 ```
 
+## Local JSON File <sub>:file_folder:</sub>
+
+For commodities whose prices are maintained manually or sourced from a custom
+tool, you can supply a plain JSON file on the local filesystem.  No network
+access is required; Paisa reads the file each time prices are updated.
+
+### Configuration
+
+```yaml
+commodities:
+  - name: MYFUND # (1)!
+    type: unknown # (2)!
+    price:
+        provider: local-json # (3)!
+        code: prices/myfund.json # (4)!
+```
+
+1. Commodity name as used in your journal
+1. Commodity type (`unknown` is fine for custom assets)
+1. Price provider name
+1. Path to the JSON file – absolute, or relative to the directory that contains `paisa.yaml`
+
+### JSON File Format
+
+```json
+{
+  "version": 1,
+  "commodity": "MYFUND",
+  "currency": "INR",
+  "entries": [
+    { "date": "2024-01-01", "value": "123.45" },
+    { "date": "2024-02-01", "value": "124.00" },
+    { "date": "2024-03-01", "value": "125.50" }
+  ]
+}
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `version` | No | Format version.  Omit or set to `1`. |
+| `commodity` | No | Default commodity name for all entries.  Falls back to the name in your `paisa.yaml` commodity block. |
+| `currency` | No | Default quote currency (e.g. `INR`, `USD`).  Falls back to `default_currency` in `paisa.yaml`. |
+| `entries` | Yes | Array of price data points (see below). |
+
+Each entry in the `entries` array supports:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `date` | Yes | Date in `YYYY-MM-DD` format. |
+| `value` | Yes | Price as a decimal string, e.g. `"123.45"`. |
+| `commodity` | No | Overrides the file-level `commodity` for this entry. |
+| `currency` | No | Overrides the file-level `currency` for this entry. |
+
+### Example – invalid input handling
+
+If the file cannot be read or contains bad data, Paisa logs an error and skips
+the commodity for that sync run.  Common mistakes:
+
+```json
+// ❌ missing required "value" field – entry will fail to parse
+{ "date": "2024-01-01" }
+
+// ❌ non-decimal value – entry will fail to parse
+{ "date": "2024-01-01", "value": "n/a" }
+
+// ❌ bad date format (must be YYYY-MM-DD)
+{ "date": "01/01/2024", "value": "100" }
+```
+
+### Security notes
+
+- The file path is resolved relative to the config directory; it is **not**
+  fetched over the network.
+- Paisa performs no sandboxing of the path – ensure that only trusted users can
+  modify `paisa.yaml` and the referenced price files.
+
 ## Update
 
 Paisa fetches the latest price of the commodities only when you

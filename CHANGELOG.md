@@ -4,6 +4,13 @@
 
 #### New features
 
+- **Local JSON price provider** — A new built-in price provider (`local-json`) allows users to maintain custom commodity prices in a plain JSON file on the local filesystem. No network access is required; the file is read on every price-update run. The code field in `paisa.yaml` is the path to the JSON file (absolute, or relative to the config directory). See [Commodities](docs/reference/commodities.md) for the full JSON format specification and examples.
+- **Extensible PriceProvider interface** — `internal/model/price.PriceProvider` is now fully documented with explicit return-value semantics for every method, making it straightforward to implement a custom provider. Compile-time interface-satisfaction checks (`var _ price.PriceProvider = ...`) have been added to every built-in provider package to catch drift early.
+
+#### Bug fixes
+
+- **AutoComplete no longer crashes the server** — The `in-mfapi` (MF API) and `com-purifiedbytes-nps` providers previously called `log.Fatal` when the autocomplete cache could not be populated, killing the server process. They now log the error at `Error` level and return an empty suggestion list instead.
+
 - **Typed API via Protobuf/Connect (P3.1)** — Eliminates hand-maintained TypeScript interfaces and `ajax` fetch wrappers for selected endpoints by driving the API contract from a `.proto` schema, giving compile-time type safety on both sides.
   - `proto/api.proto` — defines `Transaction`, `Posting`, `AccountBalance`, `AccountNode`, and the `PaisaService` service with a `GetAccountTree` RPC. Package name `paisa.v1`; Go package `github.com/ananthakumaran/paisa/internal/gen/paisa/v1;paisav1` (#234).
   - `internal/gen/` — committed generated Go stubs (`api.pb.go`, `paisav1connect/api.connect.go`) produced by `protoc-gen-go` + `protoc-gen-connect-go` (#235).

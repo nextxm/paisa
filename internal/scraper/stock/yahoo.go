@@ -20,6 +20,9 @@ import (
 	"github.com/ananthakumaran/paisa/internal/utils"
 )
 
+// Compile-time check: YahooPriceProvider must satisfy price.PriceProvider.
+var _ price.PriceProvider = (*YahooPriceProvider)(nil)
+
 var UserAgents = []string{
 	// Chrome
 	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",

@@ -237,7 +237,7 @@ commodities:
     # Required, ENUM: mutualfund, stock, nps, unknown
     type: mutualfund
     price:
-      # Required, ENUM: in-mfapi, com-yahoo, com-purifiedbytes-nps, co-alphavantage
+      # Required, ENUM: in-mfapi, com-yahoo, com-purifiedbytes-nps, co-alphavantage, local-json
       provider: in-mfapi
       # differs based on provider
       code: 145552
@@ -258,6 +258,12 @@ commodities:
       code: AAPL
     harvest: 1095
     tax_category: equity65
+  # Example: local JSON file provider (see docs/reference/commodities.md for the file format)
+  - name: MYFUND
+    type: unknown
+    price:
+      provider: local-json
+      code: prices/myfund.json
 
 ## Import Templates
 # OPTIONAL, DEFAULT: []
