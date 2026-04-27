@@ -59,7 +59,7 @@ export function flattenAccountTree(nodes: AccountNode[]): string[] {
     if (node.isLeaf) {
       result.push(node.fullName);
     }
-    for (const child of node.children ?? []) {
+    for (const child of node.children) {
       visit(child);
     }
   }

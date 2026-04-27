@@ -441,7 +441,7 @@ func TokenAuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userAccounts := config.GetConfig().UserAccounts
 		path := c.Request.URL.Path
-		isProtected := strings.HasPrefix(path, "/api") || strings.HasPrefix(path, "/connect/")
+		isProtected := strings.HasPrefix(path, "/api/") || strings.HasPrefix(path, "/connect/")
 		if len(userAccounts) == 0 || !isProtected {
 			c.Next()
 			return
