@@ -1,0 +1,18 @@
+# buf.yaml configures the Buf CLI for managing the proto/api.proto schema.
+#
+# Install Buf: https://buf.build/docs/installation
+# Regenerate stubs:
+#   buf generate           (uses buf.gen.yaml below)
+#   — OR —
+#   make proto             (calls protoc directly; no Buf required)
+#   npm run generate:proto (TypeScript stubs only)
+
+version: v2
+modules:
+  - path: proto
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE
