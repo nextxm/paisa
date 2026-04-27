@@ -4,6 +4,10 @@
   import { refresh } from "../../store";
   import { obscure } from "../../persisted_store";
   import { goto } from "$app/navigation";
+  import { jobsList } from "$lib/stores/jobs";
+  import SyncHistoryOverlay from "./SyncHistoryOverlay.svelte";
+
+  let showHistory = false;
 
   async function syncWithLoader(request: Record<string, any>) {
     const jobId = await sync(request);
@@ -32,6 +36,22 @@
 </script>
 
 <div class="is-flex is-align-items-center" style="gap: 0.25rem;">
+  <SyncHistoryOverlay bind:open={showHistory} />
+
+  <button
+    class="navbar-action-button sync-history-btn"
+    data-tippy-content="<p>Sync History</p>"
+    aria-label="Sync History"
+    on:click={() => (showHistory = true)}
+  >
+    <span class="icon">
+      <i class="fa-solid fa-clock-rotate-left" />
+    </span>
+    {#if $jobsList.length > 0}
+      <span class="sync-history-badge">{$jobsList.length}</span>
+    {/if}
+  </button>
+
   <button
     class="navbar-action-button"
     data-tippy-content="<p>Sync Journal</p>"
@@ -141,5 +161,26 @@
     .navbar-action-button :global(.icon) {
       font-size: 1.1rem;
     }
+  }
+
+  .sync-history-btn {
+    position: relative;
+  }
+
+  .sync-history-badge {
+    position: absolute;
+    top: 0.1rem;
+    right: 0.1rem;
+    min-width: 0.9rem;
+    height: 0.9rem;
+    padding: 0 0.2rem;
+    border-radius: 0.45rem;
+    background: var(--bulma-primary, #485fc7);
+    color: #fff;
+    font-size: 0.55rem;
+    font-weight: 700;
+    line-height: 0.9rem;
+    text-align: center;
+    pointer-events: none;
   }
 </style>
