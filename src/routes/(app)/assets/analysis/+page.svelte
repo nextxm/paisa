@@ -14,7 +14,7 @@
   let rating: PortfolioAggregate[] = [];
   let industry: PortfolioAggregate[] = [];
   let isEmpty = false;
-  let color: any;
+  let color: (value: string) => string = (_: string) => genericBarColor();
 
   let securityTypeR: any,
     portfolioR: any,
