@@ -15,11 +15,9 @@
     type CreditCardBill,
     type CreditCardSummary
   } from "$lib/utils";
-  import { MasonryGrid } from "@egjs/svelte-grid";
   import _, { now } from "lodash";
   import { onMount } from "svelte";
   import type { PageData } from "./$types";
-  let UntypedMasonryGrid = MasonryGrid as any;
 
   export let data: PageData;
   let svg: SVGElement;
@@ -183,16 +181,28 @@
           </nav>
 
           <div>
-            <UntypedMasonryGrid gap={10} maxStretchColumnSize={500} align="stretch">
+            <div class="masonry-grid masonry-grid-500">
               {#each currentBill.transactions as t}
                 <div class="mr-3 is-flex-grow-1">
                   <TransactionCard {t} />
                 </div>
               {/each}
-            </UntypedMasonryGrid>
+            </div>
           </div>
         {/if}
       </div>
     </div>
   </div>
 </section>
+
+<style lang="scss">
+  .masonry-grid {
+    display: grid;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .masonry-grid-500 {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+</style>

@@ -5,6 +5,7 @@
 #### New features
 
 - **Svelte 5 upgrade & UI modernization (P2.2)** — Upgrades the frontend framework to Svelte 5 and begins the incremental migration to rune-based reactivity:
+
   - **Svelte 5** (`^5.0.0`), **svelte-check** (`^4.0.0`), **@sveltejs/vite-plugin-svelte** (`^4.0.0`), and **eslint-plugin-svelte** (`^3.0.0`) bumped in `package.json` (#226).
   - **Svelte 4 compatibility layer** enabled in `svelte.config.js` via `compilerOptions.compatibility.componentApi: 4`, allowing all existing components to keep working while new ones adopt runes (#227).
   - **Modal.svelte migrated to Svelte 5 runes** — props use `$props()` / `$bindable()`; internal state uses `$state()`; `on:click` replaced with `onclick`. Bulma structural classes (`modal`, `modal-background`, `modal-card`, `modal-card-head/body/foot`, `is-active`) replaced with DaisyUI equivalents (`du-modal`, `du-modal-box`, `du-modal-backdrop`, `du-modal-open`) and Tailwind flex utilities (#228 #229).
@@ -19,9 +20,14 @@
 
 - **Docker build fix** — Replaced `svelte-file-dropzone` (incompatible with Svelte 5) with a local self-contained `Dropzone.svelte` component in `src/lib/components/`. The local component matches the same API (`multiple`, `accept`, `inputElement` props; dispatches `drop` event with `{ acceptedFiles, fileRejections }`).
 
+- **Dashboard crash on Svelte 5 fixed** — Removed `@egjs/svelte-grid` usage from dashboard and credit-card detail routes and replaced it with native CSS grid wrappers. This avoids runtime failures like `TypeError: Class constructor ... cannot be invoked without 'new'` caused by legacy class-based Svelte components during route hydration.
+
+- **Frontend build emits sourcemaps** — Enabled `build.sourcemap` in `vite.config.js` so minified hashed chunks can be mapped back to original source during debugging.
+
 - **AutoComplete no longer crashes the server** — The `in-mfapi` (MF API) and `com-purifiedbytes-nps` providers previously called `log.Fatal` when the autocomplete cache could not be populated, killing the server process. They now log the error at `Error` level and return an empty suggestion list instead.
 
 - **Typed API via Protobuf/Connect (P3.1)** — Eliminates hand-maintained TypeScript interfaces and `ajax` fetch wrappers for selected endpoints by driving the API contract from a `.proto` schema, giving compile-time type safety on both sides.
+
   - `proto/api.proto` — defines `Transaction`, `Posting`, `AccountBalance`, `AccountNode`, and the `PaisaService` service with a `GetAccountTree` RPC. Package name `paisa.v1`; Go package `github.com/ananthakumaran/paisa/internal/gen/paisa/v1;paisav1` (#234).
   - `internal/gen/` — committed generated Go stubs (`api.pb.go`, `paisav1connect/api.connect.go`) produced by `protoc-gen-go` + `protoc-gen-connect-go` (#235).
   - **Connect-Go integrated into Gin** — `connectrpc.com/connect` is added as a dependency; `PaisaService` endpoints are mounted at `/connect/paisa.v1.PaisaService/…` alongside the existing REST routes. `TokenAuthMiddleware` now protects `/connect/` paths with the same session-token logic as `/api/` paths (#235).

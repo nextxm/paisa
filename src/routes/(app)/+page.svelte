@@ -26,14 +26,11 @@
   import BudgetCard from "$lib/components/BudgetCard.svelte";
   import LevelItem from "$lib/components/LevelItem.svelte";
   import ZeroState from "$lib/components/ZeroState.svelte";
-  import { MasonryGrid } from "@egjs/svelte-grid";
   import { refresh } from "../../store";
   import UpcomingCard from "$lib/components/UpcomingCard.svelte";
   import GoalSummaryCard from "$lib/components/GoalSummaryCard.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
   import BalanceCard from "$lib/components/BalanceCard.svelte";
-
-  let UntypedMasonryGrid = MasonryGrid as any;
 
   let cashflowLegends: Legend[] = [];
   let month = now().format("YYYY-MM");
@@ -205,13 +202,13 @@
                   >
                 </p>
                 <div class="content">
-                  <UntypedMasonryGrid gap={10} maxStretchColumnSize={400} align="stretch">
+                  <div class="masonry-grid masonry-grid-400">
                     {#each _.values(checkingBalances) as assetBreakdown}
                       <div class="is-flex-grow-1">
                         <BalanceCard {assetBreakdown} />
                       </div>
                     {/each}
-                  </UntypedMasonryGrid>
+                  </div>
                 </div>
               </div>
             </article>
@@ -331,13 +328,13 @@
                     >
                   </p>
                   <div>
-                    <UntypedMasonryGrid gap={10} maxStretchColumnSize={500} align="stretch">
+                    <div class="masonry-grid masonry-grid-500">
                       {#each _.take(transactions, 20) as t}
                         <div class="mr-3 is-flex-grow-1">
                           <TransactionCard {t} />
                         </div>
                       {/each}
-                    </UntypedMasonryGrid>
+                    </div>
                   </div>
                 </div>
               </article>
@@ -350,6 +347,20 @@
 </section>
 
 <style lang="scss">
+  .masonry-grid {
+    display: grid;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .masonry-grid-400 {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+
+  .masonry-grid-500 {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+
   p.subtitle {
     margin-bottom: 0.5rem !important;
   }
