@@ -7,9 +7,11 @@
   export let financialYear: string;
   export let capitalGains: CapitalGain[];
 
-  const fyGains: FYCapitalGain[] = _.flatMap(capitalGains, (cg) => cg.fy[financialYear] || []);
+  $: fyGains = _.compact(
+    _.map(capitalGains, (cg): FYCapitalGain | undefined => cg.fy[financialYear])
+  );
 
-  const total = {
+  $: total = {
     withdrawn: _.sumBy(fyGains, (fy) => fy.sell_price),
     gain: _.sumBy(fyGains, (fy) => fy.tax.gain),
     taxableGain: _.sumBy(fyGains, (fy) => fy.tax.taxable),
@@ -74,7 +76,7 @@
             <table class="table is-narrow is-fullwidth is-hoverable">
               <thead>
                 <tr>
-                  <th />
+                  <th></th>
                   <th>Account</th>
                   <th>Tax Category</th>
                   <th class="has-text-right">Sold Units</th>
@@ -107,7 +109,7 @@
                             <i
                               class="fas {active ? 'fa-chevron-up' : 'fa-chevron-down'}"
                               aria-hidden="true"
-                            />
+                            ></i>
                           </span>
                         </td>
                         <td>{cg.account}</td>

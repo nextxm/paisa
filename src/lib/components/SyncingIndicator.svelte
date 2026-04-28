@@ -12,7 +12,7 @@
     transition:fade={{ duration: 200 }}
   >
     <span class="icon is-small">
-      <i class="fas fa-rotate fa-spin" aria-hidden="true" />
+      <i class="fas fa-rotate fa-spin" aria-hidden="true"></i>
     </span>
     <span class="syncing-label is-hidden-mobile">Syncing…</span>
   </span>

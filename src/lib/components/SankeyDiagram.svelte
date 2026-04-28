@@ -255,12 +255,12 @@
   {#if loading}
     <div class="sankey-skeleton" aria-busy="true" aria-label="Loading Sankey diagram">
       {#each Array(5) as _}
-        <div class="skeleton-bar" />
+        <div class="skeleton-bar"></div>
       {/each}
     </div>
   {:else if _.isEmpty(nodes) || _.isEmpty(links)}
     <div class="has-text-centered p-6 has-text-grey">
-      <span class="icon is-large"><i class="fas fa-chart-bar fa-2x" /></span>
+      <span class="icon is-large"><i class="fas fa-chart-bar fa-2x"></i></span>
       <p class="mt-2">{emptyMessage}</p>
     </div>
   {:else}

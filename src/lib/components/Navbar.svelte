@@ -214,6 +214,10 @@
   }
 
   function closeBurger(shouldRestoreFocus = true) {
+    if (typeof document !== "undefined" && navMenuEl?.contains(document.activeElement)) {
+      (document.activeElement as HTMLElement)?.blur?.();
+    }
+
     isBurger = null;
 
     if (shouldRestoreFocus && typeof document !== "undefined") {
@@ -261,6 +265,12 @@
   }
 
   $: normalizedPath = $page.url.pathname?.replace(/(.+)\/$/, "");
+
+  // isNavInert: only make the mobile drawer inert when it's closed
+  $: isNavInert =
+    isBurger !== true && typeof window !== "undefined" && window.innerWidth < 769
+      ? true
+      : undefined;
 
   $: {
     if (typeof document !== "undefined") {
@@ -326,9 +336,9 @@
       aria-expanded={isBurger === true}
       aria-controls="primary-nav-menu"
     >
-      <span aria-hidden="true" />
-      <span aria-hidden="true" />
-      <span aria-hidden="true" />
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
     </button>
 
     <a
@@ -338,12 +348,17 @@
     >
       {#if $obscure}
         <span class="icon is-small is-size-5">
-          <i class="fas fa-user-secret" />
+          <i class="fas fa-user-secret"></i>
         </span><span class="ml-2 is-primary-color">Paisa</span>
       {:else}
         <Logo size={22} /><span class="ml-1 is-primary-color">Paisa</span>
       {/if}
     </a>
+
+    <div class="navbar-item navbar-actions-row mobile-top-actions">
+      <SyncingIndicator />
+      <ThemeSwitcher />
+    </div>
   </div>
 
   <div
@@ -353,7 +368,8 @@
     class:is-active={isBurger === true}
     tabindex="-1"
     on:keydown={handleMenuKeydown}
-    aria-hidden={isBurger === true ? "false" : "true"}
+    aria-hidden={isNavInert ? "true" : undefined}
+    inert={isNavInert}
   >
     <div class="navbar-start">
       {#each links as link}
@@ -369,11 +385,16 @@
         {:else}
           <div class="navbar-item has-dropdown is-hoverable">
             <a
+              href={"#"}
+              role="button"
               class="navbar-link"
               class:is-active={normalizedPath.startsWith(link.href)}
               on:click|preventDefault={(e) =>
                 isMobile() && e.currentTarget.parentElement.classList.toggle("is-active")}
-              >{link.label}</a
+              on:keydown={(e) =>
+                e.key === "Enter" &&
+                isMobile() &&
+                e.currentTarget.parentElement.classList.toggle("is-active")}>{link.label}</a
             >
             <div class="navbar-dropdown {!isMobile() && 'is-boxed'}">
               {#each link.children as sublink}
@@ -388,8 +409,16 @@
                 {:else}
                   <div class="nested has-dropdown navbar-item">
                     <a
+                      href={"#"}
+                      role="button"
                       class="navbar-link is-arrowless is-flex is-justify-content-space-between is-active"
                       class:is-active={normalizedPath.startsWith(href)}
+                      on:click|preventDefault={(e) =>
+                        isMobile() && e.currentTarget.parentElement.classList.toggle("is-active")}
+                      on:keydown={(e) =>
+                        e.key === "Enter" &&
+                        isMobile() &&
+                        e.currentTarget.parentElement.classList.toggle("is-active")}
                     >
                       <span>{sublink.label}</span>
                       <span class="icon is-small">
@@ -424,7 +453,7 @@
       {/each}
     </div>
     <div class="navbar-end" style="margin-right: 0.3em">
-      <div class="navbar-item navbar-actions-row">
+      <div class="navbar-item navbar-actions-row menu-actions-row">
         {#if readonly}
           <span
             class="mt-1 tag is-rounded is-danger is-light invertable"
@@ -446,7 +475,7 @@
     class="mobile-nav-backdrop"
     aria-label="Close navigation menu"
     on:click={() => closeBurger()}
-  />
+  ></button>
 {/if}
 
 <div class="mt-3 px-3 is-flex is-justify-content-space-between">
@@ -458,11 +487,15 @@
     >
       <ul>
         <li>
-          <a class="is-inactive">{selectedLink.label}</a>
+          <span class="is-inactive">{selectedLink.label}</span>
           {#if selectedLink.help}
-            <a style="margin-left: -10px;" class="p-0" href={helpUrl(selectedLink.help)}
+            <a
+              style="margin-left: -10px;"
+              class="p-0"
+              href={helpUrl(selectedLink.help)}
+              aria-label={`Help for ${selectedLink.label}`}
               ><span class="icon is-small">
-                <i class="fas fa-question fa-border" />
+                <i class="fas fa-question fa-border"></i>
               </span></a
             >
           {/if}
@@ -475,12 +508,16 @@
         </li>
         {#if selectedSubLink}
           <li>
-            <a class="is-inactive">{selectedSubLink.label}</a>
+            <span class="is-inactive">{selectedSubLink.label}</span>
 
             {#if selectedSubLink.help}
-              <a style="margin-left: -10px;" class="p-0" href={helpUrl(selectedSubLink.help)}
+              <a
+                style="margin-left: -10px;"
+                class="p-0"
+                href={helpUrl(selectedSubLink.help)}
+                aria-label={`Help for ${selectedSubLink.label}`}
                 ><span class="icon is-small">
-                  <i class="fas fa-question fa-border" />
+                  <i class="fas fa-question fa-border"></i>
                 </span></a
               >
             {/if}
@@ -496,11 +533,13 @@
         {#if selectedSubLink}
           {#if selectedSubSubLink}
             <li>
-              <a class="is-inactive">{selectedSubSubLink.label}</a>
+              <span class="is-inactive">{selectedSubSubLink.label}</span>
             </li>
           {:else if selectedLink.href + selectedSubLink.href != normalizedPath}
             <li>
-              <a class="is-inactive">{decodeURIComponent(_.last(normalizedPath.split("/")))}</a>
+              <span class="is-inactive"
+                >{decodeURIComponent(_.last(normalizedPath.split("/")))}</span
+              >
             </li>
           {/if}
         {/if}
@@ -514,7 +553,7 @@
         {#each RecurringIcons as icon}
           <div data-tippy-content="<p>{icon.label}</p>">
             <span class="icon is-small has-text-{icon.color}">
-              <i class={"fas " + icon.icon} />
+              <i class={"fas " + icon.icon}></i>
             </span>
             <span class="is-hidden-mobile">{icon.label}</span>
           </div>
@@ -525,9 +564,9 @@
     {#if selectedSubLink?.maxDepthSelector}
       <div class="dropdown is-right is-hoverable">
         <div class="dropdown-trigger">
-          <button class="button is-small" aria-haspopup="true">
+          <button class="button is-small" aria-haspopup="true" aria-label="Flow settings">
             <span class="icon is-small">
-              <i class="fas fa-sliders" />
+              <i class="fas fa-sliders"></i>
             </span>
           </button>
         </div>
@@ -604,7 +643,15 @@
     border-radius: 0.45rem;
   }
 
-  @media screen and (max-width: 768px) {
+  .mobile-top-actions {
+    display: none !important;
+  }
+
+  .menu-actions-row {
+    display: flex;
+  }
+
+  @media screen and (max-width: 1023px) {
     .navbar-menu {
       position: fixed;
       top: 0;
@@ -631,11 +678,32 @@
 
     .navbar-brand {
       align-items: center;
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      width: 100%;
     }
 
-    .mobile-drawer-toggle {
-      margin-left: 0;
+    .navbar-brand .navbar-burger.mobile-drawer-toggle {
+      order: -1;
+      margin-left: 0 !important;
       margin-right: 0.2rem;
+      flex-shrink: 0;
+    }
+
+    .mobile-top-actions {
+      display: inline-flex;
+      margin-left: auto;
+      padding-right: 0.1rem;
+      align-items: center;
+      gap: 0.2rem;
+      flex-wrap: nowrap;
+    }
+
+    .menu-actions-row {
+      display: flex;
+      width: 100%;
+      justify-content: flex-start;
+      padding: 0.35rem 0.75rem;
     }
 
     .mobile-nav-backdrop {

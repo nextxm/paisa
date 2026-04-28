@@ -34,12 +34,14 @@ export function renderOverview(gains: Gain[]) {
   gains = _.sortBy(gains, (g) => g.account);
   const BAR_HEIGHT = rem(15);
   const id = "#d3-gain-overview";
+  const container = document.getElementById(id.substring(1));
+  if (!container || !container.parentElement) {
+    return;
+  }
+
   const svg = d3.select(id),
     margin = { top: rem(25), right: rem(20), bottom: rem(10), left: rem(150) },
-    width =
-      Math.max(document.getElementById(id.substring(1)).parentElement.clientWidth, 1000) -
-      margin.left -
-      margin.right,
+    width = Math.max(container.parentElement.clientWidth, 1000) - margin.left - margin.right,
     height = gains.length * BAR_HEIGHT * 2,
     g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
   svg.attr("height", height + margin.top + margin.bottom);
@@ -72,11 +74,14 @@ export function renderOverview(gains: Gain[]) {
   const getWithdrawalAmount = (g: Gain) => g.networth.withdrawalAmount;
 
   const getBalanceAmount = (g: Gain) => g.networth.balanceAmount;
+  const yPos = (account: string) => y(restName(account)) ?? 0;
+  const y2Pos = (index: string) => y2(index) ?? 0;
 
-  const maxX = _.chain(gains)
-    .map((g) => getInvestmentAmount(g) + _.max([getGainAmount(g), 0]))
-    .max()
-    .value();
+  const maxX =
+    _.chain(gains)
+      .map((g) => getInvestmentAmount(g) + Math.max(getGainAmount(g), 0))
+      .max()
+      .value() ?? 0;
   const xirrWidth = rem(250);
   const xirrTextWidth = rem(40);
   const xirrMargin = rem(20);
@@ -85,13 +90,11 @@ export function renderOverview(gains: Gain[]) {
 
   const x = d3.scaleLinear().range([textGroupZero + textGroupWidth, width]);
   x.domain([0, maxX]);
+  const xirrValues = _.map(gains, (g) => g.xirr);
   const x1 = d3
     .scaleLinear()
     .range([0, xirrWidth])
-    .domain([
-      _.min([_.min(_.map(gains, (g) => g.xirr)), 0]),
-      _.max([0, _.max(_.map(gains, (g) => g.xirr))])
-    ]);
+    .domain([Math.min(0, ...xirrValues), Math.max(0, ...xirrValues)]);
 
   g.append("line")
     .classed("svg-grey-lightest", true)
@@ -122,7 +125,7 @@ export function renderOverview(gains: Gain[]) {
       d3
         .axisBottom(x)
         .tickSize(-height)
-        .tickFormat(skipTicks(60, x, formatCurrencyCrude))
+        .tickFormat(skipTicks(60, x, (value) => formatCurrencyCrude(Number(value))) as any) as any
     );
 
   g.append("g")
@@ -132,7 +135,7 @@ export function renderOverview(gains: Gain[]) {
       d3
         .axisBottom(x1)
         .tickSize(-height)
-        .tickFormat(skipTicks(40, x1, (n: number) => formatFloat(n, 1)))
+        .tickFormat(skipTicks(40, x1, (value) => formatFloat(Number(value), 1)) as any) as any
     );
 
   g.append("g").attr("class", "axis y dark link").call(d3.axisLeft(y));
@@ -158,7 +161,7 @@ export function renderOverview(gains: Gain[]) {
     .attr("dx", "-3")
     .attr("dy", "3")
     .attr("x", textGroupZero + textGroupWidth / 3)
-    .attr("y", (g) => y(restName(g.account)));
+    .attr("y", (g) => yPos(g.account));
 
   textGroup
     .append("text")
@@ -169,7 +172,7 @@ export function renderOverview(gains: Gain[]) {
     .attr("dx", "-3")
     .attr("dy", "3")
     .attr("x", textGroupZero + (textGroupWidth * 2) / 3)
-    .attr("y", (g) => y(restName(g.account)));
+    .attr("y", (g) => yPos(g.account));
 
   textGroup
     .append("text")
@@ -179,7 +182,7 @@ export function renderOverview(gains: Gain[]) {
     .attr("dx", "-3")
     .attr("dy", "-3")
     .attr("x", textGroupZero + textGroupWidth / 3)
-    .attr("y", (g) => y(restName(g.account)) + y.bandwidth());
+    .attr("y", (g) => yPos(g.account) + y.bandwidth());
 
   textGroup
     .append("text")
@@ -189,7 +192,7 @@ export function renderOverview(gains: Gain[]) {
     .attr("dx", "-3")
     .attr("dy", "-3")
     .attr("x", textGroupZero + (textGroupWidth * 2) / 3)
-    .attr("y", (g) => y(restName(g.account)) + y.bandwidth());
+    .attr("y", (g) => yPos(g.account) + y.bandwidth());
 
   textGroup
     .append("text")
@@ -199,15 +202,15 @@ export function renderOverview(gains: Gain[]) {
     .attr("dx", "-3")
     .attr("dy", "-3")
     .attr("x", textGroupZero + textGroupWidth)
-    .attr("y", (g) => y(restName(g.account)) + y.bandwidth());
+    .attr("y", (g) => yPos(g.account) + y.bandwidth());
 
   textGroup
     .append("line")
     .classed("svg-grey-lightest", true)
     .attr("x1", 0)
-    .attr("y1", (g) => y(restName(g.account)))
+    .attr("y1", (g) => yPos(g.account))
     .attr("x2", width)
-    .attr("y2", (g) => y(restName(g.account)));
+    .attr("y2", (g) => yPos(g.account));
 
   textGroup
     .append("text")
@@ -218,7 +221,7 @@ export function renderOverview(gains: Gain[]) {
       g.xirr < 0 ? chroma(z("loss")).darken().hex() : chroma(z("gain")).darken().hex()
     )
     .attr("x", xirrWidth + xirrTextWidth)
-    .attr("y", (g) => y(restName(g.account)) + y.bandwidth() / 2);
+    .attr("y", (g) => yPos(g.account) + y.bandwidth() / 2);
 
   const groups = g
     .append("g")
@@ -227,7 +230,7 @@ export function renderOverview(gains: Gain[]) {
     .enter()
     .append("g")
     .attr("class", "group")
-    .attr("transform", (g) => "translate(0," + y(restName(g.account)) + ")");
+    .attr("transform", (g) => "translate(0," + yPos(g.account) + ")");
 
   groups
     .selectAll("g")
@@ -246,7 +249,7 @@ export function renderOverview(gains: Gain[]) {
           data: g,
           balance: getBalanceAmount(g),
           withdrawal: getWithdrawalAmount(g),
-          loss: Math.abs(_.min([getGainAmount(g), 0]))
+          loss: Math.abs(Math.min(getGainAmount(g), 0))
         }
       ] as any)
     ])
@@ -268,9 +271,9 @@ export function renderOverview(gains: Gain[]) {
     .attr("stroke-opacity", (d) => (_.includes(areaKeys, d.key) ? 0.0 : 0.4))
     .attr("fill-opacity", (d) => (_.includes(areaKeys, d.key) ? 1 : 0.6))
     .attr("x", (d) => x(d[0][0]))
-    .attr("y", (d: any) => y2(d[0].data.i))
+    .attr("y", (d: any) => y2Pos(d[0].data.i))
     .attr("height", y2.bandwidth())
-    .attr("width", (d) => x(d[0][1]) - x(d[0][0]));
+    .attr("width", (d) => Math.max(0, x(d[0][1]) - x(d[0][0])));
 
   const paddingTop = (y1.range()[1] - y1.bandwidth() * 2) / 2;
   g.append("g")
@@ -280,7 +283,7 @@ export function renderOverview(gains: Gain[]) {
     .append("rect")
     .attr("fill", (g) => (g.xirr < 0 ? z("loss") : z("gain")))
     .attr("x", (g) => (g.xirr < 0 ? x1(g.xirr) : x1(0)))
-    .attr("y", (g) => y(restName(g.account)) + paddingTop)
+    .attr("y", (g) => yPos(g.account) + paddingTop)
     .attr("height", y.bandwidth() - paddingTop * 2)
     .attr("width", (g) => Math.abs(x1(0) - x1(g.xirr)));
 
@@ -308,16 +311,19 @@ export function renderOverview(gains: Gain[]) {
       ]);
     })
     .attr("x", 0)
-    .attr("y", (g) => y(restName(g.account)))
+    .attr("y", (g) => yPos(g.account))
     .attr("height", y.bandwidth())
     .attr("width", width);
 }
 
 export function renderAccountOverview(points: Networth[], postings: Posting[], id: string) {
-  const start = _.min(_.map(points, (p) => p.date)),
-    end = now();
-
   const element = document.getElementById(id);
+  if (!element || !element.parentElement || points.length === 0) {
+    return () => {};
+  }
+
+  const start = _.minBy(points, (p) => p.date.valueOf())?.date ?? now();
+  const end = now();
 
   const svg = d3.select(element),
     margin = { top: 5, right: 50, bottom: 20, left: 40 },
@@ -336,9 +342,10 @@ export function renderAccountOverview(points: Networth[], postings: Posting[], i
 
   const positions = _.flatMap(points, (p) => [p.balanceAmount, p.netInvestmentAmount]);
   positions.push(0);
+  const yDomain = d3.extent(positions) as [number, number];
 
   const x = d3.scaleTime().range([0, width]).domain([start, end]),
-    y = d3.scaleLinear().range([height, 0]).domain(d3.extent(positions)),
+    y = d3.scaleLinear().range([height, 0]).domain(yDomain),
     z = d3.scaleOrdinal<string>(colors).domain(areaKeys);
 
   const area = (y0: number, y1: (d: Networth) => number) =>
@@ -357,11 +364,23 @@ export function renderAccountOverview(points: Networth[], postings: Posting[], i
   g.append("g")
     .attr("class", "axis y")
     .attr("transform", `translate(${width},0)`)
-    .call(d3.axisRight(y).ticks(5).tickPadding(5).tickFormat(formatCurrencyCrude));
+    .call(
+      d3
+        .axisRight(y)
+        .ticks(5)
+        .tickPadding(5)
+        .tickFormat((value) => formatCurrencyCrude(Number(value))) as any as any
+    );
 
   g.append("g")
     .attr("class", "axis y")
-    .call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat(formatCurrencyCrude));
+    .call(
+      d3
+        .axisLeft(y)
+        .ticks(5)
+        .tickSize(-width)
+        .tickFormat((value) => formatCurrencyCrude(Number(value))) as any as any
+    );
 
   const postingsG = g.append("g").attr("class", "postings");
 
@@ -463,7 +482,11 @@ export function renderAccountOverview(points: Networth[], postings: Posting[], i
     );
 
   const hoverCircle = layer.append("circle").attr("r", "3").attr("fill", "none");
-  const t = tippy(hoverCircle.node(), { theme: "light", delay: 0, allowHTML: true });
+  const hoverCircleNode = hoverCircle.node();
+  if (!hoverCircleNode) {
+    return () => {};
+  }
+  const t = tippy(hoverCircleNode, { theme: "light", delay: 0, allowHTML: true });
 
   const balanceVoronoiPoints: Delaunay.Point[] = _.map(points, (d) => [
     x(d.date),

@@ -86,7 +86,7 @@
       aria-label="close"
       onclick={() => close()}
     >
-      <i class="fas fa-times" aria-hidden="true" />
+      <i class="fas fa-times" aria-hidden="true"></i>
     </button>
   </svelte:fragment>
   <div style="min-height: 500px;" slot="body">

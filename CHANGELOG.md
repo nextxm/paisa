@@ -18,11 +18,49 @@
 
 #### Bug fixes
 
+- **Assets Analysis render crash fixed** — `src/routes/(app)/assets/analysis/+page.svelte` now initializes the commodity color mapper with a safe fallback function and explicit callable type so the page no longer throws `TypeError: ... is not a function` during first render while async data is still settling.
+
+- **Negative SVG width warnings fixed** — Clamped stacked bar segment widths in `src/lib/gain.ts` and `src/lib/liabilities/interest.ts` to `Math.max(0, ...)` to avoid invalid `<rect width>` values caused by floating-point precision drift.
+
+- **Interest chart null-safety hardening** — `src/lib/liabilities/interest.ts` now guards missing DOM containers and empty timelines, uses safe fallbacks for current overview values, and aligns D3 tick formatter typing with strict TypeScript checks without changing chart behavior.
+
+- **Frontend check dependency resolution** — Installed missing Node packages from `package.json` so generated Connect/Protobuf client modules resolve correctly during `npm run check`.
+
+- **AccountTree compatibility fix** — `src/lib/components/AccountTree.svelte` was migrated from rune-specific APIs to compatible `export let` props + reactive state/effects, restoring type-safe recursive bindings and removing compile errors.
+
+- **Mobile navbar burger alignment fix** — Updated `src/lib/components/Navbar.svelte` to enforce left-aligned burger placement on mobile (`.navbar-brand .navbar-burger.mobile-drawer-toggle`) and replaced invalid self-closing non-void tags in the navbar markup to avoid ambiguous render behavior.
+
+- **UI warning cleanup (actions/sync modal)** — Updated `src/lib/components/SyncHistoryOverlay.svelte` and `src/lib/components/Actions.svelte` to remove ambiguous self-closing non-void icon tags, and improved `src/lib/components/Modal.svelte` backdrop semantics by using a real button instead of a clickable label.
+
+- **Global non-void self-closing cleanup** — Applied a repo-wide Svelte markup normalization pass replacing ambiguous self-closing non-void HTML tags (for example `<i />`, `<div />`, `<span />`) with explicit opening/closing tags across `src/**/*.svelte`.
+
+- **Closeable runtime error toasts** — Updated global client error handling in `src/hooks.client.ts` to show dismissible bottom-right toasts with sanitized stack/message content instead of center-screen modal-style error blocks, so users can always close or ignore transient errors.
+
+- **Remaining Svelte accessibility warnings cleared** — Replaced lingering click-only anchors with semantic buttons, added missing labels to icon-only controls, fixed a remaining self-closing non-void table body, and restored `src/lib/components/BoxedTabs.svelte` to compatible classic Svelte props/reactivity so `svelte-check` now reports 0 errors and 0 warnings.
+
+- **Repo line endings normalized** — Added a repository-level `.gitattributes` policy to keep source files on LF across platforms (with Windows-native script exceptions), preventing recurring Windows/Linux newline churn that was causing `gofmt -l .` lint failures from formatting-only diffs.
+
+- **Client error toast null-safety + mobile navbar action overflow fix** — Hardened `src/hooks.client.ts` to safely format `null`/non-Error runtime exceptions (preventing `Cannot read properties of null (reading 'stack')` while rendering error toasts), updated `src/store.ts` to allow nullable `accountTfIdf` initialization, and adjusted mobile navbar action placement so top-right controls no longer get truncated on narrow screens.
+
+- **Responsive navbar action placement fix** — Updated `src/lib/components/Navbar.svelte` so hamburger-layout breakpoints remain consistent up to tablet width (preventing burger drift before desktop menu switch) and added top-right action icons (`SyncingIndicator`, theme toggle, and `Actions`) in hamburger mode while hiding duplicate drawer-end actions.
+
 - **Docker build fix** — Replaced `svelte-file-dropzone` (incompatible with Svelte 5) with a local self-contained `Dropzone.svelte` component in `src/lib/components/`. The local component matches the same API (`multiple`, `accept`, `inputElement` props; dispatches `drop` event with `{ acceptedFiles, fileRejections }`).
 
 - **Dashboard crash on Svelte 5 fixed** — Removed `@egjs/svelte-grid` usage from dashboard and credit-card detail routes and replaced it with native CSS grid wrappers. This avoids runtime failures like `TypeError: Class constructor ... cannot be invoked without 'new'` caused by legacy class-based Svelte components during route hydration.
 
 - **Frontend build emits sourcemaps** — Enabled `build.sourcemap` in `vite.config.js` so minified hashed chunks can be mapped back to original source during debugging.
+
+- **Mobile navbar accessibility fix** — Closing the burger menu now blurs any focused descendant before hiding the menu, and the closed menu is marked `inert` to prevent focus from remaining inside hidden navigation content.
+
+- **PWA cache/update hardening** — Switched to `registerType: "autoUpdate"`, enabled `skipWaiting`, `clientsClaim`, and `cleanupOutdatedCaches`, and disabled dev-time service worker registration to reduce stale asset/manifest mismatches during local development.
+
+- **Manifest and dashboard action robustness** — Updated the app manifest link to use `%sveltekit.assets%/manifest.webmanifest` and changed the dashboard "Setup Demo" trigger to a semantic `<button>`.
+
+- **Theme toggle duplication on desktop fixed** — The navbar theme switcher was appearing twice on desktop (in both `mobile-top-actions` and `menu-actions-row`) due to missing CSS specificity. Added `display: none !important` to `mobile-top-actions` to ensure it only shows on mobile (≤1023px breakpoint), and explicitly set `display: flex` for `menu-actions-row` to show it on desktop.
+
+- **MonthPicker non-selected month styling improved** — Non-selected month buttons in the month picker dropdown now have a subtle hover background and outline, making them appear clearly interactive and clickable instead of plain text. Selected months remain highlighted in blue with bold text.
+
+- **Local stale-chunk recovery** — Added a client bootstrap safeguard that, on local/dev hosts, unregisters existing service workers, clears Cache Storage, and performs a one-time reload to avoid mixed old/new chunk runtime errors such as `TypeError: ... is not a function`.
 
 - **AutoComplete no longer crashes the server** — The `in-mfapi` (MF API) and `com-purifiedbytes-nps` providers previously called `log.Fatal` when the autocomplete cache could not be populated, killing the server process. They now log the error at `Error` level and return an empty suggestion list instead.
 

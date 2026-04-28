@@ -45,7 +45,7 @@
     on:click={() => (showHistory = true)}
   >
     <span class="icon">
-      <i class="fa-solid fa-clock-rotate-left" />
+      <i class="fa-solid fa-clock-rotate-left"></i>
     </span>
     {#if $jobsList.length > 0}
       <span class="sync-history-badge">{$jobsList.length}</span>
@@ -59,7 +59,7 @@
     on:click={(_e) => syncWithLoader({ journal: true })}
   >
     <span class="icon">
-      <i class="fa-regular fa-file-lines" />
+      <i class="fa-regular fa-file-lines"></i>
     </span>
   </button>
 
@@ -70,7 +70,7 @@
     on:click={(_e) => syncWithLoader({ prices: true })}
   >
     <span class="icon">
-      <i class="fas fa-dollar-sign" />
+      <i class="fas fa-dollar-sign"></i>
     </span>
   </button>
 
@@ -82,7 +82,7 @@
     on:click={(_e) => syncWithLoader({ portfolios: true })}
   >
     <span class="icon">
-      <i class="fas fa-layer-group" />
+      <i class="fas fa-layer-group"></i>
     </span>
   </button>
 
@@ -94,7 +94,7 @@
     on:click={(_e) => toggleObscure()}
   >
     <span class="icon">
-      <i class="fas {$obscure ? 'fa-eye-slash' : 'fa-eye'}" />
+      <i class="fas {$obscure ? 'fa-eye-slash' : 'fa-eye'}"></i>
     </span>
   </button>
 
@@ -107,7 +107,7 @@
       on:click={(_e) => doLogout()}
     >
       <span class="icon">
-        <i class="fas fa-arrow-right-from-bracket" />
+        <i class="fas fa-arrow-right-from-bracket"></i>
       </span>
     </button>
   {/if}

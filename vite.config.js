@@ -83,7 +83,7 @@ const config = {
       }
     }),
     VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
       manifest: {
         name: "Paisa – Personal Finance Manager",
         short_name: "Paisa",
@@ -113,6 +113,9 @@ const config = {
         ]
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff}"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: "/",

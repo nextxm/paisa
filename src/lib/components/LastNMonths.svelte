@@ -1,6 +1,5 @@
 <script lang="ts">
   import _ from "lodash";
-  import BoxedTabs from "./BoxedTabs.svelte";
   import { now } from "$lib/utils";
 
   export let n = 2;
@@ -19,4 +18,14 @@
   );
 </script>
 
-<BoxedTabs bind:value {options} />
+<div class="du-tabs du-tabs-boxed du-tabs-sm">
+  {#each options as option}
+    <button
+      type="button"
+      class="du-tab {option.value === value ? 'du-tab-active' : ''}"
+      on:click={() => (value = option.value)}
+    >
+      {option.label}
+    </button>
+  {/each}
+</div>

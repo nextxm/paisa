@@ -46,9 +46,40 @@ import _ from "lodash";
 import "@formatjs/intl-numberformat/polyfill";
 import "@formatjs/intl-numberformat/locale-data/en";
 
+async function cleanupStaleLocalServiceWorker() {
+  if (typeof window === "undefined") return;
+  if (!("serviceWorker" in navigator)) return;
+
+  const isLocalLikeHost =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "phoenix" ||
+    window.location.hostname.endsWith(".local");
+
+  // During local/dev workflows, old SW caches can mix chunks from different builds.
+  if (!(import.meta.env.DEV || isLocalLikeHost)) return;
+
+  const regs = await navigator.serviceWorker.getRegistrations();
+  if (regs.length === 0) return;
+
+  await Promise.all(regs.map((reg) => reg.unregister()));
+
+  if ("caches" in window) {
+    const cacheKeys = await caches.keys();
+    await Promise.all(cacheKeys.map((key) => caches.delete(key)));
+  }
+
+  if (!sessionStorage.getItem("paisa-sw-cleaned")) {
+    sessionStorage.setItem("paisa-sw-cleaned", "1");
+    window.location.reload();
+  }
+}
+
+cleanupStaleLocalServiceWorker();
+
 Handlebars.registerHelper(
   _.mapValues(helpers, (helper, name) => {
-    return function (...args: any[]) {
+    return function (this: unknown, ...args: any[]) {
       try {
         return helper.apply(this, args);
       } catch (e) {
@@ -67,24 +98,42 @@ toast.setDefaults({
 
 globalThis.USER_CONFIG = {} as any;
 
-export const handleError: HandleClientError = async ({ error, status, message }) => {
-  let stack = null;
+export const handleError: HandleClientError = ({ error, status, message }) => {
+  let stack: string | undefined;
   if (error instanceof Error) {
     stack = error.stack;
   }
-  return { message, stack, status, detail: error.toString() };
+  const detail = error == null ? "Unknown error" : String(error);
+  return { message, stack, status, detail };
 };
 
 function formatError(error: any) {
+  if (error == null) {
+    return "Unknown error";
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
   if (error.stack) {
     return error.stack;
   }
 
   if (error.message) {
     return error.message;
-  } else {
-    return error.toString();
   }
+
+  return String(error);
+}
+
+function escapeHtml(text: string) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 const footer = `
@@ -96,14 +145,14 @@ const footer = `
 `;
 
 function displayError(error: any) {
-  const message = formatError(error);
+  const message = escapeHtml(formatError(error));
   toast.toast({
-    message: `<div class="message invertable is-danger"><div class="message-header">Something Went Wrong</div><div class="message-body">${message}${footer}</div></div>`,
+    message: `<article class="notification is-danger is-light invertable"><button class="delete" aria-label="Close error"></button><p class="has-text-weight-semibold mb-2">Something Went Wrong</p><pre style="white-space: pre-wrap; max-height: 30vh; overflow: auto; margin: 0;">${message}</pre>${footer}</article>`,
     type: "is-danger",
     dismissible: true,
     pauseOnHover: true,
-    duration: 10000,
-    position: "center",
+    duration: 15000,
+    position: "bottom-right",
     animate: { in: "fadeIn", out: "fadeOut" }
   });
 }
