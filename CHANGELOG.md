@@ -38,6 +38,8 @@
 
 - **Remaining Svelte accessibility warnings cleared** — Replaced lingering click-only anchors with semantic buttons, added missing labels to icon-only controls, fixed a remaining self-closing non-void table body, and restored `src/lib/components/BoxedTabs.svelte` to compatible classic Svelte props/reactivity so `svelte-check` now reports 0 errors and 0 warnings.
 
+- **Repo line endings normalized** — Added a repository-level `.gitattributes` policy to keep source files on LF across platforms (with Windows-native script exceptions), preventing recurring Windows/Linux newline churn that was causing `gofmt -l .` lint failures from formatting-only diffs.
+
 - **Responsive navbar action placement fix** — Updated `src/lib/components/Navbar.svelte` so hamburger-layout breakpoints remain consistent up to tablet width (preventing burger drift before desktop menu switch) and added top-right action icons (`SyncingIndicator`, theme toggle, and `Actions`) in hamburger mode while hiding duplicate drawer-end actions.
 
 - **Docker build fix** — Replaced `svelte-file-dropzone` (incompatible with Svelte 5) with a local self-contained `Dropzone.svelte` component in `src/lib/components/`. The local component matches the same API (`multiple`, `accept`, `inputElement` props; dispatches `drop` event with `{ acceptedFiles, fileRejections }`).

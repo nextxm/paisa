@@ -1,7 +1,6 @@
 package service
 
 import (
-
 	"sync"
 	"time"
 
@@ -262,9 +261,6 @@ func PopulateMarketPrice(db *gorm.DB, ps []posting.Posting) []posting.Posting {
 	})
 }
 
-
-
-
 // loadRateCache populates rcache.pairTrees from the database.
 // Provider prices are loaded first, then journal prices are inserted on top so
 // that journal values take precedence over provider values for the same date.
@@ -318,5 +314,3 @@ func ClearRateCache() {
 	defer rcacheMu.Unlock()
 	rcache = rateCache{}
 }
-
-

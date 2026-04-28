@@ -113,4 +113,3 @@ func TestBuildAccountTree_FullNamePreserved(t *testing.T) {
 	assert.Equal(t, "Assets:Investments:Stocks:AAPL", aapl.FullName)
 	assert.True(t, aapl.IsLeaf)
 }
-
