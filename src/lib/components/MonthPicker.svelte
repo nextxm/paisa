@@ -195,5 +195,5 @@
     &.is-link {
       color: hsl(217, 71%, 53%);
     }
-  }  
+  }
 </style>
