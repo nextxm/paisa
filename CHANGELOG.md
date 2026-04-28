@@ -58,6 +58,8 @@
 
 - **Theme toggle duplication on desktop fixed** — The navbar theme switcher was appearing twice on desktop (in both `mobile-top-actions` and `menu-actions-row`) due to missing CSS specificity. Added `display: none !important` to `mobile-top-actions` to ensure it only shows on mobile (≤1023px breakpoint), and explicitly set `display: flex` for `menu-actions-row` to show it on desktop.
 
+- **MonthPicker non-selected month styling improved** — Non-selected month buttons in the month picker dropdown now have a subtle hover background and outline, making them appear clearly interactive and clickable instead of plain text. Selected months remain highlighted in blue with bold text.
+
 - **Local stale-chunk recovery** — Added a client bootstrap safeguard that, on local/dev hosts, unregisters existing service workers, clears Cache Storage, and performs a one-time reload to avoid mixed old/new chunk runtime errors such as `TypeError: ... is not a function`.
 
 - **AutoComplete no longer crashes the server** — The `in-mfapi` (MF API) and `com-purifiedbytes-nps` providers previously called `log.Fatal` when the autocomplete cache could not be populated, killing the server process. They now log the error at `Error` level and return an empty suggestion list instead.
