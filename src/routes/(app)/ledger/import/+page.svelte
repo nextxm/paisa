@@ -113,8 +113,6 @@
     $templateEditorState = _.assign({}, $templateEditorState, { hasUnsavedChanges: false });
   }
 
-  let input: any;
-
   $: if (!_.isEmpty(data) && $templateEditorState.template) {
     if (
       lastTemplate != $templateEditorState.template ||
@@ -227,7 +225,7 @@
       aria-label="close"
       onclick={() => close()}
     >
-      <i class="fas fa-times" aria-hidden="true" />
+      <i class="fas fa-times" aria-hidden="true"></i>
     </button>
   </svelte:fragment>
   <div class="field" slot="body">
@@ -259,9 +257,13 @@
           <div class="field is-grouped mb-0">
             <p class="control">
               <span data-tippy-content="Create" data-tippy-followCursor="false">
-                <button class="button" onclick={() => openTemplateCreateModal()}>
+                <button
+                  class="button"
+                  aria-label="Create template"
+                  onclick={() => openTemplateCreateModal()}
+                >
                   <span class="icon">
-                    <i class="fas fa-file-circle-plus" />
+                    <i class="fas fa-file-circle-plus"></i>
                   </span>
                 </button>
               </span>
@@ -275,12 +277,13 @@
               >
                 <button
                   class="button"
+                  aria-label="Save template"
                   onclick={() => save()}
                   disabled={$templateEditorState.hasUnsavedChanges == false ||
                     selectedTemplate?.template_type == "builtin"}
                 >
                   <span class="icon">
-                    <i class="fas fa-floppy-disk" />
+                    <i class="fas fa-floppy-disk"></i>
                   </span>
                 </button>
               </span>
@@ -291,11 +294,12 @@
               >
                 <button
                   class="button"
+                  aria-label="Delete template"
                   onclick={() => remove()}
                   disabled={selectedTemplate?.template_type == "builtin"}
                 >
                   <span class="icon">
-                    <i class="fas fa-trash-can" />
+                    <i class="fas fa-trash-can"></i>
                   </span>
                 </button>
               </span>
@@ -332,7 +336,7 @@
         <div class="box py-0">
           <div class="field">
             <div class="control">
-              <div class="template-editor" bind:this={templateEditorDom} />
+              <div class="template-editor" bind:this={templateEditorDom}></div>
             </div>
           </div>
         </div>
@@ -343,25 +347,27 @@
                 data-tippy-followCursor="false"
                 data-tippy-content="Copy to Clipboard"
                 class="button clipboard"
+                aria-label="Copy preview to clipboard"
                 disabled={_.isEmpty(preview)}
                 onclick={copyToClipboard}
               >
                 <span class="icon">
-                  <i class="fas fa-copy" />
+                  <i class="fas fa-copy"></i>
                 </span>
               </button>
               <button
                 data-tippy-followCursor="false"
                 data-tippy-content="Save"
                 class="button save"
+                aria-label="Save preview to file"
                 disabled={_.isEmpty(preview)}
                 onclick={openSaveModal}
               >
                 <span class="icon">
-                  <i class="fas fa-floppy-disk" />
+                  <i class="fas fa-floppy-disk"></i>
                 </span>
               </button>
-              <div class="preview-editor" bind:this={previewEditorDom} />
+              <div class="preview-editor" bind:this={previewEditorDom}></div>
             </div>
           </div>
         </div>
@@ -370,7 +376,6 @@
         <div class="box p-3 mb-3">
           <Dropzone
             multiple={false}
-            inputElement={input}
             accept=".csv,.txt,.xls,.xlsx,.pdf,.CSV,.TXT,.XLS,.XLSX,.PDF"
             on:drop={handleFilesSelect}
           >
@@ -410,7 +415,7 @@
             >
               <thead>
                 <tr>
-                  <th />
+                  <th></th>
                   {#each _.range(0, columnCount) as ci}
                     <th class="has-background-light">{String.fromCharCode(65 + ci)}</th>
                   {/each}
@@ -431,7 +436,7 @@
         {/if}
       </div>
     </div>
-    <div />
+    <div></div>
   </div>
 </section>
 

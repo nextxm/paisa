@@ -143,7 +143,7 @@
                 on:click={(_e) => clearPriceCache()}
               >
                 <span class="icon is-small">
-                  <i class="fas fa-trash-can" />
+                  <i class="fas fa-trash-can"></i>
                 </span>
                 <span>Clear Price Cache</span>
               </button>
@@ -206,7 +206,7 @@
                   }}
                 >
                   <span class="icon is-small">
-                    <i class="fas fa-times" />
+                    <i class="fas fa-times"></i>
                   </span>
                   <span>Clear Filters</span>
                 </button>
@@ -221,7 +221,7 @@
           <table class="table is-narrow is-fullwidth is-light-border is-hoverable">
             <thead>
               <tr>
-                <th />
+                <th></th>
                 <th>Commodity Name</th>
                 <th>Last Date</th>
                 <th>Quote</th>
@@ -247,14 +247,14 @@
                   <td>
                     <span class="icon has-text-link">
                       {#if loadingHistoryRows[commodity]}
-                        <i class="fas fa-spinner fa-spin" aria-hidden="true" />
+                        <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
                       {:else}
                         <i
                           class="fas {expandedRows[commodity]
                             ? 'fa-chevron-up'
                             : 'fa-chevron-down'}"
                           aria-hidden="true"
-                        />
+                        ></i>
                       {/if}
                     </span>
                   </td>

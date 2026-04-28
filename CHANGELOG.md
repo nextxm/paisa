@@ -30,6 +30,16 @@
 
 - **Mobile navbar burger alignment fix** — Updated `src/lib/components/Navbar.svelte` to enforce left-aligned burger placement on mobile (`.navbar-brand .navbar-burger.mobile-drawer-toggle`) and replaced invalid self-closing non-void tags in the navbar markup to avoid ambiguous render behavior.
 
+- **UI warning cleanup (actions/sync modal)** — Updated `src/lib/components/SyncHistoryOverlay.svelte` and `src/lib/components/Actions.svelte` to remove ambiguous self-closing non-void icon tags, and improved `src/lib/components/Modal.svelte` backdrop semantics by using a real button instead of a clickable label.
+
+- **Global non-void self-closing cleanup** — Applied a repo-wide Svelte markup normalization pass replacing ambiguous self-closing non-void HTML tags (for example `<i />`, `<div />`, `<span />`) with explicit opening/closing tags across `src/**/*.svelte`.
+
+- **Closeable runtime error toasts** — Updated global client error handling in `src/hooks.client.ts` to show dismissible bottom-right toasts with sanitized stack/message content instead of center-screen modal-style error blocks, so users can always close or ignore transient errors.
+
+- **Remaining Svelte accessibility warnings cleared** — Replaced lingering click-only anchors with semantic buttons, added missing labels to icon-only controls, fixed a remaining self-closing non-void table body, and restored `src/lib/components/BoxedTabs.svelte` to compatible classic Svelte props/reactivity so `svelte-check` now reports 0 errors and 0 warnings.
+
+- **Responsive navbar action placement fix** — Updated `src/lib/components/Navbar.svelte` so hamburger-layout breakpoints remain consistent up to tablet width (preventing burger drift before desktop menu switch) and added top-right action icons (`SyncingIndicator`, theme toggle, and `Actions`) in hamburger mode while hiding duplicate drawer-end actions.
+
 - **Docker build fix** — Replaced `svelte-file-dropzone` (incompatible with Svelte 5) with a local self-contained `Dropzone.svelte` component in `src/lib/components/`. The local component matches the same API (`multiple`, `accept`, `inputElement` props; dispatches `drop` event with `{ acceptedFiles, fileRejections }`).
 
 - **Dashboard crash on Svelte 5 fixed** — Removed `@egjs/svelte-grid` usage from dashboard and credit-card detail routes and replaced it with native CSS grid wrappers. This avoids runtime failures like `TypeError: Class constructor ... cannot be invoked without 'new'` caused by legacy class-based Svelte components during route hydration.

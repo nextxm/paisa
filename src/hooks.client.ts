@@ -118,6 +118,15 @@ function formatError(error: any) {
   }
 }
 
+function escapeHtml(text: string) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const footer = `
 <p class="mt-3">
   Please report this issue at <a href="https://github.com/nextxm/paisa/issues"
@@ -127,14 +136,14 @@ const footer = `
 `;
 
 function displayError(error: any) {
-  const message = formatError(error);
+  const message = escapeHtml(formatError(error));
   toast.toast({
-    message: `<div class="message invertable is-danger"><div class="message-header">Something Went Wrong</div><div class="message-body">${message}${footer}</div></div>`,
+    message: `<article class="notification is-danger is-light invertable"><button class="delete" aria-label="Close error"></button><p class="has-text-weight-semibold mb-2">Something Went Wrong</p><pre style="white-space: pre-wrap; max-height: 30vh; overflow: auto; margin: 0;">${message}</pre>${footer}</article>`,
     type: "is-danger",
     dismissible: true,
     pauseOnHover: true,
-    duration: 10000,
-    position: "center",
+    duration: 15000,
+    position: "bottom-right",
     animate: { in: "fadeIn", out: "fadeOut" }
   });
 }

@@ -64,11 +64,12 @@
 <div class="is-flex">
   <button
     class="button is-small border-left"
+    aria-label="Previous month"
     disabled={!isAllowed(valueDate.add(-1, "month"), min, max)}
     on:click={(_e) => select(valueDate.add(-1, "month"))}
   >
     <span class="icon">
-      <i class="fas fa-chevron-left" />
+      <i class="fas fa-chevron-left"></i>
     </span>
   </button>
   <div class="dropdown is-right month-picker is-small" class:is-active={open}>
@@ -91,11 +92,12 @@
           <div class="is-flex is-justify-content-space-between is-align-items-center py-0 my-0">
             <button
               class="button is-small"
+              aria-label="Previous year"
               disabled={selectedYear - 1 < min.year()}
               on:click={(_e) => selectedYear--}
             >
               <span class="icon">
-                <i class="fas fa-chevron-left" />
+                <i class="fas fa-chevron-left"></i>
               </span>
             </button>
             <div class="select">
@@ -111,11 +113,12 @@
             </div>
             <button
               class="button is-small"
+              aria-label="Next year"
               disabled={selectedYear + 1 > max.year()}
               on:click={(_e) => selectedYear++}
             >
               <span class="icon">
-                <i class="fas fa-chevron-right" />
+                <i class="fas fa-chevron-right"></i>
               </span>
             </button>
           </div>
@@ -126,12 +129,16 @@
             {#each MONTHS as month, i}
               <div class="month is-size-6 py-2">
                 {#if isAllowed(dayjs(`${selectedYear}-${i + 1}`, "YYYY-M"), min, max)}
-                  <a
+                  <button
+                    type="button"
                     class={valueDate.year() == selectedYear && valueDate.month() == i
                       ? "is-link has-text-weight-bold"
                       : "has-text-black-ter"}
-                    on:click={(_e) => selectMonth(i)}>{month}</a
+                    aria-label={`Select ${month} ${selectedYear}`}
+                    on:click={(_e) => selectMonth(i)}
                   >
+                    {month}
+                  </button>
                 {:else}
                   <span class="has-text-grey-light">{month}</span>
                 {/if}
@@ -144,11 +151,12 @@
   </div>
   <button
     class="button is-small border-right"
+    aria-label="Next month"
     disabled={!isAllowed(valueDate.add(1, "month"), min, max)}
     on:click={(_e) => select(valueDate.add(1, "month"))}
   >
     <span class="icon">
-      <i class="fas fa-chevron-right" />
+      <i class="fas fa-chevron-right"></i>
     </span>
   </button>
 </div>

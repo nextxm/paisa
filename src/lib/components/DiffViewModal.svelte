@@ -88,12 +88,12 @@
       aria-label="close"
       onclick={() => close()}
     >
-      <i class="fas fa-times" aria-hidden="true" />
+      <i class="fas fa-times" aria-hidden="true"></i>
     </button>
   </svelte:fragment>
   <div class="field" slot="body">
     <div class="box py-0">
-      <div class="diff-editor" bind:this={editorDom} />
+      <div class="diff-editor" bind:this={editorDom}></div>
       {#if changedOldFiles.length === 0}
         <div class="has-text-centered mt-6">
           <strong>Oops!</strong> No changes has been made. Make sure the bulk edit arguments are correct.

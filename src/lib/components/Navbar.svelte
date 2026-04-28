@@ -354,6 +354,12 @@
         <Logo size={22} /><span class="ml-1 is-primary-color">Paisa</span>
       {/if}
     </a>
+
+    <div class="navbar-item navbar-actions-row mobile-top-actions">
+      <SyncingIndicator />
+      <ThemeSwitcher />
+      <Actions />
+    </div>
   </div>
 
   <div
@@ -448,7 +454,7 @@
       {/each}
     </div>
     <div class="navbar-end" style="margin-right: 0.3em">
-      <div class="navbar-item navbar-actions-row">
+      <div class="navbar-item navbar-actions-row menu-actions-row">
         {#if readonly}
           <span
             class="mt-1 tag is-rounded is-danger is-light invertable"
@@ -484,7 +490,11 @@
         <li>
           <span class="is-inactive">{selectedLink.label}</span>
           {#if selectedLink.help}
-            <a style="margin-left: -10px;" class="p-0" href={helpUrl(selectedLink.help)}
+            <a
+              style="margin-left: -10px;"
+              class="p-0"
+              href={helpUrl(selectedLink.help)}
+              aria-label={`Help for ${selectedLink.label}`}
               ><span class="icon is-small">
                 <i class="fas fa-question fa-border"></i>
               </span></a
@@ -502,7 +512,11 @@
             <span class="is-inactive">{selectedSubLink.label}</span>
 
             {#if selectedSubLink.help}
-              <a style="margin-left: -10px;" class="p-0" href={helpUrl(selectedSubLink.help)}
+              <a
+                style="margin-left: -10px;"
+                class="p-0"
+                href={helpUrl(selectedSubLink.help)}
+                aria-label={`Help for ${selectedSubLink.label}`}
                 ><span class="icon is-small">
                   <i class="fas fa-question fa-border"></i>
                 </span></a
@@ -551,7 +565,7 @@
     {#if selectedSubLink?.maxDepthSelector}
       <div class="dropdown is-right is-hoverable">
         <div class="dropdown-trigger">
-          <button class="button is-small" aria-haspopup="true">
+          <button class="button is-small" aria-haspopup="true" aria-label="Flow settings">
             <span class="icon is-small">
               <i class="fas fa-sliders"></i>
             </span>
@@ -630,7 +644,11 @@
     border-radius: 0.45rem;
   }
 
-  @media screen and (max-width: 768px) {
+  .mobile-top-actions {
+    display: none;
+  }
+
+  @media screen and (max-width: 1023px) {
     .navbar-menu {
       position: fixed;
       top: 0;
@@ -659,6 +677,7 @@
       align-items: center;
       flex-wrap: nowrap;
       justify-content: flex-start;
+      width: 100%;
     }
 
     .navbar-brand .navbar-burger.mobile-drawer-toggle {
@@ -666,6 +685,19 @@
       margin-left: 0 !important;
       margin-right: 0.2rem;
       flex-shrink: 0;
+    }
+
+    .mobile-top-actions {
+      display: inline-flex;
+      margin-left: auto;
+      padding-right: 0.1rem;
+      align-items: center;
+      gap: 0.2rem;
+      flex-wrap: nowrap;
+    }
+
+    .menu-actions-row {
+      display: none;
     }
 
     .mobile-nav-backdrop {
