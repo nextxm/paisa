@@ -147,7 +147,15 @@ const config = {
     }
   },
   optimizeDeps: {
-    exclude: ["svelte-tiny-virtual-list"]
+    exclude: [
+      "svelte-tiny-virtual-list",
+      "svelte-carousel",
+      "svelte-select",
+      "svelte-local-storage-store",
+      "date-picker-svelte",
+      "svelte-dnd-action",
+      "@egjs/svelte-grid"
+    ]
   }
 };
 
