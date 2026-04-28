@@ -174,4 +174,26 @@
       outline: none;
     }
   }
+
+  .month button {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: background-color 120ms ease;
+    cursor: pointer;
+
+    &.has-text-black-ter {
+      color: hsl(0, 0%, 29%);
+
+      &:hover,
+      &:focus {
+        background-color: hsl(0, 0%, 96%);
+        outline: 1px solid hsl(0, 0%, 86%);
+        outline-offset: -1px;
+      }
+    }
+
+    &.is-link {
+      color: hsl(217, 71%, 53%);
+    }
+  }  
 </style>
