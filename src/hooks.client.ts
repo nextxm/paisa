@@ -79,7 +79,7 @@ cleanupStaleLocalServiceWorker();
 
 Handlebars.registerHelper(
   _.mapValues(helpers, (helper, name) => {
-    return function (...args: any[]) {
+    return function (this: unknown, ...args: any[]) {
       try {
         return helper.apply(this, args);
       } catch (e) {
@@ -98,24 +98,33 @@ toast.setDefaults({
 
 globalThis.USER_CONFIG = {} as any;
 
-export const handleError: HandleClientError = async ({ error, status, message }) => {
-  let stack = null;
+export const handleError: HandleClientError = ({ error, status, message }) => {
+  let stack: string | undefined;
   if (error instanceof Error) {
     stack = error.stack;
   }
-  return { message, stack, status, detail: error.toString() };
+  const detail = error == null ? "Unknown error" : String(error);
+  return { message, stack, status, detail };
 };
 
 function formatError(error: any) {
+  if (error == null) {
+    return "Unknown error";
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
   if (error.stack) {
     return error.stack;
   }
 
   if (error.message) {
     return error.message;
-  } else {
-    return error.toString();
   }
+
+  return String(error);
 }
 
 function escapeHtml(text: string) {

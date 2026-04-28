@@ -40,6 +40,8 @@
 
 - **Repo line endings normalized** — Added a repository-level `.gitattributes` policy to keep source files on LF across platforms (with Windows-native script exceptions), preventing recurring Windows/Linux newline churn that was causing `gofmt -l .` lint failures from formatting-only diffs.
 
+- **Client error toast null-safety + mobile navbar action overflow fix** — Hardened `src/hooks.client.ts` to safely format `null`/non-Error runtime exceptions (preventing `Cannot read properties of null (reading 'stack')` while rendering error toasts), updated `src/store.ts` to allow nullable `accountTfIdf` initialization, and adjusted mobile navbar action placement so top-right controls no longer get truncated on narrow screens.
+
 - **Responsive navbar action placement fix** — Updated `src/lib/components/Navbar.svelte` so hamburger-layout breakpoints remain consistent up to tablet width (preventing burger drift before desktop menu switch) and added top-right action icons (`SyncingIndicator`, theme toggle, and `Actions`) in hamburger mode while hiding duplicate drawer-end actions.
 
 - **Docker build fix** — Replaced `svelte-file-dropzone` (incompatible with Svelte 5) with a local self-contained `Dropzone.svelte` component in `src/lib/components/`. The local component matches the same API (`multiple`, `accept`, `inputElement` props; dispatches `drop` event with `{ acceptedFiles, fileRejections }`).
