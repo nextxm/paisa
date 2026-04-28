@@ -12,7 +12,7 @@ export function now() {
   return dayjs();
 }
 
-interface EditorState {
+export interface EditorState {
   hasUnsavedChanges: boolean;
   undoDepth: number;
   redoDepth: number;
@@ -30,7 +30,7 @@ export const initialEditorState: EditorState = {
   fileName: ""
 };
 
-interface SheetEditorState {
+export interface SheetEditorState {
   hasUnsavedChanges: boolean;
   undoDepth: number;
   redoDepth: number;

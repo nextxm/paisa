@@ -10,6 +10,13 @@
   - **Svelte 4 compatibility layer** enabled in `svelte.config.js` via `compilerOptions.compatibility.componentApi: 4`, allowing all existing components to keep working while new ones adopt runes (#227).
   - **Modal.svelte migrated to Svelte 5 runes** — props use `$props()` / `$bindable()`; internal state uses `$state()`; `on:click` replaced with `onclick`. Bulma structural classes (`modal`, `modal-background`, `modal-card`, `modal-card-head/body/foot`, `is-active`) replaced with DaisyUI equivalents (`du-modal`, `du-modal-box`, `du-modal-backdrop`, `du-modal-open`) and Tailwind flex utilities (#228 #229).
   - **BoxedTabs.svelte migrated to Svelte 5 runes** — `export let` replaced with `$props()` / `$bindable()`; `$:` block replaced with `$effect()`; `on:click` replaced with `onclick` (#229).
+  - **Svelte 5 data-flow modernization — class-based state managers (#231 #232 #233)**:
+
+    - `src/lib/state/ui.svelte.ts` — new `UIState` class wraps the existing volatile UI stores (`loading`, `dateRange`, `editorState`, `willRefresh`, etc.) via Svelte 5's `fromStore` utility, exposing them as a unified, rune-compatible `uiState` singleton.  Reactive property getters/setters allow any `.svelte` component or `.svelte.ts` module to read/write state as plain properties without `$` subscriptions (#231 #232).
+    - `src/lib/state/persisted.svelte.ts` — new `PersistedState` class wraps the persisted settings stores (`obscure`, cashflow depths, sankey settings) via `fromStore`, providing the same clean class API.  Persisted writes continue to flow through `svelte-local-storage-store` for `localStorage` sync (#232 #233).
+    - `src/lib/state/storage_utils.ts` — pure `loadFromStorage` / `saveToStorage` helper functions extracted for independent testability.
+    - `src/store.ts` — `EditorState` and `SheetEditorState` interfaces are now exported so they can be imported by the new class-based layer.
+    - Backward compatibility fully preserved: all existing `$store` consumers continue to work without modification; the new `uiState` / `persistedState` singletons are additive.
   - **AccountTree.svelte** — new Svelte 5 rune-based component that renders a hierarchical `AccountNode[]` tree with keyboard-accessible expand/collapse and single-node selection via a `$bindable` `selected` prop. Depth-limited auto-expansion (first two levels open by default) and focus ring via DaisyUI/Tailwind utilities (#230).
   - **Modal callers updated** — `FileModal`, `DiffViewModal`, `PriceCodeSearchModal`, and `SyncHistoryOverlay` updated to use DaisyUI button classes (`du-btn`), Tailwind layout utilities, and the new `onclick` event syntax.
 
