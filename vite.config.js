@@ -25,14 +25,14 @@ function readGitFromFiles() {
           const packed = fs.readFileSync(".git/packed-refs", "utf-8");
           const line = packed.split("\n").find((l) => l.endsWith(refPath));
           if (line) commitHash = line.split(" ")[0].slice(0, 7);
-        } catch (e2) { }
+        } catch (e2) {}
       }
     } else {
       // Detached HEAD: the content is the full commit hash
       commitHash = headContent.slice(0, 7);
       branch = "HEAD";
     }
-  } catch (e) { }
+  } catch (e) {}
 }
 
 try {
@@ -40,9 +40,11 @@ try {
   branch = execSync("git rev-parse --abbrev-ref HEAD", { stdio: "pipe" }).toString().trim();
   try {
     tag = execSync("git describe --tags --exact-match", { stdio: "pipe" }).toString().trim();
-  } catch (e) { }
+  } catch (e) {}
   // Use the same logic as Makefile for the main version string
-  appVersion = execSync("git describe --tags --always --dirty", { stdio: "pipe" }).toString().trim();
+  appVersion = execSync("git describe --tags --always --dirty", { stdio: "pipe" })
+    .toString()
+    .trim();
 } catch (e) {
   // git binary unavailable or not a git repo — fall back to reading .git files directly
   readGitFromFiles();
@@ -53,7 +55,7 @@ try {
     if (match) {
       appVersion = match[1];
     }
-  } catch (e2) { }
+  } catch (e2) {}
 }
 
 const buildDate = new Date().toISOString();
@@ -70,7 +72,8 @@ const config = {
     })
   },
   build: {
-    target: "es2021"
+    target: "es2021",
+    sourcemap: true
   },
   plugins: [
     sveltekit(),
