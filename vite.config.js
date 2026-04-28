@@ -138,7 +138,7 @@ const config = {
         ]
       },
       devOptions: {
-        enabled: false
+        enabled: true
       }
     })
   ],

@@ -358,7 +358,7 @@
     tabindex="-1"
     on:keydown={handleMenuKeydown}
     aria-hidden={isBurger === true ? "false" : "true"}
-    inert={isBurger === true ? undefined : true}
+    inert={isBurger !== true && isMobile() ? true : undefined}
   >
     <div class="navbar-start">
       {#each links as link}
@@ -374,10 +374,16 @@
         {:else}
           <div class="navbar-item has-dropdown is-hoverable">
             <a
+              href={"#"}
+              role="button"
               class="navbar-link"
               class:is-active={normalizedPath.startsWith(link.href)}
               on:click|preventDefault={(e) =>
                 isMobile() && e.currentTarget.parentElement.classList.toggle("is-active")}
+              on:keydown={(e) =>
+                e.key === "Enter" &&
+                isMobile() &&
+                e.currentTarget.parentElement.classList.toggle("is-active")}
               >{link.label}</a
             >
             <div class="navbar-dropdown {!isMobile() && 'is-boxed'}">
@@ -393,8 +399,16 @@
                 {:else}
                   <div class="nested has-dropdown navbar-item">
                     <a
+                      href={"#"}
+                      role="button"
                       class="navbar-link is-arrowless is-flex is-justify-content-space-between is-active"
                       class:is-active={normalizedPath.startsWith(href)}
+                      on:click|preventDefault={(e) =>
+                        isMobile() && e.currentTarget.parentElement.classList.toggle("is-active")}
+                      on:keydown={(e) =>
+                        e.key === "Enter" &&
+                        isMobile() &&
+                        e.currentTarget.parentElement.classList.toggle("is-active")}
                     >
                       <span>{sublink.label}</span>
                       <span class="icon is-small">
@@ -463,7 +477,7 @@
     >
       <ul>
         <li>
-          <a class="is-inactive">{selectedLink.label}</a>
+          <span class="is-inactive">{selectedLink.label}</span>
           {#if selectedLink.help}
             <a style="margin-left: -10px;" class="p-0" href={helpUrl(selectedLink.help)}
               ><span class="icon is-small">
@@ -480,7 +494,7 @@
         </li>
         {#if selectedSubLink}
           <li>
-            <a class="is-inactive">{selectedSubLink.label}</a>
+            <span class="is-inactive">{selectedSubLink.label}</span>
 
             {#if selectedSubLink.help}
               <a style="margin-left: -10px;" class="p-0" href={helpUrl(selectedSubLink.help)}
@@ -501,11 +515,11 @@
         {#if selectedSubLink}
           {#if selectedSubSubLink}
             <li>
-              <a class="is-inactive">{selectedSubSubLink.label}</a>
+              <span class="is-inactive">{selectedSubSubLink.label}</span>
             </li>
           {:else if selectedLink.href + selectedSubLink.href != normalizedPath}
             <li>
-              <a class="is-inactive">{decodeURIComponent(_.last(normalizedPath.split("/")))}</a>
+              <span class="is-inactive">{decodeURIComponent(_.last(normalizedPath.split("/")))}</span>
             </li>
           {/if}
         {/if}
