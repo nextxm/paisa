@@ -368,7 +368,7 @@
     class:is-active={isBurger === true}
     tabindex="-1"
     on:keydown={handleMenuKeydown}
-    aria-hidden={isBurger === true ? "false" : "true"}
+    aria-hidden={isNavInert ? "true" : undefined}
     inert={isNavInert}
   >
     <div class="navbar-start">
@@ -644,7 +644,11 @@
   }
 
   .mobile-top-actions {
-    display: none;
+    display: none !important;
+  }
+
+  .menu-actions-row {
+    display: flex;
   }
 
   @media screen and (max-width: 1023px) {
