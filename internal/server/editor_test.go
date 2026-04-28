@@ -1,7 +1,6 @@
 package server
 
 import (
-
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -204,4 +203,3 @@ func buildEditorTestRouter() *gin.Engine {
 
 	return router
 }
-
