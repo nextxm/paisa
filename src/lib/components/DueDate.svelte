@@ -2,10 +2,8 @@
   import { dueDateIcon } from "$lib/utils";
   import dayjs from "dayjs";
 
-  export let dueDate: dayjs.Dayjs;
-  export let paidDate: dayjs.Dayjs;
-
-  $: icon = dueDateIcon(dueDate, paidDate);
+  let { dueDate, paidDate }: { dueDate: dayjs.Dayjs; paidDate: dayjs.Dayjs } = $props();
+  const icon = $derived(dueDateIcon(dueDate, paidDate));
 </script>
 
 <span title="due on {dueDate.format('DD MMM YYYY')}">

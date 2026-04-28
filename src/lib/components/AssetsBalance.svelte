@@ -13,8 +13,7 @@
     nonZeroPercentageChange
   } from "$lib/table_formatters";
 
-  export let breakdowns: Record<string, AssetBreakdown>;
-  export let indent = true;
+  let { breakdowns, indent = true }: { breakdowns: Record<string, AssetBreakdown>; indent?: boolean } = $props();
 
   const columns: ColumnDefinition[] = [
     {
@@ -59,10 +58,7 @@
     }
   ];
 
-  let tree: AssetBreakdown[] = [];
-  $: if (breakdowns) {
-    tree = buildTree(Object.values(breakdowns), (i) => i.group);
-  }
+  const tree = $derived(breakdowns ? buildTree(Object.values(breakdowns), (i) => i.group) : []);
 </script>
 
 {#if indent}

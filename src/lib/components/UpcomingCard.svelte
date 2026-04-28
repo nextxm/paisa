@@ -7,7 +7,7 @@
   } from "$lib/transaction_sequence";
   import { formatCurrencyCrude, now, type TransactionSequence } from "$lib/utils";
 
-  export let transactionSequece: TransactionSequence;
+  let { transactionSequece }: { transactionSequece: TransactionSequence } = $props();
 
   let schedule = nextUnpaidSchedule(transactionSequece);
   let n = schedule.scheduled;

@@ -1,7 +1,7 @@
 <script lang="ts">
   import _ from "lodash";
 
-  export let item: any;
+  let { item }: { item: any } = $props();
 </script>
 
 {#if item == null || item == false || (item != true && _.isEmpty(item))}

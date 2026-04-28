@@ -1,11 +1,21 @@
 <script lang="ts">
-  let active = false;
-  let onclick = function (_e: any) {
+  import type { Snippet } from "svelte";
+
+  let {
+    toggle,
+    content
+  }: {
+    toggle: Snippet<[{ active: boolean; onclick: (e: any) => void }]>;
+    content: Snippet;
+  } = $props();
+
+  let active = $state(false);
+  const onclick = function (_e: any) {
     active = !active;
   };
 </script>
 
-<slot name="toggle" {active} {onclick} />
+{@render toggle({ active, onclick })}
 {#if active}
-  <slot name="content" />
+  {@render content()}
 {/if}

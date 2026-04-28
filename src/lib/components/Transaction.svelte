@@ -5,8 +5,7 @@
   import PostingStatus from "$lib/components/PostingStatus.svelte";
   import TransactionNote from "./TransactionNote.svelte";
 
-  export let compact: boolean = false;
-  export let t: Transaction;
+  let { compact = false, t }: { compact?: boolean; t: Transaction } = $props();
   const debits = (t: Transaction) => {
     return _.filter(t.postings, (p) => p.amount < 0);
   };

@@ -3,9 +3,7 @@
   import type { Dayjs } from "dayjs";
   import RecurringSchedule from "./RecurringSchedule.svelte";
 
-  export let month: string;
-  export let day: Dayjs;
-  export let schedules: TransactionSchedule[];
+  let { month, day, schedules }: { month: string; day: Dayjs; schedules: TransactionSchedule[] } = $props();
   const isToday = day.isSame(now(), "day");
 </script>
 

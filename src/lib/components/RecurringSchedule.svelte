@@ -7,7 +7,7 @@
     tooltip,
     type TransactionSchedule
   } from "$lib/utils";
-  export let schedule: TransactionSchedule;
+  let { schedule }: { schedule: TransactionSchedule } = $props();
 
   const icon = scheduleIcon(schedule);
 
