@@ -154,7 +154,8 @@ const config = {
       "svelte-local-storage-store",
       "date-picker-svelte",
       "svelte-dnd-action",
-      "@egjs/svelte-grid"
+      "@egjs/svelte-grid",
+      "svelte-floating-ui"
     ]
   }
 };
