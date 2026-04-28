@@ -139,7 +139,7 @@
                 </li>
               </ol>
 
-              <a on:click={(_e) => initDemo()} class="button is-link">Setup Demo</a>
+              <button type="button" on:click={initDemo} class="button is-link">Setup Demo</button>
             </div>
           </div>
         </ZeroState>

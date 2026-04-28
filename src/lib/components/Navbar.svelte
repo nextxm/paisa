@@ -214,6 +214,10 @@
   }
 
   function closeBurger(shouldRestoreFocus = true) {
+    if (typeof document !== "undefined" && navMenuEl?.contains(document.activeElement)) {
+      (document.activeElement as HTMLElement)?.blur?.();
+    }
+
     isBurger = null;
 
     if (shouldRestoreFocus && typeof document !== "undefined") {
@@ -354,6 +358,7 @@
     tabindex="-1"
     on:keydown={handleMenuKeydown}
     aria-hidden={isBurger === true ? "false" : "true"}
+    inert={isBurger === true ? undefined : true}
   >
     <div class="navbar-start">
       {#each links as link}
