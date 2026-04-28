@@ -266,6 +266,11 @@
 
   $: normalizedPath = $page.url.pathname?.replace(/(.+)\/$/, "");
 
+  // isNavInert: only make the mobile drawer inert when it's closed
+  $: isNavInert = isBurger !== true && typeof window !== "undefined" && window.innerWidth < 769
+    ? true
+    : undefined;
+
   $: {
     if (typeof document !== "undefined") {
       document.body.classList.toggle("mobile-menu-open", isBurger === true && isMobile());
@@ -358,7 +363,7 @@
     tabindex="-1"
     on:keydown={handleMenuKeydown}
     aria-hidden={isBurger === true ? "false" : "true"}
-    inert={isBurger !== true && isMobile() ? true : undefined}
+    inert={isNavInert}
   >
     <div class="navbar-start">
       {#each links as link}
@@ -650,9 +655,11 @@
 
     .navbar-brand {
       align-items: center;
+      flex-wrap: nowrap;
     }
 
     .mobile-drawer-toggle {
+      order: -1;
       margin-left: 0;
       margin-right: 0.2rem;
     }
