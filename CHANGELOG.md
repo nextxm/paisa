@@ -24,6 +24,12 @@
 
 - **Interest chart null-safety hardening** — `src/lib/liabilities/interest.ts` now guards missing DOM containers and empty timelines, uses safe fallbacks for current overview values, and aligns D3 tick formatter typing with strict TypeScript checks without changing chart behavior.
 
+- **Frontend check dependency resolution** — Installed missing Node packages from `package.json` so generated Connect/Protobuf client modules resolve correctly during `npm run check`.
+
+- **AccountTree compatibility fix** — `src/lib/components/AccountTree.svelte` was migrated from rune-specific APIs to compatible `export let` props + reactive state/effects, restoring type-safe recursive bindings and removing compile errors.
+
+- **Mobile navbar burger alignment fix** — Updated `src/lib/components/Navbar.svelte` to enforce left-aligned burger placement on mobile (`.navbar-brand .navbar-burger.mobile-drawer-toggle`) and replaced invalid self-closing non-void tags in the navbar markup to avoid ambiguous render behavior.
+
 - **Docker build fix** — Replaced `svelte-file-dropzone` (incompatible with Svelte 5) with a local self-contained `Dropzone.svelte` component in `src/lib/components/`. The local component matches the same API (`multiple`, `accept`, `inputElement` props; dispatches `drop` event with `{ acceptedFiles, fileRejections }`).
 
 - **Dashboard crash on Svelte 5 fixed** — Removed `@egjs/svelte-grid` usage from dashboard and credit-card detail routes and replaced it with native CSS grid wrappers. This avoids runtime failures like `TypeError: Class constructor ... cannot be invoked without 'new'` caused by legacy class-based Svelte components during route hydration.

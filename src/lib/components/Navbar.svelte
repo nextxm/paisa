@@ -267,9 +267,10 @@
   $: normalizedPath = $page.url.pathname?.replace(/(.+)\/$/, "");
 
   // isNavInert: only make the mobile drawer inert when it's closed
-  $: isNavInert = isBurger !== true && typeof window !== "undefined" && window.innerWidth < 769
-    ? true
-    : undefined;
+  $: isNavInert =
+    isBurger !== true && typeof window !== "undefined" && window.innerWidth < 769
+      ? true
+      : undefined;
 
   $: {
     if (typeof document !== "undefined") {
@@ -335,9 +336,9 @@
       aria-expanded={isBurger === true}
       aria-controls="primary-nav-menu"
     >
-      <span aria-hidden="true" />
-      <span aria-hidden="true" />
-      <span aria-hidden="true" />
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
     </button>
 
     <a
@@ -347,7 +348,7 @@
     >
       {#if $obscure}
         <span class="icon is-small is-size-5">
-          <i class="fas fa-user-secret" />
+          <i class="fas fa-user-secret"></i>
         </span><span class="ml-2 is-primary-color">Paisa</span>
       {:else}
         <Logo size={22} /><span class="ml-1 is-primary-color">Paisa</span>
@@ -388,8 +389,7 @@
               on:keydown={(e) =>
                 e.key === "Enter" &&
                 isMobile() &&
-                e.currentTarget.parentElement.classList.toggle("is-active")}
-              >{link.label}</a
+                e.currentTarget.parentElement.classList.toggle("is-active")}>{link.label}</a
             >
             <div class="navbar-dropdown {!isMobile() && 'is-boxed'}">
               {#each link.children as sublink}
@@ -470,7 +470,7 @@
     class="mobile-nav-backdrop"
     aria-label="Close navigation menu"
     on:click={() => closeBurger()}
-  />
+  ></button>
 {/if}
 
 <div class="mt-3 px-3 is-flex is-justify-content-space-between">
@@ -486,7 +486,7 @@
           {#if selectedLink.help}
             <a style="margin-left: -10px;" class="p-0" href={helpUrl(selectedLink.help)}
               ><span class="icon is-small">
-                <i class="fas fa-question fa-border" />
+                <i class="fas fa-question fa-border"></i>
               </span></a
             >
           {/if}
@@ -504,7 +504,7 @@
             {#if selectedSubLink.help}
               <a style="margin-left: -10px;" class="p-0" href={helpUrl(selectedSubLink.help)}
                 ><span class="icon is-small">
-                  <i class="fas fa-question fa-border" />
+                  <i class="fas fa-question fa-border"></i>
                 </span></a
               >
             {/if}
@@ -524,7 +524,9 @@
             </li>
           {:else if selectedLink.href + selectedSubLink.href != normalizedPath}
             <li>
-              <span class="is-inactive">{decodeURIComponent(_.last(normalizedPath.split("/")))}</span>
+              <span class="is-inactive"
+                >{decodeURIComponent(_.last(normalizedPath.split("/")))}</span
+              >
             </li>
           {/if}
         {/if}
@@ -538,7 +540,7 @@
         {#each RecurringIcons as icon}
           <div data-tippy-content="<p>{icon.label}</p>">
             <span class="icon is-small has-text-{icon.color}">
-              <i class={"fas " + icon.icon} />
+              <i class={"fas " + icon.icon}></i>
             </span>
             <span class="is-hidden-mobile">{icon.label}</span>
           </div>
@@ -551,7 +553,7 @@
         <div class="dropdown-trigger">
           <button class="button is-small" aria-haspopup="true">
             <span class="icon is-small">
-              <i class="fas fa-sliders" />
+              <i class="fas fa-sliders"></i>
             </span>
           </button>
         </div>
@@ -656,12 +658,14 @@
     .navbar-brand {
       align-items: center;
       flex-wrap: nowrap;
+      justify-content: flex-start;
     }
 
-    .mobile-drawer-toggle {
+    .navbar-brand .navbar-burger.mobile-drawer-toggle {
       order: -1;
-      margin-left: 0;
+      margin-left: 0 !important;
       margin-right: 0.2rem;
+      flex-shrink: 0;
     }
 
     .mobile-nav-backdrop {
