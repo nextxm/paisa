@@ -1,11 +1,9 @@
 <script lang="ts">
-  let {
-    active = $bindable(false),
-    width = "min(640px, 100vw)",
-    bodyClass = "",
-    headerClass = "",
-    footerClass = ""
-  } = $props();
+  export let active = false;
+  export let width = "min(640px, 100vw)";
+  export let bodyClass = "";
+  export let headerClass = "";
+  export let footerClass = "";
 
   function close() {
     active = false;
@@ -24,5 +22,6 @@
       <slot name="foot" {close} />
     </footer>
   </div>
-  <label class="du-modal-backdrop" onclick={() => close()}></label>
+  <button type="button" class="du-modal-backdrop" aria-label="Close modal" on:click={() => close()}
+  ></button>
 </div>

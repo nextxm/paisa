@@ -1,6 +1,5 @@
 <script lang="ts">
   import type dayjs from "dayjs";
-  import BoxedTabs from "./BoxedTabs.svelte";
   import { isMobile } from "$lib/utils";
 
   export let value: number;
@@ -31,5 +30,15 @@
 </script>
 
 {#if options.length > 1}
-  <BoxedTabs bind:value {options} />
+  <div class="du-tabs du-tabs-boxed du-tabs-sm">
+    {#each options as option}
+      <button
+        type="button"
+        class="du-tab {option.value === value ? 'du-tab-active' : ''}"
+        on:click={() => (value = option.value)}
+      >
+        {option.label}
+      </button>
+    {/each}
+  </div>
 {/if}

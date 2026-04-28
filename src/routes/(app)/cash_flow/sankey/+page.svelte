@@ -181,9 +181,9 @@
               <div class="level-item">
                 <div class="field is-horizontal">
                   <div class="field-label is-normal mr-2">
-                    <label
+                    <span
                       class="label has-text-weight-normal is-size-7"
-                      style="white-space: nowrap;">Account Depth</label
+                      style="white-space: nowrap;">Account Depth</span
                     >
                   </div>
                   <div class="field-body">

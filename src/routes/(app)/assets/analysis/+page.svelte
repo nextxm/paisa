@@ -94,7 +94,10 @@
     <div class="columns">
       <div class="column is-12 has-text-centered">
         <div class="box overflow-x-auto">
-          <div id="d3-portfolio-security-type-treemap" style="width: 100%; position: relative" />
+          <div
+            id="d3-portfolio-security-type-treemap"
+            style="width: 100%; position: relative"
+          ></div>
           <svg id="d3-portfolio-security-type" />
         </div>
       </div>
@@ -104,7 +107,10 @@
     <div class="columns">
       <div class="column is-12 has-text-centered">
         <div class="box overflow-x-auto">
-          <div id="d3-portfolio-security-rating-treemap" style="width: 100%; position: relative" />
+          <div
+            id="d3-portfolio-security-rating-treemap"
+            style="width: 100%; position: relative"
+          ></div>
           <svg id="d3-portfolio-security-rating" />
         </div>
       </div>
@@ -117,7 +123,7 @@
           <div
             id="d3-portfolio-security-industry-treemap"
             style="width: 100%; position: relative"
-          />
+          ></div>
           <svg id="d3-portfolio-security-industry" />
         </div>
       </div>
@@ -130,7 +136,7 @@
           {#if portfolioR}
             <LegendCard legends={portfolioR.legends} clazz="ml-4" />
           {/if}
-          <div id="d3-portfolio-treemap" style="width: 100%; position: relative" />
+          <div id="d3-portfolio-treemap" style="width: 100%; position: relative"></div>
           <svg id="d3-portfolio" />
         </div>
       </div>

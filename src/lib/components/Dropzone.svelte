@@ -3,7 +3,6 @@
 
   export let multiple: boolean = true;
   export let accept: string = "";
-  export let inputElement: HTMLInputElement | undefined = undefined;
   export let disabled: boolean = false;
 
   const dispatch = createEventDispatcher();

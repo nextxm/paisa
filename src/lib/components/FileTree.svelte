@@ -29,25 +29,26 @@
   {#each files as file}
     {#if file.type != "directory"}
       <li>
-        <a
+        <button
+          type="button"
           on:click={() => dispatch("select", file)}
           class={file.name == selectedFileName ? "du-active" : ""}
         >
           <span class="icon is-small">
-            <i class="fa-regular fa-file-lines" />
+            <i class="fa-regular fa-file-lines"></i>
           </span>
           <span title={fileName(file.name)} class="truncate">{fileName(file.name)}</span>
           {#if file.name == selectedFileName && hasUnsavedChanges}
             <span class="ml-1 tag is-danger">unsaved</span>
           {/if}
-        </a>
+        </button>
       </li>
     {:else}
       <li>
         <details open={isOpen(file)}>
           <summary>
             <span class="icon is-small">
-              <i class="fa-regular fa-folder" />
+              <i class="fa-regular fa-folder"></i>
             </span>
             <span title={file.name} class="truncate">{file.name}</span>
           </summary>

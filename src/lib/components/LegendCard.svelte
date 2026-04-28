@@ -43,10 +43,13 @@
 
 <div class="flex justify-start gap-0 {clazz}">
   {#each legends as legend}
-    <div
+    <button
+      type="button"
       class="flex flex-col p-1.5 gap-2 legend-box {legend.onClick && 'cursor-pointer'}"
       on:click={(_e) => onClick(legend)}
       class:selected={selectedLegend == legend}
+      disabled={!legend.onClick}
+      aria-label={legend.label}
     >
       {#if legend.texture}
         <svg
@@ -70,6 +73,6 @@
       <div class="legend-label whitespace-pre is-size-6-5 has-text-grey custom-icon">
         {legend.label}
       </div>
-    </div>
+    </button>
   {/each}
 </div>

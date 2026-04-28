@@ -155,12 +155,16 @@
                 <p class="is-6"><b>{filtered.length}</b> transaction(s)</p>
               </div>
               <div class="level-item">
-                <a on:click={(_e) => downloadTransactions()}>
+                <button
+                  type="button"
+                  class="button is-small is-text"
+                  on:click={(_e) => downloadTransactions()}
+                >
                   <span class="icon is-small">
                     <i class="fa-solid fa-file-arrow-down"></i>
                   </span>
                   download
-                </a>
+                </button>
               </div>
             </div>
           </nav>

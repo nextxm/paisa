@@ -1,5 +1,4 @@
 <script lang="ts">
-  import BoxedTabs from "./BoxedTabs.svelte";
   import type { SankeyPeriod } from "../../persisted_store";
   import dayjs from "dayjs";
   import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -57,32 +56,45 @@
 </script>
 
 <div class="is-flex is-align-items-center" style="gap: 0.5rem">
-  <BoxedTabs bind:value {options} />
+  <div class="du-tabs du-tabs-boxed du-tabs-sm">
+    {#each options as option}
+      <button
+        type="button"
+        class="du-tab {option.value === value ? 'du-tab-active' : ''}"
+        on:click={() => (value = option.value)}
+      >
+        {option.label}
+      </button>
+    {/each}
+  </div>
 
   <div class="is-flex is-align-items-center">
     <button
       class="button is-small"
       style="border: none; background: transparent; box-shadow: none;"
+      aria-label="Previous period"
       disabled={!canPrev}
       on:click={prev}
     >
-      <span class="icon is-small"><i class="fas fa-chevron-left" /></span>
+      <span class="icon is-small"><i class="fas fa-chevron-left"></i></span>
     </button>
-    <a
+    <button
+      type="button"
       class="has-text-weight-bold has-text-centered has-text-grey-darker is-size-7"
       style="min-width: 60px;"
       on:click={reset}
       aria-label="Reset to current"
     >
       {label}
-    </a>
+    </button>
     <button
       class="button is-small"
       style="border: none; background: transparent; box-shadow: none;"
+      aria-label="Next period"
       disabled={!canNext || !refDate}
       on:click={next}
     >
-      <span class="icon is-small"><i class="fas fa-chevron-right" /></span>
+      <span class="icon is-small"><i class="fas fa-chevron-right"></i></span>
     </button>
   </div>
 </div>

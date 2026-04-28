@@ -12,7 +12,7 @@
 <Modal bind:active={open} width="min(680px, 100vw)" footerClass="justify-end">
   <svelte:fragment slot="head" let:close>
     <p class="text-base font-semibold flex-1">
-      <span class="icon is-small mr-1"><i class="fa-solid fa-clock-rotate-left" /></span>
+      <span class="icon is-small mr-1"><i class="fa-solid fa-clock-rotate-left"></i></span>
       Sync History
     </p>
     <button
@@ -20,7 +20,7 @@
       aria-label="Close sync history"
       onclick={() => close()}
     >
-      <i class="fas fa-times" aria-hidden="true" />
+      <i class="fas fa-times" aria-hidden="true"></i>
     </button>
   </svelte:fragment>
 
@@ -28,7 +28,7 @@
     {#if displayJobs.length === 0}
       <div class="has-text-centered has-text-grey py-6">
         <span class="icon is-large">
-          <i class="fa-regular fa-clock fa-2x" />
+          <i class="fa-regular fa-clock fa-2x"></i>
         </span>
         <p class="mt-3">No sync jobs yet.</p>
       </div>
@@ -40,7 +40,7 @@
               <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
                 <span class="tag {statusTagClass(job.status)} is-light">
                   <span class="icon is-small">
-                    <i class={statusIconClass(job.status)} aria-hidden="true" />
+                    <i class={statusIconClass(job.status)} aria-hidden="true"></i>
                   </span>
                   <span>&nbsp;{job.status}</span>
                 </span>
@@ -73,7 +73,7 @@
                 class="mt-2 p-2 has-background-danger-light has-text-danger-dark is-size-7 sync-error-snippet"
               >
                 <span class="icon is-small mr-1">
-                  <i class="fa-solid fa-triangle-exclamation" aria-hidden="true" />
+                  <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
                 </span>
                 {job.error}
               </div>

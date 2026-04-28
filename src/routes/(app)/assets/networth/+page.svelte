@@ -99,7 +99,7 @@
                   fetchNetworth();
                 }}
               >
-                <span class="icon is-small"><i class="fas fa-times" /></span>
+                <span class="icon is-small"><i class="fas fa-times"></i></span>
                 <span>Reset Currency</span>
               </button>
             </p>
