@@ -55,7 +55,7 @@
       .value();
   }
 
-  $: if (grouped_expenses) {
+  $: if (grouped_expenses && z && renderer) {
     renderCalendar($month, grouped_expenses[$month], z, $groups);
 
     const expenses = grouped_expenses[$month] || [];
