@@ -14,22 +14,20 @@
   import type { AccountNode } from "$lib/gen/api_pb";
   import AccountTree from "./AccountTree.svelte";
 
-  let {
-    nodes,
-    selected = $bindable(""),
-    depth = 0
-  }: { nodes: AccountNode[]; selected?: string; depth?: number } = $props();
+  export let nodes: AccountNode[] = [];
+  export let selected: string = "";
+  export let depth: number = 0;
 
   // Track which nodes are expanded. Depth 0 and 1 are expanded by default.
-  let expanded = $state<Record<string, boolean>>({});
+  let expanded: Record<string, boolean> = {};
 
-  $effect(() => {
+  $: {
     for (const n of nodes) {
       if (!(n.fullName in expanded)) {
         expanded[n.fullName] = depth < 2;
       }
     }
-  });
+  }
 
   function toggle(node: AccountNode) {
     expanded[node.fullName] = !expanded[node.fullName];
@@ -65,11 +63,11 @@
         aria-selected={isSelected}
         aria-expanded={hasChildren ? isExpanded : undefined}
         tabindex="0"
-        onclick={() => {
+        on:click={() => {
           if (hasChildren) toggle(node);
           else select(node);
         }}
-        onkeydown={(e) => handleKeydown(e, node)}
+        on:keydown={(e) => handleKeydown(e, node)}
       >
         <!-- expand/collapse indicator -->
         <span class="account-tree-toggle w-4 text-center shrink-0">
