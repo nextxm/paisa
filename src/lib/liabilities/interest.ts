@@ -7,6 +7,7 @@ import {
   formatCurrency,
   formatCurrencyCrude,
   formatFloat,
+  now,
   type Interest,
   type InterestOverview,
   tooltip,
@@ -25,11 +26,23 @@ const lineScale = d3
   .domain(lineKeys)
   .range([COLORS.primary, COLORS.secondary, COLORS.tertiary]);
 
-function renderTable(interest: Interest) {
+function fallbackOverview(): InterestOverview {
+  return {
+    date: now(),
+    drawn_amount: 0,
+    repaid_amount: 0,
+    interest_amount: 0
+  };
+}
+
+function currentOverview(interest: Interest): InterestOverview {
+  return _.last(interest.overview_timeline) ?? fallbackOverview();
+}
+
+function renderTable(this: HTMLTableSectionElement, interest: Interest) {
   const tbody = d3.select(this);
-  const current = _.last(interest.overview_timeline);
-  tbody.html(function () {
-    return `
+  const current = currentOverview(interest);
+  tbody.html(`
 <tr>
   <td>Account</td>
   <td class='has-text-right has-text-weight-bold'>${restName(interest.account)}</td>
@@ -56,20 +69,21 @@ function renderTable(interest: Interest) {
   <td>APR</td>
   <td class='has-text-right'>${formatFloat(interest.apr)}</td>
 </tr>
-`;
-  });
+`);
 }
 
 export function renderOverview(gains: Interest[]) {
   gains = _.sortBy(gains, (g) => g.account);
   const BAR_HEIGHT = rem(15);
   const id = "#d3-interest-overview";
+  const container = document.getElementById(id.substring(1));
+  if (!container || !container.parentElement) {
+    return;
+  }
+
   const svg = d3.select(id),
     margin = { top: rem(5), right: rem(20), bottom: rem(30), left: rem(150) },
-    width =
-      Math.max(document.getElementById(id.substring(1)).parentElement.clientWidth, 850) -
-      margin.left -
-      margin.right,
+    width = Math.max(container.parentElement.clientWidth, 850) - margin.left - margin.right,
     height = gains.length * BAR_HEIGHT * 2,
     g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
   svg.attr("height", height + margin.top + margin.bottom);
@@ -96,20 +110,24 @@ export function renderOverview(gains: Interest[]) {
   const colors = [COLORS.primary, COLORS.secondary, COLORS.tertiary, COLORS.gain, COLORS.loss];
   const z = d3.scaleOrdinal<string>(colors).domain(keys);
 
-  const getDrawnAmount = (g: Interest) => _.last(g.overview_timeline).drawn_amount;
+  const getDrawnAmount = (g: Interest) => currentOverview(g).drawn_amount;
 
-  const getInterestAmount = (g: Interest) => _.last(g.overview_timeline).interest_amount;
-  const getRepaidAmount = (g: Interest) => _.last(g.overview_timeline).repaid_amount;
+  const getInterestAmount = (g: Interest) => currentOverview(g).interest_amount;
+  const getRepaidAmount = (g: Interest) => currentOverview(g).repaid_amount;
 
   const getBalanceAmount = (g: Interest) => {
-    const current = _.last(g.overview_timeline);
+    const current = currentOverview(g);
     return current.drawn_amount + current.interest_amount - current.repaid_amount;
   };
 
-  const maxX = _.chain(gains)
-    .map((g) => getDrawnAmount(g) + _.max([getInterestAmount(g), 0]))
-    .max()
-    .value();
+  const yPos = (account: string) => y(restName(account)) ?? 0;
+  const y2Pos = (index: string) => y2(index) ?? 0;
+
+  const maxX =
+    _.chain(gains)
+      .map((g) => getDrawnAmount(g) + Math.max(getInterestAmount(g), 0))
+      .max()
+      .value() ?? 0;
   const aprWidth = rem(250);
   const aprTextWidth = rem(40);
   const aprMargin = rem(20);
@@ -118,13 +136,11 @@ export function renderOverview(gains: Interest[]) {
 
   const x = d3.scaleLinear().range([textGroupZero + textGroupWidth, width]);
   x.domain([0, maxX]);
+  const aprValues = _.map(gains, (g) => g.apr);
   const x1 = d3
     .scaleLinear()
     .range([0, aprWidth])
-    .domain([
-      _.min([_.min(_.map(gains, (g) => g.apr)), 0]),
-      _.max([0, _.max(_.map(gains, (g) => g.apr))])
-    ]);
+    .domain([Math.min(0, ...aprValues), Math.max(0, ...aprValues)]);
 
   g.append("line")
     .classed("svg-grey-lighter", true)
@@ -154,7 +170,7 @@ export function renderOverview(gains: Interest[]) {
       d3
         .axisBottom(x)
         .tickSize(-height)
-        .tickFormat(skipTicks(60, x, formatCurrencyCrude))
+        .tickFormat(skipTicks(60, x, (value) => formatCurrencyCrude(Number(value))) as any) as any
     );
 
   g.append("g")
@@ -164,7 +180,7 @@ export function renderOverview(gains: Interest[]) {
       d3
         .axisBottom(x1)
         .tickSize(-height)
-        .tickFormat(skipTicks(40, x1, (n: number) => formatFloat(n, 1)))
+        .tickFormat(skipTicks(40, x1, (value) => formatFloat(Number(value), 1)) as any) as any
     );
 
   g.append("g").attr("class", "axis y dark").call(d3.axisLeft(y));
@@ -186,7 +202,7 @@ export function renderOverview(gains: Interest[]) {
     .attr("dx", "-3")
     .attr("dy", "3")
     .attr("x", textGroupZero + textGroupWidth / 3)
-    .attr("y", (g) => y(restName(g.account)));
+    .attr("y", (g) => yPos(g.account));
 
   textGroup
     .append("text")
@@ -197,7 +213,7 @@ export function renderOverview(gains: Interest[]) {
     .attr("dx", "-3")
     .attr("dy", "3")
     .attr("x", textGroupZero + (textGroupWidth * 2) / 3)
-    .attr("y", (g) => y(restName(g.account)));
+    .attr("y", (g) => yPos(g.account));
 
   textGroup
     .append("text")
@@ -207,7 +223,7 @@ export function renderOverview(gains: Interest[]) {
     .attr("dx", "-3")
     .attr("dy", "-3")
     .attr("x", textGroupZero + textGroupWidth / 3)
-    .attr("y", (g) => y(restName(g.account)) + y.bandwidth());
+    .attr("y", (g) => yPos(g.account) + y.bandwidth());
 
   textGroup
     .append("text")
@@ -217,7 +233,7 @@ export function renderOverview(gains: Interest[]) {
     .attr("dx", "-3")
     .attr("dy", "-3")
     .attr("x", textGroupZero + (textGroupWidth * 2) / 3)
-    .attr("y", (g) => y(restName(g.account)) + y.bandwidth());
+    .attr("y", (g) => yPos(g.account) + y.bandwidth());
 
   textGroup
     .append("text")
@@ -227,15 +243,15 @@ export function renderOverview(gains: Interest[]) {
     .attr("dx", "-3")
     .attr("dy", "-3")
     .attr("x", textGroupZero + textGroupWidth)
-    .attr("y", (g) => y(restName(g.account)) + y.bandwidth());
+    .attr("y", (g) => yPos(g.account) + y.bandwidth());
 
   textGroup
     .append("line")
     .classed("svg-grey-lighter", true)
     .attr("x1", 0)
-    .attr("y1", (g) => y(restName(g.account)))
+    .attr("y1", (g) => yPos(g.account))
     .attr("x2", width)
-    .attr("y2", (g) => y(restName(g.account)));
+    .attr("y2", (g) => yPos(g.account));
 
   textGroup
     .append("text")
@@ -246,7 +262,7 @@ export function renderOverview(gains: Interest[]) {
       g.apr < 0 ? chroma(z("loss")).darken().hex() : chroma(z("gain")).darken().hex()
     )
     .attr("x", aprWidth + aprTextWidth)
-    .attr("y", (g) => y(restName(g.account)) + y.bandwidth() / 2);
+    .attr("y", (g) => yPos(g.account) + y.bandwidth() / 2);
 
   const groups = g
     .append("g")
@@ -255,7 +271,7 @@ export function renderOverview(gains: Interest[]) {
     .enter()
     .append("g")
     .attr("class", "group")
-    .attr("transform", (g) => "translate(0," + y(restName(g.account)) + ")");
+    .attr("transform", (g) => "translate(0," + yPos(g.account) + ")");
 
   groups
     .selectAll("g")
@@ -265,7 +281,7 @@ export function renderOverview(gains: Interest[]) {
           i: "0",
           data: g,
           drawn: getDrawnAmount(g),
-          loss: _.max([getInterestAmount(g), 0])
+          loss: Math.max(getInterestAmount(g), 0)
         }
       ] as any),
       d3.stack().keys(["balance", "gain", "repaid"])([
@@ -274,7 +290,7 @@ export function renderOverview(gains: Interest[]) {
           data: g,
           balance: getBalanceAmount(g),
           repaid: getRepaidAmount(g),
-          gain: Math.abs(_.min([getInterestAmount(g), 0]))
+          gain: Math.abs(Math.min(getInterestAmount(g), 0))
         }
       ] as any)
     ])
@@ -296,9 +312,9 @@ export function renderOverview(gains: Interest[]) {
     .attr("stroke-opacity", (d) => (_.includes(areaKeys, d.key) ? 0.0 : 0.4))
     .attr("fill-opacity", (d) => (_.includes(areaKeys, d.key) ? 1 : 0.6))
     .attr("x", (d) => x(d[0][0]))
-    .attr("y", (d: any) => y2(d[0].data.i))
+    .attr("y", (d: any) => y2Pos(d[0].data.i))
     .attr("height", y2.bandwidth())
-    .attr("width", (d) => x(d[0][1]) - x(d[0][0]));
+    .attr("width", (d) => Math.max(0, x(d[0][1]) - x(d[0][0])));
 
   const paddingTop = (y1.range()[1] - y1.bandwidth() * 2) / 2;
   g.append("g")
@@ -308,7 +324,7 @@ export function renderOverview(gains: Interest[]) {
     .append("rect")
     .attr("fill", (g) => (g.apr < 0 ? z("loss") : z("gain")))
     .attr("x", (g) => (g.apr < 0 ? x1(g.apr) : x1(0)))
-    .attr("y", (g) => y(restName(g.account)) + paddingTop)
+    .attr("y", (g) => yPos(g.account) + paddingTop)
     .attr("height", y.bandwidth() - paddingTop * 2)
     .attr("width", (g) => Math.abs(x1(0) - x1(g.apr)));
 
@@ -319,7 +335,7 @@ export function renderOverview(gains: Interest[]) {
     .append("rect")
     .attr("fill", "transparent")
     .attr("data-tippy-content", (g: Interest) => {
-      const current = _.last(g.overview_timeline);
+      const current = currentOverview(g);
       return tooltip([
         ["Account", [g.account, "has-text-weight-bold has-text-right"]],
         [
@@ -345,15 +361,15 @@ export function renderOverview(gains: Interest[]) {
       ]);
     })
     .attr("x", 0)
-    .attr("y", (g) => y(restName(g.account)))
+    .attr("y", (g) => yPos(g.account))
     .attr("height", y.bandwidth())
     .attr("width", width);
 }
 
 export function renderPerAccountOverview(interests: Interest[]) {
   const dates = _.flatMap(interests, (g) => _.map(g.overview_timeline, (o) => o.date));
-  const start = _.min(dates),
-    end = _.max(dates);
+  const start = _.minBy(dates, (d) => d.valueOf()) ?? now();
+  const end = _.maxBy(dates, (d) => d.valueOf()) ?? now();
 
   const divs = d3
     .select("#d3-interest-timeline-breakdown")
@@ -381,7 +397,7 @@ export function renderPerAccountOverview(interests: Interest[]) {
     .attr("class", "box overflow-x-auto")
     .append("svg")
     .attr("height", "150")
-    .each(function (gain) {
+    .each(function (this: SVGSVGElement, gain) {
       renderOverviewSmall(gain.overview_timeline, this, [start, end]);
     });
 }
@@ -391,6 +407,10 @@ function renderOverviewSmall(
   element: Element,
   xDomain: [dayjs.Dayjs, dayjs.Dayjs]
 ) {
+  if (!element.parentElement) {
+    return;
+  }
+
   const svg = d3.select(element),
     margin = { top: 5, right: 80, bottom: 20, left: 40 },
     width = Math.max(element.parentElement.clientWidth, 800) - margin.left - margin.right,
@@ -398,15 +418,11 @@ function renderOverviewSmall(
     g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
   svg.attr("width", width + margin.left + margin.right);
+  const yMax =
+    d3.max<InterestOverview, number>(points, (d) => d.interest_amount + d.drawn_amount) ?? 0;
 
   const x = d3.scaleTime().range([0, width]).domain(xDomain),
-    y = d3
-      .scaleLinear()
-      .range([height, 0])
-      .domain([
-        0,
-        d3.max<InterestOverview, number>(points, (d) => d.interest_amount + d.drawn_amount)
-      ]),
+    y = d3.scaleLinear().range([height, 0]).domain([0, yMax]),
     z = d3.scaleOrdinal<string>(colors).domain(areaKeys);
 
   const area = (y0: number, y1: (d: InterestOverview) => number) =>
@@ -425,11 +441,23 @@ function renderOverviewSmall(
   g.append("g")
     .attr("class", "axis y")
     .attr("transform", `translate(${width},0)`)
-    .call(d3.axisRight(y).ticks(5).tickPadding(5).tickFormat(formatCurrencyCrude));
+    .call(
+      d3
+        .axisRight(y)
+        .ticks(5)
+        .tickPadding(5)
+        .tickFormat((value) => formatCurrencyCrude(Number(value))) as any as any
+    );
 
   g.append("g")
     .attr("class", "axis y")
-    .call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat(formatCurrencyCrude));
+    .call(
+      d3
+        .axisLeft(y)
+        .ticks(5)
+        .tickSize(-width)
+        .tickFormat((value) => formatCurrencyCrude(Number(value))) as any as any
+    );
 
   const layer = g.selectAll(".layer").data([points]).enter().append("g").attr("class", "layer");
 
