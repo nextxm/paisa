@@ -124,7 +124,7 @@ export const delayedUnLoading = derived(
 
 export const willClearTippy = writable(0);
 
-export const accountTfIdf = writable<AccountTfIdf>(null);
+export const accountTfIdf = writable<AccountTfIdf | null>(null);
 
 export function setAllowedDateRange(dates: dayjs.Dayjs[]) {
   const [start, end] = d3.extent(dates);

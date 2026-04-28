@@ -358,7 +358,6 @@
     <div class="navbar-item navbar-actions-row mobile-top-actions">
       <SyncingIndicator />
       <ThemeSwitcher />
-      <Actions />
     </div>
   </div>
 
@@ -697,7 +696,10 @@
     }
 
     .menu-actions-row {
-      display: none;
+      display: flex;
+      width: 100%;
+      justify-content: flex-start;
+      padding: 0.35rem 0.75rem;
     }
 
     .mobile-nav-backdrop {
