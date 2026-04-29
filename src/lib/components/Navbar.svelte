@@ -468,7 +468,7 @@
           <span class="is-inactive">{selectedLink.label}</span>
           {#if selectedLink.help}
             <a
-              class="p-0 ml-1"
+              class="is-clear ml-1"
               href={helpUrl(selectedLink.help)}
               aria-label={`Help for ${selectedLink.label}`}
               ><span class="icon is-small">
@@ -489,7 +489,7 @@
 
             {#if selectedSubLink.help}
               <a
-                class="p-0 ml-1"
+                class="is-clear ml-1"
                 href={helpUrl(selectedSubLink.help)}
                 aria-label={`Help for ${selectedSubLink.label}`}
                 ><span class="icon is-small">
