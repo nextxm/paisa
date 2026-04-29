@@ -1,8 +1,17 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { formatCurrency, type Posting } from "$lib/utils";
   import _ from "lodash";
 
-  let { postings, groupFormat }: { postings: Posting[]; groupFormat: string } = $props();
+  let {
+    postings,
+    groupFormat,
+    children
+  }: {
+    postings: Posting[];
+    groupFormat: string;
+    children?: Snippet<[Posting[]]>;
+  } = $props();
 
   interface GroupedPosting {
     key: string;
@@ -54,7 +63,7 @@
           <div>{formatCurrency(groupedPosting.total)}</div>
         </div>
       {/if}
-      <slot groupedPostings={groupedPosting.postings} />
+      {@render children?.(groupedPosting.postings)}
     </div>
   {/each}
 </div>

@@ -51,7 +51,7 @@
   headerClass="pt-1 pb-1"
   footerClass="justify-end"
 >
-  <svelte:fragment slot="head" let:close>
+  {#snippet head(close)}
     <p class="text-base font-semibold flex-1">
       {#if changedOldFiles.length > 0}
         {changedOldFiles[selectedFileIndex]?.name}
@@ -92,18 +92,20 @@
     >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
-  </svelte:fragment>
-  <div class="field" slot="body">
-    <div class="box py-0">
-      <div class="diff-editor" bind:this={editorDom}></div>
-      {#if changedOldFiles.length === 0}
-        <div class="has-text-centered mt-6">
-          <strong>Oops!</strong> No changes has been made. Make sure the bulk edit arguments are correct.
-        </div>
-      {/if}
+  {/snippet}
+  {#snippet body()}
+    <div class="field">
+      <div class="box py-0">
+        <div class="diff-editor" bind:this={editorDom}></div>
+        {#if changedOldFiles.length === 0}
+          <div class="has-text-centered mt-6">
+            <strong>Oops!</strong> No changes has been made. Make sure the bulk edit arguments are correct.
+          </div>
+        {/if}
+      </div>
     </div>
-  </div>
-  <svelte:fragment slot="foot" let:close>
+  {/snippet}
+  {#snippet foot(close)}
     <button class="du-btn du-btn-sm" onclick={() => close()}>Cancel</button>
     {#if changedOldFiles.length > 0}
       <button
@@ -114,5 +116,5 @@
         }}>Save All</button
       >
     {/if}
-  </svelte:fragment>
+  {/snippet}
 </Modal>
