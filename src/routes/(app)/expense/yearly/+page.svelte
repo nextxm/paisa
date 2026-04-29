@@ -18,7 +18,7 @@
 
   let groups = writable([]);
   let z: d3.ScaleOrdinal<string, string, never> = $state(null),
-    renderer: (ps: Posting[]) => void,
+    renderer: (ps: Posting[]) => void = $state(),
     expenses: Posting[] = $state(null),
     grouped_expenses: Record<string, Posting[]> = $state(null),
     grouped_incomes: Record<string, Posting[]> = $state(null),
@@ -29,46 +29,40 @@
 
   let legends: Legend[] = $state([]);
 
-  let income = $state(""),
-    netIncome = $state(""),
-    taxRate = $state(""),
-    tax = $state(""),
-    expenseRate = $state(""),
-    expense = $state(""),
-    investment = $state(""),
-    savingRate = $state("");
+  let netValue = $derived(
+    sum(grouped_incomes?.[$year] || [], -1) - sum(grouped_taxes?.[$year] || [])
+  );
+  let grossIncomeValue = $derived(sum(grouped_incomes?.[$year] || [], -1));
+
+  let income = $derived(sumCurrency(grouped_incomes?.[$year] || [], -1));
+  let tax = $derived(sumCurrency(grouped_taxes?.[$year] || []));
+  let expense = $derived(sumCurrency(grouped_expenses?.[$year] || []));
+  let investment = $derived(sumCurrency(grouped_investments?.[$year] || []));
+
+  let netIncome = $derived(
+    !_.isEmpty(grouped_incomes?.[$year]) ? formatCurrency(netValue) + " net income" : ""
+  );
+  let taxRate = $derived(
+    !_.isEmpty(grouped_incomes?.[$year])
+      ? formatPercentage(sum(grouped_taxes?.[$year] || []) / grossIncomeValue) + " of income"
+      : ""
+  );
+  let expenseRate = $derived(
+    !_.isEmpty(grouped_incomes?.[$year])
+      ? formatPercentage(sum(grouped_expenses?.[$year] || []) / netValue) + " of net income"
+      : ""
+  );
+  let savingRate = $derived(
+    !_.isEmpty(grouped_incomes?.[$year])
+      ? formatPercentage(sum(grouped_investments?.[$year] || []) / netValue) + " of net income"
+      : ""
+  );
 
   $effect(() => {
     if (grouped_expenses && z && renderer) {
-      currentYearExpenses = grouped_expenses[$year];
+      currentYearExpenses = grouped_expenses[$year] || [];
       renderCalendar(currentYearExpenses, z, $groups);
-
-      const expenses = grouped_expenses[$year] || [];
-      const incomes = grouped_incomes[$year] || [];
-      const taxes = grouped_taxes[$year] || [];
-      const investments = grouped_investments[$year] || [];
-
-      income = sumCurrency(incomes, -1);
-
-      tax = sumCurrency(taxes);
-      expense = sumCurrency(expenses);
-      investment = sumCurrency(investments);
-
-      if (_.isEmpty(incomes)) {
-        expenseRate = "";
-        taxRate = "";
-        savingRate = "";
-        netIncome = "";
-      } else {
-        netIncome = formatCurrency(sum(incomes, -1) - sum(taxes)) + " net income";
-        taxRate = formatPercentage(sum(taxes) / sum(incomes, -1)) + " of income";
-        expenseRate =
-          formatPercentage(sum(expenses) / (sum(incomes, -1) - sum(taxes))) + " of net income";
-        savingRate =
-          formatPercentage(sum(investments) / (sum(incomes, -1) - sum(taxes))) + " of net income";
-      }
-
-      renderer(expenses);
+      renderer(currentYearExpenses);
     }
   });
 

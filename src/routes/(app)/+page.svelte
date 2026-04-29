@@ -40,20 +40,18 @@
   let expenses: { [key: string]: Posting[] } = $state({});
   let xirr = $state(0);
   let networth: Networth = $state(null);
-  let renderer: (data: Posting[]) => void;
-  let totalExpense = $state(0);
+  let renderer: (data: Posting[]) => void = $state();
+  let selectedExpenses = $derived(expenses[month] || []);
+  let totalExpense = $derived(_.sumBy(selectedExpenses, (p) => p.amount));
   let transactions: Transaction[] = $state([]);
   let budgetsByMonth: Record<string, Budget> = $state({});
-  let currentBudget: Budget = $state(null);
-  let selectedExpenses: Posting[] = $state([]);
+  let currentBudget = $derived(budgetsByMonth[month]);
   let isEmpty = $state(false);
   let checkingBalances: Record<string, AssetBreakdown> = $state({});
 
   $effect(() => {
     if (renderer) {
-      selectedExpenses = expenses[month] || [];
       renderer(selectedExpenses);
-      totalExpense = _.sumBy(selectedExpenses, (p) => p.amount);
     }
   });
 
@@ -85,7 +83,6 @@
     const postings = _.chain(expenses).values().flatten().value();
     const z = expense.colorScale(postings);
     renderer = expense.renderCurrentExpensesBreakdown(z);
-    currentBudget = budgetsByMonth[month];
 
     const { renderer: cashflowRenderer, legends } = cashFlow.renderMonthlyFlow(
       "#d3-current-cash-flow",

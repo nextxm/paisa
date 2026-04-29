@@ -1,0 +1,27 @@
+{
+  "name": "Paisa - Personal Finance Manager",
+  "short_name": "Paisa",
+  "description": "Open source personal finance manager built on top of the ledger double-entry accounting tool.",
+  "theme_color": "#1e1e2e",
+  "background_color": "#1e1e2e",
+  "display": "standalone",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

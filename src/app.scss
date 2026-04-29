@@ -132,17 +132,26 @@ $footerActiveColor: #d00;
   }
 
   a,
-  summary {
+  summary,
+  button {
     border-radius: $radius-small;
     color: $grey-dark;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
   }
 
   a:hover,
-  summary:hover {
+  summary:hover,
+  button:hover {
     background-color: $white-ter !important;
   }
 
-  a.du-active {
+  a.du-active,
+  button.du-active {
     color: $link !important;
     background-color: $white !important;
     font-weight: bold;
@@ -159,6 +168,10 @@ $footerActiveColor: #d00;
 
 :focus {
   outline: 0;
+}
+
+button {
+  cursor: pointer;
 }
 
 html,
@@ -422,9 +435,24 @@ svg text {
   line-height: 1rem;
 }
 
-.legend-box.selected {
-  background-color: $grey-lightest;
-  border-radius: $radius;
+.is-clear {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  color: inherit !important;
+}
+
+.legend-box {
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+
+  &.selected {
+    background-color: rgba($grey-lightest, 0.5);
+    border-radius: $radius;
+  }
 }
 
 #d3-salary-timeline .x.axis > g.tick {

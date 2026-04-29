@@ -3,6 +3,7 @@
   import type { JSONSchema7 } from "json-schema";
   import Select from "svelte-select";
   import _ from "lodash";
+  import JsonSchemaForm from "./JsonSchemaForm.svelte";
   import PriceCodeSearchModal from "./PriceCodeSearchModal.svelte";
   import { iconGlyph, iconsList } from "$lib/icon";
   import AccountSelect from "./AccountsSelect.svelte";
@@ -301,21 +302,21 @@
 
   <PriceCodeSearchModal
     bind:open={modalOpen}
-    on:select={(e) => {
-      value["code"] = e.detail.code;
-      value["provider"] = e.detail.provider;
+    onselect={({ code, provider }) => {
+      value["code"] = code;
+      value["provider"] = provider;
     }}
   />
 
   <div class="config-body {depth % 2 == 1 ? 'odd' : 'even'}">
     {#each sortedProperties(schema) as [key, subSchema]}
-      <svelte:self
+      <JsonSchemaForm
         {allAccounts}
         required={_.includes(schema.required || [], key)}
         depth={depth + 1}
         {key}
         bind:value={value[key]}
-        schema={subSchema}
+        schema={subSchema as Schema}
         disabled={true}
       />
     {/each}
@@ -338,13 +339,13 @@
   {#if open}
     <div class="config-body {depth % 2 == 1 ? 'odd' : 'even'}">
       {#each sortedProperties(schema) as [key, subSchema]}
-        <svelte:self
+        <JsonSchemaForm
           {allAccounts}
           required={_.includes(schema.required || [], key)}
           depth={depth + 1}
           {key}
           bind:value={value[key]}
-          schema={subSchema}
+          schema={subSchema as Schema}
         />
       {/each}
     </div>
@@ -398,7 +399,7 @@
   {#if open}
     <div class="config-body {depth % 2 == 1 ? 'odd' : 'even'}">
       {#each Array.isArray(value) ? value : [] as _item, i}
-        <svelte:self
+        <JsonSchemaForm
           {allAccounts}
           deletable={() => {
             if (Array.isArray(value)) {
@@ -409,7 +410,7 @@
           depth={depth + 1}
           key=""
           bind:value={value[i]}
-          schema={schema.items}
+          schema={schema.items as Schema}
         />
       {/each}
     </div>

@@ -2,12 +2,14 @@
   import { afterNavigate, beforeNavigate } from "$app/navigation";
   import { followCursor, delegate, hideAll } from "tippy.js";
   import _ from "lodash";
+  import type { Snippet } from "svelte";
   import Spinner from "$lib/components/Spinner.svelte";
   import Navbar from "$lib/components/Navbar.svelte";
   import ReloadPrompt from "$lib/components/ReloadPrompt.svelte";
   import { willClearTippy, willRefresh } from "../../store";
 
-  let isBurger: boolean = null;
+  let { children }: { children: Snippet } = $props();
+  let isBurger: boolean = $state(null);
 
   function clearTippy() {
     hideAll();
@@ -60,7 +62,7 @@
   <Navbar bind:isBurger />
 
   <Spinner>
-    <slot />
+    {@render children()}
   </Spinner>
 {/key}
 

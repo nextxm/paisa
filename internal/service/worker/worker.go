@@ -72,6 +72,8 @@ type Job struct {
 	StartedAt *time.Time `json:"started_at,omitempty"`
 	// FinishedAt is the wall-clock time at which the job reached a terminal state; zero if not yet finished.
 	FinishedAt *time.Time `json:"finished_at,omitempty"`
+	// Metadata holds arbitrary key-value pairs associated with the job.
+	Metadata map[string]any `json:"metadata,omitempty"`
 }
 
 // Registry is a thread-safe store for background Jobs.  Use [NewRegistry] to
@@ -185,7 +187,7 @@ type DetailedJobFn func(ctx context.Context) (details []string, err error)
 //
 // SubmitDetailed is non-blocking: fn is executed asynchronously in a separate
 // goroutine.
-func (r *Registry) SubmitDetailed(ctx context.Context, fn DetailedJobFn) string {
+func (r *Registry) SubmitDetailed(ctx context.Context, metadata map[string]any, fn DetailedJobFn) string {
 	id, err := uuid.NewV4()
 	if err != nil {
 		log.WithError(err).Fatal("worker: unable to generate job ID")
@@ -195,6 +197,7 @@ func (r *Registry) SubmitDetailed(ctx context.Context, fn DetailedJobFn) string 
 		ID:        id.String(),
 		Status:    StatusPending,
 		CreatedAt: time.Now().UTC(),
+		Metadata:  metadata,
 	}
 
 	r.mu.Lock()

@@ -15,7 +15,8 @@
   } from "../../persisted_store";
   import _ from "lodash";
   import { financialYear, forEachFinancialYear, helpUrl, isMobile, now } from "$lib/utils";
-  import { onDestroy, onMount, tick } from "svelte";
+  import { resolveNavbarSelectionTyped } from "$lib/navbar_selection";
+  import { tick } from "svelte";
   import { get } from "svelte/store";
   import DateRange from "./DateRange.svelte";
   import ThemeSwitcher from "./ThemeSwitcher.svelte";
@@ -31,7 +32,7 @@
     closeBurger(false);
   });
 
-  onMount(async () => {
+  $effect(() => {
     if (get(year) == "") {
       year.set(financialYear(now()));
     }
@@ -59,6 +60,7 @@
     children?: Link[];
     disablePreload?: boolean;
   }
+
   const links: Link[] = [
     { label: "Dashboard", href: "/", hide: true },
     {
@@ -278,49 +280,20 @@
   });
 
   $effect(() => {
-    if (normalizedPath) {
-      selectedSubLink = null;
-      selectedSubSubLink = null;
-      selectedLink = _.find(links, (l) => normalizedPath == l.href);
-      if (!selectedLink) {
-        selectedLink = _.find(
-          links,
-          (l) => !_.isEmpty(l.children) && normalizedPath.startsWith(l.href)
-        );
-
-        selectedSubLink = _.find(
-          selectedLink.children,
-          (l) => normalizedPath == selectedLink.href + l.href
-        );
-
-        if (!selectedSubLink) {
-          selectedSubLink = _.find(selectedLink.children, (l) =>
-            normalizedPath.startsWith(selectedLink.href + l.href)
-          );
-
-          if (!_.isEmpty(selectedSubLink.children)) {
-            selectedSubSubLink = _.find(selectedSubLink.children, (l) =>
-              normalizedPath.startsWith(selectedLink.href + selectedSubLink.href + l.href)
-            );
-          }
-        }
-      }
-    }
+    const selection = resolveNavbarSelectionTyped(links, normalizedPath);
+    selectedLink = selection.selectedLink;
+    selectedSubLink = selection.selectedSubLink;
+    selectedSubSubLink = selection.selectedSubSubLink;
   });
 
-  onDestroy(() => {
-    if (typeof document !== "undefined") {
-      document.body.classList.remove("mobile-menu-open");
-    }
-
-    navMenuEl?.removeEventListener("click", closeBurgerOnItemClick);
-  });
-
-  onMount(() => {
+  $effect(() => {
     navMenuEl?.addEventListener("click", closeBurgerOnItemClick);
 
     return () => {
       navMenuEl?.removeEventListener("click", closeBurgerOnItemClick);
+      if (typeof document !== "undefined") {
+        document.body.classList.remove("mobile-menu-open");
+      }
     };
   });
 </script>
@@ -495,8 +468,7 @@
           <span class="is-inactive">{selectedLink.label}</span>
           {#if selectedLink.help}
             <a
-              style="margin-left: -10px;"
-              class="p-0"
+              class="is-clear ml-1"
               href={helpUrl(selectedLink.help)}
               aria-label={`Help for ${selectedLink.label}`}
               ><span class="icon is-small">
@@ -517,8 +489,7 @@
 
             {#if selectedSubLink.help}
               <a
-                style="margin-left: -10px;"
-                class="p-0"
+                class="is-clear ml-1"
                 href={helpUrl(selectedSubLink.help)}
                 aria-label={`Help for ${selectedSubLink.label}`}
                 ><span class="icon is-small">

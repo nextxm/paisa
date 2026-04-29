@@ -4,6 +4,15 @@
 
 #### New features
 
+- **Epic 2: Architectural Alignment & Cleanup** — Finalized structural patterns and removed legacy Svelte 4 compatibility:
+  - **Snippet Transition (2.1)** — `Modal.svelte` migrated from named `<slot>` elements to typed snippet props (`head`, `body`, `foot`). All consumers updated to use `{#snippet head(close)}...{/snippet}` blocks: `FileModal`, `PriceCodeSearchModal`, `DiffViewModal`, `SyncHistoryOverlay`, and the import page inline modal.
+  - **Callback Prop Migration (2.2)** — `createEventDispatcher` removed from `FileModal.svelte` (replaced with `onsave` callback) and `PriceCodeSearchModal.svelte` (replaced with `onselect` callback). All four `FileModal` call-sites and `JsonSchemaForm`'s `PriceCodeSearchModal` usage updated to pass callback props directly.
+  - **Global Store Evolution (2.3)** — New `src/lib/state/ui.svelte.ts` (`UIState`) and `src/lib/state/persisted.svelte.ts` (`PersistedState`) class-based wrappers created using `fromStore`. Components can now access stores via `uiState.<prop>.current` or continue using the existing `$store` syntax.
+  - **Lifecycle & Context Update (2.4)** — `Navbar.svelte` `onMount`/`onDestroy` lifecycle hooks replaced with `$effect` (cleanup via returned function). Root `+layout.svelte` and `(app)/+layout.svelte` updated from `<slot />` to `{@render children()}` with typed `Snippet` prop.
+  - **Final Switch-Over (2.5)** — `componentApi: 4` compatibility shim removed from `svelte.config.js`. All remaining Svelte 4 deprecation warnings resolved: `Dropzone`, `Spinner`, `ZeroState`, `PostingGroup` slots converted to snippet props; `JsonSchemaForm` `<svelte:self>` replaced with self-import; `LastNMonths` `options` array made `$derived`; `MonthPicker` `selectedYear` initialised from raw prop value; `ThemeSwitcher` initial store call decoupled from reactive variable. `isBurger` in `(app)/+layout.svelte` declared with `$state()`.
+  - **prettier-plugin-svelte** bumped to `^3.3` to support `{@render ...}` syntax in formatting.
+  - `svelte-check` now reports **0 errors and 0 warnings** across the entire frontend.
+
 - **Epic 1: Component Modernization (Runes & Event Syntax)** — Systematically migrated all Svelte components and route pages from Svelte 4 syntax to Svelte 5 runes:
   - All `export let` props converted to `$props()` / `$bindable()`
   - All `$:` reactive statements converted to `$derived()` or `$effect()`
@@ -28,6 +37,16 @@
 - **Extensible PriceProvider interface** — `internal/model/price.PriceProvider` is now fully documented with explicit return-value semantics for every method, making it straightforward to implement a custom provider. Compile-time interface-satisfaction checks (`var _ price.PriceProvider = ...`) have been added to every built-in provider package to catch drift early.
 
 #### Bug fixes
+
+- **Navbar effect recursion fixed** — Reworked breadcrumb/nav selection in `src/lib/components/Navbar.svelte` to resolve selection from the current path in a pure helper (`src/lib/navbar_selection.ts`) instead of reading and mutating the same reactive state inside one `$effect`. This prevents startup/runtime `effect_update_depth_exceeded` crashes on built apps.
+
+- **Embedded static asset routing fixed** — Updated `internal/server/server.go` to serve root-level PWA assets (`/manifest.webmanifest`, `/sw.js`, Workbox files, and `/pwa-*.png`) from embedded `web/static` instead of falling through `NoRoute` to `index.html`. This resolves `Manifest: Line: 1, column: 1, Syntax error` when using the Go-served app.
+
+- **Dashboard startup loop fixed** — Updated `src/routes/(app)/+page.svelte` to remove a read-after-write reactive pattern in the dashboard `$effect` (`selectedExpenses`), preventing a recursive update cycle that could raise `effect_update_depth_exceeded` on load when the current month has no expense bucket.
+
+- **Manifest endpoint syntax error fixed** — Added `static/manifest.webmanifest` so `/manifest.webmanifest` serves valid JSON instead of fallback HTML, resolving browser console errors like `Manifest: Line: 1, column: 1, Syntax error`.
+
+- **Startup effect loop hardening** — Updated `src/lib/components/Actions.svelte` to stabilize the `obscure` store subscription (track previous value correctly and unsubscribe on destroy), preventing repeated `refresh()` cascades that could trigger `effect_update_depth_exceeded` on app load.
 
 - **Assets Analysis render crash fixed** — `src/routes/(app)/assets/analysis/+page.svelte` now initializes the commodity color mapper with a safe fallback function and explicit callable type so the page no longer throws `TypeError: ... is not a function` during first render while async data is still settling.
 

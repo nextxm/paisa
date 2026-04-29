@@ -7,14 +7,16 @@
 
   let currentMonth = now();
 
-  let options: { label: string; value: string }[] = _.reverse(
-    _.map(_.range(0, n), (i) => {
-      let month = currentMonth.subtract(i, "month");
-      return {
-        label: month.format("MMMM"),
-        value: month.format("YYYY-MM")
-      };
-    })
+  const options: { label: string; value: string }[] = $derived(
+    _.reverse(
+      _.map(_.range(0, n), (i) => {
+        let month = currentMonth.subtract(i, "month");
+        return {
+          label: month.format("MMMM"),
+          value: month.format("YYYY-MM")
+        };
+      })
+    )
   );
 </script>
 

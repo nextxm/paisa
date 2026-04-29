@@ -1,13 +1,16 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { fade } from "svelte/transition";
   import { delayedLoading, delayedUnLoading } from "../../store";
   import Logo from "./Logo.svelte";
+
+  let { children }: { children: Snippet } = $props();
   let size = 90;
 </script>
 
 <div>
   <div style={$delayedUnLoading || $delayedLoading ? "visibility: hidden" : ""}>
-    <slot />
+    {@render children()}
   </div>
   {#if $delayedLoading}
     <div class="circle-container" transition:fade={{ duration: 400 }}>

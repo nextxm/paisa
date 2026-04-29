@@ -184,21 +184,23 @@
         <BoxLabel text="Current Balance" />
       </div>
       <div class="column is-3">
-        <PostingGroup postings={latestPostings} groupFormat="MMM YYYY" let:groupedPostings>
-          <div>
-            {#each groupedPostings as posting}
-              <PostingCard
-                {posting}
-                color={posting.amount >= 0
-                  ? posting.account.startsWith("Income:CapitalGains")
-                    ? COLORS.tertiary
-                    : COLORS.secondary
-                  : posting.account.startsWith("Income:CapitalGains")
-                    ? COLORS.secondary
-                    : COLORS.tertiary}
-              />
-            {/each}
-          </div>
+        <PostingGroup postings={latestPostings} groupFormat="MMM YYYY">
+          {#snippet children(groupedPostings)}
+            <div>
+              {#each groupedPostings as posting}
+                <PostingCard
+                  {posting}
+                  color={posting.amount >= 0
+                    ? posting.account.startsWith("Income:CapitalGains")
+                      ? COLORS.tertiary
+                      : COLORS.secondary
+                    : posting.account.startsWith("Income:CapitalGains")
+                      ? COLORS.secondary
+                      : COLORS.tertiary}
+                />
+              {/each}
+            </div>
+          {/snippet}
         </PostingGroup>
       </div>
     </div>

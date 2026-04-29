@@ -25,18 +25,13 @@
   let transactionSequences: TransactionSequence[] = $state([]);
   let transactionSequencesDelayed: TransactionSequence[] = $state([]);
 
-  let days: Dayjs[] = $state([]);
-  let schedulesByDate: Record<string, TransactionSchedule[]> = $state({});
-
-  $effect(() => {
-    if (days) {
-      ({ days } = monthDays($month));
-      schedulesByDate = _.chain(transactionSequences)
-        .flatMap((ts) => ts.schedulesByMonth[$month] || [])
-        .groupBy((s) => s.scheduled.format("YYYY-MM-DD"))
-        .value();
-    }
-  });
+  let days = $derived(monthDays($month).days);
+  let schedulesByDate = $derived(
+    _.chain(transactionSequences)
+      .flatMap((ts) => ts.schedulesByMonth[$month] || [])
+      .groupBy((s) => s.scheduled.format("YYYY-MM-DD"))
+      .value()
+  );
 
   onMount(async () => {
     ({ transaction_sequences: transactionSequences } = await ajax("/api/recurring"));
