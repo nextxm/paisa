@@ -4,21 +4,21 @@
   import CapitalGainDetailCard from "./CapitalGainDetailCard.svelte";
   import Toggleable from "./Toggleable.svelte";
 
-  export let financialYear: string;
-  export let capitalGains: CapitalGain[];
+  let { financialYear, capitalGains }: { financialYear: string; capitalGains: CapitalGain[] } =
+    $props();
 
-  $: fyGains = _.compact(
-    _.map(capitalGains, (cg): FYCapitalGain | undefined => cg.fy[financialYear])
+  const fyGains = $derived(
+    _.compact(_.map(capitalGains, (cg): FYCapitalGain | undefined => cg.fy[financialYear]))
   );
 
-  $: total = {
+  const total = $derived({
     withdrawn: _.sumBy(fyGains, (fy) => fy.sell_price),
     gain: _.sumBy(fyGains, (fy) => fy.tax.gain),
     taxableGain: _.sumBy(fyGains, (fy) => fy.tax.taxable),
     shortTermTax: _.sumBy(fyGains, (fy) => fy.tax.short_term),
     longTermTax: _.sumBy(fyGains, (fy) => fy.tax.long_term),
     slab: _.sumBy(fyGains, (fy) => fy.tax.slab)
-  };
+  });
 </script>
 
 <div class="column is-12">
@@ -102,7 +102,7 @@
                         slot="toggle"
                         let:active
                         let:onclick
-                        on:click={(e) => onclick(e)}
+                        {onclick}
                       >
                         <td>
                           <span class="icon has-text-link">

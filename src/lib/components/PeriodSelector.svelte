@@ -7,10 +7,17 @@
   dayjs.extend(isSameOrAfter);
   dayjs.extend(isSameOrBefore);
 
-  export let value: SankeyPeriod = "month";
-  export let refDate: string = "";
-  export let minDate: dayjs.Dayjs = dayjs();
-  export let maxDate: dayjs.Dayjs = dayjs();
+  let {
+    value = $bindable<SankeyPeriod>("month"),
+    refDate = $bindable(""),
+    minDate = dayjs(),
+    maxDate = dayjs()
+  }: {
+    value: SankeyPeriod;
+    refDate?: string;
+    minDate?: dayjs.Dayjs;
+    maxDate?: dayjs.Dayjs;
+  } = $props();
 
   const options: { label: string; value: SankeyPeriod }[] = [
     { label: "Month", value: "month" },
@@ -19,14 +26,16 @@
   ];
 
   let prevValue = value;
-  $: if (value !== prevValue) {
-    refDate = "";
-    prevValue = value;
-  }
+  $effect(() => {
+    if (value !== prevValue) {
+      refDate = "";
+      prevValue = value;
+    }
+  });
 
-  $: current = refDate ? dayjs(refDate) : dayjs();
+  const current = $derived(refDate ? dayjs(refDate) : dayjs());
 
-  $: label = getLabel(value, current);
+  const label = $derived(getLabel(value, current));
 
   function getLabel(period: SankeyPeriod, date: dayjs.Dayjs) {
     if (period === "month") return date.format("MMM YYYY");
@@ -47,8 +56,12 @@
     refDate = current.add(1, value).startOf(value).format("YYYY-MM-DD");
   }
 
-  $: canPrev = current.subtract(1, value).endOf(value).isSameOrAfter(minDate.startOf("month"));
-  $: canNext = current.add(1, value).startOf(value).isSameOrBefore(maxDate.endOf("month"));
+  const canPrev = $derived(
+    current.subtract(1, value).endOf(value).isSameOrAfter(minDate.startOf("month"))
+  );
+  const canNext = $derived(
+    current.add(1, value).startOf(value).isSameOrBefore(maxDate.endOf("month"))
+  );
 
   function reset() {
     refDate = "";
@@ -61,7 +74,7 @@
       <button
         type="button"
         class="du-tab {option.value === value ? 'du-tab-active' : ''}"
-        on:click={() => (value = option.value)}
+        onclick={() => (value = option.value)}
       >
         {option.label}
       </button>
@@ -74,7 +87,7 @@
       style="border: none; background: transparent; box-shadow: none;"
       aria-label="Previous period"
       disabled={!canPrev}
-      on:click={prev}
+      onclick={prev}
     >
       <span class="icon is-small"><i class="fas fa-chevron-left"></i></span>
     </button>
@@ -82,7 +95,7 @@
       type="button"
       class="has-text-weight-bold has-text-centered has-text-grey-darker is-size-7"
       style="min-width: 60px;"
-      on:click={reset}
+      onclick={reset}
       aria-label="Reset to current"
     >
       {label}
@@ -92,7 +105,7 @@
       style="border: none; background: transparent; box-shadow: none;"
       aria-label="Next period"
       disabled={!canNext || !refDate}
-      on:click={next}
+      onclick={next}
     >
       <span class="icon is-small"><i class="fas fa-chevron-right"></i></span>
     </button>

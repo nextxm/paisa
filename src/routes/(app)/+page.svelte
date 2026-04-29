@@ -32,28 +32,30 @@
   import LegendCard from "$lib/components/LegendCard.svelte";
   import BalanceCard from "$lib/components/BalanceCard.svelte";
 
-  let cashflowLegends: Legend[] = [];
-  let month = now().format("YYYY-MM");
-  let goalSummaries: GoalSummary[] = [];
-  let transactionSequences: TransactionSequence[] = [];
-  let cashFlows: CashFlow[] = [];
-  let expenses: { [key: string]: Posting[] } = {};
-  let xirr = 0;
-  let networth: Networth;
+  let cashflowLegends: Legend[] = $state([]);
+  let month = $state(now().format("YYYY-MM"));
+  let goalSummaries: GoalSummary[] = $state([]);
+  let transactionSequences: TransactionSequence[] = $state([]);
+  let cashFlows: CashFlow[] = $state([]);
+  let expenses: { [key: string]: Posting[] } = $state({});
+  let xirr = $state(0);
+  let networth: Networth = $state(null);
   let renderer: (data: Posting[]) => void;
-  let totalExpense = 0;
-  let transactions: Transaction[] = [];
-  let budgetsByMonth: Record<string, Budget> = {};
-  let currentBudget: Budget;
-  let selectedExpenses: Posting[] = [];
-  let isEmpty = false;
-  let checkingBalances: Record<string, AssetBreakdown> = {};
+  let totalExpense = $state(0);
+  let transactions: Transaction[] = $state([]);
+  let budgetsByMonth: Record<string, Budget> = $state({});
+  let currentBudget: Budget = $state(null);
+  let selectedExpenses: Posting[] = $state([]);
+  let isEmpty = $state(false);
+  let checkingBalances: Record<string, AssetBreakdown> = $state({});
 
-  $: if (renderer) {
-    selectedExpenses = expenses[month] || [];
-    renderer(selectedExpenses);
-    totalExpense = _.sumBy(selectedExpenses, (p) => p.amount);
-  }
+  $effect(() => {
+    if (renderer) {
+      selectedExpenses = expenses[month] || [];
+      renderer(selectedExpenses);
+      totalExpense = _.sumBy(selectedExpenses, (p) => p.amount);
+    }
+  });
 
   async function initDemo() {
     await ajax("/api/init", { method: "POST" });
@@ -139,7 +141,7 @@
                 </li>
               </ol>
 
-              <button type="button" on:click={initDemo} class="button is-link">Setup Demo</button>
+              <button type="button" onclick={initDemo} class="button is-link">Setup Demo</button>
             </div>
           </div>
         </ZeroState>

@@ -3,22 +3,29 @@
   import _ from "lodash";
   import Select from "svelte-select";
 
-  export let allAccounts: string[];
-  export let accounts: string[];
+  let {
+    allAccounts,
+    accounts = $bindable([] as string[])
+  }: { allAccounts: string[]; accounts?: string[] } = $props();
 
-  let allAccountItems: { value: string; label: string; created?: boolean }[];
-  let accountItems: { value: string; label: string; created?: boolean }[];
+  let allAccountItems: { value: string; label: string; created?: boolean }[] = $state([]);
+  let accountItems: { value: string; label: string; created?: boolean }[] = $state([]);
 
-  let filterText = "";
-  $: allAccountItems = _.map(allAccounts, (account) => ({
-    value: account,
-    label: account
-  }));
+  let filterText = $state("");
 
-  $: accountItems = _.map(accounts, (account) => ({
-    value: account,
-    label: account
-  }));
+  $effect(() => {
+    allAccountItems = _.map(allAccounts, (account) => ({
+      value: account,
+      label: account
+    }));
+  });
+
+  $effect(() => {
+    accountItems = _.map(accounts, (account) => ({
+      value: account,
+      label: account
+    }));
+  });
 
   function handleFilter(e: any) {
     if (accountItems?.find((i) => i.label === filterText)) return;

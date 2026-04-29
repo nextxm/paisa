@@ -1,6 +1,6 @@
 <script lang="ts">
   import { formatTextAsHtml, type Transaction } from "$lib/utils";
-  export let transaction: Transaction;
+  let { transaction }: { transaction: Transaction } = $props();
 </script>
 
 {#if transaction.note != ""}

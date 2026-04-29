@@ -2,10 +2,10 @@
   import _ from "lodash";
   import { now } from "$lib/utils";
 
-  export let n = 2;
+  let { n = 2, value = $bindable(now().format("YYYY-MM")) }: { n?: number; value?: string } =
+    $props();
 
   let currentMonth = now();
-  export let value: string = currentMonth.format("YYYY-MM");
 
   let options: { label: string; value: string }[] = _.reverse(
     _.map(_.range(0, n), (i) => {
@@ -23,7 +23,7 @@
     <button
       type="button"
       class="du-tab {option.value === value ? 'du-tab-active' : ''}"
-      on:click={() => (value = option.value)}
+      onclick={() => (value = option.value)}
     >
       {option.label}
     </button>

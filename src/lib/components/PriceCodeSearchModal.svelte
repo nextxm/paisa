@@ -6,20 +6,20 @@
   import { ajax, type AutoCompleteItem, type PriceProvider } from "$lib/utils";
 
   let label = "Choose Price Provider";
-  export let open = false;
-  let code = "";
+  let { open = $bindable(false) } = $props();
+  let code = $state("");
 
-  let providers: PriceProvider[] = [];
-  let selectedProvider: PriceProvider = null;
+  let providers: PriceProvider[] = $state([]);
+  let selectedProvider: PriceProvider = $state(null);
 
-  let filters: Record<string, AutoCompleteItem> = {};
+  let filters: Record<string, AutoCompleteItem> = $state({});
 
   onMount(async () => {
     ({ providers } = await ajax("/api/price/providers", { background: true }));
     selectedProvider = providers[0];
   });
 
-  let isLoading = false;
+  let isLoading = $state(false);
   async function clearProviderCache() {
     isLoading = true;
     try {
@@ -34,7 +34,7 @@
     }
   }
 
-  let autocompleteCache: number[] = [];
+  let autocompleteCache: number[] = $state([]);
   function clearCache(i: number) {
     autocompleteCache[i] = (autocompleteCache[i] || 0) + 1;
   }

@@ -23,32 +23,32 @@
   import BoxLabel from "$lib/components/BoxLabel.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
 
-  let commodities: string[] = [];
-  let selectedCommodities: string[] = [];
-  let security_type: PortfolioAggregate[] = [];
-  let name_and_security_type: PortfolioAggregate[] = [];
-  let rating: PortfolioAggregate[] = [];
-  let industry: PortfolioAggregate[] = [];
-  let color: any;
+  let commodities: string[] = $state([]);
+  let selectedCommodities: string[] = $state([]);
+  let security_type: PortfolioAggregate[] = $state([]);
+  let name_and_security_type: PortfolioAggregate[] = $state([]);
+  let rating: PortfolioAggregate[] = $state([]);
+  let industry: PortfolioAggregate[] = $state([]);
+  let color: any = $state(null);
 
-  let securityTypeEmpty: boolean = false;
-  let nameAndSecurityTypeEmpty: boolean = false;
-  let ratingEmpty: boolean = false;
-  let industryEmpty: boolean = false;
+  let securityTypeEmpty: boolean = $state(false);
+  let nameAndSecurityTypeEmpty: boolean = $state(false);
+  let ratingEmpty: boolean = $state(false);
+  let industryEmpty: boolean = $state(false);
 
-  export let data: PageData;
-  let gain: AccountGain;
-  let overview: Networth;
-  let assetBreakdown: AssetBreakdown;
-  let legends = buildLegends();
+  let { data }: { data: PageData } = $props();
+  let gain: AccountGain = $state(null);
+  let overview: Networth = $state(null);
+  let assetBreakdown: AssetBreakdown = $state(null);
+  let legends = $state(buildLegends());
 
   let destroyCallback = () => {};
-  let postings: Posting[] = [];
+  let postings: Posting[] = $state([]);
 
-  let securityTypeR: any,
-    portfolioR: any,
-    industryR: any,
-    ratingR: any = null;
+  let securityTypeR: any = $state(null),
+    portfolioR: any = $state(null),
+    industryR: any = $state(null),
+    ratingR: any = $state(null);
 
   onDestroy(async () => {
     destroyCallback();
@@ -106,12 +106,14 @@
     industryEmpty = industry.length === 0;
   });
 
-  $: if (securityTypeR) {
-    securityTypeR(filterCommodityBreakdowns(security_type, selectedCommodities), color);
-    ratingR(filterCommodityBreakdowns(rating, selectedCommodities), color);
-    industryR(filterCommodityBreakdowns(industry, selectedCommodities), color);
-    portfolioR(filterCommodityBreakdowns(name_and_security_type, selectedCommodities), color);
-  }
+  $effect(() => {
+    if (securityTypeR) {
+      securityTypeR(filterCommodityBreakdowns(security_type, selectedCommodities), color);
+      ratingR(filterCommodityBreakdowns(rating, selectedCommodities), color);
+      industryR(filterCommodityBreakdowns(industry, selectedCommodities), color);
+      portfolioR(filterCommodityBreakdowns(name_and_security_type, selectedCommodities), color);
+    }
+  });
 </script>
 
 <section class="section">

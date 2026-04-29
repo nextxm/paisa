@@ -2,7 +2,7 @@
   import { formatCurrency, type FYCapitalGain } from "$lib/utils";
   const DATE_FORMAT = "DD MMM YYYY";
 
-  export let fyCapitalGain: FYCapitalGain;
+  let { fyCapitalGain }: { fyCapitalGain: FYCapitalGain } = $props();
 </script>
 
 <div>
