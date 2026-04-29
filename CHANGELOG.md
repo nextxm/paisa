@@ -38,6 +38,8 @@
 
 #### Bug fixes
 
+- **Navbar effect recursion fixed** — Reworked breadcrumb/nav selection in `src/lib/components/Navbar.svelte` to resolve selection from the current path in a pure helper (`src/lib/navbar_selection.ts`) instead of reading and mutating the same reactive state inside one `$effect`. This prevents startup/runtime `effect_update_depth_exceeded` crashes on built apps.
+
 - **Embedded static asset routing fixed** — Updated `internal/server/server.go` to serve root-level PWA assets (`/manifest.webmanifest`, `/sw.js`, Workbox files, and `/pwa-*.png`) from embedded `web/static` instead of falling through `NoRoute` to `index.html`. This resolves `Manifest: Line: 1, column: 1, Syntax error` when using the Go-served app.
 
 - **Dashboard startup loop fixed** — Updated `src/routes/(app)/+page.svelte` to remove a read-after-write reactive pattern in the dashboard `$effect` (`selectedExpenses`), preventing a recursive update cycle that could raise `effect_update_depth_exceeded` on load when the current month has no expense bucket.
