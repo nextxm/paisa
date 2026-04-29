@@ -25,65 +25,67 @@
   import LegendCard from "$lib/components/LegendCard.svelte";
 
   let groups = writable([]);
-  let z: d3.ScaleOrdinal<string, string, never>,
+  let z: d3.ScaleOrdinal<string, string, never> = $state(null),
     renderer: (ps: Posting[]) => void,
-    expenses: Posting[],
-    grouped_expenses: Record<string, Posting[]>,
-    grouped_incomes: Record<string, Posting[]>,
-    grouped_investments: Record<string, Posting[]>,
-    grouped_taxes: Record<string, Posting[]>,
+    expenses: Posting[] = $state(null),
+    grouped_expenses: Record<string, Posting[]> = $state(null),
+    grouped_incomes: Record<string, Posting[]> = $state(null),
+    grouped_investments: Record<string, Posting[]> = $state(null),
+    grouped_taxes: Record<string, Posting[]> = $state(null),
     destroy: () => void;
 
-  let legends: Legend[] = [];
+  let legends: Legend[] = $state([]);
 
-  let taxRate = "",
-    netIncome = "",
-    tax = "",
-    expenseRate = "",
-    expense = "",
-    saving = "",
-    savingRate = "",
-    income = "";
+  let taxRate = $state(""),
+    netIncome = $state(""),
+    tax = $state(""),
+    expenseRate = $state(""),
+    expense = $state(""),
+    saving = $state(""),
+    savingRate = $state(""),
+    income = $state("");
 
-  let current_month_expenses: Posting[] = [];
+  let current_month_expenses: Posting[] = $state([]);
 
-  $: {
+  $effect(() => {
     current_month_expenses = _.chain((grouped_expenses && grouped_expenses[$month]) || [])
       .filter((e) => _.includes($groups, secondName(e.account)))
       .sortBy((e) => e.date)
       .reverse()
       .value();
-  }
+  });
 
-  $: if (grouped_expenses && z && renderer) {
-    renderCalendar($month, grouped_expenses[$month], z, $groups);
+  $effect(() => {
+    if (grouped_expenses && z && renderer) {
+      renderCalendar($month, grouped_expenses[$month], z, $groups);
 
-    const expenses = grouped_expenses[$month] || [];
-    const incomes = grouped_incomes[$month] || [];
-    const taxes = grouped_taxes[$month] || [];
-    const investments = grouped_investments[$month] || [];
+      const expenses = grouped_expenses[$month] || [];
+      const incomes = grouped_incomes[$month] || [];
+      const taxes = grouped_taxes[$month] || [];
+      const investments = grouped_investments[$month] || [];
 
-    income = sumCurrency(incomes, -1);
-    tax = sumCurrency(taxes);
-    expense = sumCurrency(expenses);
-    saving = sumCurrency(investments);
+      income = sumCurrency(incomes, -1);
+      tax = sumCurrency(taxes);
+      expense = sumCurrency(expenses);
+      saving = sumCurrency(investments);
 
-    if (_.isEmpty(incomes)) {
-      taxRate = "";
-      expenseRate = "";
-      savingRate = "";
-      netIncome = "";
-    } else {
-      netIncome = formatCurrency(sum(incomes, -1) - sum(taxes)) + " net income";
-      taxRate = formatPercentage(sum(taxes) / sum(incomes, -1)) + " on income";
-      expenseRate =
-        formatPercentage(sum(expenses) / (sum(incomes, -1) - sum(taxes))) + " of net income";
-      savingRate =
-        formatPercentage(sum(investments) / (sum(incomes, -1) - sum(taxes))) + " of net income";
+      if (_.isEmpty(incomes)) {
+        taxRate = "";
+        expenseRate = "";
+        savingRate = "";
+        netIncome = "";
+      } else {
+        netIncome = formatCurrency(sum(incomes, -1) - sum(taxes)) + " net income";
+        taxRate = formatPercentage(sum(taxes) / sum(incomes, -1)) + " on income";
+        expenseRate =
+          formatPercentage(sum(expenses) / (sum(incomes, -1) - sum(taxes))) + " of net income";
+        savingRate =
+          formatPercentage(sum(investments) / (sum(incomes, -1) - sum(taxes))) + " of net income";
+      }
+
+      renderer(expenses);
     }
-
-    renderer(expenses);
-  }
+  });
 
   onDestroy(async () => {
     if (destroy) {

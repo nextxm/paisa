@@ -3,11 +3,13 @@
   import _ from "lodash";
   import { createEventDispatcher } from "svelte";
 
-  export let label = "Save As";
-  export let help = "Create or overwrite existing file";
-  export let placeholder = "expense.ledger";
-  export let open = false;
-  let destinationFile = "";
+  let {
+    label = "Save As",
+    help = "Create or overwrite existing file",
+    placeholder = "expense.ledger",
+    open = $bindable(false)
+  } = $props();
+  let destinationFile = $state("");
 
   const dispatch = createEventDispatcher();
 </script>

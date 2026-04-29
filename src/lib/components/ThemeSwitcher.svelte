@@ -4,7 +4,7 @@
   import * as store from "../../store";
   import { refresh } from "../../store";
 
-  let theme = getColorPreference();
+  let theme = $state(getColorPreference());
   store.theme.set(theme);
 
   function setTheme(value: string) {
@@ -37,7 +37,7 @@
 </script>
 
 <button
-  on:click={toggle}
+  onclick={toggle}
   class="theme-toggle p-1"
   title="Toggles light & dark"
   aria-label="auto"

@@ -7,11 +7,11 @@
   } from "$lib/transaction_sequence";
   import { formatCurrencyCrude, now, type TransactionSequence } from "$lib/utils";
 
-  export let transactionSequece: TransactionSequence;
+  let { transactionSequece }: { transactionSequece: TransactionSequence } = $props();
 
-  let schedule = nextUnpaidSchedule(transactionSequece);
-  let n = schedule.scheduled;
-  const icon = scheduleIcon(schedule);
+  const schedule = $derived(nextUnpaidSchedule(transactionSequece));
+  const n = $derived(schedule.scheduled);
+  const icon = $derived(scheduleIcon(schedule));
 </script>
 
 <div class="has-text-centered mb-0 mr-3 max-w-[200px]">

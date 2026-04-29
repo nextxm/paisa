@@ -8,14 +8,13 @@
   import { refresh } from "../../../../store";
   import { sync } from "$lib/sync";
 
-  let lastConfig: typeof globalThis.USER_CONFIG;
-  let config: typeof globalThis.USER_CONFIG;
-  let schema: JSONSchema7;
-  let hasChanges = true;
-  let isLoading = false;
-  let isTogglingProviderDebug = false;
-  let error: string = null;
-  let accounts: string[] = [];
+  let lastConfig: typeof globalThis.USER_CONFIG = $state(null);
+  let config: typeof globalThis.USER_CONFIG = $state(null);
+  let schema: JSONSchema7 = $state(null);
+  let isLoading = $state(false);
+  let isTogglingProviderDebug = $state(false);
+  let error: string = $state(null);
+  let accounts: string[] = $state([]);
   onMount(async () => {
     ({ config, schema, accounts } = await ajax("/api/config"));
     lastConfig = _.cloneDeep(config);
@@ -93,7 +92,7 @@
     }
   }
 
-  $: hasChanges = !_.isEqual(config, lastConfig);
+  const hasChanges = $derived(!_.isEqual(config, lastConfig));
 </script>
 
 <div class="section">
@@ -130,7 +129,7 @@
                   <div class="field has-addons mb-0">
                     <div class="control">
                       <button
-                        on:click={() => applyProviderHTTPDebug(false)}
+                        onclick={() => applyProviderHTTPDebug(false)}
                         class="button is-light {isTogglingProviderDebug &&
                           !config.provider_debug_http &&
                           'is-loading'}"
@@ -140,7 +139,7 @@
                     </div>
                     <div class="control">
                       <button
-                        on:click={() => applyProviderHTTPDebug(true)}
+                        onclick={() => applyProviderHTTPDebug(true)}
                         class="button is-warning {isTogglingProviderDebug &&
                           config.provider_debug_http &&
                           'is-loading'}"
@@ -155,18 +154,18 @@
             <div class="field is-grouped is-grouped-right">
               <div class="control">
                 <button
-                  on:click={() => save(config)}
+                  onclick={() => save(config)}
                   class="button is-success {isLoading && 'is-loading'}"
                   disabled={!hasChanges}>Save</button
                 >
               </div>
               <div class="control">
-                <button on:click={() => (config = _.cloneDeep(lastConfig))} class="button is-light"
+                <button onclick={() => (config = _.cloneDeep(lastConfig))} class="button is-light"
                   >Cancel</button
                 >
               </div>
               <div class="control">
-                <button on:click={() => resetToDefault()} class="button is-danger"
+                <button onclick={() => resetToDefault()} class="button is-danger"
                   >Reset to Defaults</button
                 >
               </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Posting } from "$lib/utils";
 
-  export let posting: Posting;
+  let { posting }: { posting: Posting } = $props();
 </script>
 
 {#if posting.status == "cleared"}

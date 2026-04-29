@@ -8,26 +8,29 @@
 
   type HistoryMode = "latest" | "all";
 
-  let groupedPrices: Record<string, Price[]> = {};
-  let expandedRows: Record<string, boolean> = {};
-  let loadingHistoryRows: Record<string, boolean> = {};
-  let loadedHistoryRows: Record<string, boolean> = {};
+  let groupedPrices: Record<string, Price[]> = $state({});
+  let expandedRows: Record<string, boolean> = $state({});
+  let loadingHistoryRows: Record<string, boolean> = $state({});
+  let loadedHistoryRows: Record<string, boolean> = $state({});
 
-  let filterBase = "";
-  let filterQuote = "";
-  let filterSource = "";
-  let reportCurrency = "";
-  let historyMode: HistoryMode = "all";
+  let filterBase = $state("");
+  let filterQuote = $state("");
+  let filterSource = $state("");
+  let reportCurrency = $state("");
+  let historyMode: HistoryMode = $state("all");
 
-  let availableBases: string[] = [];
-  let availableQuotes: string[] = [];
-  let availableSources: string[] = [];
+  let availableBases: string[] = $state([]);
+  let availableQuotes: string[] = $state([]);
+  let availableSources: string[] = $state([]);
 
   const ITEM_SIZE = 18;
 
-  $: hasActiveFilters =
-    filterBase !== "" || filterQuote !== "" || filterSource !== "" || reportCurrency !== "";
-  $: priceEntries = _.sortBy(Object.entries(groupedPrices), ([commodity]) => commodity);
+  const hasActiveFilters = $derived(
+    filterBase !== "" || filterQuote !== "" || filterSource !== "" || reportCurrency !== ""
+  );
+  const priceEntries = $derived(
+    _.sortBy(Object.entries(groupedPrices), ([commodity]) => commodity)
+  );
 
   function change(prices: Price[], days: number, tolerance: number) {
     const first = prices[0];
@@ -140,7 +143,7 @@
             <p class="control">
               <button
                 class="button is-small is-link invertable is-light is-danger"
-                on:click={(_e) => clearPriceCache()}
+                onclick={(_e) => clearPriceCache()}
               >
                 <span class="icon is-small">
                   <i class="fas fa-trash-can"></i>
@@ -150,7 +153,7 @@
             </p>
             <p class="control">
               <span class="select is-small">
-                <select bind:value={filterBase} on:change={() => fetchPrice()}>
+                <select bind:value={filterBase} onchange={() => fetchPrice()}>
                   <option value="">All Base</option>
                   {#each availableBases as base}
                     <option value={base}>{base}</option>
@@ -160,7 +163,7 @@
             </p>
             <p class="control">
               <span class="select is-small">
-                <select bind:value={filterQuote} on:change={() => fetchPrice()}>
+                <select bind:value={filterQuote} onchange={() => fetchPrice()}>
                   <option value="">All Quote</option>
                   {#each availableQuotes as quote}
                     <option value={quote}>{quote}</option>
@@ -170,7 +173,7 @@
             </p>
             <p class="control">
               <span class="select is-small">
-                <select bind:value={filterSource} on:change={() => fetchPrice()}>
+                <select bind:value={filterSource} onchange={() => fetchPrice()}>
                   <option value="">All Sources</option>
                   {#each availableSources as src}
                     <option value={src}>{src}</option>
@@ -180,7 +183,7 @@
             </p>
             <p class="control">
               <span class="select is-small">
-                <select bind:value={reportCurrency} on:change={() => fetchPrice()}>
+                <select bind:value={reportCurrency} onchange={() => fetchPrice()}>
                   <option value="">No Conversion</option>
                   {#each availableQuotes as quote}
                     <option value={quote}>{quote}</option>
@@ -190,7 +193,7 @@
             </p>
             <p class="control">
               <span class="select is-small">
-                <select bind:value={historyMode} on:change={() => fetchPrice()}>
+                <select bind:value={historyMode} onchange={() => fetchPrice()}>
                   <option value="latest">Latest Only</option>
                   <option value="all">Load History</option>
                 </select>
@@ -200,7 +203,7 @@
               <p class="control">
                 <button
                   class="button is-small is-light"
-                  on:click={() => {
+                  onclick={() => {
                     clearFilters();
                     fetchPrice();
                   }}
@@ -242,7 +245,7 @@
                 <tr
                   class={expandedRows[commodity] ? "is-active" : ""}
                   style="cursor: pointer;"
-                  on:click={() => toggleCommodity(commodity)}
+                  onclick={() => toggleCommodity(commodity)}
                 >
                   <td>
                     <span class="icon has-text-link">

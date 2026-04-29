@@ -2,8 +2,7 @@
   import { formatCurrency, type Posting } from "$lib/utils";
   import _ from "lodash";
 
-  export let postings: Posting[];
-  export let groupFormat: string;
+  let { postings, groupFormat }: { postings: Posting[]; groupFormat: string } = $props();
 
   interface GroupedPosting {
     key: string;
@@ -11,9 +10,10 @@
     total: number;
   }
 
-  let groupedPostings: GroupedPosting[] = [];
-  $: groupedPostings = group(postings);
-  $: isGrouped = _.some(groupedPostings, (groupedPosting) => groupedPosting.postings.length > 1);
+  const groupedPostings = $derived(group(postings));
+  const isGrouped = $derived(
+    _.some(groupedPostings, (groupedPosting) => groupedPosting.postings.length > 1)
+  );
 
   function group(ps: Posting[]) {
     let groupedPostings: GroupedPosting[] = [];

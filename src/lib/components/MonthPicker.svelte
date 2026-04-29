@@ -3,19 +3,23 @@
   import dayjs from "dayjs";
   import _ from "lodash";
 
-  export let min: dayjs.Dayjs;
-  export let max: dayjs.Dayjs;
-  export let value: string;
+  let {
+    min,
+    max,
+    value = $bindable()
+  }: {
+    min: dayjs.Dayjs;
+    max: dayjs.Dayjs;
+    value: string;
+  } = $props();
 
-  let allowedYears: number[] = [];
-  let selectedYear: number;
-  let open = false;
+  let open = $state(false);
 
-  $: valueDate = dayjs(value, "YYYY-MM");
-  $: allowedYears = _.range(min.year(), max.year() + 1);
-  $: selectedYear = valueDate.year();
+  const valueDate = $derived(dayjs(value, "YYYY-MM"));
+  let allowedYears = $derived(_.range(min.year(), max.year() + 1));
+  let selectedYear = $state(valueDate.year());
 
-  $: {
+  $effect(() => {
     if (!isAllowed(valueDate, min, max)) {
       if (isAllowed(now(), min, max)) {
         select(now());
@@ -23,17 +27,15 @@
         select(max);
       }
     }
-  }
+  });
 
   function isAllowed(date: dayjs.Dayjs, min: dayjs.Dayjs, max: dayjs.Dayjs) {
     return date.isSameOrAfter(min.startOf("month")) && date.isSameOrBefore(max.endOf("month"));
   }
 
   function select(date: dayjs.Dayjs) {
-    valueDate = date;
     value = date.format("YYYY-MM");
-    selectedYear = valueDate.year();
-    allowedYears = _.range(min.year(), max.year() + 1);
+    selectedYear = date.year();
     open = false;
   }
 
@@ -66,7 +68,7 @@
     class="button is-small border-left"
     aria-label="Previous month"
     disabled={!isAllowed(valueDate.add(-1, "month"), min, max)}
-    on:click={(_e) => select(valueDate.add(-1, "month"))}
+    onclick={(_e) => select(valueDate.add(-1, "month"))}
   >
     <span class="icon">
       <i class="fas fa-chevron-left"></i>
@@ -78,7 +80,7 @@
         class="button is-small border-none"
         aria-haspopup="true"
         aria-controls="dropdown-menu2"
-        on:click={(_e) => (open = !open)}
+        onclick={(_e) => (open = !open)}
       >
         <span class="has-text-weight-bold">{valueDate.format("MMM YYYY")}</span>
         <span class="icon">
@@ -94,7 +96,7 @@
               class="button is-small"
               aria-label="Previous year"
               disabled={selectedYear - 1 < min.year()}
-              on:click={(_e) => selectedYear--}
+              onclick={(_e) => selectedYear--}
             >
               <span class="icon">
                 <i class="fas fa-chevron-left"></i>
@@ -104,7 +106,7 @@
               <select
                 class="has-text-weight-bold"
                 value={selectedYear}
-                on:change={(e) => selectYear(e)}
+                onchange={(e) => selectYear(e)}
               >
                 {#each allowedYears as year}
                   <option value={year}>{year}</option>
@@ -115,7 +117,7 @@
               class="button is-small"
               aria-label="Next year"
               disabled={selectedYear + 1 > max.year()}
-              on:click={(_e) => selectedYear++}
+              onclick={(_e) => selectedYear++}
             >
               <span class="icon">
                 <i class="fas fa-chevron-right"></i>
@@ -135,7 +137,7 @@
                       ? "is-link has-text-weight-bold"
                       : "has-text-black-ter"}
                     aria-label={`Select ${month} ${selectedYear}`}
-                    on:click={(_e) => selectMonth(i)}
+                    onclick={(_e) => selectMonth(i)}
                   >
                     {month}
                   </button>
@@ -153,7 +155,7 @@
     class="button is-small border-right"
     aria-label="Next month"
     disabled={!isAllowed(valueDate.add(1, "month"), min, max)}
-    on:click={(_e) => select(valueDate.add(1, "month"))}
+    onclick={(_e) => select(valueDate.add(1, "month"))}
   >
     <span class="icon">
       <i class="fas fa-chevron-right"></i>

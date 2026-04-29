@@ -21,18 +21,18 @@
   import FileModal from "$lib/components/FileModal.svelte";
   import { page } from "$app/stores";
 
-  let ledgerFiles: LedgerFile[] = [];
-  let accounts: string[] = [];
-  let commodities: string[] = [];
+  let ledgerFiles: LedgerFile[] = $state([]);
+  let accounts: string[] = $state([]);
+  let commodities: string[] = $state([]);
 
-  export let data: PageData;
-  let editorDom: Element;
-  let editor: EditorView;
-  let filesMap: Record<string, SheetFile> = {};
-  let postings: Posting[] = [];
-  let selectedFile: SheetFile = null;
-  let selectedVersion: string = null;
-  let lineNumber = 0;
+  let { data }: { data: PageData } = $props();
+  let editorDom: Element = $state();
+  let editor: EditorView = $state();
+  let filesMap: Record<string, SheetFile> = $state({});
+  let postings: Posting[] = $state([]);
+  let selectedFile: SheetFile = $state(null);
+  let selectedVersion: string = $state(null);
+  let lineNumber = $state(0);
 
   function command(fn: Function) {
     return () => {
@@ -142,29 +142,31 @@
     }
   }
 
-  $: if (selectedFile) {
-    if (!editor || editor.state.doc.toString() != selectedFile.content) {
-      if (editor) {
-        editor.destroy();
-      }
-
-      editor = createEditor(selectedFile.content, editorDom, postings, {
-        keybindings,
-        autocomplete: {
-          account: accounts,
-          commodity: commodities,
-          filename: ledgerFiles.map((f) => f.name)
+  $effect(() => {
+    if (selectedFile) {
+      if (!editor || editor.state.doc.toString() != selectedFile.content) {
+        if (editor) {
+          editor.destroy();
         }
-      });
-      if (lineNumber > 0) {
-        moveToLine(editor, lineNumber, true);
-        focus(editor);
-        lineNumber = 0;
+
+        editor = createEditor(selectedFile.content, editorDom, postings, {
+          keybindings,
+          autocomplete: {
+            account: accounts,
+            commodity: commodities,
+            filename: ledgerFiles.map((f) => f.name)
+          }
+        });
+        if (lineNumber > 0) {
+          moveToLine(editor, lineNumber, true);
+          focus(editor);
+          lineNumber = 0;
+        }
       }
     }
-  }
+  });
 
-  let modalOpen = false;
+  let modalOpen = $state(false);
   function openCreateModal() {
     modalOpen = true;
   }
@@ -218,7 +220,7 @@
               <button
                 class="button is-small is-link invertable is-light"
                 disabled={$sheetEditorState.hasUnsavedChanges}
-                on:click={(_e) => openCreateModal()}
+                onclick={(_e) => openCreateModal()}
               >
                 <span class="icon is-small">
                   <i class="fas fa-file-circle-plus"></i>
@@ -233,7 +235,7 @@
               <button
                 class="button is-small"
                 disabled={$sheetEditorState.hasUnsavedChanges == false}
-                on:click={(_e) => save()}
+                onclick={(_e) => save()}
               >
                 <span class="icon is-small">
                   <i class="fas fa-floppy-disk"></i>
@@ -245,7 +247,7 @@
               <button
                 class="button is-small"
                 disabled={$sheetEditorState.undoDepth == 0}
-                on:click={(_e) => undo(editor)}
+                onclick={(_e) => undo(editor)}
               >
                 <span class="icon is-small">
                   <i class="fas fa-arrow-left"></i>
@@ -257,7 +259,7 @@
               <button
                 class="button is-small"
                 disabled={$sheetEditorState.redoDepth == 0}
-                on:click={(_e) => redo(editor)}
+                onclick={(_e) => redo(editor)}
               >
                 <span>Redo</span>
                 <span class="icon is-small">
@@ -273,7 +275,7 @@
                 <button
                   class="button is-small"
                   disabled={!selectedVersion}
-                  on:click={(_e) => revert(selectedVersion)}
+                  onclick={(_e) => revert(selectedVersion)}
                 >
                   <span class="icon is-small">
                     <i class="fas fa-clock-rotate-left"></i>
@@ -296,7 +298,7 @@
                 <button
                   class="button is-small"
                   aria-label="Delete backups"
-                  on:click={(_e) => deleteBackups()}
+                  onclick={(_e) => deleteBackups()}
                 >
                   <span class="icon is-small">
                     <i class="fas fa-trash-can"></i>
@@ -311,7 +313,7 @@
               <button
                 type="button"
                 class="button p-0 has-background-transparent"
-                on:click={(_e) => moveToLine(editor, $sheetEditorState.errors[0].line_from)}
+                onclick={(_e) => moveToLine(editor, $sheetEditorState.errors[0].line_from)}
               >
                 <span class="ml-1 tag invertable is-danger is-light"
                   >{$sheetEditorState.errors.length} error(s) found</span
@@ -338,7 +340,7 @@
           <aside class="menu">
             <FileTree
               path=""
-              on:select={(e) => selectFile(e.detail)}
+              onselect={(file) => selectFile(file)}
               files={buildDirectoryTree(_.values(filesMap))}
               selectedFileName={selectedFile?.name}
               hasUnsavedChanges={$sheetEditorState.hasUnsavedChanges}
