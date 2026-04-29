@@ -132,17 +132,26 @@ $footerActiveColor: #d00;
   }
 
   a,
-  summary {
+  summary,
+  button {
     border-radius: $radius-small;
     color: $grey-dark;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
   }
 
   a:hover,
-  summary:hover {
+  summary:hover,
+  button:hover {
     background-color: $white-ter !important;
   }
 
-  a.du-active {
+  a.du-active,
+  button.du-active {
     color: $link !important;
     background-color: $white !important;
     font-weight: bold;
@@ -159,6 +168,15 @@ $footerActiveColor: #d00;
 
 :focus {
   outline: 0;
+}
+
+button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
 }
 
 html,
@@ -423,7 +441,7 @@ svg text {
 }
 
 .legend-box.selected {
-  background-color: $grey-lightest;
+  background-color: rgba($grey-lightest, 0.5);
   border-radius: $radius;
 }
 
