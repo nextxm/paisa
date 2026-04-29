@@ -16,9 +16,14 @@ export function renderIncomeStatement(element: Element) {
   const BARS = 4;
   const BAR_HEIGHT = 100;
 
+  const host = element as HTMLElement;
+  const parentWidth = host.parentElement?.clientWidth ?? 0;
+  const ownWidth = host.clientWidth ?? 0;
+  const availableWidth = Math.max(parentWidth, ownWidth, 600);
+
   const svg = d3.select(element),
     margin = { top: rem(20), right: rem(20), bottom: rem(10), left: rem(110) },
-    width = Math.max(element.parentElement.clientWidth, 600) - margin.left - margin.right,
+    width = availableWidth - margin.left - margin.right,
     g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
   const height = BAR_HEIGHT * BARS;
