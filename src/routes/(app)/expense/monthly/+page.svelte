@@ -26,13 +26,13 @@
 
   let groups = writable([]);
   let z: d3.ScaleOrdinal<string, string, never> = $state(null),
-    renderer: (ps: Posting[]) => void,
+    renderer: (ps: Posting[]) => void = $state(),
     expenses: Posting[] = $state(null),
     grouped_expenses: Record<string, Posting[]> = $state(null),
     grouped_incomes: Record<string, Posting[]> = $state(null),
     grouped_investments: Record<string, Posting[]> = $state(null),
     grouped_taxes: Record<string, Posting[]> = $state(null),
-    destroy: () => void;
+    destroy: () => void = $state();
 
   let legends: Legend[] = $state([]);
 

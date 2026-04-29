@@ -9,7 +9,7 @@
 
   let legends: Legend[] = $state([]);
   let cashFlows: CashFlow[] = $state([]);
-  let renderer: (cashflows: CashFlow[]) => void;
+  let renderer: (cashflows: CashFlow[]) => void = $state();
 
   $effect(() => {
     if (!_.isEmpty(cashFlows) && renderer) {
