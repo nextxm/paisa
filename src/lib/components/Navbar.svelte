@@ -15,7 +15,7 @@
   } from "../../persisted_store";
   import _ from "lodash";
   import { financialYear, forEachFinancialYear, helpUrl, isMobile, now } from "$lib/utils";
-  import { onDestroy, onMount, tick } from "svelte";
+  import { tick } from "svelte";
   import { get } from "svelte/store";
   import DateRange from "./DateRange.svelte";
   import ThemeSwitcher from "./ThemeSwitcher.svelte";
@@ -31,12 +31,11 @@
     closeBurger(false);
   });
 
-  onMount(async () => {
+  $effect(() => {
     if (get(year) == "") {
       year.set(financialYear(now()));
     }
   });
-
   const RecurringIcons = [
     { icon: "fa-circle-check", color: "success", label: "Cleared" },
     { icon: "fa-circle-check", color: "warning-dark", label: "Cleared late" },
@@ -308,19 +307,14 @@
     }
   });
 
-  onDestroy(() => {
-    if (typeof document !== "undefined") {
-      document.body.classList.remove("mobile-menu-open");
-    }
-
-    navMenuEl?.removeEventListener("click", closeBurgerOnItemClick);
-  });
-
-  onMount(() => {
+  $effect(() => {
     navMenuEl?.addEventListener("click", closeBurgerOnItemClick);
 
     return () => {
       navMenuEl?.removeEventListener("click", closeBurgerOnItemClick);
+      if (typeof document !== "undefined") {
+        document.body.classList.remove("mobile-menu-open");
+      }
     };
   });
 </script>

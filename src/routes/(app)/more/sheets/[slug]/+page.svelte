@@ -204,7 +204,7 @@
 
 <FileModal
   bind:open={modalOpen}
-  on:save={(e) => createFile(e.detail)}
+  onsave={(file) => createFile(file)}
   label="Create"
   placeholder="scratch"
   help="Filename without any extension"

@@ -4,6 +4,15 @@
 
 #### New features
 
+- **Epic 2: Architectural Alignment & Cleanup** — Finalized structural patterns and removed legacy Svelte 4 compatibility:
+  - **Snippet Transition (2.1)** — `Modal.svelte` migrated from named `<slot>` elements to typed snippet props (`head`, `body`, `foot`). All consumers updated to use `{#snippet head(close)}...{/snippet}` blocks: `FileModal`, `PriceCodeSearchModal`, `DiffViewModal`, `SyncHistoryOverlay`, and the import page inline modal.
+  - **Callback Prop Migration (2.2)** — `createEventDispatcher` removed from `FileModal.svelte` (replaced with `onsave` callback) and `PriceCodeSearchModal.svelte` (replaced with `onselect` callback). All four `FileModal` call-sites and `JsonSchemaForm`'s `PriceCodeSearchModal` usage updated to pass callback props directly.
+  - **Global Store Evolution (2.3)** — New `src/lib/state/ui.svelte.ts` (`UIState`) and `src/lib/state/persisted.svelte.ts` (`PersistedState`) class-based wrappers created using `fromStore`. Components can now access stores via `uiState.<prop>.current` or continue using the existing `$store` syntax.
+  - **Lifecycle & Context Update (2.4)** — `Navbar.svelte` `onMount`/`onDestroy` lifecycle hooks replaced with `$effect` (cleanup via returned function). Root `+layout.svelte` and `(app)/+layout.svelte` updated from `<slot />` to `{@render children()}` with typed `Snippet` prop.
+  - **Final Switch-Over (2.5)** — `componentApi: 4` compatibility shim removed from `svelte.config.js`. All remaining Svelte 4 deprecation warnings resolved: `Dropzone`, `Spinner`, `ZeroState`, `PostingGroup` slots converted to snippet props; `JsonSchemaForm` `<svelte:self>` replaced with self-import; `LastNMonths` `options` array made `$derived`; `MonthPicker` `selectedYear` initialised from raw prop value; `ThemeSwitcher` initial store call decoupled from reactive variable. `isBurger` in `(app)/+layout.svelte` declared with `$state()`.
+  - **prettier-plugin-svelte** bumped to `^3.3` to support `{@render ...}` syntax in formatting.
+  - `svelte-check` now reports **0 errors and 0 warnings** across the entire frontend.
+
 - **Epic 1: Component Modernization (Runes & Event Syntax)** — Systematically migrated all Svelte components and route pages from Svelte 4 syntax to Svelte 5 runes:
   - All `export let` props converted to `$props()` / `$bindable()`
   - All `$:` reactive statements converted to `$derived()` or `$effect()`

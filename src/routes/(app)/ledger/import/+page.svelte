@@ -224,7 +224,7 @@
 </script>
 
 <Modal bind:active={templateCreateModalOpen}>
-  <svelte:fragment slot="head" let:close>
+  {#snippet head(close)}
     <p class="text-base font-semibold flex-1">Create Template</p>
     <button
       class="du-btn du-btn-sm du-btn-circle du-btn-ghost"
@@ -233,27 +233,29 @@
     >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
-  </svelte:fragment>
-  <div class="field" slot="body">
-    <label class="label" for="save-filename">Template Name</label>
-    <div class="control" id="save-filename">
-      <input class="input" type="text" bind:value={saveAsName} />
-      {#if saveAsNameDuplicate}
-        <p class="help is-danger">Template with the same name already exists</p>
-      {/if}
+  {/snippet}
+  {#snippet body()}
+    <div class="field">
+      <label class="label" for="save-filename">Template Name</label>
+      <div class="control" id="save-filename">
+        <input class="input" type="text" bind:value={saveAsName} />
+        {#if saveAsNameDuplicate}
+          <p class="help is-danger">Template with the same name already exists</p>
+        {/if}
+      </div>
     </div>
-  </div>
-  <svelte:fragment slot="foot" let:close>
+  {/snippet}
+  {#snippet foot(close)}
     <button
       class="du-btn du-btn-success du-btn-sm"
       disabled={_.isEmpty(saveAsName) || saveAsNameDuplicate}
       onclick={() => save() && close()}>Create</button
     >
     <button class="du-btn du-btn-sm" onclick={() => close()}>Cancel</button>
-  </svelte:fragment>
+  {/snippet}
 </Modal>
 
-<FileModal bind:open={modalOpen} on:save={(e) => saveToFile(e.detail)} />
+<FileModal bind:open={modalOpen} onsave={(file) => saveToFile(file)} />
 
 <section class="section tab-import" style="padding-bottom: 0 !important">
   <div class="container is-fluid">

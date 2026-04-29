@@ -4,8 +4,9 @@
   import * as store from "../../store";
   import { refresh } from "../../store";
 
-  let theme = $state(getColorPreference());
-  store.theme.set(theme);
+  const initialTheme = getColorPreference();
+  let theme = $state(initialTheme);
+  store.theme.set(initialTheme);
 
   function setTheme(value: string) {
     theme = value;
