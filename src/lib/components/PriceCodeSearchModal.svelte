@@ -2,11 +2,17 @@
   import Select from "svelte-select";
   import Modal from "$lib/components/Modal.svelte";
   import _ from "lodash";
-  import { createEventDispatcher, onMount } from "svelte";
+  import { onMount } from "svelte";
   import { ajax, type AutoCompleteItem, type PriceProvider } from "$lib/utils";
 
   let label = "Choose Price Provider";
-  let { open = $bindable(false) } = $props();
+  let {
+    open = $bindable(false),
+    onselect
+  }: {
+    open?: boolean;
+    onselect?: (data: { code: string; provider: string }) => void;
+  } = $props();
   let code = $state("");
 
   let providers: PriceProvider[] = $state([]);
@@ -74,12 +80,10 @@
       return completions;
     };
   }
-
-  const dispatch = createEventDispatcher();
 </script>
 
 <Modal bind:active={open} footerClass="justify-between">
-  <svelte:fragment slot="head" let:close>
+  {#snippet head(close)}
     <p class="text-base font-semibold flex-1">{label}</p>
     <button
       class="du-btn du-btn-sm du-btn-circle du-btn-ghost"
@@ -88,76 +92,78 @@
     >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
-  </svelte:fragment>
-  <div style="min-height: 500px;" slot="body">
-    {#if selectedProvider}
-      <div class="field">
-        <label class="label" for="">Provider</label>
-        <div class="control">
-          <div class="select">
-            <select bind:value={selectedProvider} required onchange={() => reset()}>
-              {#each providers as provider}
-                <option value={provider}>{provider.label}</option>
-              {/each}
-            </select>
-          </div>
-          <div class="help">{@html selectedProvider.description}</div>
-        </div>
-      </div>
-      <div class="field">
-        {#each selectedProvider.fields as field, i}
-          <div class="field">
-            <label class="label" for="">{field.label}</label>
-            <div class="control">
-              {#if field.inputType == "text"}
-                {#if i === selectedProvider.fields.length - 1}
-                  <input class="input" type="text" bind:value={code} required />
-                {:else}
-                  <input class="input" type="text" bind:value={filters[field.id]} required />
-                {/if}
-              {:else}
-                {#key autocompleteCache[i]}
-                  <Select
-                    bind:value={filters[field.id]}
-                    --list-z-index="5"
-                    showChevron={true}
-                    loadOptions={makeAutoComplete(field.id, filters, i, selectedProvider)}
-                    label="label"
-                    itemId="id"
-                    debounceWait={500}
-                    searchable={true}
-                    clearable={false}
-                    on:change={() => {
-                      _.each(selectedProvider.fields, (f, j) => {
-                        if (j > i) {
-                          clearCache(j);
-                          filters[f.id] = null;
-                        }
-                      });
-
-                      if (i === selectedProvider.fields.length - 1) {
-                        code = filters[field.id].id;
-                      } else {
-                        code = "";
-                      }
-                    }}
-                  ></Select>
-                {/key}
-              {/if}
-              <p class="help">{@html field.help}</p>
+  {/snippet}
+  {#snippet body()}
+    <div style="min-height: 500px;">
+      {#if selectedProvider}
+        <div class="field">
+          <label class="label" for="">Provider</label>
+          <div class="control">
+            <div class="select">
+              <select bind:value={selectedProvider} required onchange={() => reset()}>
+                {#each providers as provider}
+                  <option value={provider}>{provider.label}</option>
+                {/each}
+              </select>
             </div>
+            <div class="help">{@html selectedProvider.description}</div>
           </div>
-        {/each}
-      </div>
-    {/if}
-  </div>
-  <svelte:fragment slot="foot" let:close>
+        </div>
+        <div class="field">
+          {#each selectedProvider.fields as field, i}
+            <div class="field">
+              <label class="label" for="">{field.label}</label>
+              <div class="control">
+                {#if field.inputType == "text"}
+                  {#if i === selectedProvider.fields.length - 1}
+                    <input class="input" type="text" bind:value={code} required />
+                  {:else}
+                    <input class="input" type="text" bind:value={filters[field.id]} required />
+                  {/if}
+                {:else}
+                  {#key autocompleteCache[i]}
+                    <Select
+                      bind:value={filters[field.id]}
+                      --list-z-index="5"
+                      showChevron={true}
+                      loadOptions={makeAutoComplete(field.id, filters, i, selectedProvider)}
+                      label="label"
+                      itemId="id"
+                      debounceWait={500}
+                      searchable={true}
+                      clearable={false}
+                      on:change={() => {
+                        _.each(selectedProvider.fields, (f, j) => {
+                          if (j > i) {
+                            clearCache(j);
+                            filters[f.id] = null;
+                          }
+                        });
+
+                        if (i === selectedProvider.fields.length - 1) {
+                          code = filters[field.id].id;
+                        } else {
+                          code = "";
+                        }
+                      }}
+                    ></Select>
+                  {/key}
+                {/if}
+                <p class="help">{@html field.help}</p>
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  {/snippet}
+  {#snippet foot(close)}
     <div class="flex gap-2">
       <button
         class="du-btn du-btn-success du-btn-sm"
         disabled={_.isEmpty(code)}
         onclick={() => {
-          dispatch("select", { code: code, provider: selectedProvider.code });
+          onselect?.({ code: code, provider: selectedProvider.code });
           reset();
           close();
         }}>Select</button
@@ -172,5 +178,5 @@
         disabled={!selectedProvider}>Clear Provider Cache</button
       >
     </div>
-  </svelte:fragment>
+  {/snippet}
 </Modal>

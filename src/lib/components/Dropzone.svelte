@@ -1,14 +1,18 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
+
   let {
     multiple = true,
     accept = "",
     disabled = false,
-    ondrop: onDropCallback = null
+    ondrop: onDropCallback = null,
+    children
   }: {
     multiple?: boolean;
     accept?: string;
     disabled?: boolean;
     ondrop?: ((detail: { acceptedFiles: File[]; fileRejections: File[] }) => void) | null;
+    children?: Snippet;
   } = $props();
 
   let dragging = $state(false);
@@ -69,7 +73,7 @@
     style="display:none"
     onchange={handleChange}
   />
-  <slot />
+  {@render children?.()}
 </div>
 
 <style>

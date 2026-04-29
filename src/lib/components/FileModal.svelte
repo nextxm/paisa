@@ -1,21 +1,25 @@
 <script lang="ts">
   import Modal from "$lib/components/Modal.svelte";
   import _ from "lodash";
-  import { createEventDispatcher } from "svelte";
 
   let {
     label = "Save As",
     help = "Create or overwrite existing file",
     placeholder = "expense.ledger",
-    open = $bindable(false)
+    open = $bindable(false),
+    onsave
+  }: {
+    label?: string;
+    help?: string;
+    placeholder?: string;
+    open?: boolean;
+    onsave?: (file: string) => void;
   } = $props();
   let destinationFile = $state("");
-
-  const dispatch = createEventDispatcher();
 </script>
 
 <Modal bind:active={open}>
-  <svelte:fragment slot="head" let:close>
+  {#snippet head(close)}
     <p class="text-base font-semibold flex-1">{label}</p>
     <button
       class="du-btn du-btn-sm du-btn-circle du-btn-ghost"
@@ -24,20 +28,25 @@
     >
       <i class="fas fa-times" aria-hidden="true"></i>
     </button>
-  </svelte:fragment>
-  <div class="field" slot="body">
-    <label class="label" for="save-filename">File Name</label>
-    <div class="control" id="save-filename">
-      <input class="input" type="text" {placeholder} bind:value={destinationFile} />
-      <p class="help">{help}</p>
+  {/snippet}
+  {#snippet body()}
+    <div class="field">
+      <label class="label" for="save-filename">File Name</label>
+      <div class="control" id="save-filename">
+        <input class="input" type="text" {placeholder} bind:value={destinationFile} />
+        <p class="help">{help}</p>
+      </div>
     </div>
-  </div>
-  <svelte:fragment slot="foot" let:close>
+  {/snippet}
+  {#snippet foot(close)}
     <button
       class="du-btn du-btn-success du-btn-sm"
       disabled={_.isEmpty(destinationFile)}
-      onclick={() => dispatch("save", destinationFile) && close()}>{label}</button
+      onclick={() => {
+        onsave?.(destinationFile);
+        close();
+      }}>{label}</button
     >
     <button class="du-btn du-btn-sm" onclick={() => close()}>Cancel</button>
-  </svelte:fragment>
+  {/snippet}
 </Modal>

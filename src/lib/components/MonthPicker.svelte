@@ -17,7 +17,7 @@
 
   const valueDate = $derived(dayjs(value, "YYYY-MM"));
   let allowedYears = $derived(_.range(min.year(), max.year() + 1));
-  let selectedYear = $state(valueDate.year());
+  let selectedYear = $state(dayjs(value, "YYYY-MM").year());
 
   $effect(() => {
     if (!isAllowed(valueDate, min, max)) {
