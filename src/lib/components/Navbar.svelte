@@ -15,6 +15,7 @@
   } from "../../persisted_store";
   import _ from "lodash";
   import { financialYear, forEachFinancialYear, helpUrl, isMobile, now } from "$lib/utils";
+  import { resolveNavbarSelectionTyped } from "$lib/navbar_selection";
   import { tick } from "svelte";
   import { get } from "svelte/store";
   import DateRange from "./DateRange.svelte";
@@ -36,6 +37,7 @@
       year.set(financialYear(now()));
     }
   });
+
   const RecurringIcons = [
     { icon: "fa-circle-check", color: "success", label: "Cleared" },
     { icon: "fa-circle-check", color: "warning-dark", label: "Cleared late" },
@@ -58,6 +60,7 @@
     children?: Link[];
     disablePreload?: boolean;
   }
+
   const links: Link[] = [
     { label: "Dashboard", href: "/", hide: true },
     {
@@ -277,34 +280,10 @@
   });
 
   $effect(() => {
-    if (normalizedPath) {
-      selectedSubLink = null;
-      selectedSubSubLink = null;
-      selectedLink = _.find(links, (l) => normalizedPath == l.href);
-      if (!selectedLink) {
-        selectedLink = _.find(
-          links,
-          (l) => !_.isEmpty(l.children) && normalizedPath.startsWith(l.href)
-        );
-
-        selectedSubLink = _.find(
-          selectedLink.children,
-          (l) => normalizedPath == selectedLink.href + l.href
-        );
-
-        if (!selectedSubLink) {
-          selectedSubLink = _.find(selectedLink.children, (l) =>
-            normalizedPath.startsWith(selectedLink.href + l.href)
-          );
-
-          if (!_.isEmpty(selectedSubLink.children)) {
-            selectedSubSubLink = _.find(selectedSubLink.children, (l) =>
-              normalizedPath.startsWith(selectedLink.href + selectedSubLink.href + l.href)
-            );
-          }
-        }
-      }
-    }
+    const selection = resolveNavbarSelectionTyped(links, normalizedPath);
+    selectedLink = selection.selectedLink;
+    selectedSubLink = selection.selectedSubLink;
+    selectedSubSubLink = selection.selectedSubSubLink;
   });
 
   $effect(() => {
