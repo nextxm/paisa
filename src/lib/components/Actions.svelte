@@ -5,6 +5,8 @@
   import { obscure } from "../../persisted_store";
   import { goto } from "$app/navigation";
   import { jobsList } from "$lib/stores/jobs";
+  import { get } from "svelte/store";
+  import { onDestroy } from "svelte";
   import SyncHistoryOverlay from "./SyncHistoryOverlay.svelte";
 
   let showHistory = false;
@@ -15,11 +17,16 @@
     startPolling(jobId, () => refresh());
   }
 
-  let last = $obscure;
-  obscure.subscribe(() => {
-    if ($obscure === last) return;
+  let last = get(obscure);
+  const unsubscribeObscure = obscure.subscribe((value) => {
+    if (value === last) return;
 
+    last = value;
     refresh();
+  });
+
+  onDestroy(() => {
+    unsubscribeObscure();
   });
 
   function doLogout() {
@@ -31,7 +38,6 @@
 
   function toggleObscure() {
     obscure.set(!$obscure);
-    refresh();
   }
 </script>
 
