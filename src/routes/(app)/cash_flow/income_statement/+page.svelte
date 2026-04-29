@@ -14,12 +14,10 @@
   import ZeroState from "$lib/components/ZeroState.svelte";
   import { iconify } from "$lib/icon";
 
-  let isEmpty = $state(false);
-
   let svg: Element = $state();
-  let incomeStatement = $derived(yearly[$year]);
   let renderer: (data: IncomeStatement) => void;
   let yearly: Record<string, IncomeStatement> = $state({});
+  let incomeStatement = $derived(yearly[$year]);
   let years = $derived(_.sortBy(_.keys(yearly)).reverse());
   let diff = $derived(
     incomeStatement ? incomeStatement.endingBalance - incomeStatement.startingBalance : 0
