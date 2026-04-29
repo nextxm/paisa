@@ -3,10 +3,10 @@
   import { jobsList, jobs } from "$lib/stores/jobs";
   import { statusTagClass, statusIconClass, formatTs, formatDuration } from "./sync_history_utils";
 
-  export let open = false;
+  let { open = $bindable(false) } = $props();
 
   /** Jobs displayed newest-first. */
-  $: displayJobs = [...$jobsList].reverse();
+  const displayJobs = $derived([...$jobsList].reverse());
 </script>
 
 <Modal bind:active={open} width="min(680px, 100vw)" footerClass="justify-end">

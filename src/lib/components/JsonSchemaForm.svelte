@@ -105,7 +105,7 @@
 {#if deletable}
   <button
     type="button"
-    on:click={(_e) => deletable()}
+    onclick={(_e) => deletable()}
     class="config-delete"
     aria-label="Delete item"
   >
@@ -132,7 +132,7 @@
             style="max-width: 350px;"
             type="password"
             bind:value={rawValue}
-            on:change={() => {
+            onchange={() => {
               if (!_.isEmpty(rawValue)) {
                 value = "sha256:" + sha256(sha256(rawValue).toString()).toString();
               }
@@ -275,7 +275,7 @@
 
     <button
       type="button"
-      on:click={(_e) => (modalOpen = true)}
+      onclick={(_e) => (modalOpen = true)}
       class="is-link"
       aria-label="Search price code"
     >
@@ -312,7 +312,7 @@
       type="button"
       class="is-link is-light invertable"
       data-tippy-content={documentation(schema)}
-      on:click={(_e) => (open = !open)}
+      onclick={(_e) => (open = !open)}
     >
       <span>{schema["ui:header"] ? value[schema["ui:header"]] || title : title}</span>
       <span class="icon is-small">
@@ -356,7 +356,7 @@
       type="button"
       class="is-link is-light invertable"
       data-tippy-content={documentation(schema)}
-      on:click={(_e) => (open = !open)}
+      onclick={(_e) => (open = !open)}
     >
       <span>{title}</span>
       <span class="icon is-small">
@@ -366,7 +366,7 @@
     {#if open}
       <button
         type="button"
-        on:click={(_e) =>
+        onclick={(_e) =>
           (value = [
             newItem(schema, key, Array.isArray(value) ? value : []),
             ...(Array.isArray(value) ? value : [])

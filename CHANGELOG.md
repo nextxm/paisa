@@ -4,6 +4,8 @@
 
 #### New features
 
+- **Svelte 5 runes migration (P2.3)** — Converted 15 remaining `src/lib/components/` files and 5 route pages from Svelte 4 syntax to Svelte 5 runes: `export let` → `$props()` / `$bindable()`, `$:` derived expressions → `$derived()`, `$:` side-effect blocks → `$effect()`, and mutable local state → `$state()`. `createEventDispatcher` in `BulkEditForm`, `DiffViewModal`, and `FileTree` replaced with callback props (`onpreview`, `onsave`, `onselect`); all callers updated. `<svelte:self>` in `FileTree` replaced with an explicit self-import. Goals pages (`savings`, `retirement`) converted all `onMount`-assigned variables to `$state()` for correct reactivity.
+
 - **Svelte 5 upgrade & UI modernization (P2.2)** — Upgrades the frontend framework to Svelte 5 and begins the incremental migration to rune-based reactivity:
 
   - **Svelte 5** (`^5.0.0`), **svelte-check** (`^4.0.0`), **@sveltejs/vite-plugin-svelte** (`^4.0.0`), and **eslint-plugin-svelte** (`^3.0.0`) bumped in `package.json` (#226).

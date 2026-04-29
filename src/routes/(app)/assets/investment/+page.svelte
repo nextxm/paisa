@@ -10,10 +10,10 @@
   import _ from "lodash";
   import { onMount } from "svelte";
 
-  let monthlyInvestmentTimelineLegends: Legend[] = [];
-  let yearlyInvestmentTimelineLegends: Legend[] = [];
-  let reportCurrency = "";
-  let availableCurrencies: string[] = [];
+  let monthlyInvestmentTimelineLegends: Legend[] = $state([]);
+  let yearlyInvestmentTimelineLegends: Legend[] = $state([]);
+  let reportCurrency = $state("");
+  let availableCurrencies: string[] = $state([]);
 
   async function fetchInvestment() {
     const params = new URLSearchParams();
@@ -45,7 +45,7 @@
             <span class="select is-small">
               <select
                 bind:value={reportCurrency}
-                on:change={() => fetchInvestment()}
+                onchange={() => fetchInvestment()}
                 title="Report Currency"
               >
                 <option value="">Default Currency</option>
@@ -59,7 +59,7 @@
             <p class="control">
               <button
                 class="button is-small is-light"
-                on:click={() => {
+                onclick={() => {
                   reportCurrency = "";
                   fetchInvestment();
                 }}

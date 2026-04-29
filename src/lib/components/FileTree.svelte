@@ -1,15 +1,23 @@
 <script lang="ts">
   import type { Directory, LedgerFile } from "$lib/utils";
   import _ from "lodash";
-  import { createEventDispatcher } from "svelte";
+  import FileTree from "./FileTree.svelte";
 
-  export let files: Array<Directory | LedgerFile> = [];
-  export let path: string;
-  export let selectedFileName: string;
-  export let hasUnsavedChanges: boolean;
-  export let root: boolean = true;
-
-  const dispatch = createEventDispatcher();
+  let {
+    files = [],
+    path,
+    selectedFileName,
+    hasUnsavedChanges,
+    root = true,
+    onselect
+  }: {
+    files?: Array<Directory | LedgerFile>;
+    path: string;
+    selectedFileName: string;
+    hasUnsavedChanges: boolean;
+    root?: boolean;
+    onselect?: (file: LedgerFile) => void;
+  } = $props();
 
   function fileName(path: string) {
     return _.last(path.split("/"));
@@ -31,7 +39,7 @@
       <li>
         <button
           type="button"
-          on:click={() => dispatch("select", file)}
+          onclick={() => onselect?.(file as LedgerFile)}
           class={file.name == selectedFileName ? "du-active" : ""}
         >
           <span class="icon is-small">
@@ -52,9 +60,9 @@
             </span>
             <span title={file.name} class="truncate">{file.name}</span>
           </summary>
-          <svelte:self
+          <FileTree
             path={join([path, file.name])}
-            on:select={(e) => dispatch("select", e.detail)}
+            {onselect}
             root={false}
             files={file.children}
             {selectedFileName}

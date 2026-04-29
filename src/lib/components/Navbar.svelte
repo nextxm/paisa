@@ -331,7 +331,7 @@
       bind:this={burgerButtonEl}
       class="navbar-burger mobile-drawer-toggle"
       class:is-active={isBurger === true}
-      on:click={toggleBurger}
+      onclick={toggleBurger}
       aria-label="menu"
       aria-expanded={isBurger === true}
       aria-controls="primary-nav-menu"
@@ -367,7 +367,7 @@
     class="navbar-menu"
     class:is-active={isBurger === true}
     tabindex="-1"
-    on:keydown={handleMenuKeydown}
+    onkeydown={handleMenuKeydown}
     aria-hidden={isNavInert ? "true" : undefined}
     inert={isNavInert}
   >
@@ -389,9 +389,11 @@
               role="button"
               class="navbar-link"
               class:is-active={normalizedPath.startsWith(link.href)}
-              on:click|preventDefault={(e) =>
-                isMobile() && e.currentTarget.parentElement.classList.toggle("is-active")}
-              on:keydown={(e) =>
+              onclick={(e) => {
+                e.preventDefault();
+                isMobile() && e.currentTarget.parentElement.classList.toggle("is-active");
+              }}
+              onkeydown={(e) =>
                 e.key === "Enter" &&
                 isMobile() &&
                 e.currentTarget.parentElement.classList.toggle("is-active")}>{link.label}</a
@@ -413,9 +415,11 @@
                       role="button"
                       class="navbar-link is-arrowless is-flex is-justify-content-space-between is-active"
                       class:is-active={normalizedPath.startsWith(href)}
-                      on:click|preventDefault={(e) =>
-                        isMobile() && e.currentTarget.parentElement.classList.toggle("is-active")}
-                      on:keydown={(e) =>
+                      onclick={(e) => {
+                        e.preventDefault();
+                        isMobile() && e.currentTarget.parentElement.classList.toggle("is-active");
+                      }}
+                      onkeydown={(e) =>
                         e.key === "Enter" &&
                         isMobile() &&
                         e.currentTarget.parentElement.classList.toggle("is-active")}
@@ -474,7 +478,7 @@
     type="button"
     class="mobile-nav-backdrop"
     aria-label="Close navigation menu"
-    on:click={() => closeBurger()}
+    onclick={() => closeBurger()}
   ></button>
 {/if}
 

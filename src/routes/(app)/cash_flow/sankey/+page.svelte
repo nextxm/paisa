@@ -18,10 +18,10 @@
   import quarterOfYear from "dayjs/plugin/quarterOfYear";
   dayjs.extend(quarterOfYear);
 
-  let nodes: SankeyNode[] = [];
-  let links: SankeyLink[] = [];
-  let meta: SankeyMeta | null = null;
-  let isLoading = true;
+  let nodes: SankeyNode[] = $state([]);
+  let links: SankeyLink[] = $state([]);
+  let meta: SankeyMeta | null = $state(null);
+  let isLoading = $state(true);
 
   let unsubscribe: (() => void) | undefined;
   let fetchId = 0;
@@ -78,12 +78,12 @@
     unsubscribe?.();
   });
 
-  let displayDepth = 0;
-  let hideAssetTransfers = false;
+  let displayDepth = $state(0);
+  let hideAssetTransfers = $state(false);
 
-  $: processedGraph = processGraph(nodes, links, displayDepth, hideAssetTransfers);
-  $: processedNodes = processedGraph.nodes;
-  $: processedLinks = processedGraph.links;
+  const processedGraph = $derived(processGraph(nodes, links, displayDepth, hideAssetTransfers));
+  const processedNodes = $derived(processedGraph.nodes);
+  const processedLinks = $derived(processedGraph.links);
 
   function processGraph(
     rawNodes: SankeyNode[],

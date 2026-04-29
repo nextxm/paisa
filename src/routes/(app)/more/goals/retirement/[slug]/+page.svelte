@@ -22,28 +22,28 @@
   import AssetsBalance from "$lib/components/AssetsBalance.svelte";
   import BoxLabel from "$lib/components/BoxLabel.svelte";
 
-  export let data: PageData;
+  let { data }: { data: PageData } = $props();
 
   let svg: Element;
   let investmentTimelineSvg: Element;
-  let savingsTotal = 0,
-    investmentTotal = 0,
-    gainTotal = 0,
-    icon = "",
-    name = "",
-    targetSavings = 0,
-    swr = 0,
-    xirr = 0,
-    yearlyExpense = 0,
-    progressPercent = 0,
-    savingsX = 0,
-    targetX = 0,
-    breakPoints: Point[] = [],
-    savingsTimeline: Point[] = [],
-    postings: Posting[] = [],
-    latestPostings: Posting[] = [],
-    balances: Record<string, AssetBreakdown> = {},
-    destroyCallback = () => {};
+  let savingsTotal = $state(0);
+  let investmentTotal = $state(0);
+  let gainTotal = $state(0);
+  let icon = $state("");
+  let name = $state("");
+  let targetSavings = $state(0);
+  let swr = $state(0);
+  let xirr = $state(0);
+  let yearlyExpense = $state(0);
+  let progressPercent = $state(0);
+  let savingsX = $state(0);
+  let targetX = $state(0);
+  let breakPoints: Point[] = $state([]);
+  let savingsTimeline: Point[] = $state([]);
+  let postings: Posting[] = $state([]);
+  let latestPostings: Posting[] = $state([]);
+  let balances: Record<string, AssetBreakdown> = $state({});
+  let destroyCallback = () => {};
 
   onDestroy(async () => {
     destroyCallback();

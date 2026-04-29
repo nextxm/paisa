@@ -52,7 +52,7 @@
         <div class="flex items-center justify-center mt-5">
           <div class="field">
             <p class="control">
-              <button class="button is-medium is-link" on:click={(_e) => openCreateModal()}>
+              <button class="button is-medium is-link" onclick={(_e) => openCreateModal()}>
                 <span class="icon is-small">
                   <i class="fas fa-file-circle-plus"></i>
                 </span>

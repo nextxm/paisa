@@ -61,7 +61,7 @@
       <button
         type="button"
         class="du-tab {option.value === value ? 'du-tab-active' : ''}"
-        on:click={() => (value = option.value)}
+        onclick={() => (value = option.value)}
       >
         {option.label}
       </button>
@@ -74,7 +74,7 @@
       style="border: none; background: transparent; box-shadow: none;"
       aria-label="Previous period"
       disabled={!canPrev}
-      on:click={prev}
+      onclick={prev}
     >
       <span class="icon is-small"><i class="fas fa-chevron-left"></i></span>
     </button>
@@ -82,7 +82,7 @@
       type="button"
       class="has-text-weight-bold has-text-centered has-text-grey-darker is-size-7"
       style="min-width: 60px;"
-      on:click={reset}
+      onclick={reset}
       aria-label="Reset to current"
     >
       {label}
@@ -92,7 +92,7 @@
       style="border: none; background: transparent; box-shadow: none;"
       aria-label="Next period"
       disabled={!canNext || !refDate}
-      on:click={next}
+      onclick={next}
     >
       <span class="icon is-small"><i class="fas fa-chevron-right"></i></span>
     </button>

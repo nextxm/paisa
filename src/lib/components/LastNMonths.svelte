@@ -23,7 +23,7 @@
     <button
       type="button"
       class="du-tab {option.value === value ? 'du-tab-active' : ''}"
-      on:click={() => (value = option.value)}
+      onclick={() => (value = option.value)}
     >
       {option.label}
     </button>

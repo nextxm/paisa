@@ -7,18 +7,20 @@
   import ZeroState from "$lib/components/ZeroState.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
 
-  let legends: Legend[] = [];
-  let cashFlows: CashFlow[] = [];
+  let legends: Legend[] = $state([]);
+  let cashFlows: CashFlow[] = $state([]);
   let renderer: (cashflows: CashFlow[]) => void;
 
-  $: if (!_.isEmpty(cashFlows) && renderer) {
-    renderer(
-      _.filter(
-        cashFlows,
-        (c) => c.date.isSameOrBefore($dateRange.to) && c.date.isSameOrAfter($dateRange.from)
-      )
-    );
-  }
+  $effect(() => {
+    if (!_.isEmpty(cashFlows) && renderer) {
+      renderer(
+        _.filter(
+          cashFlows,
+          (c) => c.date.isSameOrBefore($dateRange.to) && c.date.isSameOrAfter($dateRange.from)
+        )
+      );
+    }
+  });
 
   onMount(async () => {
     ({ cash_flows: cashFlows } = await ajax("/api/cash_flow"));

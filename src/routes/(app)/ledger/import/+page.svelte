@@ -19,24 +19,24 @@
   import FileModal from "$lib/components/FileModal.svelte";
   import Modal from "$lib/components/Modal.svelte";
 
-  let templates: ImportTemplate[] = [];
-  let selectedTemplate: ImportTemplate;
-  let saveAsName: string;
+  let templates: ImportTemplate[] = $state([]);
+  let selectedTemplate: ImportTemplate = $state(null);
+  let saveAsName: string = $state(null);
   let lastTemplate: any;
   let lastData: any;
-  let preview = "";
-  let parseErrorMessage: string = null;
-  let columnCount: number;
-  let data: any[][] = [];
-  let rows: Array<Record<string, any>> = [];
+  let preview = $state("");
+  let parseErrorMessage: string = $state(null);
+  let columnCount: number = $state(0);
+  let data: any[][] = $state([]);
+  let rows: Array<Record<string, any>> = $state([]);
   let lastOptions: any;
-  let options: { reverse: boolean; trim: boolean } = { reverse: false, trim: true };
+  let options: { reverse: boolean; trim: boolean } = $state({ reverse: false, trim: true });
 
-  let templateEditorDom: Element;
-  let templateEditor: EditorView;
+  let templateEditorDom: Element = $state();
+  let templateEditor: EditorView = $state();
 
-  let previewEditorDom: Element;
-  let previewEditor: EditorView;
+  let previewEditorDom: Element = $state();
+  let previewEditor: EditorView = $state();
 
   onMount(async () => {
     accountTfIdf.set(await ajax("/api/account/tf_idf"));
@@ -47,7 +47,9 @@
     previewEditor = createPreviewEditor("", preview, previewEditorDom, { readonly: true });
   });
 
-  $: saveAsNameDuplicate = !!_.find(templates, { name: saveAsName, template_type: "custom" });
+  const saveAsNameDuplicate = $derived(
+    !!_.find(templates, { name: saveAsName, template_type: "custom" })
+  );
 
   async function save() {
     const { template, saved, message } = await ajax("/api/templates/upsert", {
@@ -113,36 +115,40 @@
     $templateEditorState = _.assign({}, $templateEditorState, { hasUnsavedChanges: false });
   }
 
-  $: if (!_.isEmpty(data) && $templateEditorState.template) {
-    if (
-      lastTemplate != $templateEditorState.template ||
-      lastData != data ||
-      lastOptions != options
-    ) {
-      try {
-        preview = renderJournal(rows, $templateEditorState.template, {
-          reverse: options.reverse,
-          trim: options.trim
-        });
-        updatePreviewContent(previewEditor, preview);
-        lastTemplate = $templateEditorState.template;
-        lastData = data;
-        lastOptions = _.clone(options);
-      } catch (e) {
-        console.log(e);
+  $effect(() => {
+    if (!_.isEmpty(data) && $templateEditorState.template) {
+      if (
+        lastTemplate != $templateEditorState.template ||
+        lastData != data ||
+        lastOptions != options
+      ) {
+        try {
+          preview = renderJournal(rows, $templateEditorState.template, {
+            reverse: options.reverse,
+            trim: options.trim
+          });
+          updatePreviewContent(previewEditor, preview);
+          lastTemplate = $templateEditorState.template;
+          lastData = data;
+          lastOptions = _.clone(options);
+        } catch (e) {
+          console.log(e);
+        }
       }
     }
-  }
+  });
 
-  $: if (selectedTemplate && templateEditor) {
-    if (templateEditor.state.doc.toString() != selectedTemplate.content) {
-      templateEditor.destroy();
-      templateEditor = createTemplateEditor(selectedTemplate.content, templateEditorDom);
+  $effect(() => {
+    if (selectedTemplate && templateEditor) {
+      if (templateEditor.state.doc.toString() != selectedTemplate.content) {
+        templateEditor.destroy();
+        templateEditor = createTemplateEditor(selectedTemplate.content, templateEditorDom);
+      }
     }
-  }
+  });
 
-  async function handleFilesSelect(e: { detail: { acceptedFiles: File[] } }) {
-    const { acceptedFiles } = e.detail;
+  async function handleFilesSelect(detail: { acceptedFiles: File[] }) {
+    const { acceptedFiles } = detail;
 
     const results = await parse(acceptedFiles[0]);
     if (results.error) {
@@ -377,7 +383,7 @@
           <Dropzone
             multiple={false}
             accept=".csv,.txt,.xls,.xlsx,.pdf,.CSV,.TXT,.XLS,.XLSX,.PDF"
-            on:drop={handleFilesSelect}
+            ondrop={handleFilesSelect}
           >
             Drag 'n' drop CSV, TXT, XLS, XLSX, PDF file here or click to select
           </Dropzone>

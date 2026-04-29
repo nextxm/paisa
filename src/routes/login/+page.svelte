@@ -3,13 +3,13 @@
   import Logo from "$lib/components/Logo.svelte";
   import { login } from "$lib/utils";
   import _ from "lodash";
-  let username = "";
-  let password = "";
+  let username = $state("");
+  let password = $state("");
 
-  let invalid = false;
-  let invalidErrorMessage = "";
+  let invalid = $state(false);
+  let invalidErrorMessage = $state("");
 
-  $: loginDisabled = _.isEmpty(username) || _.isEmpty(password);
+  const loginDisabled = $derived(_.isEmpty(username) || _.isEmpty(password));
 
   async function tryLogin() {
     if (loginDisabled) return;
@@ -36,7 +36,7 @@
                 <a href="https://nextxm.github.io/paisa/" class="is-primary-color">Paisa</a>
               </div>
             </div>
-            <form on:submit|preventDefault={tryLogin}>
+            <form onsubmit={(e) => { e.preventDefault(); tryLogin(); }}>
               <div class="field">
                 <label for="" class="label">Username</label>
                 <div class="control">

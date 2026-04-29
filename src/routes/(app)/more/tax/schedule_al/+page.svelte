@@ -5,16 +5,20 @@
   import { onMount } from "svelte";
   import { dateMin, year } from "../../../../../store";
 
-  let scheduleAls: Record<string, ScheduleAL>;
-  let selectedScheduleAl: ScheduleAL;
+  let scheduleAls: Record<string, ScheduleAL> = $state(null);
+  let selectedScheduleAl: ScheduleAL = $state(null);
 
-  $: if (scheduleAls) {
-    selectedScheduleAl = scheduleAls[$year];
-  }
+  $effect(() => {
+    if (scheduleAls) {
+      selectedScheduleAl = scheduleAls[$year];
+    }
+  });
 
-  $: if (selectedScheduleAl) {
-    renderBreakdowns(selectedScheduleAl.entries);
-  }
+  $effect(() => {
+    if (selectedScheduleAl) {
+      renderBreakdowns(selectedScheduleAl.entries);
+    }
+  });
 
   onMount(async () => {
     ({ schedule_als: scheduleAls } = await ajax("/api/schedule_al"));

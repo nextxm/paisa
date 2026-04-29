@@ -102,7 +102,7 @@
                         slot="toggle"
                         let:active
                         let:onclick
-                        on:click={(e) => onclick(e)}
+                        {onclick}
                       >
                         <td>
                           <span class="icon has-text-link">

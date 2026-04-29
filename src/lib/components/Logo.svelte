@@ -1,13 +1,16 @@
 <script lang="ts">
   import COLORS from "$lib/colors";
-  import _ from "lodash";
 
-  export let size = 256;
-  export let thickness = 4;
-  export let animation = false;
+  let { size = 256, thickness = 4, animation = false } = $props();
 
-  let colors = [COLORS.income, COLORS.expenses, COLORS.equity, COLORS.liabilities, COLORS.assets];
-  let dotColor = COLORS.primary;
+  const colors = [
+    COLORS.income,
+    COLORS.expenses,
+    COLORS.equity,
+    COLORS.liabilities,
+    COLORS.assets
+  ];
+  const dotColor = COLORS.primary;
 </script>
 
 <svg
