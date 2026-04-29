@@ -439,7 +439,8 @@
         }
       ]
     },
-    "taxes": {}
+    "taxes": {},
+    "liabilities": {}
   },
   "year_wise": {
     "expenses": {
@@ -685,6 +686,7 @@
         }
       ]
     },
-    "taxes": {}
+    "taxes": {},
+    "liabilities": {}
   }
 }

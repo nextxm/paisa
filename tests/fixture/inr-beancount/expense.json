@@ -457,7 +457,7 @@
           "payee": "Purchased 0.00000001 BTC",
           "account": "Assets:Coinbase:BTC",
           "commodity": "BTC",
-          "quantity": 1e-8,
+          "quantity": 1e-08,
           "amount": 0,
           "status": "cleared",
           "tag_recurring": "",
@@ -473,7 +473,8 @@
         }
       ]
     },
-    "taxes": {}
+    "taxes": {},
+    "liabilities": {}
   },
   "year_wise": {
     "expenses": {
@@ -724,7 +725,7 @@
           "payee": "Purchased 0.00000001 BTC",
           "account": "Assets:Coinbase:BTC",
           "commodity": "BTC",
-          "quantity": 1e-8,
+          "quantity": 1e-08,
           "amount": 0,
           "status": "cleared",
           "tag_recurring": "",
@@ -740,6 +741,7 @@
         }
       ]
     },
-    "taxes": {}
+    "taxes": {},
+    "liabilities": {}
   }
 }
