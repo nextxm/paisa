@@ -41,11 +41,11 @@
   let xirr = $state(0);
   let networth: Networth = $state(null);
   let renderer: (data: Posting[]) => void;
+  let selectedExpenses = $derived(expenses[month] || []);
   let totalExpense = $derived(_.sumBy(selectedExpenses, (p) => p.amount));
   let transactions: Transaction[] = $state([]);
   let budgetsByMonth: Record<string, Budget> = $state({});
   let currentBudget = $derived(budgetsByMonth[month]);
-  let selectedExpenses = $derived(expenses[month] || []);
   let isEmpty = $state(false);
   let checkingBalances: Record<string, AssetBreakdown> = $state({});
 
