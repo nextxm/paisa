@@ -17,12 +17,15 @@
   let isEmpty = $state(false);
 
   let svg: Element = $state();
-  let incomeStatement: IncomeStatement = $state(null);
+  let incomeStatement = $derived(yearly[$year]);
   let renderer: (data: IncomeStatement) => void;
   let yearly: Record<string, IncomeStatement> = $state({});
-  let diff: number = $state(0);
-  let diffPercent: number = $state(0);
-  let years: string[] = $state([]);
+  let years = $derived(_.sortBy(_.keys(yearly)).reverse());
+  let diff = $derived(
+    incomeStatement ? incomeStatement.endingBalance - incomeStatement.startingBalance : 0
+  );
+  let diffPercent = $derived(incomeStatement ? diff / incomeStatement.startingBalance : 0);
+  let isEmpty = $derived(yearly && !yearly[$year]);
 
   type AccountGroupName =
     | "income"
@@ -61,19 +64,8 @@
   const accountGroups: AccountGroup[] = [];
 
   $effect(() => {
-    if (yearly && renderer) {
-      if (yearly[$year] == null) {
-        incomeStatement = null;
-        isEmpty = true;
-      } else {
-        incomeStatement = yearly[$year];
-        years = _.sortBy(_.keys(yearly)).reverse();
-        diff = incomeStatement.endingBalance - incomeStatement.startingBalance;
-        diffPercent = diff / incomeStatement.startingBalance;
-
-        renderer(incomeStatement);
-        isEmpty = false;
-      }
+    if (incomeStatement && renderer) {
+      renderer(incomeStatement);
     }
   });
 

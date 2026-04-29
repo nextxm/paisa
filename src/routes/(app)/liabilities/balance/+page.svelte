@@ -63,12 +63,7 @@
     { title: "APR", field: "apr", hozAlign: "right", formatter: nonZeroFloatChange }
   ];
 
-  let tree: LiabilityBreakdown[] = $state([]);
-  $effect(() => {
-    if (breakdowns) {
-      tree = buildTree(Object.values(breakdowns), (i) => i.group);
-    }
-  });
+  let tree = $derived(buildTree(Object.values(breakdowns), (i) => i.group));
 </script>
 
 <section class="section" class:is-hidden={!isEmpty}>

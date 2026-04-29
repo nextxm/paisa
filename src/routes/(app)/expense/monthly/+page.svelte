@@ -36,54 +36,47 @@
 
   let legends: Legend[] = $state([]);
 
-  let taxRate = $state(""),
-    netIncome = $state(""),
-    tax = $state(""),
-    expenseRate = $state(""),
-    expense = $state(""),
-    saving = $state(""),
-    savingRate = $state(""),
-    income = $state("");
-
-  let current_month_expenses: Posting[] = $state([]);
-
-  $effect(() => {
-    current_month_expenses = _.chain((grouped_expenses && grouped_expenses[$month]) || [])
+  let current_month_expenses = $derived(
+    _.chain((grouped_expenses && grouped_expenses[$month]) || [])
       .filter((e) => _.includes($groups, secondName(e.account)))
       .sortBy((e) => e.date)
       .reverse()
-      .value();
-  });
+      .value()
+  );
+  let income = $derived(sumCurrency(grouped_incomes?.[$month] || [], -1));
+  let tax = $derived(sumCurrency(grouped_taxes?.[$month] || []));
+  let expense = $derived(sumCurrency(grouped_expenses?.[$month] || []));
+  let saving = $derived(sumCurrency(grouped_investments?.[$month] || []));
+
+  let netValue = $derived(
+    sum(grouped_incomes?.[$month] || [], -1) - sum(grouped_taxes?.[$month] || [])
+  );
+  let grossIncomeValue = $derived(sum(grouped_incomes?.[$month] || [], -1));
+
+  let netIncome = $derived(
+    !_.isEmpty(grouped_incomes?.[$month]) ? formatCurrency(netValue) + " net income" : ""
+  );
+  let taxRate = $derived(
+    !_.isEmpty(grouped_incomes?.[$month])
+      ? formatPercentage(sum(grouped_taxes?.[$month] || []) / grossIncomeValue) + " on income"
+      : ""
+  );
+  let expenseRate = $derived(
+    !_.isEmpty(grouped_incomes?.[$month])
+      ? formatPercentage(sum(grouped_expenses?.[$month] || []) / netValue) + " of net income"
+      : ""
+  );
+  let savingRate = $derived(
+    !_.isEmpty(grouped_incomes?.[$month])
+      ? formatPercentage(sum(grouped_investments?.[$month] || []) / netValue) + " of net income"
+      : ""
+  );
+
 
   $effect(() => {
     if (grouped_expenses && z && renderer) {
       renderCalendar($month, grouped_expenses[$month], z, $groups);
-
-      const expenses = grouped_expenses[$month] || [];
-      const incomes = grouped_incomes[$month] || [];
-      const taxes = grouped_taxes[$month] || [];
-      const investments = grouped_investments[$month] || [];
-
-      income = sumCurrency(incomes, -1);
-      tax = sumCurrency(taxes);
-      expense = sumCurrency(expenses);
-      saving = sumCurrency(investments);
-
-      if (_.isEmpty(incomes)) {
-        taxRate = "";
-        expenseRate = "";
-        savingRate = "";
-        netIncome = "";
-      } else {
-        netIncome = formatCurrency(sum(incomes, -1) - sum(taxes)) + " net income";
-        taxRate = formatPercentage(sum(taxes) / sum(incomes, -1)) + " on income";
-        expenseRate =
-          formatPercentage(sum(expenses) / (sum(incomes, -1) - sum(taxes))) + " of net income";
-        savingRate =
-          formatPercentage(sum(investments) / (sum(incomes, -1) - sum(taxes))) + " of net income";
-      }
-
-      renderer(expenses);
+      renderer(grouped_expenses[$month] || []);
     }
   });
 
