@@ -38,6 +38,8 @@
 
 #### Bug fixes
 
+- **Embedded static asset routing fixed** — Updated `internal/server/server.go` to serve root-level PWA assets (`/manifest.webmanifest`, `/sw.js`, Workbox files, and `/pwa-*.png`) from embedded `web/static` instead of falling through `NoRoute` to `index.html`. This resolves `Manifest: Line: 1, column: 1, Syntax error` when using the Go-served app.
+
 - **Dashboard startup loop fixed** — Updated `src/routes/(app)/+page.svelte` to remove a read-after-write reactive pattern in the dashboard `$effect` (`selectedExpenses`), preventing a recursive update cycle that could raise `effect_update_depth_exceeded` on load when the current month has no expense bucket.
 
 - **Manifest endpoint syntax error fixed** — Added `static/manifest.webmanifest` so `/manifest.webmanifest` serves valid JSON instead of fallback HTML, resolving browser console errors like `Manifest: Line: 1, column: 1, Syntax error`.

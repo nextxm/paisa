@@ -57,6 +57,26 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.FileFromFS("/static"+c.Request.URL.Path, http.FS(web.Static))
 	})
 
+	router.GET("/manifest.webmanifest", func(c *gin.Context) {
+		c.FileFromFS("/static/manifest.webmanifest", http.FS(web.Static))
+	})
+
+	router.GET("/sw.js", func(c *gin.Context) {
+		c.FileFromFS("/static/sw.js", http.FS(web.Static))
+	})
+
+	router.GET("/sw.js.map", func(c *gin.Context) {
+		c.FileFromFS("/static/sw.js.map", http.FS(web.Static))
+	})
+
+	router.GET("/workbox-:file", func(c *gin.Context) {
+		c.FileFromFS("/static"+c.Request.URL.Path, http.FS(web.Static))
+	})
+
+	router.GET("/pwa-:name.png", func(c *gin.Context) {
+		c.FileFromFS("/static"+c.Request.URL.Path, http.FS(web.Static))
+	})
+
 	router.GET("/api/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"success": true})
 	})
