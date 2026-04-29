@@ -40,11 +40,18 @@ type SyncResult struct {
 func SyncJournal(db *gorm.DB) (SyncResult, error) {
 	journalPath := config.GetJournalPath()
 
-	// Compute the SHA-256 hash of the journal file.  If hashing fails (e.g. the
+	files, err := ledger.Cli().Files(journalPath)
+	if err != nil {
+		log.WithFields(log.Fields{"stage": "journal.files", "error": err}).
+			Warn("Failed to list journal files; proceeding with root file only")
+		files = []string{journalPath}
+	}
+
+	// Compute the SHA-256 hash of all journal files.  If hashing fails (e.g. a
 	// file is missing) we log a warning and fall through to a full sync rather
 	// than returning an error, so that the validate stage can surface the real
 	// problem with a clearer message.
-	currentHash, hashErr := utils.SHA256File(journalPath)
+	currentHash, hashErr := utils.SHA256Files(files)
 	if hashErr != nil {
 		log.WithFields(log.Fields{"stage": "journal.hash", "error": hashErr}).
 			Warn("Failed to compute journal hash; proceeding with full sync")
