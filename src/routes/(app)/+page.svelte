@@ -51,9 +51,10 @@
 
   $effect(() => {
     if (renderer) {
-      selectedExpenses = expenses[month] || [];
-      renderer(selectedExpenses);
-      totalExpense = _.sumBy(selectedExpenses, (p) => p.amount);
+      const currentExpenses = expenses[month] || [];
+      selectedExpenses = currentExpenses;
+      renderer(currentExpenses);
+      totalExpense = _.sumBy(currentExpenses, (p) => p.amount);
     }
   });
 
