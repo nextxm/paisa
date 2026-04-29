@@ -13,7 +13,7 @@
     }
   };
 
-  export let postings: Posting[];
+  let { postings }: { postings: Posting[] } = $props();
 </script>
 
 <div style="margin: 4px 0;">

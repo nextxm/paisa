@@ -1,9 +1,9 @@
 <script lang="ts">
   import { formatPercentage } from "$lib/utils";
 
-  export let value: number;
-  $: icon = value > 0 ? "fa-arrow-up rotate-45" : "fa-arrow-down -rotate-45";
-  $: color = value > 0 ? "has-text-success" : "has-text-danger";
+  let { value }: { value: number } = $props();
+  const icon = $derived(value > 0 ? "fa-arrow-up rotate-45" : "fa-arrow-down -rotate-45");
+  const color = $derived(value > 0 ? "has-text-success" : "has-text-danger");
 </script>
 
 {#if value === null}

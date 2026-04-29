@@ -3,14 +3,14 @@
   import dayjs from "dayjs";
   import { onMount } from "svelte";
 
-  let rates: FXRate[] = [];
-  let base = "USD";
-  let quote = "";
-  let year = now().year();
-  let month = now().month() + 1;
+  let rates: FXRate[] = $state([]);
+  let base = $state("USD");
+  let quote = $state("");
+  let year = $state(now().year());
+  let month = $state(now().month() + 1);
 
-  let availableBases: string[] = [];
-  let availableQuotes: string[] = [];
+  let availableBases: string[] = $state([]);
+  let availableQuotes: string[] = $state([]);
 
   const years = Array.from({ length: 10 }, (_, i) => now().year() - i);
   const months = Array.from({ length: 12 }, (_, i) => ({
@@ -55,7 +55,7 @@
           <div class="field is-grouped is-grouped-multiline mb-0">
             <p class="control">
               <span class="select is-small">
-                <select bind:value={base} on:change={() => fetchRates()}>
+                <select bind:value={base} onchange={() => fetchRates()}>
                   {#each availableBases as b}
                     <option value={b}>{b}</option>
                   {/each}
@@ -67,7 +67,7 @@
             </p>
             <p class="control">
               <span class="select is-small">
-                <select bind:value={quote} on:change={() => fetchRates()}>
+                <select bind:value={quote} onchange={() => fetchRates()}>
                   {#each availableQuotes as q}
                     <option value={q}>{q}</option>
                   {/each}
@@ -76,7 +76,7 @@
             </p>
             <p class="control">
               <span class="select is-small">
-                <select bind:value={year} on:change={() => fetchRates()}>
+                <select bind:value={year} onchange={() => fetchRates()}>
                   {#each years as y}
                     <option value={y}>{y}</option>
                   {/each}
@@ -85,7 +85,7 @@
             </p>
             <p class="control">
               <span class="select is-small">
-                <select bind:value={month} on:change={() => fetchRates()}>
+                <select bind:value={month} onchange={() => fetchRates()}>
                   {#each months as m}
                     <option value={m.value}>{m.label}</option>
                   {/each}

@@ -13,10 +13,12 @@
     nonZeroPercentageChange
   } from "$lib/table_formatters";
 
-  export let breakdowns: Record<string, AssetBreakdown>;
-  export let indent = true;
+  let {
+    breakdowns,
+    indent = true
+  }: { breakdowns: Record<string, AssetBreakdown>; indent?: boolean } = $props();
 
-  const columns: ColumnDefinition[] = [
+  const columns: ColumnDefinition[] = $derived([
     {
       title: "Account",
       field: "group",
@@ -57,12 +59,14 @@
       hozAlign: "right",
       formatter: nonZeroPercentageChange
     }
-  ];
+  ]);
 
-  let tree: AssetBreakdown[] = [];
-  $: if (breakdowns) {
-    tree = buildTree(Object.values(breakdowns), (i) => i.group);
-  }
+  let tree: AssetBreakdown[] = $state([]);
+  $effect(() => {
+    if (breakdowns) {
+      tree = buildTree(Object.values(breakdowns), (i) => i.group);
+    }
+  });
 </script>
 
 {#if indent}

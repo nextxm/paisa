@@ -21,20 +21,22 @@
   import RecurringDay from "$lib/components/RecurringDay.svelte";
   import dayjs from "dayjs";
 
-  let isEmpty = false;
-  let transactionSequences: TransactionSequence[] = [];
-  let transactionSequencesDelayed: TransactionSequence[] = [];
+  let isEmpty = $state(false);
+  let transactionSequences: TransactionSequence[] = $state([]);
+  let transactionSequencesDelayed: TransactionSequence[] = $state([]);
 
-  let days: Dayjs[] = [];
-  let schedulesByDate: Record<string, TransactionSchedule[]> = {};
+  let days: Dayjs[] = $state([]);
+  let schedulesByDate: Record<string, TransactionSchedule[]> = $state({});
 
-  $: if (days) {
-    ({ days } = monthDays($month));
-    schedulesByDate = _.chain(transactionSequences)
-      .flatMap((ts) => ts.schedulesByMonth[$month] || [])
-      .groupBy((s) => s.scheduled.format("YYYY-MM-DD"))
-      .value();
-  }
+  $effect(() => {
+    if (days) {
+      ({ days } = monthDays($month));
+      schedulesByDate = _.chain(transactionSequences)
+        .flatMap((ts) => ts.schedulesByMonth[$month] || [])
+        .groupBy((s) => s.scheduled.format("YYYY-MM-DD"))
+        .value();
+    }
+  });
 
   onMount(async () => {
     ({ transaction_sequences: transactionSequences } = await ajax("/api/recurring"));

@@ -16,25 +16,39 @@
 
   const ICON_MAX_RESULTS = 200;
 
-  export let key: string;
-  export let value: any;
-  export let rawValue: string = "";
-  export let schema: Schema;
-  export let depth: number = 0;
-  export let required = false;
-  export let deletable: () => void = null;
-  export let disabled: boolean = false;
-  export let allAccounts: string[];
+  let {
+    key,
+    value = $bindable<any>(),
+    rawValue = $bindable(""),
+    schema,
+    depth = 0,
+    required = false,
+    deletable = null,
+    disabled = false,
+    allAccounts,
+    modalOpen = $bindable(false)
+  }: {
+    key: string;
+    value: any;
+    rawValue?: string;
+    schema: Schema;
+    depth?: number;
+    required?: boolean;
+    deletable?: () => void;
+    disabled?: boolean;
+    allAccounts: string[];
+    modalOpen?: boolean;
+  } = $props();
 
-  export let modalOpen = false;
-
-  let open = false;
+  let open = $state(false);
   let openInitialized = false;
-  $: if (!openInitialized && schema) {
-    open = schema["ui:open"] ?? depth < 1;
-    openInitialized = true;
-  }
-  $: title = _.startCase(key);
+  $effect(() => {
+    if (!openInitialized && schema) {
+      open = schema["ui:open"] ?? depth < 1;
+      openInitialized = true;
+    }
+  });
+  const title = $derived(_.startCase(key));
 
   function defaultValueForSchema(schema: any): any {
     if (!schema) return null;
@@ -105,7 +119,7 @@
 {#if deletable}
   <button
     type="button"
-    on:click={(_e) => deletable()}
+    onclick={(_e) => deletable()}
     class="config-delete"
     aria-label="Delete item"
   >
@@ -132,7 +146,7 @@
             style="max-width: 350px;"
             type="password"
             bind:value={rawValue}
-            on:change={() => {
+            onchange={() => {
               if (!_.isEmpty(rawValue)) {
                 value = "sha256:" + sha256(sha256(rawValue).toString()).toString();
               }
@@ -275,7 +289,7 @@
 
     <button
       type="button"
-      on:click={(_e) => (modalOpen = true)}
+      onclick={(_e) => (modalOpen = true)}
       class="is-link"
       aria-label="Search price code"
     >
@@ -312,7 +326,7 @@
       type="button"
       class="is-link is-light invertable"
       data-tippy-content={documentation(schema)}
-      on:click={(_e) => (open = !open)}
+      onclick={(_e) => (open = !open)}
     >
       <span>{schema["ui:header"] ? value[schema["ui:header"]] || title : title}</span>
       <span class="icon is-small">
@@ -356,7 +370,7 @@
       type="button"
       class="is-link is-light invertable"
       data-tippy-content={documentation(schema)}
-      on:click={(_e) => (open = !open)}
+      onclick={(_e) => (open = !open)}
     >
       <span>{title}</span>
       <span class="icon is-small">
@@ -366,7 +380,7 @@
     {#if open}
       <button
         type="button"
-        on:click={(_e) =>
+        onclick={(_e) =>
           (value = [
             newItem(schema, key, Array.isArray(value) ? value : []),
             ...(Array.isArray(value) ? value : [])

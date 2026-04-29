@@ -14,15 +14,15 @@
   import { get } from "svelte/store";
   import { download } from "$lib/export";
 
-  let buldEditOpen = false;
-  let transactions: T[] = null;
-  let filtered: T[] = [];
-  let files: LedgerFile[] = [];
-  let newFiles: LedgerFile[] = [];
-  let updatedTransactionsCount = 0;
-  let openPreviewModal = false;
-  let accounts: string[] = [];
-  let commodities: string[] = [];
+  let buldEditOpen = $state(false);
+  let transactions: T[] = $state(null);
+  let filtered: T[] = $state([]);
+  let files: LedgerFile[] = $state([]);
+  let newFiles: LedgerFile[] = $state([]);
+  let updatedTransactionsCount = $state(0);
+  let openPreviewModal = $state(false);
+  let accounts: string[] = $state([]);
+  let commodities: string[] = $state([]);
 
   const debits = (t: T) => {
     return _.filter(t.postings, (p) => p.amount < 0);
@@ -107,7 +107,7 @@
 </script>
 
 <DiffViewModal
-  on:save={(e) => saveAll(e.detail)}
+  onsave={(files) => saveAll(files)}
   bind:open={openPreviewModal}
   oldFiles={files}
   {newFiles}
@@ -139,7 +139,7 @@
                   <div class="control">
                     <button
                       class="button is-link is-light invertable"
-                      on:click={(_e) => (buldEditOpen = !buldEditOpen)}
+                      onclick={(_e) => (buldEditOpen = !buldEditOpen)}
                     >
                       <span>Bulk Edit</span>
                       <span class="icon is-small">
@@ -158,7 +158,7 @@
                 <button
                   type="button"
                   class="button is-small is-text"
-                  on:click={(_e) => downloadTransactions()}
+                  onclick={(_e) => downloadTransactions()}
                 >
                   <span class="icon is-small">
                     <i class="fa-solid fa-file-arrow-down"></i>
@@ -174,7 +174,7 @@
       {#if buldEditOpen}
         <div class="columns">
           <div class="column is-12" transition:slide>
-            <BulkEditForm {accounts} on:preview={(e) => showPreview(e.detail)} />
+            <BulkEditForm {accounts} onpreview={(detail) => showPreview(detail)} />
           </div>
         </div>
       {/if}

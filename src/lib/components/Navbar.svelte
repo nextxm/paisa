@@ -24,7 +24,7 @@
   import InputRange from "./InputRange.svelte";
   import PeriodSelector from "./PeriodSelector.svelte";
   import SyncingIndicator from "./SyncingIndicator.svelte";
-  export let isBurger: boolean = null;
+  let { isBurger = $bindable(null) }: { isBurger: boolean | null } = $props();
   const readonly = USER_CONFIG.readonly;
 
   afterNavigate(() => {
@@ -164,9 +164,9 @@
   const about = { label: "About", href: "/about" };
   _.last(links).children.push(about);
 
-  let selectedLink: Link = null;
-  let selectedSubLink: Link = null;
-  let selectedSubSubLink: Link = null;
+  let selectedLink: Link = $state(null);
+  let selectedSubLink: Link = $state(null);
+  let selectedSubSubLink: Link = $state(null);
   let navMenuEl: HTMLDivElement;
   let burgerButtonEl: HTMLButtonElement;
   let previousFocusEl: HTMLElement = null;
@@ -264,48 +264,49 @@
     }
   }
 
-  $: normalizedPath = $page.url.pathname?.replace(/(.+)\/$/, "");
+  const normalizedPath = $derived($page.url.pathname?.replace(/(.+)\/$/, ""));
 
   // isNavInert: only make the mobile drawer inert when it's closed
-  $: isNavInert =
-    isBurger !== true && typeof window !== "undefined" && window.innerWidth < 769
-      ? true
-      : undefined;
+  const isNavInert = $derived(
+    isBurger !== true && typeof window !== "undefined" && window.innerWidth < 769 ? true : undefined
+  );
 
-  $: {
+  $effect(() => {
     if (typeof document !== "undefined") {
       document.body.classList.toggle("mobile-menu-open", isBurger === true && isMobile());
     }
-  }
+  });
 
-  $: if (normalizedPath) {
-    selectedSubLink = null;
-    selectedSubSubLink = null;
-    selectedLink = _.find(links, (l) => normalizedPath == l.href);
-    if (!selectedLink) {
-      selectedLink = _.find(
-        links,
-        (l) => !_.isEmpty(l.children) && normalizedPath.startsWith(l.href)
-      );
-
-      selectedSubLink = _.find(
-        selectedLink.children,
-        (l) => normalizedPath == selectedLink.href + l.href
-      );
-
-      if (!selectedSubLink) {
-        selectedSubLink = _.find(selectedLink.children, (l) =>
-          normalizedPath.startsWith(selectedLink.href + l.href)
+  $effect(() => {
+    if (normalizedPath) {
+      selectedSubLink = null;
+      selectedSubSubLink = null;
+      selectedLink = _.find(links, (l) => normalizedPath == l.href);
+      if (!selectedLink) {
+        selectedLink = _.find(
+          links,
+          (l) => !_.isEmpty(l.children) && normalizedPath.startsWith(l.href)
         );
 
-        if (!_.isEmpty(selectedSubLink.children)) {
-          selectedSubSubLink = _.find(selectedSubLink.children, (l) =>
-            normalizedPath.startsWith(selectedLink.href + selectedSubLink.href + l.href)
+        selectedSubLink = _.find(
+          selectedLink.children,
+          (l) => normalizedPath == selectedLink.href + l.href
+        );
+
+        if (!selectedSubLink) {
+          selectedSubLink = _.find(selectedLink.children, (l) =>
+            normalizedPath.startsWith(selectedLink.href + l.href)
           );
+
+          if (!_.isEmpty(selectedSubLink.children)) {
+            selectedSubSubLink = _.find(selectedSubLink.children, (l) =>
+              normalizedPath.startsWith(selectedLink.href + selectedSubLink.href + l.href)
+            );
+          }
         }
       }
     }
-  }
+  });
 
   onDestroy(() => {
     if (typeof document !== "undefined") {
@@ -331,7 +332,7 @@
       bind:this={burgerButtonEl}
       class="navbar-burger mobile-drawer-toggle"
       class:is-active={isBurger === true}
-      on:click={toggleBurger}
+      onclick={toggleBurger}
       aria-label="menu"
       aria-expanded={isBurger === true}
       aria-controls="primary-nav-menu"
@@ -367,7 +368,7 @@
     class="navbar-menu"
     class:is-active={isBurger === true}
     tabindex="-1"
-    on:keydown={handleMenuKeydown}
+    onkeydown={handleMenuKeydown}
     aria-hidden={isNavInert ? "true" : undefined}
     inert={isNavInert}
   >
@@ -389,9 +390,11 @@
               role="button"
               class="navbar-link"
               class:is-active={normalizedPath.startsWith(link.href)}
-              on:click|preventDefault={(e) =>
-                isMobile() && e.currentTarget.parentElement.classList.toggle("is-active")}
-              on:keydown={(e) =>
+              onclick={(e) => {
+                e.preventDefault();
+                isMobile() && e.currentTarget.parentElement.classList.toggle("is-active");
+              }}
+              onkeydown={(e) =>
                 e.key === "Enter" &&
                 isMobile() &&
                 e.currentTarget.parentElement.classList.toggle("is-active")}>{link.label}</a
@@ -413,9 +416,11 @@
                       role="button"
                       class="navbar-link is-arrowless is-flex is-justify-content-space-between is-active"
                       class:is-active={normalizedPath.startsWith(href)}
-                      on:click|preventDefault={(e) =>
-                        isMobile() && e.currentTarget.parentElement.classList.toggle("is-active")}
-                      on:keydown={(e) =>
+                      onclick={(e) => {
+                        e.preventDefault();
+                        isMobile() && e.currentTarget.parentElement.classList.toggle("is-active");
+                      }}
+                      onkeydown={(e) =>
                         e.key === "Enter" &&
                         isMobile() &&
                         e.currentTarget.parentElement.classList.toggle("is-active")}
@@ -474,7 +479,7 @@
     type="button"
     class="mobile-nav-backdrop"
     aria-label="Close navigation menu"
-    on:click={() => closeBurger()}
+    onclick={() => closeBurger()}
   ></button>
 {/if}
 

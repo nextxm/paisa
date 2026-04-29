@@ -4,9 +4,9 @@
   import _ from "lodash";
   import { onMount } from "svelte";
 
-  let breakdowns: Record<string, AssetBreakdown> = {};
-  let reportCurrency = "";
-  let availableCurrencies: string[] = [];
+  let breakdowns: Record<string, AssetBreakdown> = $state({});
+  let reportCurrency = $state("");
+  let availableCurrencies: string[] = $state([]);
 
   async function fetchBreakdowns() {
     const params = new URLSearchParams();
@@ -37,7 +37,7 @@
                 <span class="select is-small">
                   <select
                     bind:value={reportCurrency}
-                    on:change={() => fetchBreakdowns()}
+                    onchange={() => fetchBreakdowns()}
                     title="Report Currency"
                   >
                     <option value="">Default Currency</option>
@@ -51,7 +51,7 @@
                 <p class="control">
                   <button
                     class="button is-small is-light"
-                    on:click={() => {
+                    onclick={() => {
                       reportCurrency = "";
                       fetchBreakdowns();
                     }}

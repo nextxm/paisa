@@ -14,15 +14,15 @@
   import ZeroState from "$lib/components/ZeroState.svelte";
   import { iconify } from "$lib/icon";
 
-  let isEmpty = false;
+  let isEmpty = $state(false);
 
-  let svg: Element;
-  let incomeStatement: IncomeStatement;
+  let svg: Element = $state();
+  let incomeStatement: IncomeStatement = $state(null);
   let renderer: (data: IncomeStatement) => void;
-  let yearly: Record<string, IncomeStatement> = {};
-  let diff: number;
-  let diffPercent: number;
-  let years: string[] = [];
+  let yearly: Record<string, IncomeStatement> = $state({});
+  let diff: number = $state(0);
+  let diffPercent: number = $state(0);
+  let years: string[] = $state([]);
 
   type AccountGroupName =
     | "income"
@@ -60,20 +60,22 @@
 
   const accountGroups: AccountGroup[] = [];
 
-  $: if (yearly && renderer) {
-    if (yearly[$year] == null) {
-      incomeStatement = null;
-      isEmpty = true;
-    } else {
-      incomeStatement = yearly[$year];
-      years = _.sortBy(_.keys(yearly)).reverse();
-      diff = incomeStatement.endingBalance - incomeStatement.startingBalance;
-      diffPercent = diff / incomeStatement.startingBalance;
+  $effect(() => {
+    if (yearly && renderer) {
+      if (yearly[$year] == null) {
+        incomeStatement = null;
+        isEmpty = true;
+      } else {
+        incomeStatement = yearly[$year];
+        years = _.sortBy(_.keys(yearly)).reverse();
+        diff = incomeStatement.endingBalance - incomeStatement.startingBalance;
+        diffPercent = diff / incomeStatement.startingBalance;
 
-      renderer(incomeStatement);
-      isEmpty = false;
+        renderer(incomeStatement);
+        isEmpty = false;
+      }
     }
-  }
+  });
 
   function uniqueAccounts(statements: IncomeStatement[], key: AccountGroupName) {
     const accounts = new Set<string>();

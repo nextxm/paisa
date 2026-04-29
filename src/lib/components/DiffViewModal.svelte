@@ -1,45 +1,47 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
   import Modal from "./Modal.svelte";
   import type { MergeView } from "@codemirror/merge";
   import { createDiffEditor } from "$lib/editor";
   import type { LedgerFile } from "$lib/utils";
   let editorDom: Element;
   let editor: MergeView;
-  export let oldFiles: LedgerFile[] = [];
-  export let newFiles: LedgerFile[] = [];
-  export let updatedTransactionsCount = 0;
-  let changedOldFiles: LedgerFile[] = [];
-  let changedNewFiles: LedgerFile[] = [];
-  let selectedFileIndex = 0;
+  let {
+    oldFiles = [],
+    newFiles = [],
+    updatedTransactionsCount = 0,
+    open = $bindable(false),
+    onsave
+  }: {
+    oldFiles?: LedgerFile[];
+    newFiles?: LedgerFile[];
+    updatedTransactionsCount?: number;
+    open?: boolean;
+    onsave?: (files: LedgerFile[]) => void;
+  } = $props();
+  let selectedFileIndex = $state(0);
 
-  const dispatch = createEventDispatcher();
-  export let open = false;
+  const changedOldFiles = $derived(
+    oldFiles.filter((_, i) => oldFiles[i].content !== newFiles[i]?.content)
+  );
+  const changedNewFiles = $derived(
+    newFiles.filter((_, i) => oldFiles[i].content !== newFiles[i]?.content)
+  );
 
-  $: {
-    changedOldFiles = [];
-    changedNewFiles = [];
-    for (let i = 0; i < newFiles.length; i++) {
-      if (oldFiles[i].content !== newFiles[i].content) {
-        changedOldFiles.push(oldFiles[i]);
-        changedNewFiles.push(newFiles[i]);
+  $effect(() => {
+    if (open) {
+      if (editor) {
+        editor.destroy();
+      }
+
+      if (changedOldFiles.length > 0) {
+        editor = createDiffEditor(
+          changedOldFiles[selectedFileIndex].content,
+          changedNewFiles[selectedFileIndex].content,
+          editorDom
+        );
       }
     }
-  }
-
-  $: if (open) {
-    if (editor) {
-      editor.destroy();
-    }
-
-    if (changedOldFiles.length > 0) {
-      editor = createDiffEditor(
-        changedOldFiles[selectedFileIndex].content,
-        changedNewFiles[selectedFileIndex].content,
-        editorDom
-      );
-    }
-  }
+  });
 </script>
 
 <Modal
@@ -106,7 +108,10 @@
     {#if changedOldFiles.length > 0}
       <button
         class="du-btn du-btn-success du-btn-sm"
-        onclick={() => dispatch("save", changedNewFiles) && close()}>Save All</button
+        onclick={() => {
+          onsave?.(changedNewFiles);
+          close();
+        }}>Save All</button
       >
     {/if}
   </svelte:fragment>

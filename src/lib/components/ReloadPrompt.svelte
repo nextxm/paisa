@@ -14,10 +14,10 @@
 
 {#if $needRefresh}
   <div class="reload-prompt notification is-info is-light invertable">
-    <button class="delete" aria-label="Dismiss update prompt" on:click={close}></button>
+    <button class="delete" aria-label="Dismiss update prompt" onclick={close}></button>
     <p>New content available, click on reload button to update.</p>
     <div class="mt-2">
-      <button class="button is-info is-small" on:click={reload}>Reload</button>
+      <button class="button is-info is-small" onclick={reload}>Reload</button>
     </div>
   </div>
 {/if}

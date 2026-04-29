@@ -10,17 +10,26 @@
   import { iconify } from "$lib/icon";
 
   // Props
-  export let nodes: SankeyNode[] = [];
-  export let links: SankeyLink[] = [];
-  export let height: number = 500;
-  export let loading: boolean = false;
-  export let emptyMessage: string = "No flow data available for this period.";
-  export let onLinkClick: ((link: SankeyLink) => void) | undefined = undefined;
+  let {
+    nodes = [],
+    links = [],
+    height = 500,
+    loading = false,
+    emptyMessage = "No flow data available for this period.",
+    onLinkClick = undefined
+  }: {
+    nodes?: SankeyNode[];
+    links?: SankeyLink[];
+    height?: number;
+    loading?: boolean;
+    emptyMessage?: string;
+    onLinkClick?: ((link: SankeyLink) => void) | undefined;
+  } = $props();
 
-  let svgEl: SVGSVGElement;
-  let containerEl: HTMLDivElement;
+  let svgEl: SVGSVGElement = $state();
+  let containerEl: HTMLDivElement = $state();
   let resizeObserver: ResizeObserver;
-  let containerWidth = 0;
+  let containerWidth = $state(0);
 
   // Color mapping by account kind
   const kindColors: Record<string, string> = {
@@ -229,12 +238,19 @@
       .text((d: any) => truncateLabel(d.name));
   }
 
-  $: if (svgEl && containerWidth > 0) {
-    draw();
-  }
+  $effect(() => {
+    if (svgEl && containerWidth > 0) {
+      draw();
+    }
+  });
 
   // Re-draw whenever props change
-  $: nodes, links, height, draw();
+  $effect(() => {
+    nodes;
+    links;
+    height;
+    draw();
+  });
 
   onMount(() => {
     resizeObserver = new ResizeObserver((entries) => {

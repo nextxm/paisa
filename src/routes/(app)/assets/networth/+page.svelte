@@ -17,30 +17,32 @@
   import BoxLabel from "$lib/components/BoxLabel.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
 
-  let networth = 0;
-  let investment = 0;
-  let gain = 0;
-  let xirr = 0;
-  let svg: Element;
+  let networth = $state(0);
+  let investment = $state(0);
+  let gain = $state(0);
+  let xirr = $state(0);
+  let svg: Element = $state();
   let destroy: () => void;
-  let points: Networth[] = [];
-  let legends: Legend[] = [];
-  let reportCurrency = "";
-  let availableCurrencies: string[] = [];
+  let points: Networth[] = $state([]);
+  let legends: Legend[] = $state([]);
+  let reportCurrency = $state("");
+  let availableCurrencies: string[] = $state([]);
 
-  $: if (!_.isEmpty(points)) {
-    if (destroy) {
-      destroy();
+  $effect(() => {
+    if (!_.isEmpty(points)) {
+      if (destroy) {
+        destroy();
+      }
+
+      ({ destroy, legends } = renderNetworth(
+        _.filter(
+          points,
+          (p) => p.date.isSameOrBefore($dateRange.to) && p.date.isSameOrAfter($dateRange.from)
+        ),
+        svg
+      ));
     }
-
-    ({ destroy, legends } = renderNetworth(
-      _.filter(
-        points,
-        (p) => p.date.isSameOrBefore($dateRange.to) && p.date.isSameOrAfter($dateRange.from)
-      ),
-      svg
-    ));
-  }
+  });
 
   onDestroy(async () => {
     if (destroy) {
@@ -80,7 +82,7 @@
             <span class="select is-small">
               <select
                 bind:value={reportCurrency}
-                on:change={() => fetchNetworth()}
+                onchange={() => fetchNetworth()}
                 title="Report Currency"
               >
                 <option value="">Default Currency</option>
@@ -94,7 +96,7 @@
             <p class="control">
               <button
                 class="button is-small is-light"
-                on:click={() => {
+                onclick={() => {
                   reportCurrency = "";
                   fetchNetworth();
                 }}

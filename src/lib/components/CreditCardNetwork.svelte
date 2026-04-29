@@ -1,11 +1,11 @@
 <script lang="ts">
-  export let size: number;
-  export let name: string;
-  $: multiplier =
+  let { size, name }: { size: number; name: string } = $props();
+  const multiplier = $derived(
     {
       rupay: 1.3,
       discover: 1.7
-    }[name] || 1;
+    }[name] || 1
+  );
 </script>
 
 {#if name == "visa"}

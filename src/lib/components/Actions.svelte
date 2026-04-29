@@ -42,7 +42,7 @@
     class="navbar-action-button sync-history-btn"
     data-tippy-content="<p>Sync History</p>"
     aria-label="Sync History"
-    on:click={() => (showHistory = true)}
+    onclick={() => (showHistory = true)}
   >
     <span class="icon">
       <i class="fa-solid fa-clock-rotate-left"></i>
@@ -56,7 +56,7 @@
     class="navbar-action-button"
     data-tippy-content="<p>Sync Journal</p>"
     aria-label="Sync Journal"
-    on:click={(_e) => syncWithLoader({ journal: true })}
+    onclick={(_e) => syncWithLoader({ journal: true })}
   >
     <span class="icon">
       <i class="fa-regular fa-file-lines"></i>
@@ -67,7 +67,7 @@
     class="navbar-action-button"
     data-tippy-content="<p>Update Prices</p>"
     aria-label="Update Prices"
-    on:click={(_e) => syncWithLoader({ prices: true })}
+    onclick={(_e) => syncWithLoader({ prices: true })}
   >
     <span class="icon">
       <i class="fas fa-dollar-sign"></i>
@@ -79,7 +79,7 @@
     class="navbar-action-button"
     data-tippy-content="<p>Update Mutual Fund Portfolios</p>"
     aria-label="Update Mutual Fund Portfolios"
-    on:click={(_e) => syncWithLoader({ portfolios: true })}
+    onclick={(_e) => syncWithLoader({ portfolios: true })}
   >
     <span class="icon">
       <i class="fas fa-layer-group"></i>
@@ -91,7 +91,7 @@
     class="navbar-action-button"
     data-tippy-content="<p>{$obscure ? 'Show' : 'Hide'} numbers</p>"
     aria-label="Toggle obscure numbers"
-    on:click={(_e) => toggleObscure()}
+    onclick={(_e) => toggleObscure()}
   >
     <span class="icon">
       <i class="fas {$obscure ? 'fa-eye-slash' : 'fa-eye'}"></i>
@@ -104,7 +104,7 @@
       class="navbar-action-button"
       data-tippy-content="<p>Logout</p>"
       aria-label="Logout"
-      on:click={(_e) => doLogout()}
+      onclick={(_e) => doLogout()}
     >
       <span class="icon">
         <i class="fas fa-arrow-right-from-bracket"></i>
