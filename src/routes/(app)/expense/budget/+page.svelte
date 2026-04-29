@@ -18,16 +18,11 @@
 
   const monthStart = now().startOf("month");
   let budgetsByMonth: Record<string, Budget> = $state({});
-  let currentMonthAccountBudgets: AccountBudget[] = $state([]);
-  let currentMonthBudget: Budget = $state(null);
+  let currentMonthBudget = $derived(budgetsByMonth[$month]);
+  let currentMonthAccountBudgets = $derived(budgetsByMonth[$month]?.accounts || []);
   let checkingBalance: number = $state(0);
   let availableForBudgeting: number = $state(0);
   let isEmpty = $state(false);
-
-  $effect(() => {
-    currentMonthBudget = budgetsByMonth[$month];
-    currentMonthAccountBudgets = budgetsByMonth[$month]?.accounts || [];
-  });
 
   onMount(async () => {
     ({ budgetsByMonth, checkingBalance, availableForBudgeting } = await ajax("/api/budget"));
