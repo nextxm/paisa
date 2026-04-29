@@ -40,7 +40,7 @@
   let expenses: { [key: string]: Posting[] } = $state({});
   let xirr = $state(0);
   let networth: Networth = $state(null);
-  let renderer: (data: Posting[]) => void;
+  let renderer: (data: Posting[]) => void = $state();
   let selectedExpenses = $derived(expenses[month] || []);
   let totalExpense = $derived(_.sumBy(selectedExpenses, (p) => p.amount));
   let transactions: Transaction[] = $state([]);

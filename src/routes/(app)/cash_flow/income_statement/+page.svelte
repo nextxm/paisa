@@ -15,7 +15,7 @@
   import { iconify } from "$lib/icon";
 
   let svg: Element = $state();
-  let renderer: (data: IncomeStatement) => void;
+  let renderer: (data: IncomeStatement) => void = $state();
   let yearly: Record<string, IncomeStatement> = $state({});
   let incomeStatement = $derived(yearly[$year]);
   let years = $derived(_.sortBy(_.keys(yearly)).reverse());
