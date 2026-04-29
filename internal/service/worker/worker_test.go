@@ -336,7 +336,7 @@ func TestRegistry_ConcurrentSubmitAndGet(t *testing.T) {
 // returns a non-empty job ID.
 func TestSubmitDetailed_ReturnsNonEmptyID(t *testing.T) {
 	r := worker.NewRegistry()
-	id := r.SubmitDetailed(context.Background(), func(_ context.Context) ([]string, error) {
+	id := r.SubmitDetailed(context.Background(), nil, func(_ context.Context) ([]string, error) {
 		return nil, nil
 	})
 	assert.NotEmpty(t, id, "SubmitDetailed must return a non-empty job ID")
@@ -347,7 +347,7 @@ func TestSubmitDetailed_ReturnsNonEmptyID(t *testing.T) {
 // Details slice.
 func TestSubmitDetailed_Completed_NoDetails(t *testing.T) {
 	r := worker.NewRegistry()
-	id := r.SubmitDetailed(context.Background(), func(_ context.Context) ([]string, error) {
+	id := r.SubmitDetailed(context.Background(), nil, func(_ context.Context) ([]string, error) {
 		return nil, nil
 	})
 
@@ -370,7 +370,7 @@ func TestSubmitDetailed_Completed_WithDetails(t *testing.T) {
 	r := worker.NewRegistry()
 	want := []string{"commodity A failed", "commodity B failed"}
 
-	id := r.SubmitDetailed(context.Background(), func(_ context.Context) ([]string, error) {
+	id := r.SubmitDetailed(context.Background(), nil, func(_ context.Context) ([]string, error) {
 		return want, nil
 	})
 
@@ -394,7 +394,7 @@ func TestSubmitDetailed_Failed_WithDetails(t *testing.T) {
 	sentinelErr := errors.New("sync failed")
 	want := []string{"XIRR did not converge for account: Assets:Equity:AAPL"}
 
-	id := r.SubmitDetailed(context.Background(), func(_ context.Context) ([]string, error) {
+	id := r.SubmitDetailed(context.Background(), nil, func(_ context.Context) ([]string, error) {
 		return want, sentinelErr
 	})
 

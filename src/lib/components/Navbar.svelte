@@ -472,7 +472,7 @@
               href={helpUrl(selectedLink.help)}
               aria-label={`Help for ${selectedLink.label}`}
               ><span class="icon is-small">
-                <i class="fas fa-question fa-border"></i>
+                <i class="fas fa-question"></i>
               </span></a
             >
           {/if}
@@ -493,7 +493,7 @@
                 href={helpUrl(selectedSubLink.help)}
                 aria-label={`Help for ${selectedSubLink.label}`}
                 ><span class="icon is-small">
-                  <i class="fas fa-question fa-border"></i>
+                  <i class="fas fa-question"></i>
                 </span></a
               >
             {/if}
@@ -733,6 +733,5 @@
   }
 
   li a span.icon {
-    margin-top: -5px;
   }
 </style>

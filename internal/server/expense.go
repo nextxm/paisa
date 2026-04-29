@@ -47,16 +47,19 @@ func GetExpense(db *gorm.DB) gin.H {
 	incomes := []posting.Posting{}
 	investments := []posting.Posting{}
 	taxes := []posting.Posting{}
+	liabilities := []posting.Posting{}
 
 	for _, p := range postings {
 		if utils.IsSameOrParent(p.Account, "Expenses:Tax") {
 			taxes = append(taxes, p)
-		} else if utils.IsParent(p.Account, "Expenses") {
+		} else if utils.IsSameOrParent(p.Account, "Expenses") {
 			expenses = append(expenses, p)
-		} else if utils.IsParent(p.Account, "Income") {
+		} else if utils.IsSameOrParent(p.Account, "Income") {
 			incomes = append(incomes, p)
-		} else if utils.IsParent(p.Account, "Assets") && !utils.IsSameOrParent(p.Account, "Assets:Checking") {
+		} else if utils.IsSameOrParent(p.Account, "Assets") && !utils.IsSameOrParent(p.Account, "Assets:Checking") {
 			investments = append(investments, p)
+		} else if utils.IsSameOrParent(p.Account, "Liabilities") {
+			liabilities = append(liabilities, p)
 		}
 	}
 
@@ -71,12 +74,14 @@ func GetExpense(db *gorm.DB) gin.H {
 			"expenses":    utils.GroupByMonth(expenses),
 			"incomes":     utils.GroupByMonth(incomes),
 			"investments": utils.GroupByMonth(investments),
-			"taxes":       utils.GroupByMonth(taxes)},
+			"taxes":       utils.GroupByMonth(taxes),
+			"liabilities": utils.GroupByMonth(liabilities)},
 		"year_wise": gin.H{
 			"expenses":    utils.GroupByFY(expenses),
 			"incomes":     utils.GroupByFY(incomes),
 			"investments": utils.GroupByFY(investments),
-			"taxes":       utils.GroupByFY(taxes)},
+			"taxes":       utils.GroupByFY(taxes),
+			"liabilities": utils.GroupByFY(liabilities)},
 		"graph": graph}
 }
 

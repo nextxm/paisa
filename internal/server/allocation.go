@@ -67,8 +67,8 @@ func computeAggregateTimeline(db *gorm.DB, postings []posting.Posting) []map[str
 	}
 
 	end := utils.EndOfToday()
-	for start := postings[0].Date; start.Before(end); start = start.AddDate(0, 0, 1) {
-		for len(postings) > 0 && (postings[0].Date.Before(start) || postings[0].Date.Equal(start)) {
+	for start := utils.ToDate(postings[0].Date); start.Before(end); start = start.AddDate(0, 0, 1) {
+		for len(postings) > 0 && (utils.ToDate(postings[0].Date).Before(start) || utils.ToDate(postings[0].Date).Equal(start)) {
 			p, postings = postings[0], postings[1:]
 			rsByAccount := accumulator[p.Account]
 			if rsByAccount == nil {

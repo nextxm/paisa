@@ -118,11 +118,26 @@ $footerActiveColor: #d00;
 
   .du-tab {
     color: $grey-dark !important;
+    border: 1px solid transparent;
+
+    &:focus,
+    &:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
+    }
 
     &.du-tab-active {
       background-color: $white !important;
       color: $black-bis !important;
+      border-color: $grey-lighter;
     }
+  }
+}
+
+.du-modal {
+  &-backdrop {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(2px);
   }
 }
 
@@ -147,13 +162,13 @@ $footerActiveColor: #d00;
   a:hover,
   summary:hover,
   button:hover {
-    background-color: $white-ter !important;
+    background-color: rgba(127, 127, 127, 0.05) !important;
   }
 
   a.du-active,
   button.du-active {
     color: $link !important;
-    background-color: $white !important;
+    background-color: rgba(127, 127, 127, 0.1) !important;
     font-weight: bold;
   }
 }
@@ -166,8 +181,10 @@ $footerActiveColor: #d00;
   background-color: rgba(0, 0, 0, 0.86);
 }
 
-:focus {
-  outline: 0;
+:focus,
+:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 button {
@@ -446,7 +463,7 @@ svg text {
 .legend-box {
   background: none;
   border: none;
-  font: inherit;
+  font-family: $family-sans-serif-icon;
   color: inherit;
 
   &.selected {
@@ -617,11 +634,30 @@ nav.level.grid-2 {
 }
 
 .navbar {
-  background-color: $white !important;
-  color: rgba(0, 0, 0, 0.7);
+  background-color: $background !important;
+  color: $text;
 
   a.navbar-item {
-    background-color: $white !important;
+    background-color: $background !important;
+
+    &:hover,
+    &.is-active {
+      background-color: $white-ter !important;
+    }
+  }
+
+  .navbar-dropdown {
+    background-color: $background !important;
+    border-top: none;
+
+    .navbar-item {
+      background-color: $background !important;
+
+      &:hover,
+      &.is-active {
+        background-color: $white-ter !important;
+      }
+    }
   }
 }
 .cm-editor {
@@ -854,9 +890,6 @@ nav.level.grid-2 {
   border-left: 1px solid $grey-lighter;
 }
 
-.sheet-editor .cm-editor {
-}
-
 .preview-editor {
   min-height: 35px;
 }
@@ -1040,7 +1073,7 @@ span.progress-percent.less-than-10 {
   .budget-amount {
     width: 80px;
     text-align: right;
-    text-weight: bold;
+    font-weight: bold;
 
     &.info {
       font-weight: bold;
@@ -1111,11 +1144,11 @@ span.progress-percent.less-than-10 {
   border-bottom: 1px solid $grey-lighter;
 
   &.odd {
-    background-color: $white-ter;
+    background-color: rgba(127, 127, 127, 0.05);
   }
 
   &.even {
-    background-color: $white-bis;
+    background-color: transparent;
   }
 }
 

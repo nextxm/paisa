@@ -10,9 +10,9 @@
   import { writable } from "svelte/store";
   import type { Action } from "svelte/action";
 
-  let isEmpty = false;
-  let config: UserConfig;
-  let goals: GoalSummary[] = [];
+  let isEmpty = $state(false);
+  let config: UserConfig = $state(null);
+  let goals: GoalSummary[] = $state([]);
   const dragDisabled = writable(true);
 
   function handleConsider(event: CustomEvent<DndEvent<GoalSummary>>) {
@@ -115,8 +115,8 @@
         flipDurationMs: 300,
         dragDisabled: $dragDisabled
       }}
-      on:consider={handleConsider}
-      on:finalize={handleFinalize}
+      onconsider={handleConsider}
+      onfinalize={handleFinalize}
     >
       {#each goals as goal (goal.id)}
         <div animate:flip={{ duration: 300 }} class="column is-6 is-one-third-widescreen">

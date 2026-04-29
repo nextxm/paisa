@@ -17,6 +17,10 @@ html[data-theme="dark"] {
   $white-bis: hsl($black-hue, $black-saturation, 13%) !default;
   $white: hsl($black-hue, $black-saturation, 10%) !default;
 
+  $light: $white-ter !default;
+  $light-invert: $black !default;
+  $background: $white-bis !default;
+
   $diff-add-bg-light: rgba(70, 149, 74, 0.15);
   $diff-add-bg-dark: rgba(70, 149, 74, 0.4);
   $diff-del-bg-light: rgba(229, 83, 75, 0.1);
@@ -45,6 +49,8 @@ html[data-theme="dark"] {
 
   &.paisa {
     .box {
+      background-color: $white-bis;
+      color: $grey-darker;
       box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.7);
     }
 
@@ -198,5 +204,110 @@ html[data-theme="dark"] {
       $grey-lightest calc(95% + 1px),
       $grey-lightest 100%
     );
+  }
+
+  .button.is-light {
+    background-color: $white-bis;
+    color: $grey-darker;
+    border-color: transparent;
+
+    &:hover {
+      background-color: $white-ter;
+    }
+  }
+
+  .config-body {
+    &.odd {
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+    &.even {
+      background-color: transparent;
+    }
+  }
+
+  .input,
+  .textarea,
+  .select select {
+    background-color: $white-bis;
+    color: $grey-darker;
+    border-color: $grey-lightest;
+
+    &::placeholder {
+      color: $grey;
+    }
+
+    &:hover {
+      border-color: $grey-lighter;
+    }
+
+    &:focus,
+    &.is-focused {
+      border-color: var(--bulma-link, #485fc7);
+      box-shadow: none !important;
+    }
+  }
+
+  .has-text-black-ter {
+    color: $black-ter !important;
+  }
+
+  .message {
+    background-color: $white-bis;
+    .message-body {
+      background-color: $white-bis;
+      color: $grey-darker;
+    }
+  }
+
+  .du-tabs {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    border-radius: $radius;
+    padding: 2px;
+
+    .du-tab {
+      background-color: transparent !important;
+      border: none !important;
+      color: $grey-dark !important;
+      font-weight: 500;
+      transition: all 0.2s ease;
+
+      &:hover {
+        color: $grey-darker !important;
+      }
+
+      &.du-tab-active {
+        background-color: $white !important;
+        color: $black !important;
+        border-radius: $radius !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+      }
+    }
+  }
+
+  .du-modal {
+    &-backdrop {
+      background-color: rgba(0, 0, 0, 0.6) !important;
+    }
+  }
+
+  .navbar {
+    background-color: $background !important;
+
+    a.navbar-item {
+      &:hover,
+      &.is-active {
+        background-color: rgba(0, 0, 0, 0.2) !important;
+      }
+    }
+
+    .navbar-dropdown {
+      background-color: $background !important;
+      .navbar-item {
+        &:hover,
+        &.is-active {
+          background-color: rgba(0, 0, 0, 0.2) !important;
+        }
+      }
+    }
   }
 }

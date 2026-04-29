@@ -63,13 +63,47 @@
           style="background-color: {legend.color}; height: 1.1rem; width: 1.1rem; border-radius: 3px;"
         ></div>
       {:else if legend.shape == "line"}
-        <div
-          style="border-top: 3px solid {legend.color}; height: 0.1rem; width: 2rem;"
-        ></div>
+        <div style="border-top: 3px solid {legend.color}; height: 0.1rem; width: 2rem;"></div>
       {/if}
-      <div class="legend-label is-size-7 has-text-grey has-text-centered" style="word-break: break-word; max-width: 120px;">
+      <div
+        class="legend-label is-size-7 has-text-grey has-text-centered"
+        style="word-break: break-word; max-width: 120px;"
+      >
         {legend.label}
       </div>
     </button>
   {/each}
 </div>
+
+<style lang="scss">
+  .legend-box {
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background-color: rgba(127, 127, 127, 0.1);
+      border-color: rgba(127, 127, 127, 0.2);
+
+      :global(html[data-theme="dark"]) & {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-color: rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    &.selected {
+      background-color: rgba(127, 127, 127, 0.15);
+      border-color: var(--bulma-link, #485fc7);
+
+      :global(html[data-theme="dark"]) & {
+        background-color: rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    &:disabled {
+      cursor: default;
+    }
+  }
+</style>

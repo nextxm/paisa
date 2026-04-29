@@ -21,12 +21,12 @@
   import { onDestroy, onMount } from "svelte";
   import VirtualList from "svelte-tiny-virtual-list";
 
-  let files: LedgerFile[] = [];
-  let accounts: string[] = [];
-  let commodities: string[] = [];
+  let files: LedgerFile[] = $state([]);
+  let accounts: string[] = $state([]);
+  let commodities: string[] = $state([]);
 
-  let filteredPostings: Posting[] = [];
-  let rows: { posting: Posting; transaction: Transaction }[] = [];
+  let filteredPostings: Posting[] = $state([]);
+  let rows: { posting: Posting; transaction: Transaction }[] = $state([]);
 
   function handleInputRaw(predicate: (t: Transaction) => boolean) {
     filteredPostings = rows.filter((r) => predicate(r.transaction)).map((r) => r.posting);
