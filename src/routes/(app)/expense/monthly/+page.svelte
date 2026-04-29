@@ -72,7 +72,6 @@
       : ""
   );
 
-
   $effect(() => {
     if (grouped_expenses && z && renderer) {
       renderCalendar($month, grouped_expenses[$month], z, $groups);

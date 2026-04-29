@@ -53,7 +53,7 @@
                       {#if job.metadata.journal}Journal{/if}
                       {#if job.metadata.prices}{job.metadata.journal ? " + " : ""}Prices{/if}
                       {#if job.metadata.portfolios}
-                        {(job.metadata.journal || job.metadata.prices) ? " + " : ""}Portfolios
+                        {job.metadata.journal || job.metadata.prices ? " + " : ""}Portfolios
                       {/if}
                     </span>
                   {/if}

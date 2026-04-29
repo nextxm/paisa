@@ -63,11 +63,12 @@
           style="background-color: {legend.color}; height: 1.1rem; width: 1.1rem; border-radius: 3px;"
         ></div>
       {:else if legend.shape == "line"}
-        <div
-          style="border-top: 3px solid {legend.color}; height: 0.1rem; width: 2rem;"
-        ></div>
+        <div style="border-top: 3px solid {legend.color}; height: 0.1rem; width: 2rem;"></div>
       {/if}
-      <div class="legend-label is-size-7 has-text-grey has-text-centered" style="word-break: break-word; max-width: 120px;">
+      <div
+        class="legend-label is-size-7 has-text-grey has-text-centered"
+        style="word-break: break-word; max-width: 120px;"
+      >
         {legend.label}
       </div>
     </button>
