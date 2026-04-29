@@ -37,6 +37,7 @@ type Ledger interface {
 	ValidateFile(journalPath string) ([]LedgerFileError, string, error)
 	Parse(journalPath string, prices []price.Price) ([]*posting.Posting, error)
 	Prices(jornalPath string) ([]price.Price, error)
+	Files(journalPath string) ([]string, error)
 }
 
 type LedgerCLI struct{}
@@ -129,6 +130,21 @@ func (LedgerCLI) Prices(journalPath string) ([]price.Price, error) {
 	}
 
 	return parseLedgerPrices(utils.Dos2Unix(output.String()))
+}
+
+func (LedgerCLI) Files(journalPath string) ([]string, error) {
+	ledgerPath, err := binary.LedgerBinaryPath()
+	if err != nil {
+		return nil, err
+	}
+
+	var output, errBuf bytes.Buffer
+	err = utils.Exec(ledgerPath, &output, &errBuf, "-f", journalPath, "files")
+	if err != nil {
+		return nil, err
+	}
+
+	return strings.Split(strings.TrimSpace(utils.Dos2Unix(output.String())), "\n"), nil
 }
 
 func (HLedgerCLI) ValidateFile(journalPath string) ([]LedgerFileError, string, error) {
@@ -228,6 +244,21 @@ func (HLedgerCLI) Prices(journalPath string) ([]price.Price, error) {
 	}
 
 	return parseHLedgerPrices(utils.Dos2Unix(output.String()))
+}
+
+func (HLedgerCLI) Files(journalPath string) ([]string, error) {
+	path, err := binary.LookPath("hledger")
+	if err != nil {
+		return nil, err
+	}
+
+	var output, errBuf bytes.Buffer
+	err = utils.Exec(path, &output, &errBuf, "-f", journalPath, "files")
+	if err != nil {
+		return nil, err
+	}
+
+	return strings.Split(strings.TrimSpace(utils.Dos2Unix(output.String())), "\n"), nil
 }
 
 func (Beancount) ValidateFile(journalPath string) ([]LedgerFileError, string, error) {
@@ -437,6 +468,35 @@ func (Beancount) Prices(journalPath string) ([]price.Price, error) {
 	}
 
 	return parseBeancountPrices(utils.Dos2Unix(output.String()))
+}
+
+func (Beancount) Files(journalPath string) ([]string, error) {
+	path, err := binary.BeancountBinaryPath("bean-query")
+	if err != nil {
+		return nil, err
+	}
+
+	var output, errBuf bytes.Buffer
+	err = utils.Exec(path, &output, &errBuf, "-f", "csv", journalPath, "select distinct filename")
+	if err != nil {
+		return nil, err
+	}
+
+	reader := csv.NewReader(bytes.NewBuffer(output.Bytes()))
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(records) <= 1 {
+		return []string{journalPath}, nil
+	}
+
+	var files []string
+	for _, record := range records[1:] {
+		files = append(files, strings.TrimSpace(record[0]))
+	}
+	return files, nil
 }
 
 func parseHLedgerCommodities(journalPath string) ([]string, error) {
