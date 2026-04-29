@@ -529,6 +529,7 @@ export interface Job {
   created_at: string;
   started_at?: string;
   finished_at?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface CreditCardBill {

@@ -40,36 +40,34 @@
   }
 </script>
 
-<div class="flex justify-start gap-0 {clazz}">
+<div class="flex flex-wrap items-start justify-center gap-x-4 gap-y-3 {clazz}">
   {#each legends as legend}
     <button
       type="button"
-      class="flex flex-col p-1.5 gap-2 legend-box {legend.onClick && 'cursor-pointer'}"
+      class="flex flex-col items-center p-2 gap-1.5 legend-box {legend.onClick && 'cursor-pointer'}"
       onclick={(_e) => onClick(legend)}
       class:selected={selectedLegend == legend}
       disabled={!legend.onClick}
       aria-label={legend.label}
+      style="min-width: 90px; flex: 0 0 auto;"
     >
       {#if legend.texture}
         <svg
           use:texture={{ texture: legend.texture }}
-          class="self-center"
-          height="1rem"
-          width="1rem"
+          height="1.1rem"
+          width="1.1rem"
           viewBox="0 0 {textureScale} {textureScale}"
         ></svg>
       {:else if legend.shape == "square"}
         <div
-          class="self-center"
-          style="background-color: {legend.color}; height: 1rem; width: 1rem;"
+          style="background-color: {legend.color}; height: 1.1rem; width: 1.1rem; border-radius: 3px;"
         ></div>
       {:else if legend.shape == "line"}
         <div
-          class="self-center"
           style="border-top: 3px solid {legend.color}; height: 0.1rem; width: 2rem;"
         ></div>
       {/if}
-      <div class="legend-label whitespace-pre is-size-6-5 has-text-grey custom-icon">
+      <div class="legend-label is-size-7 has-text-grey has-text-centered" style="word-break: break-word; max-width: 120px;">
         {legend.label}
       </div>
     </button>
