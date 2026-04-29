@@ -38,6 +38,8 @@
 
 #### Bug fixes
 
+- **Startup effect loop hardening** — Updated `src/lib/components/Actions.svelte` to stabilize the `obscure` store subscription (track previous value correctly and unsubscribe on destroy), preventing repeated `refresh()` cascades that could trigger `effect_update_depth_exceeded` on app load.
+
 - **Assets Analysis render crash fixed** — `src/routes/(app)/assets/analysis/+page.svelte` now initializes the commodity color mapper with a safe fallback function and explicit callable type so the page no longer throws `TypeError: ... is not a function` during first render while async data is still settling.
 
 - **Negative SVG width warnings fixed** — Clamped stacked bar segment widths in `src/lib/gain.ts` and `src/lib/liabilities/interest.ts` to `Math.max(0, ...)` to avoid invalid `<rect width>` values caused by floating-point precision drift.
