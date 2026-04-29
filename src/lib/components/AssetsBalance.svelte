@@ -18,7 +18,7 @@
     indent = true
   }: { breakdowns: Record<string, AssetBreakdown>; indent?: boolean } = $props();
 
-  const columns: ColumnDefinition[] = [
+  const columns: ColumnDefinition[] = $derived([
     {
       title: "Account",
       field: "group",
@@ -59,7 +59,7 @@
       hozAlign: "right",
       formatter: nonZeroPercentageChange
     }
-  ];
+  ]);
 
   let tree: AssetBreakdown[] = $state([]);
   $effect(() => {

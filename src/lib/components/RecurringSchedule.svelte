@@ -9,21 +9,23 @@
   } from "$lib/utils";
   let { schedule }: { schedule: TransactionSchedule } = $props();
 
-  const icon = scheduleIcon(schedule);
+  const icon = $derived(scheduleIcon(schedule));
 
-  const tooltipHtml = tooltip(
-    [
+  const tooltipHtml = $derived(
+    tooltip(
       [
-        "Due Date",
-        [schedule.scheduled.format("DD MMM YYYY"), "has-text-weight-bold has-text-right"]
+        [
+          "Due Date",
+          [schedule.scheduled.format("DD MMM YYYY"), "has-text-weight-bold has-text-right"]
+        ],
+        [
+          "Cleared On",
+          [schedule.actual?.format("DD MMM YYYY") || "", "has-text-weight-bold has-text-right"]
+        ],
+        ["Amount", [formatCurrency(schedule.amount), "has-text-weight-bold has-text-right"]]
       ],
-      [
-        "Cleared On",
-        [schedule.actual?.format("DD MMM YYYY") || "", "has-text-weight-bold has-text-right"]
-      ],
-      ["Amount", [formatCurrency(schedule.amount), "has-text-weight-bold has-text-right"]]
-    ],
-    { header: schedule.key }
+      { header: schedule.key }
+    )
   );
 </script>
 

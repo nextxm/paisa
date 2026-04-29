@@ -27,14 +27,16 @@
     return {};
   };
 
-  const tooltipContent = tooltip(
-    accountBudget.expenses.map((e) => {
-      return [
-        e.date.format("DD MMM YYYY"),
-        [e.payee, "is-clipped"],
-        [formatCurrency(e.amount), "has-text-weight-bold has-text-right"]
-      ];
-    })
+  const tooltipContent = $derived(
+    tooltip(
+      accountBudget.expenses.map((e) => {
+        return [
+          e.date.format("DD MMM YYYY"),
+          [e.payee, "is-clipped"],
+          [formatCurrency(e.amount), "has-text-weight-bold has-text-right"]
+        ];
+      })
+    )
   );
 </script>
 

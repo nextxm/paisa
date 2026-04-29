@@ -181,7 +181,7 @@
     }
   }
 
-  let modalOpen = false;
+  let modalOpen = $state(false);
   function openSaveModal() {
     modalOpen = true;
   }
@@ -217,7 +217,7 @@
     return action;
   }
 
-  let templateCreateModalOpen = false;
+  let templateCreateModalOpen = $state(false);
   function openTemplateCreateModal() {
     templateCreateModalOpen = true;
   }

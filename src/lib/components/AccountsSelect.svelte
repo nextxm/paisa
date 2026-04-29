@@ -55,7 +55,7 @@
   showChevron={true}
   searchable={true}
   clearable={false}
-  onchange={handleChange}
+  on:change={handleChange}
   on:clear={handleChange}
   on:filter={handleFilter}
   bind:filterText

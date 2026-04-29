@@ -4,6 +4,15 @@
 
 #### New features
 
+- **Epic 1: Component Modernization (Runes & Event Syntax)** — Systematically migrated all Svelte components and route pages from Svelte 4 syntax to Svelte 5 runes:
+  - All `export let` props converted to `$props()` / `$bindable()`
+  - All `$:` reactive statements converted to `$derived()` or `$effect()`
+  - All mutable local state annotated with `$state()`
+  - All DOM event attributes (`on:click`, `on:change`, `on:keydown`, etc.) replaced with lowercase equivalents (`onclick`, `onchange`, `onkeydown`, etc.)
+  - `on:*|preventDefault` modifiers inlined as `e.preventDefault()` calls
+  - `createEventDispatcher` replaced with callback props (`ondrop`, `onselect`, `onpreview`, `onsave`)
+  - All callers of modernized components updated to pass callback props instead of `on:event` listeners
+
 - **Svelte 5 runes migration (P2.3)** — Converted 15 remaining `src/lib/components/` files and 5 route pages from Svelte 4 syntax to Svelte 5 runes: `export let` → `$props()` / `$bindable()`, `$:` derived expressions → `$derived()`, `$:` side-effect blocks → `$effect()`, and mutable local state → `$state()`. `createEventDispatcher` in `BulkEditForm`, `DiffViewModal`, and `FileTree` replaced with callback props (`onpreview`, `onsave`, `onselect`); all callers updated. `<svelte:self>` in `FileTree` replaced with an explicit self-import. Goals pages (`savings`, `retirement`) converted all `onMount`-assigned variables to `$state()` for correct reactivity.
 
 - **Svelte 5 upgrade & UI modernization (P2.2)** — Upgrades the frontend framework to Svelte 5 and begins the incremental migration to rune-based reactivity:

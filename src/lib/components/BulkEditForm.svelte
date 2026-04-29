@@ -43,7 +43,7 @@
         placeholder="Old Account name"
         searchable={true}
         clearable={false}
-        onchange={(_e) => {
+        on:change={(_e) => {
           args.oldAccountName = selectedItem.name;
         }}
       ></Select>

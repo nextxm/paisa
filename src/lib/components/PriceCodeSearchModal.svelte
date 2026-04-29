@@ -127,7 +127,7 @@
                     debounceWait={500}
                     searchable={true}
                     clearable={false}
-                    onchange={() => {
+                    on:change={() => {
                       _.each(selectedProvider.fields, (f, j) => {
                         if (j > i) {
                           clearCache(j);
