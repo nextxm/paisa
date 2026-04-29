@@ -65,7 +65,7 @@
     for (const p of postings) {
       if (!result[p.account]) result[p.account] = {};
       if (!result[p.account][p.commodity]) result[p.account][p.commodity] = 0;
-      result[p.account][p.commodity] += negate ? -p.amount : p.amount;
+      result[p.account][p.commodity] += negate ? -p.quantity : p.quantity;
     }
 
     const flattened: AggregatedItem[] = [];
