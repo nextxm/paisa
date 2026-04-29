@@ -38,6 +38,10 @@
 
 #### Bug fixes
 
+- **Dashboard startup loop fixed** — Updated `src/routes/(app)/+page.svelte` to remove a read-after-write reactive pattern in the dashboard `$effect` (`selectedExpenses`), preventing a recursive update cycle that could raise `effect_update_depth_exceeded` on load when the current month has no expense bucket.
+
+- **Manifest endpoint syntax error fixed** — Added `static/manifest.webmanifest` so `/manifest.webmanifest` serves valid JSON instead of fallback HTML, resolving browser console errors like `Manifest: Line: 1, column: 1, Syntax error`.
+
 - **Startup effect loop hardening** — Updated `src/lib/components/Actions.svelte` to stabilize the `obscure` store subscription (track previous value correctly and unsubscribe on destroy), preventing repeated `refresh()` cascades that could trigger `effect_update_depth_exceeded` on app load.
 
 - **Assets Analysis render crash fixed** — `src/routes/(app)/assets/analysis/+page.svelte` now initializes the commodity color mapper with a safe fallback function and explicit callable type so the page no longer throws `TypeError: ... is not a function` during first render while async data is still settling.
