@@ -171,12 +171,7 @@ $footerActiveColor: #d00;
 }
 
 button {
-  background: none;
-  border: none;
-  padding: 0;
   cursor: pointer;
-  color: inherit;
-  font: inherit;
 }
 
 html,
@@ -440,9 +435,24 @@ svg text {
   line-height: 1rem;
 }
 
-.legend-box.selected {
-  background-color: rgba($grey-lightest, 0.5);
-  border-radius: $radius;
+.is-clear {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  color: inherit !important;
+}
+
+.legend-box {
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+
+  &.selected {
+    background-color: rgba($grey-lightest, 0.5);
+    border-radius: $radius;
+  }
 }
 
 #d3-salary-timeline .x.axis > g.tick {
