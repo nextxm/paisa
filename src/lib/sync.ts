@@ -57,7 +57,8 @@ export async function sync(request: Record<string, any>): Promise<string | null>
   jobs.upsert({
     id: job_id,
     status: "pending",
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    metadata: request
   });
 
   return job_id;

@@ -48,6 +48,15 @@
                   <span class="has-text-grey is-size-7" title={job.id}>
                     #{job.id.slice(0, 8)}
                   </span>
+                  {#if job.metadata}
+                    <span class="has-text-weight-semibold is-size-7 ml-2">
+                      {#if job.metadata.journal}Journal{/if}
+                      {#if job.metadata.prices}{job.metadata.journal ? " + " : ""}Prices{/if}
+                      {#if job.metadata.portfolios}
+                        {(job.metadata.journal || job.metadata.prices) ? " + " : ""}Portfolios
+                      {/if}
+                    </span>
+                  {/if}
                 </div>
                 <span class="has-text-grey is-size-7">{formatTs(job.created_at)}</span>
               </div>
