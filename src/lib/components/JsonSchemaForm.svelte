@@ -291,7 +291,7 @@
     <button
       type="button"
       onclick={(_e) => (modalOpen = true)}
-      class="is-link"
+      class="button is-small"
       aria-label="Search price code"
     >
       <span class="icon is-small">
@@ -325,7 +325,7 @@
   <div class="config-header">
     <button
       type="button"
-      class="is-link is-light invertable"
+      class="button is-light invertable is-small"
       data-tippy-content={documentation(schema)}
       onclick={(_e) => (open = !open)}
     >
@@ -369,7 +369,7 @@
   <div class="config-header">
     <button
       type="button"
-      class="is-link is-light invertable"
+      class="button is-light invertable is-small"
       data-tippy-content={documentation(schema)}
       onclick={(_e) => (open = !open)}
     >

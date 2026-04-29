@@ -211,3 +211,23 @@ Planned capabilities:
 
 > [!NOTE]
 > This roadmap is a living document and will evolve with community feedback, delivery learnings, and technology changes.
+
+
+Scratch Notes
+
+Tier	Feature
+🌟🌟🌟	Budget/price alerts — notify on budget breach, large anomaly, price threshold
+🌟🌟🌟	Mobile PWA — the UI isn't mobile-optimized; most finance checks happen on phone
+🌟🌟🌟	AI/NLP ledger entry — "spent ₹500 on Swiggy" → valid ledger syntax
+🌟🌟	Net worth projections — extrapolate trajectory using savings rate + historical CAGR
+🌟🌟	Recurring entry auto-generation — detection exists; one-click to generate a year of entries
+🌟🌟	Bank statement import — PDF/CSV/OFX → ledger entries
+🌟🌟	Tax optimization suggestions — LTCG harvest timing, 80C headroom alerts
+🌟	Spending anomaly insights — "40% more on Food than last 3-month average"
+
+✅ PRAGMA WAL mode + cache_size on DB open   → trivial config change
+✅ Pre-warm price/rate BTree caches in a goroutine after startup/sync
+   → eliminates cold-start latency
+✅ Merge GetExpense's 5 queries into 1 full scan + in-memory partitioning
+✅ Parallelize GetDashboard's 7 sub-queries (sync.WaitGroup)
+✅ Add cursor pagination to /api/transaction and /api/ledger

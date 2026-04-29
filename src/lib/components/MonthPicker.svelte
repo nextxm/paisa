@@ -180,17 +180,22 @@
   .month button {
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
+    background: none;
+    border: none;
     transition: background-color 120ms ease;
     cursor: pointer;
 
     &.has-text-black-ter {
-      color: hsl(0, 0%, 29%);
+      color: inherit;
 
       &:hover,
       &:focus {
-        background-color: hsl(0, 0%, 96%);
-        outline: 1px solid hsl(0, 0%, 86%);
-        outline-offset: -1px;
+        background-color: rgba(127, 127, 127, 0.1);
+        outline: none;
+
+        :global(html[data-theme="dark"]) & {
+          background-color: rgba(0, 0, 0, 0.2);
+        }
       }
     }
 

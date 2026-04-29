@@ -74,3 +74,36 @@
     </button>
   {/each}
 </div>
+
+<style lang="scss">
+  .legend-box {
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background-color: rgba(127, 127, 127, 0.1);
+      border-color: rgba(127, 127, 127, 0.2);
+
+      :global(html[data-theme="dark"]) & {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-color: rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    &.selected {
+      background-color: rgba(127, 127, 127, 0.15);
+      border-color: var(--bulma-link, #485fc7);
+
+      :global(html[data-theme="dark"]) & {
+        background-color: rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    &:disabled {
+      cursor: default;
+    }
+  }
+</style>
