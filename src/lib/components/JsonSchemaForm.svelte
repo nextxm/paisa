@@ -16,25 +16,39 @@
 
   const ICON_MAX_RESULTS = 200;
 
-  export let key: string;
-  export let value: any;
-  export let rawValue: string = "";
-  export let schema: Schema;
-  export let depth: number = 0;
-  export let required = false;
-  export let deletable: () => void = null;
-  export let disabled: boolean = false;
-  export let allAccounts: string[];
+  let {
+    key,
+    value = $bindable<any>(),
+    rawValue = $bindable(""),
+    schema,
+    depth = 0,
+    required = false,
+    deletable = null,
+    disabled = false,
+    allAccounts,
+    modalOpen = $bindable(false)
+  }: {
+    key: string;
+    value: any;
+    rawValue?: string;
+    schema: Schema;
+    depth?: number;
+    required?: boolean;
+    deletable?: () => void;
+    disabled?: boolean;
+    allAccounts: string[];
+    modalOpen?: boolean;
+  } = $props();
 
-  export let modalOpen = false;
-
-  let open = false;
+  let open = $state(false);
   let openInitialized = false;
-  $: if (!openInitialized && schema) {
-    open = schema["ui:open"] ?? depth < 1;
-    openInitialized = true;
-  }
-  $: title = _.startCase(key);
+  $effect(() => {
+    if (!openInitialized && schema) {
+      open = schema["ui:open"] ?? depth < 1;
+      openInitialized = true;
+    }
+  });
+  const title = $derived(_.startCase(key));
 
   function defaultValueForSchema(schema: any): any {
     if (!schema) return null;

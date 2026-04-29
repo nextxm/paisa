@@ -7,10 +7,17 @@
   dayjs.extend(isSameOrAfter);
   dayjs.extend(isSameOrBefore);
 
-  export let value: SankeyPeriod = "month";
-  export let refDate: string = "";
-  export let minDate: dayjs.Dayjs = dayjs();
-  export let maxDate: dayjs.Dayjs = dayjs();
+  let {
+    value = $bindable<SankeyPeriod>("month"),
+    refDate = $bindable(""),
+    minDate = dayjs(),
+    maxDate = dayjs()
+  }: {
+    value: SankeyPeriod;
+    refDate?: string;
+    minDate?: dayjs.Dayjs;
+    maxDate?: dayjs.Dayjs;
+  } = $props();
 
   const options: { label: string; value: SankeyPeriod }[] = [
     { label: "Month", value: "month" },
@@ -19,14 +26,16 @@
   ];
 
   let prevValue = value;
-  $: if (value !== prevValue) {
-    refDate = "";
-    prevValue = value;
-  }
+  $effect(() => {
+    if (value !== prevValue) {
+      refDate = "";
+      prevValue = value;
+    }
+  });
 
-  $: current = refDate ? dayjs(refDate) : dayjs();
+  const current = $derived(refDate ? dayjs(refDate) : dayjs());
 
-  $: label = getLabel(value, current);
+  const label = $derived(getLabel(value, current));
 
   function getLabel(period: SankeyPeriod, date: dayjs.Dayjs) {
     if (period === "month") return date.format("MMM YYYY");
@@ -47,8 +56,12 @@
     refDate = current.add(1, value).startOf(value).format("YYYY-MM-DD");
   }
 
-  $: canPrev = current.subtract(1, value).endOf(value).isSameOrAfter(minDate.startOf("month"));
-  $: canNext = current.add(1, value).startOf(value).isSameOrBefore(maxDate.endOf("month"));
+  const canPrev = $derived(
+    current.subtract(1, value).endOf(value).isSameOrAfter(minDate.startOf("month"))
+  );
+  const canNext = $derived(
+    current.add(1, value).startOf(value).isSameOrBefore(maxDate.endOf("month"))
+  );
 
   function reset() {
     refDate = "";

@@ -5,8 +5,8 @@
   import { firstName, formatCurrency, restName, type AccountBudget, tooltip } from "$lib/utils";
   import _ from "lodash";
 
-  export let compact = false;
-  export let accountBudget: AccountBudget;
+  let { compact = false, accountBudget }: { compact?: boolean; accountBudget: AccountBudget } =
+    $props();
 
   function canShow(accountBudget: AccountBudget): boolean {
     return accountBudget.forecast !== 0 || accountBudget.actual !== 0;

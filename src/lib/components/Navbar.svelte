@@ -24,7 +24,7 @@
   import InputRange from "./InputRange.svelte";
   import PeriodSelector from "./PeriodSelector.svelte";
   import SyncingIndicator from "./SyncingIndicator.svelte";
-  export let isBurger: boolean = null;
+  let { isBurger = $bindable(null) }: { isBurger: boolean | null } = $props();
   const readonly = USER_CONFIG.readonly;
 
   afterNavigate(() => {
@@ -164,9 +164,9 @@
   const about = { label: "About", href: "/about" };
   _.last(links).children.push(about);
 
-  let selectedLink: Link = null;
-  let selectedSubLink: Link = null;
-  let selectedSubSubLink: Link = null;
+  let selectedLink: Link = $state(null);
+  let selectedSubLink: Link = $state(null);
+  let selectedSubSubLink: Link = $state(null);
   let navMenuEl: HTMLDivElement;
   let burgerButtonEl: HTMLButtonElement;
   let previousFocusEl: HTMLElement = null;
@@ -264,48 +264,51 @@
     }
   }
 
-  $: normalizedPath = $page.url.pathname?.replace(/(.+)\/$/, "");
+  const normalizedPath = $derived($page.url.pathname?.replace(/(.+)\/$/, ""));
 
   // isNavInert: only make the mobile drawer inert when it's closed
-  $: isNavInert =
+  const isNavInert = $derived(
     isBurger !== true && typeof window !== "undefined" && window.innerWidth < 769
       ? true
-      : undefined;
+      : undefined
+  );
 
-  $: {
+  $effect(() => {
     if (typeof document !== "undefined") {
       document.body.classList.toggle("mobile-menu-open", isBurger === true && isMobile());
     }
-  }
+  });
 
-  $: if (normalizedPath) {
-    selectedSubLink = null;
-    selectedSubSubLink = null;
-    selectedLink = _.find(links, (l) => normalizedPath == l.href);
-    if (!selectedLink) {
-      selectedLink = _.find(
-        links,
-        (l) => !_.isEmpty(l.children) && normalizedPath.startsWith(l.href)
-      );
-
-      selectedSubLink = _.find(
-        selectedLink.children,
-        (l) => normalizedPath == selectedLink.href + l.href
-      );
-
-      if (!selectedSubLink) {
-        selectedSubLink = _.find(selectedLink.children, (l) =>
-          normalizedPath.startsWith(selectedLink.href + l.href)
+  $effect(() => {
+    if (normalizedPath) {
+      selectedSubLink = null;
+      selectedSubSubLink = null;
+      selectedLink = _.find(links, (l) => normalizedPath == l.href);
+      if (!selectedLink) {
+        selectedLink = _.find(
+          links,
+          (l) => !_.isEmpty(l.children) && normalizedPath.startsWith(l.href)
         );
 
-        if (!_.isEmpty(selectedSubLink.children)) {
-          selectedSubSubLink = _.find(selectedSubLink.children, (l) =>
-            normalizedPath.startsWith(selectedLink.href + selectedSubLink.href + l.href)
+        selectedSubLink = _.find(
+          selectedLink.children,
+          (l) => normalizedPath == selectedLink.href + l.href
+        );
+
+        if (!selectedSubLink) {
+          selectedSubLink = _.find(selectedLink.children, (l) =>
+            normalizedPath.startsWith(selectedLink.href + l.href)
           );
+
+          if (!_.isEmpty(selectedSubLink.children)) {
+            selectedSubSubLink = _.find(selectedSubLink.children, (l) =>
+              normalizedPath.startsWith(selectedLink.href + selectedSubLink.href + l.href)
+            );
+          }
         }
       }
     }
-  }
+  });
 
   onDestroy(() => {
     if (typeof document !== "undefined") {

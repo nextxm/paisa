@@ -4,14 +4,16 @@
 
   type TabValue = string | number | SankeyPeriod;
 
-  export let options: { label: string; value: TabValue }[] = [];
-  export let value: TabValue | undefined = undefined;
+  let {
+    options = [],
+    value = $bindable<TabValue | undefined>(undefined)
+  }: { options: { label: string; value: TabValue }[]; value?: TabValue } = $props();
 
-  $: {
+  $effect(() => {
     if (value && !options.find((option) => option.value === value) && !_.isEmpty(options)) {
       value = _.last(options)!.value;
     }
-  }
+  });
 </script>
 
 <div class="du-tabs du-tabs-boxed du-tabs-sm">

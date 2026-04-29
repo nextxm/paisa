@@ -1,9 +1,11 @@
 <script lang="ts">
-  export let active = false;
-  export let width = "min(640px, 100vw)";
-  export let bodyClass = "";
-  export let headerClass = "";
-  export let footerClass = "";
+  let {
+    active = $bindable(false),
+    width = "min(640px, 100vw)",
+    bodyClass = "",
+    headerClass = "",
+    footerClass = ""
+  } = $props();
 
   function close() {
     active = false;
