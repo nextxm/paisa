@@ -268,9 +268,7 @@
 
   // isNavInert: only make the mobile drawer inert when it's closed
   const isNavInert = $derived(
-    isBurger !== true && typeof window !== "undefined" && window.innerWidth < 769
-      ? true
-      : undefined
+    isBurger !== true && typeof window !== "undefined" && window.innerWidth < 769 ? true : undefined
   );
 
   $effect(() => {

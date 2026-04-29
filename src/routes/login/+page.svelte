@@ -36,7 +36,12 @@
                 <a href="https://nextxm.github.io/paisa/" class="is-primary-color">Paisa</a>
               </div>
             </div>
-            <form onsubmit={(e) => { e.preventDefault(); tryLogin(); }}>
+            <form
+              onsubmit={(e) => {
+                e.preventDefault();
+                tryLogin();
+              }}
+            >
               <div class="field">
                 <label for="" class="label">Username</label>
                 <div class="control">

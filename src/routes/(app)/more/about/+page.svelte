@@ -69,7 +69,13 @@
           <ul>
             {#each links as link}
               <li>
-                <a href={link.href} onclick={(e) => { e.preventDefault(); externalLink(link.href); }}>
+                <a
+                  href={link.href}
+                  onclick={(e) => {
+                    e.preventDefault();
+                    externalLink(link.href);
+                  }}
+                >
                   <span class="icon is-small">
                     <i class={link.icon}></i>
                   </span>

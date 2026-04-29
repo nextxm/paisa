@@ -48,8 +48,14 @@
   class:disabled
   role="button"
   tabindex="0"
-  ondragenter={(e) => { e.preventDefault(); dragging = true; }}
-  ondragleave={(e) => { e.preventDefault(); dragging = false; }}
+  ondragenter={(e) => {
+    e.preventDefault();
+    dragging = true;
+  }}
+  ondragleave={(e) => {
+    e.preventDefault();
+    dragging = false;
+  }}
   ondragover={(e) => e.preventDefault()}
   ondrop={handleDrop}
   onclick={() => !disabled && fileInput.click()}

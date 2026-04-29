@@ -11,8 +11,11 @@
   import PostingNote from "./PostingNote.svelte";
   import PostingStatus from "./PostingStatus.svelte";
 
-  let { posting, color, icon = false }: { posting: Posting; color: string; icon?: boolean } =
-    $props();
+  let {
+    posting,
+    color,
+    icon = false
+  }: { posting: Posting; color: string; icon?: boolean } = $props();
 </script>
 
 <div class="box p-2 my-2 has-background-white" style="border-left: 2px solid {color}">

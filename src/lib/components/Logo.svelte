@@ -3,13 +3,7 @@
 
   let { size = 256, thickness = 4, animation = false } = $props();
 
-  const colors = [
-    COLORS.income,
-    COLORS.expenses,
-    COLORS.equity,
-    COLORS.liabilities,
-    COLORS.assets
-  ];
+  const colors = [COLORS.income, COLORS.expenses, COLORS.equity, COLORS.liabilities, COLORS.assets];
   const dotColor = COLORS.primary;
 </script>
 
