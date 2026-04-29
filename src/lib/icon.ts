@@ -18,10 +18,13 @@ const icons = {
 
 export function iconGlyph(symbol: string): string {
   if (!symbol) {
-    return String.fromCodePoint(65533);
+    return "";
   }
   const [font, name] = symbol.split(":");
   const code = (icons as Record<string, Record<string, number>>)[font]?.[name] || 65533;
+  if (code === 65533) {
+    return "";
+  }
   return String.fromCodePoint(code);
 }
 
@@ -85,13 +88,11 @@ export function iconText(account: string): string {
 
 export function iconify(account: string, options?: { group?: string; suffix?: boolean }) {
   const icon = options?.group ? iconText(options.group + ":" + account) : iconText(account);
-  if (icon == "") {
+  if (!icon) {
     return account;
-  } else {
-    if (options?.suffix) {
-      return account + " " + icon;
-    } else {
-      return icon + " " + account;
-    }
   }
+  if (options?.suffix) {
+    return account + " " + icon;
+  }
+  return icon + " " + account;
 }
