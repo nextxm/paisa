@@ -59,7 +59,7 @@ describe("regression", () => {
         api = axios.create({ baseURL: `http://localhost:${fixturePort}` });
 
         proc = spawn([
-          "./paisa",
+          "./paisa.exe",
           "--config",
           path.join(directory, "paisa.yaml"),
           "--port",
