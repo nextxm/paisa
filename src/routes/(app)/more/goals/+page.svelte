@@ -10,9 +10,9 @@
   import { writable } from "svelte/store";
   import type { Action } from "svelte/action";
 
-  let isEmpty = false;
-  let config: UserConfig;
-  let goals: GoalSummary[] = [];
+  let isEmpty = $state(false);
+  let config: UserConfig = $state(null);
+  let goals: GoalSummary[] = $state([]);
   const dragDisabled = writable(true);
 
   function handleConsider(event: CustomEvent<DndEvent<GoalSummary>>) {

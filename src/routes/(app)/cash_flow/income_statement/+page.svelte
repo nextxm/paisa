@@ -59,8 +59,6 @@
 
   const sum = (object: Record<string, number>) => Object.values(object).reduce((a, b) => a + b, 0);
 
-  const accountGroups: AccountGroup[] = [];
-
   $effect(() => {
     if (incomeStatement && renderer) {
       renderer(incomeStatement);
@@ -77,6 +75,62 @@
     return Array.from(accounts).sort();
   }
 
+  const accountGroups: AccountGroup[] = $derived.by(() => {
+    if (_.isEmpty(yearly)) return [];
+    const groups: AccountGroup[] = [];
+
+    groups.push({
+      key: "income",
+      accounts: uniqueAccounts(_.values(yearly), "income"),
+      label: "Income",
+      multiplier: -1
+    });
+
+    groups.push({
+      key: "tax",
+      accounts: uniqueAccounts(_.values(yearly), "tax"),
+      label: "Tax",
+      multiplier: -1
+    });
+
+    groups.push({
+      key: "interest",
+      accounts: uniqueAccounts(_.values(yearly), "interest"),
+      label: "Interest",
+      multiplier: -1
+    });
+
+    groups.push({
+      key: "pnl",
+      accounts: uniqueAccounts(_.values(yearly), "pnl"),
+      label: "Gain / Loss",
+      multiplier: 1
+    });
+
+    groups.push({
+      key: "equity",
+      accounts: uniqueAccounts(_.values(yearly), "equity"),
+      label: "Equity",
+      multiplier: -1
+    });
+
+    groups.push({
+      key: "liabilities",
+      accounts: uniqueAccounts(_.values(yearly), "liabilities"),
+      label: "Liabilities",
+      multiplier: -1
+    });
+
+    groups.push({
+      key: "expenses",
+      accounts: uniqueAccounts(_.values(yearly), "expenses"),
+      label: "Expenses",
+      multiplier: -1
+    });
+
+    return groups;
+  });
+
   onMount(async () => {
     ({ yearly } = await ajax("/api/income_statement"));
     const y = _.minBy(_.values(yearly), (y) => y.date);
@@ -84,55 +138,6 @@
     if (y) {
       dateMin.set(y.date);
     }
-
-    accountGroups.push({
-      key: "income",
-      accounts: uniqueAccounts(_.values(yearly), "income"),
-      label: "Income",
-      multiplier: -1
-    });
-
-    accountGroups.push({
-      key: "tax",
-      accounts: uniqueAccounts(_.values(yearly), "tax"),
-      label: "Tax",
-      multiplier: -1
-    });
-
-    accountGroups.push({
-      key: "interest",
-      accounts: uniqueAccounts(_.values(yearly), "interest"),
-      label: "Interest",
-      multiplier: -1
-    });
-
-    accountGroups.push({
-      key: "pnl",
-      accounts: uniqueAccounts(_.values(yearly), "pnl"),
-      label: "Gain / Loss",
-      multiplier: 1
-    });
-
-    accountGroups.push({
-      key: "equity",
-      accounts: uniqueAccounts(_.values(yearly), "equity"),
-      label: "Equity",
-      multiplier: -1
-    });
-
-    accountGroups.push({
-      key: "liabilities",
-      accounts: uniqueAccounts(_.values(yearly), "liabilities"),
-      label: "Liabilities",
-      multiplier: -1
-    });
-
-    accountGroups.push({
-      key: "expenses",
-      accounts: uniqueAccounts(_.values(yearly), "expenses"),
-      label: "Expenses",
-      multiplier: -1
-    });
   });
 </script>
 

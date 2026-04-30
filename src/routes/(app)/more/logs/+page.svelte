@@ -4,7 +4,7 @@
   import VirtualList from "svelte-tiny-virtual-list";
   import _ from "lodash";
 
-  let logs: Log[] = [];
+  let logs: Log[] = $state([]);
   const ITEM_SIZE = 20;
   onMount(async () => {
     ({ logs } = await ajax("/api/logs"));
