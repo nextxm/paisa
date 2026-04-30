@@ -7,7 +7,7 @@
       "marketAmount": 101145.7,
       "balanceUnits": 0,
       "latestPrice": 0,
-      "xirr": 12.93,
+      "xirr": 12.85,
       "gainAmount": 12343.2625128704,
       "absoluteReturn": 0.124894215311235,
       "originalBalances": [
@@ -24,7 +24,7 @@
       "marketAmount": 12097.5625128704,
       "balanceUnits": 0,
       "latestPrice": 0,
-      "xirr": 48.61,
+      "xirr": 48.45,
       "gainAmount": 12097.5625128704,
       "absoluteReturn": 0,
       "originalBalances": [
@@ -62,7 +62,7 @@
       "marketAmount": 88243.7170071296,
       "balanceUnits": 0,
       "latestPrice": 0,
-      "xirr": 3.25,
+      "xirr": 3.23,
       "gainAmount": 245.7,
       "absoluteReturn": 0.0025064953371396,
       "originalBalances": [
@@ -112,7 +112,7 @@
       "marketAmount": 80218.4,
       "balanceUnits": 800,
       "latestPrice": 0,
-      "xirr": 3.18,
+      "xirr": 3.16,
       "gainAmount": 218.4,
       "absoluteReturn": 0.00273,
       "originalBalances": [

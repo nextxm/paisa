@@ -94,11 +94,11 @@ func EndOfFinancialYear(date time.Time) time.Time {
 }
 
 func BeginningOfMonth(date time.Time) time.Time {
-	return toDate(date.AddDate(0, 0, -date.Day()+1))
+	return ToDate(date.AddDate(0, 0, -date.Day()+1))
 }
 
 func EndOfMonth(date time.Time) time.Time {
-	return EndOfDay(toDate(date.AddDate(0, 1, -date.Day())))
+	return EndOfDay(ToDate(date.AddDate(0, 1, -date.Day())))
 }
 
 func IsWithDate(date time.Time, start time.Time, end time.Time) bool {
@@ -110,7 +110,7 @@ func IsSameDate(a time.Time, b time.Time) bool {
 }
 
 func EndOfDay(date time.Time) time.Time {
-	return toDate(date).AddDate(0, 0, 1).Add(-time.Nanosecond)
+	return ToDate(date).AddDate(0, 0, 1).Add(-time.Nanosecond)
 }
 
 var now time.Time
@@ -143,7 +143,7 @@ func EndOfToday() time.Time {
 	return EndOfDay(Now())
 }
 
-func toDate(date time.Time) time.Time {
+func ToDate(date time.Time) time.Time {
 	return time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, config.TimeZone())
 }
 

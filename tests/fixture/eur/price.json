@@ -1,8 +1,9 @@
 {
+  "history_mode": "latest",
   "prices": {
     "AAPL": [
       {
-        "id": 2,
+        "id": 4,
         "date": "2022-01-15T00:00:00Z",
         "commodity_type": "unknown",
         "commodity_id": "AAPL",
@@ -12,6 +13,5 @@
         "source": "journal"
       }
     ]
-  },
-  "history_mode": "latest"
+  }
 }

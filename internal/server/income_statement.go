@@ -164,8 +164,8 @@ func computeStatement(db *gorm.DB, postings []posting.Posting) map[string]Income
 				if r.quantity == nil {
 					r.quantity = make(map[string]decimal.Decimal)
 				}
-				r.amount = r.amount.Add(p.Amount)
 				if !utils.IsCurrency(p.Commodity) {
+					r.amount = r.amount.Add(p.Amount)
 					r.quantity[p.Commodity] = r.quantity[p.Commodity].Add(p.Quantity)
 				}
 				runnings[p.Account] = r

@@ -4,3 +4,4 @@ ledger_cli: ledger
 currencies:
   - USD
 
+time_zone: UTC

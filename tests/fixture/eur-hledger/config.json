@@ -15,7 +15,7 @@
     "display_precision": 0,
     "amount_alignment_column": 52,
     "locale": "es-EU",
-    "time_zone": "",
+    "time_zone": "UTC",
     "financial_year_starting_month": 4,
     "week_starting_day": 0,
     "strict": "no",

@@ -4,3 +4,4 @@ ledger_cli: hledger
 currencies:
   - USD
 
+time_zone: UTC
