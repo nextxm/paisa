@@ -131,6 +131,12 @@
     return groups;
   });
 
+  let collapsedGroups: Record<string, boolean> = $state({});
+
+  function toggleGroup(key: string) {
+    collapsedGroups[key] = !collapsedGroups[key];
+  }
+
   onMount(async () => {
     ({ yearly } = await ajax("/api/income_statement"));
     const y = _.minBy(_.values(yearly), (y) => y.date);
@@ -206,8 +212,17 @@
             </thead>
             <tbody class="has-text-grey-dark">
               {#each accountGroups as group}
-                <tr class="has-text-weight-bold is-sub-header">
-                  <th>{group.label}</th>
+                <tr
+                  class="has-text-weight-bold is-sub-header"
+                  style="cursor: pointer"
+                  onclick={() => toggleGroup(group.key)}
+                >
+                  <th
+                    ><span class="icon is-small mr-1"
+                      ><i class="fas fa-chevron-{collapsedGroups[group.key] ? 'right' : 'down'}"
+                      ></i></span
+                    >{group.label}</th
+                  >
                   {#each years as y}
                     <td class="has-text-right">
                       {#if yearly[y]?.[group.key]}
@@ -216,22 +231,24 @@
                     </td>
                   {/each}
                 </tr>
-                {#each group.accounts as account}
-                  <tr>
-                    <th class="custom-icon whitespace-nowrap"
-                      ><span class="pl-3 has-text-weight-normal"
-                        >{iconify(restName(account), { group: firstName(account) })}</span
-                      ></th
-                    >
-                    {#each years as y}
-                      <td class="has-text-right">
-                        {#if yearly[y]?.[group.key]?.[account]}
-                          {formatUnlessZero(yearly[y][group.key][account] * group.multiplier)}
-                        {/if}
-                      </td>
-                    {/each}
-                  </tr>
-                {/each}
+                {#if !collapsedGroups[group.key]}
+                  {#each group.accounts as account}
+                    <tr>
+                      <th class="custom-icon whitespace-nowrap"
+                        ><span class="pl-5 has-text-weight-normal"
+                          >{iconify(restName(account), { group: firstName(account) })}</span
+                        ></th
+                      >
+                      {#each years as y}
+                        <td class="has-text-right">
+                          {#if yearly[y]?.[group.key]?.[account]}
+                            {formatUnlessZero(yearly[y][group.key][account] * group.multiplier)}
+                          {/if}
+                        </td>
+                      {/each}
+                    </tr>
+                  {/each}
+                {/if}
                 <tr><td colspan={years.length + 1}>&nbsp;</td></tr>
               {/each}
 
