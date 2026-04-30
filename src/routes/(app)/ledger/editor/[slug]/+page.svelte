@@ -21,6 +21,13 @@
   import FileTree from "$lib/components/FileTree.svelte";
   import FileModal from "$lib/components/FileModal.svelte";
   import { page } from "$app/stores";
+  import {
+    editorLeftWidth,
+    editorRightWidth,
+    editorLeftCollapsed,
+    editorRightCollapsed
+  } from "../../../../../persisted_store";
+  import { get } from "svelte/store";
 
   let { data }: { data: PageData } = $props();
   let editorDom: Element = $state();
@@ -32,6 +39,51 @@
   let payees: string[] = $state([]);
   let selectedVersion: string = $state(null);
   let lineNumber = $state(0);
+
+  let leftWidth = $state(get(editorLeftWidth));
+  let rightWidth = $state(get(editorRightWidth));
+  let isLeftCollapsed = $state(get(editorLeftCollapsed));
+  let isRightCollapsed = $state(get(editorRightCollapsed));
+
+  let isResizingLeft = $state(false);
+  let isResizingRight = $state(false);
+
+  $effect(() => {
+    editorLeftWidth.set(leftWidth);
+    editorRightWidth.set(rightWidth);
+    editorLeftCollapsed.set(isLeftCollapsed);
+    editorRightCollapsed.set(isRightCollapsed);
+  });
+
+  function startResizingLeft(e: MouseEvent) {
+    isResizingLeft = true;
+    const onMouseMove = (e: MouseEvent) => {
+      leftWidth = Math.max(100, e.clientX - 20);
+    };
+    const onMouseUp = () => {
+      isResizingLeft = false;
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    e.preventDefault();
+  }
+
+  function startResizingRight(e: MouseEvent) {
+    isResizingRight = true;
+    const onMouseMove = (e: MouseEvent) => {
+      rightWidth = Math.max(100, window.innerWidth - e.clientX - 20);
+    };
+    const onMouseUp = () => {
+      isResizingRight = false;
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    e.preventDefault();
+  }
 
   function command(fn: Function) {
     return () => {
@@ -221,7 +273,7 @@
 
 <section class="section tab-editor max-h-screen" style="padding-bottom: 0 !important">
   <div class="container is-fluid">
-    <div class="columuns">
+    <div class="columns">
       <div class="column is-12 px-0 pt-0 mb-2">
         <div class="box p-3 is-flex is-align-items-center overflow-x-auto" style="width: 100%">
           <div class="field has-addons mb-0">
@@ -286,6 +338,35 @@
             </p>
           </div>
 
+          <div class="field has-addons ml-5 mb-0">
+            <p class="control">
+              <button
+                class="button is-small"
+                class:is-link={!isLeftCollapsed}
+                class:is-light={!isLeftCollapsed}
+                title="Toggle Left Sidebar"
+                onclick={() => (isLeftCollapsed = !isLeftCollapsed)}
+              >
+                <span class="icon is-small">
+                  <i class="fas {isLeftCollapsed ? 'fa-indent' : 'fa-outdent'}"></i>
+                </span>
+              </button>
+            </p>
+            <p class="control">
+              <button
+                class="button is-small"
+                class:is-link={!isRightCollapsed}
+                class:is-light={!isRightCollapsed}
+                title="Toggle Right Sidebar"
+                onclick={() => (isRightCollapsed = !isRightCollapsed)}
+              >
+                <span class="icon is-small">
+                  <i class="fas {isRightCollapsed ? 'fa-outdent' : 'fa-indent'}"></i>
+                </span>
+              </button>
+            </p>
+          </div>
+
           {#if !_.isEmpty(selectedFile?.versions)}
             <div class="field has-addons ml-5 mb-0">
               <p class="control">
@@ -341,30 +422,50 @@
         </div>
       </div>
     </div>
-    <div class="columns">
-      <div class="column is-3-widescreen is-2-fullhd is-4">
-        <div class="box px-2 full-height overflow-y-auto">
-          <aside class="menu">
-            <FileTree
-              path=""
-              onselect={(file) => selectFile(file)}
-              files={buildDirectoryTree(_.values(filesMap))}
-              selectedFileName={selectedFile?.name}
-              hasUnsavedChanges={$editorState.hasUnsavedChanges}
-            />
-          </aside>
+    <div class="editor-layout">
+      {#if !isLeftCollapsed}
+        <div class="editor-column" style="width: {leftWidth}px;">
+          <div class="box px-2 full-height overflow-y-auto overflow-x-hidden">
+            <aside class="menu">
+              <FileTree
+                path=""
+                onselect={(file) => selectFile(file)}
+                files={buildDirectoryTree(_.values(filesMap))}
+                selectedFileName={selectedFile?.name}
+                hasUnsavedChanges={$editorState.hasUnsavedChanges}
+              />
+            </aside>
+          </div>
         </div>
-      </div>
-      <div class="column is-6-widescreen is-6-fullhd is-8">
-        <div class="box py-0">
+        <button
+          type="button"
+          class="resizer"
+          class:is-resizing={isResizingLeft}
+          onmousedown={startResizingLeft}
+          aria-label="Resize left sidebar"
+        ></button>
+      {/if}
+
+      <div class="editor-column is-flex-grow-1">
+        <div class="box py-0 mb-0" style="height: 100%">
           <div class="editor" bind:this={editorDom}></div>
         </div>
       </div>
-      <div class="column is-3-widescreen is-4-fullhd is-hidden-touch is-hidden-desktop-only">
-        {#if !_.isEmpty($editorState.output)}
-          <pre class="box px-3 full-height">{$editorState.output}</pre>
-        {/if}
-      </div>
+
+      {#if !isRightCollapsed}
+        <button
+          type="button"
+          class="resizer"
+          class:is-resizing={isResizingRight}
+          onmousedown={startResizingRight}
+          aria-label="Resize right sidebar"
+        ></button>
+        <div class="editor-column" style="width: {rightWidth}px;">
+          {#if !_.isEmpty($editorState.output)}
+            <pre class="box px-3 full-height mb-0">{$editorState.output}</pre>
+          {/if}
+        </div>
+      {/if}
     </div>
   </div>
 </section>

@@ -157,6 +157,9 @@ $footerActiveColor: #d00;
     text-align: left;
     cursor: pointer;
     font: inherit;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   a:hover,
@@ -171,6 +174,12 @@ $footerActiveColor: #d00;
     background-color: rgba(127, 127, 127, 0.1) !important;
     font-weight: bold;
   }
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .du-range {
@@ -911,6 +920,37 @@ nav.level.grid-2 {
 
 .editor .cm-editor {
   max-height: $editor-full-height;
+}
+
+.editor-layout {
+  display: flex;
+  height: $editor-full-height;
+  gap: 0;
+
+  .editor-column {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .resizer {
+    width: 8px;
+    cursor: col-resize;
+    flex-shrink: 0;
+    z-index: 10;
+    transition: background 0.2s;
+    background: transparent;
+    margin: 0 -4px;
+    border: none;
+    padding: 0;
+    outline: none;
+    display: block;
+
+    &:hover,
+    &.is-resizing {
+      background: rgba($link, 0.3) !important;
+    }
+  }
 }
 
 .cm-scroller {

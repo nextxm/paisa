@@ -26,3 +26,8 @@ export function setCashflowDepthAllowed(expense: number, income: number) {
     cashflowIncomeDepth.set(income);
   }
 }
+
+export const editorLeftWidth = persisted("editorLeftWidth", 250);
+export const editorRightWidth = persisted("editorRightWidth", 350);
+export const editorLeftCollapsed = persisted("editorLeftCollapsed", false);
+export const editorRightCollapsed = persisted("editorRightCollapsed", false);

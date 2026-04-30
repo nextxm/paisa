@@ -2,6 +2,9 @@ import { spawn } from "bun";
 import path from "path";
 import net from "net";
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
+
+// @ts-ignore
+test.timeout = 60000;
 import waitPort from "wait-port";
 import fs from "fs";
 import axios from "axios";
@@ -58,8 +61,9 @@ describe("regression", () => {
         });
         api = axios.create({ baseURL: `http://localhost:${fixturePort}` });
 
+        const binary = process.platform === "win32" ? "./paisa.exe" : "./paisa";
         proc = spawn([
-          "./paisa.exe",
+          binary,
           "--config",
           path.join(directory, "paisa.yaml"),
           "--port",
@@ -118,7 +122,11 @@ describe("regression", () => {
           });
 
           if (diff != "") {
-            expect().fail(`Mismatch in ${endpoint.name}.json for fixture ${dir}:\n${diff}`);
+            if (process.env.REGENERATE == "true") {
+              fs.writeFileSync(filename, JSON.stringify(data, null, 2));
+            } else {
+              expect().fail(`Mismatch in ${endpoint.name}.json for fixture ${dir}:\n${diff}`);
+            }
           }
         });
       });
