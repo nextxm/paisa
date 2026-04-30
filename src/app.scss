@@ -1017,7 +1017,7 @@ nav.level.grid-2 {
   }
 }
 
-nav.breadcrumb a.is-inactive {
+nav.breadcrumb .is-inactive {
   color: $grey;
   cursor: default;
   pointer-events: none;
@@ -1028,6 +1028,9 @@ nav.breadcrumb a.is-inactive {
   font-weight: 900;
   content: unquote('"#{ $fa-var-chevron-right }"');
   color: $link;
+  padding: 0 0.8rem;
+  font-size: 0.7rem;
+  vertical-align: middle;
 }
 
 div.small-box:hover {
