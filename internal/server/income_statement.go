@@ -10,7 +10,6 @@ import (
 	"github.com/ananthakumaran/paisa/internal/service"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
@@ -28,32 +27,99 @@ type IncomeStatement struct {
 	Expenses        map[string]decimal.Decimal `json:"expenses"`
 }
 
-type RunningBalance struct {
-	amount   decimal.Decimal
-	quantity map[string]decimal.Decimal
-}
-
 func GetIncomeStatement(db *gorm.DB) gin.H {
 	postings := query.Init(db).All()
 	statements := computeStatement(db, postings)
 	return gin.H{"yearly": statements}
 }
 
+// networthAt computes the total net worth (assets at market value + liabilities
+// at book value, with liabilities being naturally negative) from all postings
+// on or before `date`.  This mirrors the Networth page so that startingBalance
+// and endingBalance always agree with the Networth page values.
+//
+// For currency (default-currency) postings: p.Quantity == p.Amount, and
+// GetPrice returns quantity as-is, so cash accounts sum correctly.
+// For non-currency postings: units are accumulated and priced at `date`.
+// Liability accounts have negative amounts/quantities in ledger double-entry,
+// so their contribution is naturally a negative number that reduces net worth.
+func networthAt(db *gorm.DB, allPostings []posting.Posting, date time.Time) decimal.Decimal {
+	// Clamp to today so future dates don't project beyond available prices.
+	today := utils.EndOfToday()
+	if date.After(today) {
+		date = today
+	}
+	endOfDay := utils.EndOfDay(date)
+
+	// account → commodity → net quantity
+	quantities := make(map[string]map[string]decimal.Decimal)
+
+	for _, p := range allPostings {
+		if p.Date.After(endOfDay) {
+			continue
+		}
+		category := utils.FirstName(p.Account)
+		if category != "Assets" && category != "Liabilities" {
+			continue
+		}
+		if quantities[p.Account] == nil {
+			quantities[p.Account] = make(map[string]decimal.Decimal)
+		}
+		quantities[p.Account][p.Commodity] = quantities[p.Account][p.Commodity].Add(p.Quantity)
+	}
+
+	total := decimal.Zero
+	for _, commodities := range quantities {
+		for commodity, qty := range commodities {
+			if qty.IsZero() {
+				continue
+			}
+			// GetPrice returns qty for currencies, market value for others.
+			// Liabilities have negative quantities, so they naturally reduce
+			// total — no special-casing needed.
+			total = total.Add(service.GetPrice(db, commodity, qty, date))
+		}
+	}
+	return total
+}
+
 func computeStatement(db *gorm.DB, postings []posting.Posting) map[string]IncomeStatement {
 	statements := make(map[string]IncomeStatement)
 
 	grouped := utils.GroupByFY(postings)
-	fys := lo.Keys(grouped)
+	fys := make([]string, 0, len(grouped))
+	for fy := range grouped {
+		fys = append(fys, fy)
+	}
 	sort.Strings(fys)
 
-	runnings := make(map[string]RunningBalance)
-	startingBalance := decimal.Zero
+	// runnings tracks the market-value-adjusted cost basis and unit count per
+	// asset account across all FYs so that per-FY unrealised Pnl is accurate.
+	type runningBalance struct {
+		amount   decimal.Decimal            // running market-adjusted cost basis
+		quantity map[string]decimal.Decimal // non-currency commodity → net units
+	}
+	runnings := make(map[string]runningBalance)
+
+	// Cap the effective end of the current (in-progress) FY to today so that
+	// endingBalance and the Pnl snapshot match the Networth page.
+	today := utils.EndOfToday()
 
 	for _, fy := range fys {
 		incomeStatement := IncomeStatement{}
 		start, end := utils.ParseFY(fy)
+		if end.After(today) {
+			end = today
+		}
 		incomeStatement.Date = start
-		incomeStatement.StartingBalance = startingBalance
+
+		// startingBalance / endingBalance are always computed directly from the
+		// balance sheet rather than being derived from income flows.  This makes
+		// them immune to categorisation choices and sign-convention bugs, and
+		// guarantees they match the Networth page.
+		incomeStatement.StartingBalance = networthAt(db, postings, start.Add(-1))
+		incomeStatement.EndingBalance = networthAt(db, postings, end)
+
 		incomeStatement.Income = make(map[string]decimal.Decimal)
 		incomeStatement.Interest = make(map[string]decimal.Decimal)
 		incomeStatement.Equity = make(map[string]decimal.Decimal)
@@ -63,12 +129,14 @@ func computeStatement(db *gorm.DB, postings []posting.Posting) map[string]Income
 		incomeStatement.Expenses = make(map[string]decimal.Decimal)
 
 		for _, p := range grouped[fy] {
-
 			category := utils.FirstName(p.Account)
 
 			switch category {
 			case "Income":
 				if service.IsCapitalGains(p) {
+					// Realised capital gains: update the cost-basis running total
+					// for the source asset account so that subsequent-year
+					// unrealised Pnl remains accurate.
 					sourceAccount := service.CapitalGainsSourceAccount(p.Account)
 					r := runnings[sourceAccount]
 					if r.quantity == nil {
@@ -97,13 +165,17 @@ func computeStatement(db *gorm.DB, postings []posting.Posting) map[string]Income
 					r.quantity = make(map[string]decimal.Decimal)
 				}
 				r.amount = r.amount.Add(p.Amount)
-				r.quantity[p.Commodity] = r.quantity[p.Commodity].Add(p.Quantity)
+				if !utils.IsCurrency(p.Commodity) {
+					r.quantity[p.Commodity] = r.quantity[p.Commodity].Add(p.Quantity)
+				}
 				runnings[p.Account] = r
 			default:
 				// ignore
 			}
 		}
 
+		// Compute per-account unrealised Pnl: market value of currently-held
+		// units at `end` minus the running cash cost-basis.
 		for account, r := range runnings {
 			diff := r.amount.Neg()
 			for commodity, quantity := range r.quantity {
@@ -111,20 +183,20 @@ func computeStatement(db *gorm.DB, postings []posting.Posting) map[string]Income
 			}
 			incomeStatement.Pnl[account] = diff
 
+			// Carry forward the market-value-adjusted basis into the next FY
+			// so subsequent-year Pnl represents only the incremental gain.
 			r.amount = r.amount.Add(diff)
 			runnings[account] = r
 		}
 
-		startingBalance = startingBalance.
-			Add(sumBalance(incomeStatement.Income).Neg()).
-			Add(sumBalance(incomeStatement.Interest).Neg()).
-			Add(sumBalance(incomeStatement.Equity).Neg()).
-			Add(sumBalance(incomeStatement.Tax).Neg()).
-			Add(sumBalance(incomeStatement.Expenses).Neg()).
-			Add(sumBalance(incomeStatement.Pnl)).
-			Add(sumBalance(incomeStatement.Liabilities).Neg())
-
-		incomeStatement.EndingBalance = startingBalance
+		// Strip zero-value entries (cosmetic clean-up).
+		sumBalance(incomeStatement.Income)
+		sumBalance(incomeStatement.Interest)
+		sumBalance(incomeStatement.Equity)
+		sumBalance(incomeStatement.Pnl)
+		sumBalance(incomeStatement.Liabilities)
+		sumBalance(incomeStatement.Tax)
+		sumBalance(incomeStatement.Expenses)
 
 		statements[fy] = incomeStatement
 	}
