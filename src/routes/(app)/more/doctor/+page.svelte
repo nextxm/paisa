@@ -4,7 +4,7 @@
   import { ajax } from "$lib/utils";
   import { renderIssues } from "$lib/doctor";
 
-  let issues = [];
+  let issues = $state([]);
   onMount(async () => {
     ({ issues } = await ajax("/api/diagnosis"));
     renderIssues(issues);
