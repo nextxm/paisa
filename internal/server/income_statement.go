@@ -120,6 +120,30 @@ func computeStatement(db *gorm.DB, postings []posting.Posting) map[string]Income
 		incomeStatement.StartingBalance = networthAt(db, postings, start.Add(-1))
 		incomeStatement.EndingBalance = networthAt(db, postings, end)
 
+		type categoryQuantities map[string]map[string]decimal.Decimal
+		acc := struct {
+			Income      categoryQuantities
+			Interest    categoryQuantities
+			Equity      categoryQuantities
+			Liabilities categoryQuantities
+			Tax         categoryQuantities
+			Expenses    categoryQuantities
+		}{
+			Income:      make(categoryQuantities),
+			Interest:    make(categoryQuantities),
+			Equity:      make(categoryQuantities),
+			Liabilities: make(categoryQuantities),
+			Tax:         make(categoryQuantities),
+			Expenses:    make(categoryQuantities),
+		}
+
+		updateAcc := func(cat categoryQuantities, account, commodity string, qty decimal.Decimal) {
+			if cat[account] == nil {
+				cat[account] = make(map[string]decimal.Decimal)
+			}
+			cat[account][commodity] = cat[account][commodity].Add(qty)
+		}
+
 		incomeStatement.Income = make(map[string]decimal.Decimal)
 		incomeStatement.Interest = make(map[string]decimal.Decimal)
 		incomeStatement.Equity = make(map[string]decimal.Decimal)
@@ -145,20 +169,20 @@ func computeStatement(db *gorm.DB, postings []posting.Posting) map[string]Income
 					r.amount = r.amount.Add(p.Amount)
 					runnings[sourceAccount] = r
 				} else if strings.HasPrefix(p.Account, "Income:Interest") {
-					incomeStatement.Interest[p.Account] = incomeStatement.Interest[p.Account].Add(p.Amount)
+					updateAcc(acc.Interest, p.Account, p.Commodity, p.Quantity)
 				} else {
-					incomeStatement.Income[p.Account] = incomeStatement.Income[p.Account].Add(p.Amount)
+					updateAcc(acc.Income, p.Account, p.Commodity, p.Quantity)
 				}
 			case "Equity":
-				incomeStatement.Equity[p.Account] = incomeStatement.Equity[p.Account].Add(p.Amount)
+				updateAcc(acc.Equity, p.Account, p.Commodity, p.Quantity)
 			case "Expenses":
 				if strings.HasPrefix(p.Account, "Expenses:Tax") {
-					incomeStatement.Tax[p.Account] = incomeStatement.Tax[p.Account].Add(p.Amount)
+					updateAcc(acc.Tax, p.Account, p.Commodity, p.Quantity)
 				} else {
-					incomeStatement.Expenses[p.Account] = incomeStatement.Expenses[p.Account].Add(p.Amount)
+					updateAcc(acc.Expenses, p.Account, p.Commodity, p.Quantity)
 				}
 			case "Liabilities":
-				incomeStatement.Liabilities[p.Account] = incomeStatement.Liabilities[p.Account].Add(p.Amount)
+				updateAcc(acc.Liabilities, p.Account, p.Commodity, p.Quantity)
 			case "Assets":
 				r := runnings[p.Account]
 				if r.quantity == nil {
@@ -173,6 +197,21 @@ func computeStatement(db *gorm.DB, postings []posting.Posting) map[string]Income
 				// ignore
 			}
 		}
+
+		finalizeAcc := func(target map[string]decimal.Decimal, cat categoryQuantities) {
+			for account, commodities := range cat {
+				for commodity, qty := range commodities {
+					target[account] = target[account].Add(service.GetPrice(db, commodity, qty, end))
+				}
+			}
+		}
+
+		finalizeAcc(incomeStatement.Income, acc.Income)
+		finalizeAcc(incomeStatement.Interest, acc.Interest)
+		finalizeAcc(incomeStatement.Equity, acc.Equity)
+		finalizeAcc(incomeStatement.Liabilities, acc.Liabilities)
+		finalizeAcc(incomeStatement.Tax, acc.Tax)
+		finalizeAcc(incomeStatement.Expenses, acc.Expenses)
 
 		// Compute per-account unrealised Pnl: market value of currently-held
 		// units at `end` minus the running cash cost-basis.

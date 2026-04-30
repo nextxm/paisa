@@ -225,7 +225,8 @@ func GetAllPrices(db *gorm.DB, commodity string) []price.Price {
 }
 
 func GetMarketPrice(db *gorm.DB, p posting.Posting, date time.Time) decimal.Decimal {
-	if utils.IsCurrency(p.Commodity) {
+	dc := config.DefaultCurrency()
+	if p.Commodity == dc {
 		return p.Amount
 	}
 
@@ -241,7 +242,8 @@ func GetMarketPrice(db *gorm.DB, p posting.Posting, date time.Time) decimal.Deci
 }
 
 func GetPrice(db *gorm.DB, commodity string, quantity decimal.Decimal, date time.Time) decimal.Decimal {
-	if utils.IsCurrency(commodity) {
+	dc := config.DefaultCurrency()
+	if commodity == dc {
 		return quantity
 	}
 
