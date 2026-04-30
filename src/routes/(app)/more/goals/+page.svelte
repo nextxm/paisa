@@ -115,8 +115,8 @@
         flipDurationMs: 300,
         dragDisabled: $dragDisabled
       }}
-      on:consider={handleConsider}
-      on:finalize={handleFinalize}
+      onconsider={handleConsider}
+      onfinalize={handleFinalize}
     >
       {#each goals as goal (goal.id)}
         <div animate:flip={{ duration: 300 }} class="column is-6 is-one-third-widescreen">
