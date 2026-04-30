@@ -38,6 +38,8 @@
 
 #### Bug fixes
 
+- **Income Statement start/end balance fixed** — `startingBalance` and `endingBalance` are now computed directly from the actual balance sheet (assets at market value + liabilities at book value), mirroring how the Networth page works. Previously they were derived from an income-flow reconstruction formula that had two bugs: (1) liabilities were negated with the wrong sign, and (2) the current fiscal year's `endingBalance` was priced at the FY end date (a future date) rather than today. The new approach guarantees that the End Balance row and the Networth page always agree for the current year, and correctly handles liability-funded transactions.
+
 - **Navbar effect recursion fixed** — Reworked breadcrumb/nav selection in `src/lib/components/Navbar.svelte` to resolve selection from the current path in a pure helper (`src/lib/navbar_selection.ts`) instead of reading and mutating the same reactive state inside one `$effect`. This prevents startup/runtime `effect_update_depth_exceeded` crashes on built apps.
 
 - **Embedded static asset routing fixed** — Updated `internal/server/server.go` to serve root-level PWA assets (`/manifest.webmanifest`, `/sw.js`, Workbox files, and `/pwa-*.png`) from embedded `web/static` instead of falling through `NoRoute` to `index.html`. This resolves `Manifest: Line: 1, column: 1, Syntax error` when using the Go-served app.
