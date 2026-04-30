@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/glebarez/sqlite"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +30,7 @@ func mustParseDate(s string) time.Time {
 	if err != nil {
 		panic(err)
 	}
-	return t
+	return utils.ToDate(t)
 }
 
 func seedPrice(t *testing.T, db *gorm.DB, base, quote, source, date string, val float64) {

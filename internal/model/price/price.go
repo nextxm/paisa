@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/google/btree"
 	"github.com/shopspring/decimal"
 )
@@ -213,6 +214,9 @@ func FindFiltered(db *gorm.DB, filter PriceFilter) ([]Price, error) {
 	if err := q.Find(&prices).Error; err != nil {
 		return nil, err
 	}
+	for i := range prices {
+		prices[i].Date = utils.ToDate(prices[i].Date)
+	}
 	return prices, nil
 }
 
@@ -249,5 +253,6 @@ func FindByDateBaseQuote(db *gorm.DB, date time.Time, baseCommodity, quoteCommod
 		}
 		return Price{}, false, result.Error
 	}
+	p.Date = utils.ToDate(p.Date)
 	return p, true, nil
 }

@@ -42,17 +42,15 @@ func init() {
 
 func Initialize() {
 	InitLogger(false, nil)
+	currentCommand, _, _ := rootCmd.Find(os.Args[1:])
+
+	if lo.Contains([]string{"serve", "update", "export"}, currentCommand.Name()) {
+		InitConfig()
+	}
+
 	if now != "" {
 		utils.SetNow(now)
 	}
-	currentCommand, _, _ := rootCmd.Find(os.Args[1:])
-
-	if !lo.Contains([]string{"serve", "update", "export"}, currentCommand.Name()) {
-		return
-	}
-
-	InitConfig()
-
 }
 
 func InitLogger(desktop bool, hook log.Hook) {
