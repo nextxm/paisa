@@ -913,6 +913,37 @@ nav.level.grid-2 {
   max-height: $editor-full-height;
 }
 
+.editor-layout {
+  display: flex;
+  height: $editor-full-height;
+  gap: 0;
+
+  .editor-column {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .resizer {
+    width: 8px;
+    cursor: col-resize;
+    flex-shrink: 0;
+    z-index: 10;
+    transition: background 0.2s;
+    background: transparent;
+    margin: 0 -4px;
+    border: none;
+    padding: 0;
+    outline: none;
+    display: block;
+
+    &:hover,
+    &.is-resizing {
+      background: rgba($link, 0.3) !important;
+    }
+  }
+}
+
 .cm-scroller {
   overflow: auto;
   font-family: $family-monospace !important;
