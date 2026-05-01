@@ -58,8 +58,9 @@ describe("regression", () => {
         });
         api = axios.create({ baseURL: `http://localhost:${fixturePort}` });
 
+        const binary = process.platform === "win32" ? "./paisa.exe" : "./paisa";
         proc = spawn([
-          "./paisa.exe",
+          binary,
           "--config",
           path.join(directory, "paisa.yaml"),
           "--port",
