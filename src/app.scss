@@ -157,6 +157,9 @@ $footerActiveColor: #d00;
     text-align: left;
     cursor: pointer;
     font: inherit;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   a:hover,
@@ -171,6 +174,12 @@ $footerActiveColor: #d00;
     background-color: rgba(127, 127, 127, 0.1) !important;
     font-weight: bold;
   }
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .du-range {

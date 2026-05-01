@@ -33,7 +33,7 @@
   }
 </script>
 
-<ul class={root && "du-menu du-menu-sm w-full p-0"}>
+<ul class={(root ? "du-menu du-menu-sm w-full p-0" : "") + " overflow-x-hidden"}>
   {#each files as file}
     {#if file.type != "directory"}
       <li>

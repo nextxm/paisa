@@ -425,7 +425,7 @@
     <div class="editor-layout">
       {#if !isLeftCollapsed}
         <div class="editor-column" style="width: {leftWidth}px;">
-          <div class="box px-2 full-height overflow-y-auto">
+          <div class="box px-2 full-height overflow-y-auto overflow-x-hidden">
             <aside class="menu">
               <FileTree
                 path=""
