@@ -151,15 +151,6 @@
 </script>
 
 <div class="config-layout-wrapper">
-  <!-- Mobile overlay backdrop -->
-  {#if sidebarOpen}
-    <button
-      class="config-sidebar-backdrop"
-      aria-label="Close sidebar"
-      onclick={() => (sidebarOpen = false)}
-    ></button>
-  {/if}
-
   <!-- Left sidebar -->
   <aside class="config-sidebar" class:is-open={sidebarOpen} aria-label="Configuration sections">
     <div class="config-sidebar-inner">
@@ -193,7 +184,9 @@
           aria-label="Toggle section menu"
           aria-expanded={sidebarOpen}
         >
-          <span class="icon is-small"><i class="fas fa-bars"></i></span>
+          <span class="icon is-small"
+            ><i class="fas {sidebarOpen ? 'fa-angle-up' : 'fa-angle-down'}"></i></span
+          >
           <span class="ml-1 is-size-7 has-text-grey">{currentSection?.label ?? "Config"}</span>
         </button>
       </div>
@@ -260,6 +253,10 @@
     display: flex;
     min-height: calc(100vh - 120px);
     position: relative;
+
+    @media screen and (max-width: 1023px) {
+      flex-direction: column;
+    }
   }
 
   /* ── Sidebar ──────────────────────────────────────────── */
@@ -270,18 +267,22 @@
     background: var(--bulma-scheme-main, #fff);
 
     @media screen and (max-width: 1023px) {
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      z-index: 40;
-      transform: translateX(calc(-100% - 1px));
-      transition: transform 220ms ease;
-      box-shadow: none;
+      width: 100%;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--bulma-border, #dbdbdb);
+      max-height: 0;
+      overflow: hidden;
+      transition:
+        max-height 0.3s ease-out,
+        opacity 0.2s ease;
+      opacity: 0;
+      background: var(--bulma-scheme-main-bis, #fafafa);
 
       &.is-open {
-        transform: translateX(0);
-        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.12);
+        max-height: 100vh;
+        opacity: 1;
+        padding-bottom: 1rem;
       }
     }
   }
@@ -289,21 +290,13 @@
   .config-sidebar-inner {
     position: sticky;
     top: 0;
-    padding: 1rem 0 2rem;
+    padding: 1rem 0;
     max-height: 100vh;
     overflow-y: auto;
-  }
 
-  .config-sidebar-backdrop {
-    display: none;
     @media screen and (max-width: 1023px) {
-      display: block;
-      position: fixed;
-      inset: 0;
-      background: rgba(10, 10, 10, 0.45);
-      z-index: 39;
-      border: none;
-      cursor: pointer;
+      position: relative;
+      padding: 0.5rem 0;
     }
   }
 
@@ -333,7 +326,7 @@
     justify-content: space-between;
     gap: 0.5rem;
     padding: 0.45rem 1rem;
-    background: rgba(255, 255, 255, 0.92);
+    background: var(--paisa-config-bar-bg, rgba(255, 255, 255, 0.92));
     backdrop-filter: blur(6px);
     border-bottom: 1px solid var(--bulma-border, #dbdbdb);
   }
