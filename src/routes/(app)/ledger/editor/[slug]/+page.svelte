@@ -341,7 +341,7 @@
           <div class="field has-addons ml-5 mb-0">
             <p class="control">
               <button
-                class="button is-small"
+                class="button is-small invertable"
                 class:is-link={!isLeftCollapsed}
                 class:is-light={!isLeftCollapsed}
                 title="Toggle Left Sidebar"
@@ -354,7 +354,7 @@
             </p>
             <p class="control">
               <button
-                class="button is-small"
+                class="button is-small invertable"
                 class:is-link={!isRightCollapsed}
                 class:is-light={!isRightCollapsed}
                 title="Toggle Right Sidebar"

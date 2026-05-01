@@ -4,6 +4,8 @@
 
 #### New features
 
+- **Epic: Refining Paisa Configuration Interface** — Redesigned the configuration screen to improve navigation and layout. Transitioned from a monolithic JSON form to a structured, sidebar-based interface with categorized sections for better discoverability and user experience.
+
 - **Epic 2: Architectural Alignment & Cleanup** — Finalized structural patterns and removed legacy Svelte 4 compatibility:
   - **Snippet Transition (2.1)** — `Modal.svelte` migrated from named `<slot>` elements to typed snippet props (`head`, `body`, `foot`). All consumers updated to use `{#snippet head(close)}...{/snippet}` blocks: `FileModal`, `PriceCodeSearchModal`, `DiffViewModal`, `SyncHistoryOverlay`, and the import page inline modal.
   - **Callback Prop Migration (2.2)** — `createEventDispatcher` removed from `FileModal.svelte` (replaced with `onsave` callback) and `PriceCodeSearchModal.svelte` (replaced with `onselect` callback). All four `FileModal` call-sites and `JsonSchemaForm`'s `PriceCodeSearchModal` usage updated to pass callback props directly.
@@ -37,6 +39,8 @@
 - **Extensible PriceProvider interface** — `internal/model/price.PriceProvider` is now fully documented with explicit return-value semantics for every method, making it straightforward to implement a custom provider. Compile-time interface-satisfaction checks (`var _ price.PriceProvider = ...`) have been added to every built-in provider package to catch drift early.
 
 #### Bug fixes
+
+- **Regression: Configuration schema descriptions** — Updated all regression test fixtures to match the latest configuration schema metadata. This ensures that intentional improvements to configuration documentation (like detailed tooltips and hover text) don't break the regression suite.
 
 - **Income Statement start/end balance fixed** — `startingBalance` and `endingBalance` are now computed directly from the actual balance sheet (assets at market value + liabilities at book value), mirroring how the Networth page works. Previously they were derived from an income-flow reconstruction formula that had two bugs: (1) liabilities were negated with the wrong sign, and (2) the current fiscal year's `endingBalance` was priced at the FY end date (a future date) rather than today. The new approach guarantees that the End Balance row and the Networth page always agree for the current year, and correctly handles liability-funded transactions.
 

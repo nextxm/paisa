@@ -310,4 +310,39 @@ html[data-theme="dark"] {
       }
     }
   }
+
+  /* ── Configuration Screen Dark Mode ─────────────────────── */
+  .config-sticky-bar {
+    --paisa-config-bar-bg: rgba(20, 20, 20, 0.92);
+    border-bottom-color: $white-ter !important;
+  }
+
+  .config-sidebar {
+    background: $background !important;
+    border-right-color: $white-ter !important;
+
+    @media screen and (max-width: 1023px) {
+      background: $white !important;
+      border-bottom-color: $white-ter !important;
+    }
+  }
+
+  .config-nav-item {
+    color: $grey-dark !important;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.05) !important;
+      color: $grey-darker !important;
+    }
+
+    &.is-active {
+      border-left-color: $link !important;
+      background-color: rgba($link, 0.15) !important;
+      color: $link !important;
+    }
+  }
+
+  .config-nav-group-label {
+    color: $grey !important;
+  }
 }
