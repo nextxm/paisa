@@ -731,7 +731,4 @@
       border-radius: 0.5rem;
     }
   }
-
-  li a span.icon {
-  }
 </style>

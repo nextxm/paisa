@@ -11,7 +11,7 @@
   import { sync } from "$lib/sync";
   import { CONFIG_GROUPS, ALL_SECTIONS, DEFAULT_SECTION_ID } from "$lib/config-sections";
   import type { Snippet } from "svelte";
-  import { configSidebarCollapsed } from "../../../../../persisted_store";
+  import { configSidebarCollapsed } from "../../../../persisted_store";
   import { get } from "svelte/store";
 
   let { children }: { children: Snippet } = $props();
