@@ -42,7 +42,11 @@ func GetCheckingBalance(db *gorm.DB, reportCurrency string) gin.H {
 }
 
 func GetBalance(db *gorm.DB, reportCurrency string) gin.H {
-	return doGetBalance(db, "Assets:%", true, reportCurrency)
+	return GetBalanceByMode(db, reportCurrency, false)
+}
+
+func GetBalanceByMode(db *gorm.DB, reportCurrency string, flat bool) gin.H {
+	return doGetBalance(db, "Assets:%", !flat, reportCurrency)
 }
 
 func doGetBalance(db *gorm.DB, pattern string, rollup bool, reportCurrency string) gin.H {
