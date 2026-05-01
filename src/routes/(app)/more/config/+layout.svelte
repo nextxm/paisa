@@ -11,6 +11,8 @@
   import { sync } from "$lib/sync";
   import { CONFIG_GROUPS, ALL_SECTIONS, DEFAULT_SECTION_ID } from "$lib/config-sections";
   import type { Snippet } from "svelte";
+  import { configSidebarCollapsed } from "../../../../../persisted_store";
+  import { get } from "svelte/store";
 
   let { children }: { children: Snippet } = $props();
 
@@ -21,7 +23,11 @@
   let isTogglingProviderDebug = $state(false);
   let error: string = $state(null);
   let accounts: string[] = $state([]);
-  let sidebarOpen = $state(false);
+  let isSidebarCollapsed = $state(get(configSidebarCollapsed));
+
+  $effect(() => {
+    configSidebarCollapsed.set(isSidebarCollapsed);
+  });
 
   onMount(async () => {
     ({ config, schema, accounts } = await ajax("/api/config"));
@@ -145,14 +151,17 @@
   }
 
   function navigateSection(sectionId: string) {
-    sidebarOpen = false;
     goto(`/more/config/${sectionId}`);
   }
 </script>
 
 <div class="config-layout-wrapper">
   <!-- Left sidebar -->
-  <aside class="config-sidebar" class:is-open={sidebarOpen} aria-label="Configuration sections">
+  <aside
+    class="config-sidebar"
+    class:is-collapsed={isSidebarCollapsed}
+    aria-label="Configuration sections"
+  >
     <div class="config-sidebar-inner">
       {#each CONFIG_GROUPS as group}
         <div class="config-nav-group-label">{group.label}</div>
@@ -179,16 +188,19 @@
     <div class="config-sticky-bar">
       <div class="config-sticky-bar-left">
         <button
-          class="button is-ghost is-small config-menu-toggle is-hidden-desktop"
-          onclick={() => (sidebarOpen = !sidebarOpen)}
-          aria-label="Toggle section menu"
-          aria-expanded={sidebarOpen}
+          class="button is-small invertable"
+          class:is-link={!isSidebarCollapsed}
+          class:is-light={!isSidebarCollapsed}
+          title="Toggle Sidebar"
+          onclick={() => (isSidebarCollapsed = !isSidebarCollapsed)}
         >
-          <span class="icon is-small"
-            ><i class="fas {sidebarOpen ? 'fa-angle-up' : 'fa-angle-down'}"></i></span
-          >
-          <span class="ml-1 is-size-7 has-text-grey">{currentSection?.label ?? "Config"}</span>
+          <span class="icon is-small">
+            <i class="fas {isSidebarCollapsed ? 'fa-indent' : 'fa-outdent'}"></i>
+          </span>
         </button>
+        <span class="ml-1 is-size-7 has-text-grey is-hidden-mobile"
+          >{currentSection?.label ?? "Config"}</span
+        >
       </div>
       <div class="config-sticky-bar-right">
         {#if error}
@@ -253,51 +265,51 @@
     display: flex;
     min-height: calc(100vh - 120px);
     position: relative;
-
-    @media screen and (max-width: 1023px) {
-      flex-direction: column;
-    }
   }
 
-  /* ── Sidebar ──────────────────────────────────────────── */
   .config-sidebar {
     width: 220px;
     flex-shrink: 0;
     border-right: 1px solid var(--bulma-border, #dbdbdb);
     background: var(--bulma-scheme-main, #fff);
+    transition:
+      width 0.2s ease,
+      opacity 0.2s ease,
+      margin-left 0.2s ease;
+    overflow: hidden;
+
+    &.is-collapsed {
+      width: 0;
+      opacity: 0;
+      border-right: none;
+    }
 
     @media screen and (max-width: 1023px) {
+      position: fixed;
+      top: 105px; // Below navbar and sticky bar
+      left: 0;
+      bottom: 0;
+      z-index: 40;
       width: 100%;
-      height: auto;
+      background: var(--bulma-scheme-main, #fff);
       border-right: none;
-      border-bottom: 1px solid var(--bulma-border, #dbdbdb);
-      max-height: 0;
-      overflow: hidden;
-      transition:
-        max-height 0.3s ease-out,
-        opacity 0.2s ease;
-      opacity: 0;
-      background: var(--bulma-scheme-main-bis, #fafafa);
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.12);
+      transform: translateX(0);
+      transition: transform 0.3s ease;
 
-      &.is-open {
-        max-height: 100vh;
+      &.is-collapsed {
+        transform: translateX(-100%);
+        width: 100%;
         opacity: 1;
-        padding-bottom: 1rem;
       }
     }
   }
 
   .config-sidebar-inner {
-    position: sticky;
-    top: 0;
+    width: 220px; // Keep content width stable
     padding: 1rem 0;
     max-height: 100vh;
     overflow-y: auto;
-
-    @media screen and (max-width: 1023px) {
-      position: relative;
-      padding: 0.5rem 0;
-    }
   }
 
   /* ── Main content ─────────────────────────────────────── */
