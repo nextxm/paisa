@@ -237,9 +237,8 @@
       <div class="config-content">
         <article class="message is-info is-small config-info-banner">
           <div class="message-body py-2 px-3">
-            Prices are <b>not</b> automatically updated after a config change. Use the menu at the
-            top right to update prices. If the journal failed to sync, fix the issues and sync
-            again.
+            Prices are <b>not</b> automatically updated after a config change. Use the menu at the top
+            right to update prices. If the journal failed to sync, fix the issues and sync again.
           </div>
         </article>
 
@@ -249,6 +248,7 @@
           </article>
         {/if}
 
+        <!-- prettier-ignore -->
         {@render children()}
       </div>
     {/if}
