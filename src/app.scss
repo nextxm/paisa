@@ -1323,3 +1323,51 @@ div.is-hoverable:hover {
     color: $black;
   }
 }
+
+// ── Config sidebar nav ───────────────────────────────────────────────
+
+.config-nav-group-label {
+  padding: 0.4rem 1rem 0.15rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $grey-light;
+  margin-top: 0.5rem;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+.config-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.42rem 1rem;
+  border: none;
+  border-left: 3px solid transparent;
+  background: none;
+  font: inherit;
+  font-size: 0.875rem;
+  color: $grey-dark;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+
+  &:hover {
+    background-color: rgba(127, 127, 127, 0.06);
+    color: $black-ter;
+  }
+
+  &.is-active {
+    border-left-color: $link;
+    background-color: rgba($link, 0.07);
+    color: $link;
+    font-weight: 600;
+  }
+}

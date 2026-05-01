@@ -839,7 +839,7 @@
         "description": "Set to true to log outbound provider HTTP requests and responses, including payload bodies, for subsequent syncs and data fetches."
       },
       "goals": {
-        "description": "Goals configuration",
+        "description": "Track your progress towards financial milestones like retirement or specific savings targets.",
         "type": "object",
         "properties": {
           "retirement": {
@@ -1013,7 +1013,7 @@
         }
       },
       "budget": {
-        "description": "Budget configuration",
+        "description": "Configure how your monthly budgets behave, such as whether to roll over unspent funds.",
         "type": "object",
         "properties": {
           "rollover": {
@@ -1030,7 +1030,7 @@
         "additionalProperties": false
       },
       "schedule_al": {
-        "description": "Schedule AL configuration",
+        "description": "Map your accounts to the Indian Income Tax 'Schedule AL' categories for easier tax reporting of assets and liabilities.",
         "type": "array",
         "default": [
           {
@@ -1082,6 +1082,7 @@
         }
       },
       "allocation_targets": {
+        "description": "Define your desired asset allocation (e.g., 60% Equity, 40% Debt) to track deviations in your portfolio.",
         "type": "array",
         "default": [
           {
@@ -1129,6 +1130,7 @@
         }
       },
       "commodities": {
+        "description": "Configure how external price data is fetched for your stocks, mutual funds, and other commodities.",
         "type": "array",
         "default": [
           {
@@ -1211,6 +1213,7 @@
         }
       },
       "import_templates": {
+        "description": "Define templates to help Paisa parse and import transactions from external sources like CSV or bank statements.",
         "type": "array",
         "default": [
           {
@@ -1242,6 +1245,7 @@
         }
       },
       "accounts": {
+        "description": "Customize the display of your accounts, such as assigning unique icons to specific account names.",
         "type": "array",
         "default": [
           {
@@ -1274,6 +1278,7 @@
         }
       },
       "credit_cards": {
+        "description": "Configure your credit card details to track limits, statement cycles, and due dates.",
         "type": "array",
         "itemsUniqueProperties": [
           "account"
@@ -1351,7 +1356,7 @@
       },
       "doctor": {
         "type": "object",
-        "description": "Doctor configuration",
+        "description": "Configure automated health checks for your journal, such as checking for negative balances or missing prices.",
         "properties": {
           "negative_balance": {
             "type": "object",
