@@ -181,110 +181,92 @@
               <div class="column is-12 mb-4">
                 <div class="columns is-mobile is-multiline">
                   <div class="column is-3-desktop is-6-mobile">
-                    <div class="summary-card has-background-success-light">
+                    <div class="summary-card is-success-card">
                       <div class="is-flex is-justify-content-space-between is-align-items-start">
                         <div>
-                          <p
-                            class="is-size-7 has-text-success-dark has-text-weight-bold is-uppercase"
-                          >
-                            Income
-                          </p>
+                          <p class="is-size-7 summary-label is-uppercase">Income</p>
                           <div class="mt-1">
                             {#each summary.incomes as item}
-                              <p class="title is-4 has-text-success-dark mb-1">
+                              <p class="title is-4 mb-1">
                                 {formatCurrency(item.amount)}
                                 <span class="is-size-6">{item.commodity}</span>
                               </p>
                             {/each}
                             {#if summary.incomes.length === 0}
-                              <p class="title is-4 has-text-success-dark">0.00</p>
+                              <p class="title is-4">0.00</p>
                             {/if}
                           </div>
                         </div>
-                        <span class="icon is-medium has-text-success">
+                        <span class="icon is-medium">
                           <i class="fas fa-arrow-trend-up fa-lg"></i>
                         </span>
                       </div>
                     </div>
                   </div>
                   <div class="column is-3-desktop is-6-mobile">
-                    <div class="summary-card has-background-danger-light">
+                    <div class="summary-card is-danger-card">
                       <div class="is-flex is-justify-content-space-between is-align-items-start">
                         <div>
-                          <p
-                            class="is-size-7 has-text-danger-dark has-text-weight-bold is-uppercase"
-                          >
-                            Expenses
-                          </p>
+                          <p class="is-size-7 summary-label is-uppercase">Expenses</p>
                           <div class="mt-1">
                             {#each summary.expenses as item}
-                              <p class="title is-4 has-text-danger-dark mb-1">
+                              <p class="title is-4 mb-1">
                                 {formatCurrency(item.amount)}
                                 <span class="is-size-6">{item.commodity}</span>
                               </p>
                             {/each}
                             {#if summary.expenses.length === 0}
-                              <p class="title is-4 has-text-danger-dark">0.00</p>
+                              <p class="title is-4">0.00</p>
                             {/if}
                           </div>
                         </div>
-                        <span class="icon is-medium has-text-danger">
+                        <span class="icon is-medium">
                           <i class="fas fa-arrow-trend-down fa-lg"></i>
                         </span>
                       </div>
                     </div>
                   </div>
                   <div class="column is-3-desktop is-6-mobile">
-                    <div class="summary-card has-background-warning-light">
+                    <div class="summary-card is-warning-card">
                       <div class="is-flex is-justify-content-space-between is-align-items-start">
                         <div>
-                          <p
-                            class="is-size-7 has-text-warning-dark has-text-weight-bold is-uppercase"
-                          >
-                            Taxes
-                          </p>
+                          <p class="is-size-7 summary-label is-uppercase">Taxes</p>
                           <div class="mt-1">
                             {#each summary.taxes as item}
-                              <p class="title is-4 has-text-warning-dark mb-1">
+                              <p class="title is-4 mb-1">
                                 {formatCurrency(item.amount)}
                                 <span class="is-size-6">{item.commodity}</span>
                               </p>
                             {/each}
                             {#if summary.taxes.length === 0}
-                              <p class="title is-4 has-text-warning-dark">0.00</p>
+                              <p class="title is-4">0.00</p>
                             {/if}
                           </div>
                         </div>
-                        <span class="icon is-medium has-text-warning">
+                        <span class="icon is-medium">
                           <i class="fas fa-receipt fa-lg"></i>
                         </span>
                       </div>
                     </div>
                   </div>
                   <div class="column is-3-desktop is-6-mobile">
-                    <div class="summary-card has-background-info-light">
+                    <div class="summary-card is-info-card">
                       <div class="is-flex is-justify-content-space-between is-align-items-start">
                         <div>
-                          <p class="is-size-7 has-text-info-dark has-text-weight-bold is-uppercase">
-                            Surplus
-                          </p>
+                          <p class="is-size-7 summary-label is-uppercase">Surplus</p>
                           <div class="mt-1">
                             {#each summary.savings as item}
-                              <p
-                                class="title is-4 mb-1 {item.amount >= 0
-                                  ? 'has-text-info-dark'
-                                  : 'has-text-danger-dark'}"
-                              >
+                              <p class="title is-4 mb-1 {item.amount < 0 && 'is-deficit'}">
                                 {formatCurrency(item.amount)}
                                 <span class="is-size-6">{item.commodity}</span>
                               </p>
                             {/each}
                             {#if summary.savings.length === 0}
-                              <p class="title is-4 has-text-info-dark">0.00</p>
+                              <p class="title is-4">0.00</p>
                             {/if}
                           </div>
                         </div>
-                        <span class="icon is-medium has-text-info">
+                        <span class="icon is-medium">
                           <i class="fas fa-piggy-bank fa-lg"></i>
                         </span>
                       </div>
@@ -407,11 +389,19 @@
                     </div>
                   {/if}
 
-                  {#if aggregatedInvestments.length > 0}
+                  <!-- {#if aggregatedInvestments.length > 0}
                     <div class="mb-5">
-                      <h4 class="is-size-7 has-text-grey has-text-weight-bold mb-2 is-uppercase">
-                        Investments
-                      </h4>
+                      <div class="is-flex is-align-items-center mb-2">
+                        <h4 class="is-size-7 has-text-grey has-text-weight-bold is-uppercase">
+                          Investments
+                        </h4>
+                        <span
+                          class="icon is-small has-text-grey-light ml-2"
+                          data-tippy-content="Asset transfers (e.g. Stocks, Savings) excluding Checking accounts"
+                        >
+                          <i class="fas fa-circle-info"></i>
+                        </span>
+                      </div>
                       <table class="table is-fullwidth is-narrow is-hoverable is-borderless">
                         <tbody>
                           {#each aggregatedInvestments as item}
@@ -428,7 +418,8 @@
                         </tbody>
                       </table>
                     </div>
-                  {/if}
+                  {/if} -->
+
                 </div>
               </div>
 
@@ -475,9 +466,14 @@
 <style lang="scss">
   @media screen and (min-width: 1024px) {
     .border-left-desktop {
-      border-left: 1px solid #f0f0f0;
+      border-left: 1px solid var(--bulma-border, #dbdbdb);
       padding-left: 2rem;
     }
+  }
+
+  .summary-label {
+    font-weight: 700;
+    color: var(--paisa-summary-label-color, #666);
   }
 
   .summary-card {
@@ -485,6 +481,60 @@
     border-radius: 8px;
     height: 100%;
     transition: transform 0.2s;
+    background-color: var(--bulma-scheme-main-ter, #f5f5f5);
+    border: 1px solid var(--bulma-border, #dbdbdb);
+
+    .title {
+      color: var(--bulma-text, #363636);
+    }
+
+    .icon {
+      color: var(--bulma-text-grey-light, #b5b5b5);
+    }
+
+    &.is-success-card {
+      background-color: var(--paisa-success-bg, rgba(72, 199, 142, 0.1));
+      border-color: var(--bulma-success, #48c78e);
+      .title,
+      .summary-label,
+      .icon {
+        color: var(--bulma-success-dark, #257953);
+      }
+    }
+
+    &.is-danger-card {
+      background-color: var(--paisa-danger-bg, rgba(241, 70, 104, 0.1));
+      border-color: var(--bulma-danger, #f14668);
+      .title,
+      .summary-label,
+      .icon {
+        color: var(--bulma-danger-dark, #cc0f35);
+      }
+    }
+
+    &.is-warning-card {
+      background-color: var(--paisa-warning-bg, rgba(255, 221, 87, 0.1));
+      border-color: var(--bulma-warning, #ffdd57);
+      .title,
+      .summary-label,
+      .icon {
+        color: var(--bulma-warning-dark, #947600);
+      }
+    }
+
+    &.is-info-card {
+      background-color: var(--paisa-info-bg, rgba(62, 142, 208, 0.1));
+      border-color: var(--bulma-info, #3e8ed0);
+      .title,
+      .summary-label,
+      .icon {
+        color: var(--bulma-info-dark, #205d8a);
+      }
+      .title.is-deficit {
+        color: var(--bulma-danger-dark, #cc0f35);
+      }
+    }
+
     &:hover {
       transform: translateY(-2px);
     }
@@ -495,22 +545,40 @@
   }
 
   .net-surplus-footer {
-    background-color: #f8fafc;
+    background-color: var(--bulma-scheme-main-bis, #fafafa);
     padding: 1.5rem;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--bulma-border, #dbdbdb);
   }
 
   .table.is-borderless {
+    background-color: transparent;
     td {
       border: none;
       padding-top: 0.5rem;
       padding-bottom: 0.5rem;
     }
     tr {
-      border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+      border-bottom: 1px solid var(--bulma-border-light, #f0f0f0);
       &:last-child {
         border-bottom: none;
+      }
+    }
+  }
+
+  :global(html[data-theme="dark"]) {
+    .summary-card {
+      &.is-success-card {
+        background-color: rgba(72, 199, 142, 0.05);
+      }
+      &.is-danger-card {
+        background-color: rgba(241, 70, 104, 0.05);
+      }
+      &.is-warning-card {
+        background-color: rgba(255, 221, 87, 0.05);
+      }
+      &.is-info-card {
+        background-color: rgba(62, 142, 208, 0.05);
       }
     }
   }
