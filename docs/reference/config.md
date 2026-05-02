@@ -5,8 +5,12 @@ description: "Full list of configuration options supported by Paisa along with t
 # Configuration
 
 All the configuration related to paisa is stored in a yaml file named
-`paisa.yaml`. The configuration can be edited via the web
-interface. The sequence in which paisa looks for the file is described
+`paisa.yaml`. The configuration can be edited via the web interface.
+The configuration screen features a structured, sidebar-based interface
+with categorized sections for easy navigation and discoverability.
+On mobile devices, the sidebar automatically collapses upon selecting a section.
+
+The sequence in which paisa looks for the file is described
 below
 
 1. `PAISA_CONFIG` environment variable
