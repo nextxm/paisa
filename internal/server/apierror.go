@@ -22,6 +22,7 @@ const (
 	ErrCodeInvalidRequest  ErrorCode = "INVALID_REQUEST"
 	ErrCodeInternalError   ErrorCode = "INTERNAL_ERROR"
 	ErrCodeUnauthorized    ErrorCode = "UNAUTHORIZED"
+	ErrCodeForbidden       ErrorCode = "FORBIDDEN"
 	ErrCodeTooManyRequests ErrorCode = "TOO_MANY_REQUESTS"
 	ErrCodeReadonly        ErrorCode = "READONLY"
 )

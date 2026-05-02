@@ -124,6 +124,20 @@ export const CONFIG_GROUPS: ConfigGroup[] = [
         description: "Automated journal health checks for balances and prices"
       },
       {
+        id: "firefly",
+        label: "Firefly III",
+        icon: "fa-fire",
+        schemaKeys: ["firefly"],
+        description: "Configure Firefly III integration for reconciliation"
+      },
+      {
+        id: "labs",
+        label: "Labs",
+        icon: "fa-flask",
+        schemaKeys: ["labs"],
+        description: "Enable experimental features"
+      },
+      {
         id: "advanced",
         label: "Advanced",
         icon: "fa-sliders",

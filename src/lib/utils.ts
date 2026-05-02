@@ -610,6 +610,16 @@ export interface SankeyResponse {
   meta: SankeyMeta;
 }
 
+export interface ReconcileItem {
+  firefly_account: string;
+  paisa_account: string;
+  firefly_balance: string;
+  paisa_balance: string;
+  currency: string;
+  diff: string;
+  ignored: boolean;
+}
+
 const tokenKey = "token";
 
 type RequestOptions = RequestInit & {
@@ -647,6 +657,7 @@ export function ajax(route: "/api/price"): Promise<{ prices: Record<string, Pric
 export function ajax(
   route: "/api/fx-rates"
 ): Promise<{ rates: FXRate[]; base: string; quote: string; year: number; month: number }>;
+export function ajax(route: "/api/firefly/reconcile"): Promise<{ items: ReconcileItem[] }>;
 export function ajax(route: "/api/price/filters"): Promise<PriceFilters>;
 export function ajax(route: "/api/transaction"): Promise<{ transactions: Transaction[] }>;
 export function ajax(

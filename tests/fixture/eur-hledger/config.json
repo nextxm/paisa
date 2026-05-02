@@ -70,7 +70,15 @@
     "allow_legacy_auth": false,
     "disable_multi_currency_prices": false,
     "provider_debug_http": false,
-    "credit_cards": []
+    "credit_cards": [],
+    "firefly": {
+      "url": "",
+      "token": "",
+      "ignore_accounts": []
+    },
+    "labs": {
+      "firefly_reconcile": false
+    }
   },
   "now": "2022-02-07T00:00:00Z",
   "schema": {
@@ -1511,6 +1519,42 @@
         "maximum": 6,
         "minimum": 0,
         "type": "integer"
+      },
+      "firefly": {
+        "type": "object",
+        "description": "Firefly III integration settings",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Firefly III base URL (e.g. https://firefly.example.com)"
+          },
+          "token": {
+            "type": "string",
+            "ui:widget": "password",
+            "description": "Firefly III Personal Access Token"
+          },
+          "ignore_accounts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "ui:widget": "accounts",
+            "description": "Accounts to ignore from reconciliation"
+          }
+        },
+        "additionalProperties": false
+      },
+      "labs": {
+        "type": "object",
+        "description": "Experimental features (Labs)",
+        "properties": {
+          "firefly_reconcile": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable Firefly III balance reconciliation"
+          }
+        },
+        "additionalProperties": false
       }
     },
     "required": [

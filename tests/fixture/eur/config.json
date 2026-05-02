@@ -70,7 +70,15 @@
     "allow_legacy_auth": false,
     "disable_multi_currency_prices": false,
     "provider_debug_http": false,
-    "credit_cards": []
+    "credit_cards": [],
+    "firefly": {
+      "url": "",
+      "token": "",
+      "ignore_accounts": []
+    },
+    "labs": {
+      "firefly_reconcile": false
+    }
   },
   "now": "2022-02-07T00:00:00Z",
   "schema": {
@@ -547,6 +555,30 @@
         "minimum": 1,
         "type": "integer"
       },
+      "firefly": {
+        "additionalProperties": false,
+        "description": "Firefly III integration settings",
+        "properties": {
+          "ignore_accounts": {
+            "description": "Accounts to ignore from reconciliation",
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "ui:widget": "accounts"
+          },
+          "token": {
+            "description": "Firefly III Personal Access Token",
+            "type": "string",
+            "ui:widget": "password"
+          },
+          "url": {
+            "description": "Firefly III base URL (e.g. https://firefly.example.com)",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "goals": {
         "description": "Track your progress towards financial milestones like retirement or specific savings targets.",
         "properties": {
@@ -756,6 +788,18 @@
       "journal_path": {
         "description": "Path to your journal file. It can be absolute or relative to the configuration file. The main journal file can refer other files using <code>include</code> as long as all the files are in the same or sub directory",
         "type": "string"
+      },
+      "labs": {
+        "additionalProperties": false,
+        "description": "Experimental features (Labs)",
+        "properties": {
+          "firefly_reconcile": {
+            "default": false,
+            "description": "Enable Firefly III balance reconciliation",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
       },
       "ledger_cli": {
         "description": "The ledger client to use",

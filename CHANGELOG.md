@@ -5,6 +5,8 @@
 #### New features
 
 - **Firefly III Webhook Integration** — Added a dedicated `/api/webhooks/firefly` endpoint that automatically parses and imports transactions from Firefly III via webhooks. Supported transactions are appended to the configured `add_journal_path` journal file.
+ 
+- **Firefly III Reconciliation (Labs)** — Introduced a new balance reconciliation tool to compare Paisa (Ledger) account balances with Firefly III data. The feature is hidden by default and can be enabled under the new "Labs" configuration section. Includes support for ignoring specific accounts and case-insensitive account matching.
 
 - **Price Export Feature** — Users can now export their commodity price history in Ledger, hLedger, or Beancount formats. The export supports filtering by commodity and provides options for single-file or multi-file (ZIP) output.
 

@@ -2,9 +2,15 @@ package server
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/ananthakumaran/paisa/internal/server/assets"
+	"github.com/ananthakumaran/paisa/internal/service/firefly"
 	"github.com/gin-gonic/gin"
+	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -83,5 +89,81 @@ func FireflyWebhookHandler(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"success": true, "entries": entries})
+	}
+}
+
+type ReconcileItem struct {
+	FireflyAccount string          `json:"firefly_account"`
+	PaisaAccount   string          `json:"paisa_account"`
+	FireflyBalance decimal.Decimal `json:"firefly_balance"`
+	PaisaBalance   decimal.Decimal `json:"paisa_balance"`
+	Currency       string          `json:"currency"`
+	Diff           decimal.Decimal `json:"diff"`
+	Ignored        bool            `json:"ignored"`
+}
+
+func FireflyReconcileHandler(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		conf := config.GetConfig()
+		if !conf.Labs.FireflyReconcile {
+			RespondError(c, http.StatusForbidden, ErrCodeForbidden, "Firefly reconciliation is not enabled in Labs")
+			return
+		}
+
+		fireflyAccounts, err := firefly.GetAccounts(conf.Firefly.URL, conf.Firefly.Token)
+		if err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
+
+		// Fetch Paisa balances (flat list)
+		paisaBalancesH := assets.GetBalanceByMode(db, "", true)
+		paisaBreakdowns, ok := paisaBalancesH["asset_breakdowns"].(map[string]assets.AssetBreakdown)
+		if !ok {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, "Failed to fetch Paisa balances")
+			return
+		}
+
+		var items []ReconcileItem
+		ignoredSet := lo.SliceToMap(conf.Firefly.IgnoreAccounts, func(a string) (string, bool) { return a, true })
+
+		for _, fa := range fireflyAccounts {
+			if !fa.Attributes.Active || (fa.Attributes.Type != "asset" && fa.Attributes.Type != "liabilities") {
+				continue
+			}
+
+			item := ReconcileItem{
+				FireflyAccount: fa.Attributes.Name,
+				Currency:       fa.Attributes.CurrencyCode,
+				Ignored:        ignoredSet[fa.Attributes.Name],
+			}
+
+			fb, err := decimal.NewFromString(fa.Attributes.CurrentBalance)
+			if err == nil {
+				item.FireflyBalance = fb
+			}
+
+			// Try to find a matching Paisa account
+			// Matching is case-insensitive and checks if Paisa account name contains Firefly account name or vice versa
+			for name, pb := range paisaBreakdowns {
+				paisaAccountName := name
+				if strings.Contains(strings.ToLower(paisaAccountName), strings.ToLower(fa.Attributes.Name)) ||
+					strings.Contains(strings.ToLower(fa.Attributes.Name), strings.ToLower(paisaAccountName)) {
+					item.PaisaAccount = paisaAccountName
+					for _, ob := range pb.OriginalBalances {
+						if ob.Currency == fa.Attributes.CurrencyCode {
+							item.PaisaBalance = ob.Amount
+							break
+						}
+					}
+					break
+				}
+			}
+
+			item.Diff = item.FireflyBalance.Sub(item.PaisaBalance)
+			items = append(items, item)
+		}
+
+		c.JSON(http.StatusOK, gin.H{"items": items})
 	}
 }

@@ -138,6 +138,9 @@
         { label: "Sheets", href: "/sheets", help: "sheets", disablePreload: true },
         { label: "Goals", href: "/goals", help: "goals" },
         { label: "Doctor", href: "/doctor" },
+        ...(USER_CONFIG.labs?.firefly_reconcile
+          ? [{ label: "Reconciliation", href: "/reconciliation" }]
+          : []),
         { label: "Logs", href: "/logs" }
       ]
     }

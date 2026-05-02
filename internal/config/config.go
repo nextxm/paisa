@@ -138,6 +138,16 @@ type CreditCard struct {
 	ExpirationDate  string `json:"expiration_date" yaml:"expiration_date"`
 }
 
+type FireflyConfig struct {
+	URL            string   `json:"url" yaml:"url"`
+	Token          string   `json:"token" yaml:"token"`
+	IgnoreAccounts []string `json:"ignore_accounts" yaml:"ignore_accounts"`
+}
+
+type Labs struct {
+	FireflyReconcile bool `json:"firefly_reconcile" yaml:"firefly_reconcile"`
+}
+
 type Config struct {
 	JournalPath                string       `json:"journal_path" yaml:"journal_path"`
 	AddJournalPath             string       `json:"add_journal_path" yaml:"add_journal_path"`
@@ -192,6 +202,10 @@ type Config struct {
 	ProviderDebugHTTP bool `json:"provider_debug_http" yaml:"provider_debug_http"`
 
 	CreditCards []CreditCard `json:"credit_cards" yaml:"credit_cards"`
+
+	Firefly FireflyConfig `json:"firefly" yaml:"firefly"`
+
+	Labs Labs `json:"labs" yaml:"labs"`
 }
 
 var config Config
@@ -227,6 +241,8 @@ var defaultConfig = Config{
 	Goals:                      Goals{Retirement: []RetirementGoal{}, Savings: []SavingsGoal{}},
 	UserAccounts:               []UserAccount{},
 	CreditCards:                []CreditCard{},
+	Firefly:                    FireflyConfig{IgnoreAccounts: []string{}},
+	Labs:                       Labs{FireflyReconcile: false},
 }
 
 var itemsUniquePropertiesMeta = jsonschema.MustCompileString("itemsUniqueProperties.json", `{
