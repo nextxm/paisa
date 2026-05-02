@@ -36,7 +36,7 @@
     // React to columns changing
     const currentColumns = columns;
     if (tabulator && isBuilt) {
-      tabulator.setColumns(currentColumns).catch(() => {});
+      tabulator.setColumns(currentColumns);
     }
   });
 
