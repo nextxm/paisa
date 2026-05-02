@@ -66,6 +66,7 @@ function buildAssetBreakdownTree(items: AssetBreakdown[]): AssetBreakdownTreeNod
 }
 
 function formatOriginalBalances(breakdown: AssetBreakdown): string {
+  if (!breakdown.originalBalances) return "";
   return breakdown.originalBalances
     .map((balance) => `${balance.currency} ${balance.amount}`)
     .join(", ");

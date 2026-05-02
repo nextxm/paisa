@@ -43,6 +43,8 @@ import helpers from "$lib/template_helpers";
 import * as toast from "bulma-toast";
 import _ from "lodash";
 
+import { buildErrorToastMessage } from "$lib/error_toast";
+
 import "@formatjs/intl-numberformat/polyfill";
 import "@formatjs/intl-numberformat/locale-data/en";
 
@@ -107,47 +109,9 @@ export const handleError: HandleClientError = ({ error, status, message }) => {
   return { message, stack, status, detail };
 };
 
-function formatError(error: any) {
-  if (error == null) {
-    return "Unknown error";
-  }
-
-  if (typeof error === "string") {
-    return error;
-  }
-
-  if (error.stack) {
-    return error.stack;
-  }
-
-  if (error.message) {
-    return error.message;
-  }
-
-  return String(error);
-}
-
-function escapeHtml(text: string) {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-const footer = `
-<p class="mt-3">
-  Please report this issue at <a href="https://github.com/nextxm/paisa/issues"
-    >https://github.com/nextxm/paisa/issues</a
-  >. Closing and reopening the app may help.
-</p>
-`;
-
 function displayError(error: any) {
-  const message = escapeHtml(formatError(error));
   toast.toast({
-    message: `<article class="notification is-danger is-light invertable"><button class="delete" aria-label="Close error"></button><p class="has-text-weight-semibold mb-2">Something Went Wrong</p><pre style="white-space: pre-wrap; max-height: 30vh; overflow: auto; margin: 0;">${message}</pre>${footer}</article>`,
+    message: buildErrorToastMessage(error),
     type: "is-danger",
     dismissible: true,
     pauseOnHover: true,
@@ -158,8 +122,14 @@ function displayError(error: any) {
 }
 
 window.addEventListener("unhandledrejection", (event) => {
+  if (event.reason?.message?.includes("ResizeObserver loop limit exceeded")) {
+    return;
+  }
   displayError(event.reason);
 });
 window.addEventListener("error", (event) => {
-  displayError(event.error);
+  if (event.message?.includes("ResizeObserver loop limit exceeded")) {
+    return;
+  }
+  displayError(event.error || event.message);
 });

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { rem } from "$lib/utils";
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy } from "svelte";
   import { TabulatorFull as Tabulator, type ColumnDefinition } from "tabulator-tables";
 
   let {
@@ -15,61 +15,73 @@
 
   let tableComponent: HTMLElement = $state();
   let tabulator: Tabulator | null = null;
+  let isBuilt = $state(false);
+  let pendingData: any[] | null = null;
 
   function isTableMounted() {
     return !!tableComponent && tableComponent.isConnected;
   }
 
   $effect(() => {
-    build();
+    // React to data changing
+    const currentData = data;
+    if (tabulator && isBuilt) {
+      tabulator.setData(currentData || []).catch(() => {});
+    } else if (tabulator && !isBuilt) {
+      pendingData = currentData;
+    }
   });
 
-  async function build() {
-    if (!isTableMounted()) {
+  $effect(() => {
+    // React to columns changing
+    const currentColumns = columns;
+    if (tabulator && isBuilt) {
+      tabulator.setColumns(currentColumns).catch(() => {});
+    }
+  });
+
+  $effect(() => {
+    const el = tableComponent;
+    if (!el || !isTableMounted() || tabulator) {
       return;
     }
 
-    if (tabulator) {
-      if (data.length === 0) {
-        tabulator.clearData();
-        return;
+    tabulator = new Tabulator(el, {
+      dataTree: tree,
+      dataTreeStartExpanded: [true, true, false],
+      dataTreeBranchElement: false,
+      dataTreeChildIndent: rem(30),
+      dataTreeCollapseElement:
+        "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-up'></i></span>",
+      dataTreeExpandElement:
+        "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-down'></i></span>",
+      data: data || [],
+      columns: columns,
+      layout: "fitDataTable"
+    });
+
+    tabulator.on("tableBuilt", () => {
+      if (!tabulator) return;
+      isBuilt = true;
+      if (pendingData !== null) {
+        tabulator.setData(pendingData).catch(() => {});
+        pendingData = null;
       }
-
-      try {
-        await tabulator.replaceData(data);
-      } catch {
-        if (!isTableMounted()) {
-          return;
-        }
-
-        tabulator.destroy();
-        tabulator = null;
-        build();
-      }
-    } else {
-      tabulator = new Tabulator(tableComponent, {
-        dataTree: tree,
-        dataTreeStartExpanded: [true, true, false],
-        dataTreeBranchElement: false,
-        dataTreeChildIndent: rem(30),
-        dataTreeCollapseElement:
-          "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-up'></i></span>",
-        dataTreeExpandElement:
-          "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-down'></i></span>",
-        data: data || [],
-        columns: columns,
-        layout: "fitDataTable"
-      });
-    }
-  }
-
-  onMount(async () => {
-    build();
+    });
   });
 
   onDestroy(() => {
-    tabulator?.destroy();
-    tabulator = null;
+    if (tabulator) {
+      const t = tabulator;
+      tabulator = null;
+      isBuilt = false;
+      pendingData = null;
+      try {
+        t.destroy();
+      } catch {
+        // Ignore destruction errors
+      }
+    }
   });
 </script>
 
