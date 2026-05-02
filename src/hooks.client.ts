@@ -122,8 +122,14 @@ function displayError(error: any) {
 }
 
 window.addEventListener("unhandledrejection", (event) => {
+  if (event.reason?.message?.includes("ResizeObserver loop limit exceeded")) {
+    return;
+  }
   displayError(event.reason);
 });
 window.addEventListener("error", (event) => {
-  displayError(event.error);
+  if (event.message?.includes("ResizeObserver loop limit exceeded")) {
+    return;
+  }
+  displayError(event.error || event.message);
 });

@@ -15,7 +15,7 @@
 
   let tableComponent: HTMLElement = $state();
   let tabulator: Tabulator | null = null;
-  let isBuilt = false;
+  let isBuilt = $state(false);
   let pendingData: any[] | null = null;
 
   function isTableMounted() {
@@ -23,54 +23,64 @@
   }
 
   $effect(() => {
-    // Capture reactive dependency on data and tableComponent
+    // React to data changing
     const currentData = data;
-    const el = tableComponent;
-
-    if (!el) return;
-
     if (tabulator && isBuilt) {
-      tabulator.setData(currentData || []);
+      tabulator.setData(currentData || []).catch(() => {});
     } else if (tabulator && !isBuilt) {
-      // Table is initializing — defer until tableBuilt fires
       pendingData = currentData;
-    } else {
-      // First render: create the table
-      tabulator = new Tabulator(el, {
-        dataTree: tree,
-        dataTreeStartExpanded: [true, true, false],
-        dataTreeBranchElement: false,
-        dataTreeChildIndent: rem(30),
-        dataTreeCollapseElement:
-          "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-up'></i></span>",
-        dataTreeExpandElement:
-          "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-down'></i></span>",
-        data: currentData || [],
-        columns: columns,
-        layout: "fitDataTable"
-      });
-
-      tabulator.on("tableBuilt", () => {
-        isBuilt = true;
-        if (pendingData !== null) {
-          tabulator!.setData(pendingData);
-          pendingData = null;
-        }
-      });
     }
+  });
+
+  $effect(() => {
+    // React to columns changing
+    const currentColumns = columns;
+    if (tabulator && isBuilt) {
+      tabulator.setColumns(currentColumns).catch(() => {});
+    }
+  });
+
+  $effect(() => {
+    const el = tableComponent;
+    if (!el || !isTableMounted() || tabulator) {
+      return;
+    }
+
+    tabulator = new Tabulator(el, {
+      dataTree: tree,
+      dataTreeStartExpanded: [true, true, false],
+      dataTreeBranchElement: false,
+      dataTreeChildIndent: rem(30),
+      dataTreeCollapseElement:
+        "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-up'></i></span>",
+      dataTreeExpandElement:
+        "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-down'></i></span>",
+      data: data || [],
+      columns: columns,
+      layout: "fitDataTable"
+    });
+
+    tabulator.on("tableBuilt", () => {
+      if (!tabulator) return;
+      isBuilt = true;
+      if (pendingData !== null) {
+        tabulator.setData(pendingData).catch(() => {});
+        pendingData = null;
+      }
+    });
   });
 
   onDestroy(() => {
     if (tabulator) {
-      try {
-        tabulator.destroy();
-      } catch {
-        // Tabulator may try to ResizeObserver.unobserve() an already-detached
-        // element when the component unmounts — this is safe to ignore.
-      }
+      const t = tabulator;
       tabulator = null;
       isBuilt = false;
       pendingData = null;
+      try {
+        t.destroy();
+      } catch {
+        // Ignore destruction errors
+      }
     }
   });
 </script>
