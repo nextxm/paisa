@@ -21,9 +21,9 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v2.4.0
-      - uses: nixbuild/nix-quick-install-action@v30
-      - uses: nix-community/cache-nix-action@v6
+      - uses: actions/checkout@v4
+      - uses: nixbuild/nix-quick-install-action@v34
+      - uses: nix-community/cache-nix-action@v7
         with:
           primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
@@ -45,9 +45,9 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v2.4.0
-      - uses: nixbuild/nix-quick-install-action@v30
-      - uses: nix-community/cache-nix-action@v6
+      - uses: actions/checkout@v4
+      - uses: nixbuild/nix-quick-install-action@v34
+      - uses: nix-community/cache-nix-action@v7
         with:
           primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
@@ -70,9 +70,9 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v2.4.0
-      - uses: nixbuild/nix-quick-install-action@v30
-      - uses: nix-community/cache-nix-action@v6
+      - uses: actions/checkout@v4
+      - uses: nixbuild/nix-quick-install-action@v34
+      - uses: nix-community/cache-nix-action@v7
         with:
           primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
