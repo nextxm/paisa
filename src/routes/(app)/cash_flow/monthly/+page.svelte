@@ -253,7 +253,7 @@
                     <div class="summary-card is-info-card">
                       <div class="is-flex is-justify-content-space-between is-align-items-start">
                         <div>
-                          <p class="is-size-7 summary-label is-uppercase">Surplus</p>
+                          <p class="is-size-7 summary-label is-uppercase">Net Flow</p>
                           <div class="mt-1">
                             {#each summary.savings as item}
                               <p class="title is-4 mb-1 {item.amount < 0 && 'is-deficit'}">
@@ -267,7 +267,7 @@
                           </div>
                         </div>
                         <span class="icon is-medium">
-                          <i class="fas fa-piggy-bank fa-lg"></i>
+                          <i class="fas fa-right-left fa-lg"></i>
                         </span>
                       </div>
                     </div>
@@ -388,37 +388,6 @@
                       </table>
                     </div>
                   {/if}
-
-                  <!-- {#if aggregatedInvestments.length > 0}
-                    <div class="mb-5">
-                      <div class="is-flex is-align-items-center mb-2">
-                        <h4 class="is-size-7 has-text-grey has-text-weight-bold is-uppercase">
-                          Investments
-                        </h4>
-                        <span
-                          class="icon is-small has-text-grey-light ml-2"
-                          data-tippy-content="Asset transfers (e.g. Stocks, Savings) excluding Checking accounts"
-                        >
-                          <i class="fas fa-circle-info"></i>
-                        </span>
-                      </div>
-                      <table class="table is-fullwidth is-narrow is-hoverable is-borderless">
-                        <tbody>
-                          {#each aggregatedInvestments as item}
-                            <tr>
-                              <td class="pl-0">{restName(item.account)}</td>
-                              <td class="has-text-right tabular-nums pr-0">
-                                <span class="has-text-weight-medium">
-                                  {formatCurrency(item.amount)}
-                                </span>
-                                <span class="is-size-7 has-text-grey">{item.commodity}</span>
-                              </td>
-                            </tr>
-                          {/each}
-                        </tbody>
-                      </table>
-                    </div>
-                  {/if} -->
                 </div>
               </div>
 
@@ -427,9 +396,9 @@
                   <div class="level is-mobile">
                     <div class="level-left">
                       <div>
-                        <h3 class="title is-5 mb-0">Monthly Surplus</h3>
+                        <h3 class="title is-5 mb-0">Monthly Net Flow</h3>
                         <p class="is-size-7 has-text-grey">
-                          Overall cash flow remaining after expenses and taxes
+                          Total income remaining after all expenses and taxes
                         </p>
                       </div>
                     </div>
@@ -544,41 +513,96 @@
   }
 
   .net-surplus-footer {
-    background-color: var(--bulma-scheme-main-bis, #fafafa);
+    background-color: var(--bulma-scheme-main-bis, #f8fafc);
     padding: 1.5rem;
     border-radius: 8px;
     border: 1px solid var(--bulma-border, #dbdbdb);
+
+    .title {
+      color: var(--bulma-text, #363636);
+    }
   }
 
   .table.is-borderless {
     background-color: transparent;
     td {
-      border: none;
-      padding-top: 0.5rem;
-      padding-bottom: 0.5rem;
+      border: none !important;
+      padding-top: 0.4rem;
+      padding-bottom: 0.4rem;
+      color: var(--bulma-text, inherit);
     }
     tr {
-      border-bottom: 1px solid var(--bulma-border-light, #f0f0f0);
-      &:last-child {
-        border-bottom: none;
-      }
+      border: none !important;
     }
   }
 
   :global(html[data-theme="dark"]) {
     .summary-card {
+      background-color: rgba(255, 255, 255, 0.02);
+      border-color: rgba(255, 255, 255, 0.1);
+
+      .summary-label {
+        color: var(--bulma-text-grey, #7a7a7a);
+      }
+      .icon {
+        color: var(--bulma-text-grey, #7a7a7a);
+      }
+
       &.is-success-card {
-        background-color: rgba(72, 199, 142, 0.05);
+        background-color: rgba(72, 199, 142, 0.08);
+        border-color: rgba(72, 199, 142, 0.3);
+        .title,
+        .summary-label,
+        .icon {
+          color: #82e0aa;
+        }
       }
       &.is-danger-card {
-        background-color: rgba(241, 70, 104, 0.05);
+        background-color: rgba(241, 70, 104, 0.08);
+        border-color: rgba(241, 70, 104, 0.3);
+        .title,
+        .summary-label,
+        .icon {
+          color: #f5b7b1;
+        }
       }
       &.is-warning-card {
-        background-color: rgba(255, 221, 87, 0.05);
+        background-color: rgba(255, 221, 87, 0.08);
+        border-color: rgba(255, 221, 87, 0.3);
+        .title,
+        .summary-label,
+        .icon {
+          color: #f9e79f;
+        }
       }
       &.is-info-card {
-        background-color: rgba(62, 142, 208, 0.05);
+        background-color: rgba(62, 142, 208, 0.08);
+        border-color: rgba(62, 142, 208, 0.3);
+        .title,
+        .summary-label,
+        .icon {
+          color: #aed6f1;
+        }
+        .title.is-deficit {
+          color: #f5b7b1;
+        }
       }
+    }
+
+    .net-surplus-footer {
+      background-color: rgba(255, 255, 255, 0.03);
+      border-color: rgba(255, 255, 255, 0.1);
+
+      .title.has-text-success-dark {
+        color: #82e0aa !important;
+      }
+      .title.has-text-danger-dark {
+        color: #f5b7b1 !important;
+      }
+    }
+
+    .table.is-borderless tr {
+      border: none !important;
     }
   }
 
