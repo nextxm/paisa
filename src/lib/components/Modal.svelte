@@ -16,9 +16,9 @@
     bodyClass?: string;
     headerClass?: string;
     footerClass?: string;
-    head?: Snippet<[() => void]>;
+    head?: Snippet<[any]>;
     body?: Snippet;
-    foot?: Snippet<[() => void]>;
+    foot?: Snippet<[any]>;
   } = $props();
 
   function close() {
@@ -28,15 +28,21 @@
 
 <div class="du-modal" class:du-modal-open={active}>
   <div class="du-modal-box p-0 max-w-none overflow-visible" style:width>
-    <header class="flex items-center px-4 py-3 border-b border-base-300 {headerClass}">
-      {@render head?.(close)}
-    </header>
+    {#if head}
+      <header class="flex items-center px-4 py-3 border-b border-base-300 {headerClass}">
+        {@render head(close)}
+      </header>
+    {/if}
     <section class="p-4 overflow-y-auto {bodyClass}">
-      {@render body?.()}
+      {#if body}
+        {@render body()}
+      {/if}
     </section>
-    <footer class="flex items-center px-4 py-3 border-t border-base-300 {footerClass}">
-      {@render foot?.(close)}
-    </footer>
+    {#if foot}
+      <footer class="flex items-center px-4 py-3 border-t border-base-300 {footerClass}">
+        {@render foot(close)}
+      </footer>
+    {/if}
   </div>
   <button
     type="button"

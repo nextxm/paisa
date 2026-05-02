@@ -15,65 +15,49 @@
 
   let tableComponent: HTMLElement = $state();
   let tabulator: Tabulator | null = null;
+  let isBuilt = false;
 
   function isTableMounted() {
     return !!tableComponent && tableComponent.isConnected;
   }
 
   $effect(() => {
-    build();
+    // React to data or columns changing
+    if (tabulator && isBuilt) {
+      tabulator.setData(data || []);
+    }
   });
 
-  async function build() {
-    if (!isTableMounted()) {
+  $effect(() => {
+    if (!isTableMounted() || tabulator) {
       return;
     }
 
-    if (tabulator) {
-      if (data.length === 0) {
-        try {
-          await tabulator.clearData();
-        } catch {
-          // component was unmounted before clearData completed
-        }
-        return;
-      }
+    tabulator = new Tabulator(tableComponent, {
+      dataTree: tree,
+      dataTreeStartExpanded: [true, true, false],
+      dataTreeBranchElement: false,
+      dataTreeChildIndent: rem(30),
+      dataTreeCollapseElement:
+        "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-up'></i></span>",
+      dataTreeExpandElement:
+        "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-down'></i></span>",
+      data: data || [],
+      columns: columns,
+      layout: "fitDataTable"
+    });
 
-      try {
-        await tabulator.replaceData(data);
-      } catch {
-        if (!isTableMounted()) {
-          return;
-        }
-
-        tabulator.destroy();
-        tabulator = null;
-        build();
-      }
-    } else {
-      tabulator = new Tabulator(tableComponent, {
-        dataTree: tree,
-        dataTreeStartExpanded: [true, true, false],
-        dataTreeBranchElement: false,
-        dataTreeChildIndent: rem(30),
-        dataTreeCollapseElement:
-          "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-up'></i></span>",
-        dataTreeExpandElement:
-          "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-down'></i></span>",
-        data: data || [],
-        columns: columns,
-        layout: "fitDataTable"
-      });
-    }
-  }
-
-  onMount(async () => {
-    build();
+    tabulator.on("tableBuilt", () => {
+      isBuilt = true;
+    });
   });
 
   onDestroy(() => {
-    tabulator?.destroy();
-    tabulator = null;
+    if (tabulator) {
+      tabulator.destroy();
+      tabulator = null;
+      isBuilt = false;
+    }
   });
 </script>
 
