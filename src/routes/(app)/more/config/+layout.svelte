@@ -9,6 +9,7 @@
   import * as toast from "bulma-toast";
   import { refresh } from "../../../../store";
   import { sync } from "$lib/sync";
+  import { shouldCollapseConfigSidebarOnNavigate } from "$lib/config_sidebar";
   import { CONFIG_GROUPS, ALL_SECTIONS, DEFAULT_SECTION_ID } from "$lib/config-sections";
   import type { Snippet } from "svelte";
   import { configSidebarCollapsed } from "../../../../persisted_store";
@@ -151,6 +152,9 @@
   }
 
   function navigateSection(sectionId: string) {
+    if (typeof window !== "undefined" && shouldCollapseConfigSidebarOnNavigate(window.innerWidth)) {
+      isSidebarCollapsed = true;
+    }
     goto(`/more/config/${sectionId}`);
   }
 </script>

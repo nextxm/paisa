@@ -1,6 +1,6 @@
 <script lang="ts">
   import { rem } from "$lib/utils";
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { TabulatorFull as Tabulator, type ColumnDefinition } from "tabulator-tables";
 
   let {
@@ -14,21 +14,38 @@
   } = $props();
 
   let tableComponent: HTMLElement = $state();
-  let tabulator: Tabulator;
+  let tabulator: Tabulator | null = null;
+
+  function isTableMounted() {
+    return !!tableComponent && tableComponent.isConnected;
+  }
 
   $effect(() => {
-    if (data.length > 0) {
-      build();
-    }
+    build();
   });
 
   async function build() {
-    if (data.length === 0) {
+    if (!isTableMounted()) {
       return;
     }
 
     if (tabulator) {
-      tabulator.replaceData(data);
+      if (data.length === 0) {
+        tabulator.clearData();
+        return;
+      }
+
+      try {
+        await tabulator.replaceData(data);
+      } catch {
+        if (!isTableMounted()) {
+          return;
+        }
+
+        tabulator.destroy();
+        tabulator = null;
+        build();
+      }
     } else {
       tabulator = new Tabulator(tableComponent, {
         dataTree: tree,
@@ -39,7 +56,7 @@
           "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-up'></i></span>",
         dataTreeExpandElement:
           "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-down'></i></span>",
-        data: data,
+        data: data || [],
         columns: columns,
         layout: "fitDataTable"
       });
@@ -48,6 +65,11 @@
 
   onMount(async () => {
     build();
+  });
+
+  onDestroy(() => {
+    tabulator?.destroy();
+    tabulator = null;
   });
 </script>
 
