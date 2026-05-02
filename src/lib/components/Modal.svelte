@@ -44,10 +44,6 @@
       </footer>
     {/if}
   </div>
-  <button
-    type="button"
-    class="du-modal-backdrop"
-    aria-label="Close modal"
-    onclick={() => close()}
+  <button type="button" class="du-modal-backdrop" aria-label="Close modal" onclick={() => close()}
   ></button>
 </div>
