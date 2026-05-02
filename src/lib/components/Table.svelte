@@ -62,7 +62,12 @@
 
   onDestroy(() => {
     if (tabulator) {
-      tabulator.destroy();
+      try {
+        tabulator.destroy();
+      } catch {
+        // Tabulator may try to ResizeObserver.unobserve() an already-detached
+        // element when the component unmounts — this is safe to ignore.
+      }
       tabulator = null;
       isBuilt = false;
       pendingData = null;
