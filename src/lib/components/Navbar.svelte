@@ -231,7 +231,8 @@
     if (!isMobile() || isBurger !== true) return;
 
     const target = event.target as HTMLElement;
-    if (target.closest("a.navbar-item")) {
+    const link = target.closest("a") as HTMLAnchorElement | null;
+    if (link && link.getAttribute("href") && link.getAttribute("href") !== "#") {
       closeBurger(false);
     }
   }

@@ -44,6 +44,8 @@
 
 #### Bug fixes
 
+- **Config mobile sidebar auto-close on selection** — On mobile widths, choosing a section in More → Configuration now automatically collapses the sidebar overlay so the selected section content is immediately visible.
+
 - **Regression: Configuration schema descriptions** — Updated all regression test fixtures to match the latest configuration schema metadata. This ensures that intentional improvements to configuration documentation (like detailed tooltips and hover text) don't break the regression suite.
 
 - **Income Statement start/end balance fixed** — `startingBalance` and `endingBalance` are now computed directly from the actual balance sheet (assets at market value + liabilities at book value), mirroring how the Networth page works. Previously they were derived from an income-flow reconstruction formula that had two bugs: (1) liabilities were negated with the wrong sign, and (2) the current fiscal year's `endingBalance` was priced at the FY end date (a future date) rather than today. The new approach guarantees that the End Balance row and the Networth page always agree for the current year, and correctly handles liability-funded transactions.
