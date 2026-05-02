@@ -1406,13 +1406,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#unreleased-multi-currency-pricing-rollout" class="md-nav__link">
+  <a href="#unreleased-future-changes" class="md-nav__link">
     <span class="md-ellipsis">
-      Unreleased — Multi-currency pricing rollout
+      Unreleased — Future changes
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Unreleased — Multi-currency pricing rollout">
+    <nav class="md-nav" aria-label="Unreleased — Future changes">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1426,6 +1426,39 @@
         
           <li class="md-nav__item">
   <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bug fixes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#08-beta-2026-04-26-multi-currency-pricing-rollout" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.8-beta (2026-04-26) — Multi-currency pricing rollout
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.8-beta (2026-04-26) — Multi-currency pricing rollout">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      New features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes_1" class="md-nav__link">
     <span class="md-ellipsis">
       Bug fixes
     </span>
@@ -2145,13 +2178,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#unreleased-multi-currency-pricing-rollout" class="md-nav__link">
+  <a href="#unreleased-future-changes" class="md-nav__link">
     <span class="md-ellipsis">
-      Unreleased — Multi-currency pricing rollout
+      Unreleased — Future changes
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Unreleased — Multi-currency pricing rollout">
+    <nav class="md-nav" aria-label="Unreleased — Future changes">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2165,6 +2198,39 @@
         
           <li class="md-nav__item">
   <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bug fixes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#08-beta-2026-04-26-multi-currency-pricing-rollout" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.8-beta (2026-04-26) — Multi-currency pricing rollout
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.8-beta (2026-04-26) — Multi-currency pricing rollout">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      New features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes_1" class="md-nav__link">
     <span class="md-ellipsis">
       Bug fixes
     </span>
@@ -2467,8 +2533,204 @@
 
 
 <h1 id="release-changelog">Release Changelog<a class="headerlink" href="#release-changelog" title="Permanent link">&para;</a></h1>
-<h3 id="unreleased-multi-currency-pricing-rollout">Unreleased — Multi-currency pricing rollout<a class="headerlink" href="#unreleased-multi-currency-pricing-rollout" title="Permanent link">&para;</a></h3>
+<h3 id="unreleased-future-changes">Unreleased — Future changes<a class="headerlink" href="#unreleased-future-changes" title="Permanent link">&para;</a></h3>
 <h4 id="new-features">New features<a class="headerlink" href="#new-features" title="Permanent link">&para;</a></h4>
+<ul>
+<li>
+<p><strong>Assets Balance flat view + exports</strong> — Added a Flat Accounts toggle on the Assets → Balance page and support for exporting the current view to CSV or Excel. Exports now respect the selected display mode (hierarchy or flat), and <code>/api/assets/balance</code> accepts <code>flat=true</code> to return non-rollup account rows.</p>
+</li>
+<li>
+<p><strong>Epic: Refining Paisa Configuration Interface</strong> — Redesigned the configuration screen to improve navigation and layout. Transitioned from a monolithic JSON form to a structured, sidebar-based interface with categorized sections for better discoverability and user experience.</p>
+</li>
+<li>
+<p><strong>Epic 2: Architectural Alignment &amp; Cleanup</strong> — Finalized structural patterns and removed legacy Svelte 4 compatibility:</p>
+</li>
+<li>
+<p><strong>Snippet Transition (2.1)</strong> — <code>Modal.svelte</code> migrated from named <code>&lt;slot&gt;</code> elements to typed snippet props (<code>head</code>, <code>body</code>, <code>foot</code>). All consumers updated to use <code>{#snippet head(close)}...{/snippet}</code> blocks: <code>FileModal</code>, <code>PriceCodeSearchModal</code>, <code>DiffViewModal</code>, <code>SyncHistoryOverlay</code>, and the import page inline modal.</p>
+</li>
+<li><strong>Callback Prop Migration (2.2)</strong> — <code>createEventDispatcher</code> removed from <code>FileModal.svelte</code> (replaced with <code>onsave</code> callback) and <code>PriceCodeSearchModal.svelte</code> (replaced with <code>onselect</code> callback). All four <code>FileModal</code> call-sites and <code>JsonSchemaForm</code>'s <code>PriceCodeSearchModal</code> usage updated to pass callback props directly.</li>
+<li><strong>Global Store Evolution (2.3)</strong> — New <code>src/lib/state/ui.svelte.ts</code> (<code>UIState</code>) and <code>src/lib/state/persisted.svelte.ts</code> (<code>PersistedState</code>) class-based wrappers created using <code>fromStore</code>. Components can now access stores via <code>uiState.&lt;prop&gt;.current</code> or continue using the existing <code>$store</code> syntax.</li>
+<li><strong>Lifecycle &amp; Context Update (2.4)</strong> — <code>Navbar.svelte</code> <code>onMount</code>/<code>onDestroy</code> lifecycle hooks replaced with <code>$effect</code> (cleanup via returned function). Root <code>+layout.svelte</code> and <code>(app)/+layout.svelte</code> updated from <code>&lt;slot /&gt;</code> to <code>{@render children()}</code> with typed <code>Snippet</code> prop.</li>
+<li><strong>Final Switch-Over (2.5)</strong> — <code>componentApi: 4</code> compatibility shim removed from <code>svelte.config.js</code>. All remaining Svelte 4 deprecation warnings resolved: <code>Dropzone</code>, <code>Spinner</code>, <code>ZeroState</code>, <code>PostingGroup</code> slots converted to snippet props; <code>JsonSchemaForm</code> <code>&lt;svelte:self&gt;</code> replaced with self-import; <code>LastNMonths</code> <code>options</code> array made <code>$derived</code>; <code>MonthPicker</code> <code>selectedYear</code> initialised from raw prop value; <code>ThemeSwitcher</code> initial store call decoupled from reactive variable. <code>isBurger</code> in <code>(app)/+layout.svelte</code> declared with <code>$state()</code>.</li>
+<li><strong>prettier-plugin-svelte</strong> bumped to <code>^3.3</code> to support <code>{@render ...}</code> syntax in formatting.</li>
+<li>
+<p><code>svelte-check</code> now reports <strong>0 errors and 0 warnings</strong> across the entire frontend.</p>
+</li>
+<li>
+<p><strong>Epic 1: Component Modernization (Runes &amp; Event Syntax)</strong> — Systematically migrated all Svelte components and route pages from Svelte 4 syntax to Svelte 5 runes:</p>
+</li>
+<li>
+<p>All <code>export let</code> props converted to <code>$props()</code> / <code>$bindable()</code></p>
+</li>
+<li>All <code>$:</code> reactive statements converted to <code>$derived()</code> or <code>$effect()</code></li>
+<li>All mutable local state annotated with <code>$state()</code></li>
+<li>All DOM event attributes (<code>on:click</code>, <code>on:change</code>, <code>on:keydown</code>, etc.) replaced with lowercase equivalents (<code>onclick</code>, <code>onchange</code>, <code>onkeydown</code>, etc.)</li>
+<li><code>on:*|preventDefault</code> modifiers inlined as <code>e.preventDefault()</code> calls</li>
+<li><code>createEventDispatcher</code> replaced with callback props (<code>ondrop</code>, <code>onselect</code>, <code>onpreview</code>, <code>onsave</code>)</li>
+<li>
+<p>All callers of modernized components updated to pass callback props instead of <code>on:event</code> listeners</p>
+</li>
+<li>
+<p><strong>Svelte 5 runes migration (P2.3)</strong> — Converted 15 remaining <code>src/lib/components/</code> files and 5 route pages from Svelte 4 syntax to Svelte 5 runes: <code>export let</code> → <code>$props()</code> / <code>$bindable()</code>, <code>$:</code> derived expressions → <code>$derived()</code>, <code>$:</code> side-effect blocks → <code>$effect()</code>, and mutable local state → <code>$state()</code>. <code>createEventDispatcher</code> in <code>BulkEditForm</code>, <code>DiffViewModal</code>, and <code>FileTree</code> replaced with callback props (<code>onpreview</code>, <code>onsave</code>, <code>onselect</code>); all callers updated. <code>&lt;svelte:self&gt;</code> in <code>FileTree</code> replaced with an explicit self-import. Goals pages (<code>savings</code>, <code>retirement</code>) converted all <code>onMount</code>-assigned variables to <code>$state()</code> for correct reactivity.</p>
+</li>
+<li>
+<p><strong>Svelte 5 upgrade &amp; UI modernization (P2.2)</strong> — Upgrades the frontend framework to Svelte 5 and begins the incremental migration to rune-based reactivity:</p>
+</li>
+<li>
+<p><strong>Svelte 5</strong> (<code>^5.0.0</code>), <strong>svelte-check</strong> (<code>^4.0.0</code>), <strong>@sveltejs/vite-plugin-svelte</strong> (<code>^4.0.0</code>), and <strong>eslint-plugin-svelte</strong> (<code>^3.0.0</code>) bumped in <code>package.json</code> (#226).</p>
+</li>
+<li><strong>Svelte 4 compatibility layer</strong> enabled in <code>svelte.config.js</code> via <code>compilerOptions.compatibility.componentApi: 4</code>, allowing all existing components to keep working while new ones adopt runes (#227).</li>
+<li><strong>Modal.svelte migrated to Svelte 5 runes</strong> — props use <code>$props()</code> / <code>$bindable()</code>; internal state uses <code>$state()</code>; <code>on:click</code> replaced with <code>onclick</code>. Bulma structural classes (<code>modal</code>, <code>modal-background</code>, <code>modal-card</code>, <code>modal-card-head/body/foot</code>, <code>is-active</code>) replaced with DaisyUI equivalents (<code>du-modal</code>, <code>du-modal-box</code>, <code>du-modal-backdrop</code>, <code>du-modal-open</code>) and Tailwind flex utilities (#228 #229).</li>
+<li><strong>BoxedTabs.svelte migrated to Svelte 5 runes</strong> — <code>export let</code> replaced with <code>$props()</code> / <code>$bindable()</code>; <code>$:</code> block replaced with <code>$effect()</code>; <code>on:click</code> replaced with <code>onclick</code> (#229).</li>
+<li><strong>AccountTree.svelte</strong> — new Svelte 5 rune-based component that renders a hierarchical <code>AccountNode[]</code> tree with keyboard-accessible expand/collapse and single-node selection via a <code>$bindable</code> <code>selected</code> prop. Depth-limited auto-expansion (first two levels open by default) and focus ring via DaisyUI/Tailwind utilities (#230).</li>
+<li>
+<p><strong>Modal callers updated</strong> — <code>FileModal</code>, <code>DiffViewModal</code>, <code>PriceCodeSearchModal</code>, and <code>SyncHistoryOverlay</code> updated to use DaisyUI button classes (<code>du-btn</code>), Tailwind layout utilities, and the new <code>onclick</code> event syntax.</p>
+</li>
+<li>
+<p><strong>Local JSON price provider</strong> — A new built-in price provider (<code>local-json</code>) allows users to maintain custom commodity prices in a plain JSON file on the local filesystem. No network access is required; the file is read on every price-update run. The code field in <code>paisa.yaml</code> is the path to the JSON file (absolute, or relative to the config directory). See <a href="docs/reference/commodities.md">Commodities</a> for the full JSON format specification and examples.</p>
+</li>
+<li><strong>Extensible PriceProvider interface</strong> — <code>internal/model/price.PriceProvider</code> is now fully documented with explicit return-value semantics for every method, making it straightforward to implement a custom provider. Compile-time interface-satisfaction checks (<code>var _ price.PriceProvider = ...</code>) have been added to every built-in provider package to catch drift early.</li>
+</ul>
+<h4 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h4>
+<ul>
+<li>
+<p><strong>Error toast close button fixed</strong> — Removed an unbound inline <code>delete</code> button from the global runtime error toast markup in <code>src/hooks.client.ts</code> and now rely on Bulma Toast's built-in dismiss control (<code>dismissible: true</code>). The visible close X now dismisses error boxes correctly.</p>
+</li>
+<li>
+<p><strong>Config mobile sidebar auto-close on selection</strong> — On mobile widths, choosing a section in More → Configuration now automatically collapses the sidebar overlay so the selected section content is immediately visible.</p>
+</li>
+<li>
+<p><strong>Regression: Configuration schema descriptions</strong> — Updated all regression test fixtures to match the latest configuration schema metadata. This ensures that intentional improvements to configuration documentation (like detailed tooltips and hover text) don't break the regression suite.</p>
+</li>
+<li>
+<p><strong>Income Statement start/end balance fixed</strong> — <code>startingBalance</code> and <code>endingBalance</code> are now computed directly from the actual balance sheet (assets at market value + liabilities at book value), mirroring how the Networth page works. Previously they were derived from an income-flow reconstruction formula that had two bugs: (1) liabilities were negated with the wrong sign, and (2) the current fiscal year's <code>endingBalance</code> was priced at the FY end date (a future date) rather than today. The new approach guarantees that the End Balance row and the Networth page always agree for the current year, and correctly handles liability-funded transactions.</p>
+</li>
+<li>
+<p><strong>Navbar effect recursion fixed</strong> — Reworked breadcrumb/nav selection in <code>src/lib/components/Navbar.svelte</code> to resolve selection from the current path in a pure helper (<code>src/lib/navbar_selection.ts</code>) instead of reading and mutating the same reactive state inside one <code>$effect</code>. This prevents startup/runtime <code>effect_update_depth_exceeded</code> crashes on built apps.</p>
+</li>
+<li>
+<p><strong>Embedded static asset routing fixed</strong> — Updated <code>internal/server/server.go</code> to serve root-level PWA assets (<code>/manifest.webmanifest</code>, <code>/sw.js</code>, Workbox files, and <code>/pwa-*.png</code>) from embedded <code>web/static</code> instead of falling through <code>NoRoute</code> to <code>index.html</code>. This resolves <code>Manifest: Line: 1, column: 1, Syntax error</code> when using the Go-served app.</p>
+</li>
+<li>
+<p><strong>Dashboard startup loop fixed</strong> — Updated <code>src/routes/(app)/+page.svelte</code> to remove a read-after-write reactive pattern in the dashboard <code>$effect</code> (<code>selectedExpenses</code>), preventing a recursive update cycle that could raise <code>effect_update_depth_exceeded</code> on load when the current month has no expense bucket.</p>
+</li>
+<li>
+<p><strong>Manifest endpoint syntax error fixed</strong> — Added <code>static/manifest.webmanifest</code> so <code>/manifest.webmanifest</code> serves valid JSON instead of fallback HTML, resolving browser console errors like <code>Manifest: Line: 1, column: 1, Syntax error</code>.</p>
+</li>
+<li>
+<p><strong>Startup effect loop hardening</strong> — Updated <code>src/lib/components/Actions.svelte</code> to stabilize the <code>obscure</code> store subscription (track previous value correctly and unsubscribe on destroy), preventing repeated <code>refresh()</code> cascades that could trigger <code>effect_update_depth_exceeded</code> on app load.</p>
+</li>
+<li>
+<p><strong>Assets Analysis render crash fixed</strong> — <code>src/routes/(app)/assets/analysis/+page.svelte</code> now initializes the commodity color mapper with a safe fallback function and explicit callable type so the page no longer throws <code>TypeError: ... is not a function</code> during first render while async data is still settling.</p>
+</li>
+<li>
+<p><strong>Negative SVG width warnings fixed</strong> — Clamped stacked bar segment widths in <code>src/lib/gain.ts</code> and <code>src/lib/liabilities/interest.ts</code> to <code>Math.max(0, ...)</code> to avoid invalid <code>&lt;rect width&gt;</code> values caused by floating-point precision drift.</p>
+</li>
+<li>
+<p><strong>Interest chart null-safety hardening</strong> — <code>src/lib/liabilities/interest.ts</code> now guards missing DOM containers and empty timelines, uses safe fallbacks for current overview values, and aligns D3 tick formatter typing with strict TypeScript checks without changing chart behavior.</p>
+</li>
+<li>
+<p><strong>Frontend check dependency resolution</strong> — Installed missing Node packages from <code>package.json</code> so generated Connect/Protobuf client modules resolve correctly during <code>npm run check</code>.</p>
+</li>
+<li>
+<p><strong>AccountTree compatibility fix</strong> — <code>src/lib/components/AccountTree.svelte</code> was migrated from rune-specific APIs to compatible <code>export let</code> props + reactive state/effects, restoring type-safe recursive bindings and removing compile errors.</p>
+</li>
+<li>
+<p><strong>Mobile navbar burger alignment fix</strong> — Updated <code>src/lib/components/Navbar.svelte</code> to enforce left-aligned burger placement on mobile (<code>.navbar-brand .navbar-burger.mobile-drawer-toggle</code>) and replaced invalid self-closing non-void tags in the navbar markup to avoid ambiguous render behavior.</p>
+</li>
+<li>
+<p><strong>UI warning cleanup (actions/sync modal)</strong> — Updated <code>src/lib/components/SyncHistoryOverlay.svelte</code> and <code>src/lib/components/Actions.svelte</code> to remove ambiguous self-closing non-void icon tags, and improved <code>src/lib/components/Modal.svelte</code> backdrop semantics by using a real button instead of a clickable label.</p>
+</li>
+<li>
+<p><strong>Global non-void self-closing cleanup</strong> — Applied a repo-wide Svelte markup normalization pass replacing ambiguous self-closing non-void HTML tags (for example <code>&lt;i /&gt;</code>, <code>&lt;div /&gt;</code>, <code>&lt;span /&gt;</code>) with explicit opening/closing tags across <code>src/**/*.svelte</code>.</p>
+</li>
+<li>
+<p><strong>Closeable runtime error toasts</strong> — Updated global client error handling in <code>src/hooks.client.ts</code> to show dismissible bottom-right toasts with sanitized stack/message content instead of center-screen modal-style error blocks, so users can always close or ignore transient errors.</p>
+</li>
+<li>
+<p><strong>Remaining Svelte accessibility warnings cleared</strong> — Replaced lingering click-only anchors with semantic buttons, added missing labels to icon-only controls, fixed a remaining self-closing non-void table body, and restored <code>src/lib/components/BoxedTabs.svelte</code> to compatible classic Svelte props/reactivity so <code>svelte-check</code> now reports 0 errors and 0 warnings.</p>
+</li>
+<li>
+<p><strong>Repo line endings normalized</strong> — Added a repository-level <code>.gitattributes</code> policy to keep source files on LF across platforms (with Windows-native script exceptions), preventing recurring Windows/Linux newline churn that was causing <code>gofmt -l .</code> lint failures from formatting-only diffs.</p>
+</li>
+<li>
+<p><strong>Client error toast null-safety + mobile navbar action overflow fix</strong> — Hardened <code>src/hooks.client.ts</code> to safely format <code>null</code>/non-Error runtime exceptions (preventing <code>Cannot read properties of null (reading 'stack')</code> while rendering error toasts), updated <code>src/store.ts</code> to allow nullable <code>accountTfIdf</code> initialization, and adjusted mobile navbar action placement so top-right controls no longer get truncated on narrow screens.</p>
+</li>
+<li>
+<p><strong>Responsive navbar action placement fix</strong> — Updated <code>src/lib/components/Navbar.svelte</code> so hamburger-layout breakpoints remain consistent up to tablet width (preventing burger drift before desktop menu switch) and added top-right action icons (<code>SyncingIndicator</code>, theme toggle, and <code>Actions</code>) in hamburger mode while hiding duplicate drawer-end actions.</p>
+</li>
+<li>
+<p><strong>Docker build fix</strong> — Replaced <code>svelte-file-dropzone</code> (incompatible with Svelte 5) with a local self-contained <code>Dropzone.svelte</code> component in <code>src/lib/components/</code>. The local component matches the same API (<code>multiple</code>, <code>accept</code>, <code>inputElement</code> props; dispatches <code>drop</code> event with <code>{ acceptedFiles, fileRejections }</code>).</p>
+</li>
+<li>
+<p><strong>Dashboard crash on Svelte 5 fixed</strong> — Removed <code>@egjs/svelte-grid</code> usage from dashboard and credit-card detail routes and replaced it with native CSS grid wrappers. This avoids runtime failures like <code>TypeError: Class constructor ... cannot be invoked without 'new'</code> caused by legacy class-based Svelte components during route hydration.</p>
+</li>
+<li>
+<p><strong>Frontend build emits sourcemaps</strong> — Enabled <code>build.sourcemap</code> in <code>vite.config.js</code> so minified hashed chunks can be mapped back to original source during debugging.</p>
+</li>
+<li>
+<p><strong>Mobile navbar accessibility fix</strong> — Closing the burger menu now blurs any focused descendant before hiding the menu, and the closed menu is marked <code>inert</code> to prevent focus from remaining inside hidden navigation content.</p>
+</li>
+<li>
+<p><strong>PWA cache/update hardening</strong> — Switched to <code>registerType: "autoUpdate"</code>, enabled <code>skipWaiting</code>, <code>clientsClaim</code>, and <code>cleanupOutdatedCaches</code>, and disabled dev-time service worker registration to reduce stale asset/manifest mismatches during local development.</p>
+</li>
+<li>
+<p><strong>Manifest and dashboard action robustness</strong> — Updated the app manifest link to use <code>%sveltekit.assets%/manifest.webmanifest</code> and changed the dashboard "Setup Demo" trigger to a semantic <code>&lt;button&gt;</code>.</p>
+</li>
+<li>
+<p><strong>Theme toggle duplication on desktop fixed</strong> — The navbar theme switcher was appearing twice on desktop (in both <code>mobile-top-actions</code> and <code>menu-actions-row</code>) due to missing CSS specificity. Added <code>display: none !important</code> to <code>mobile-top-actions</code> to ensure it only shows on mobile (≤1023px breakpoint), and explicitly set <code>display: flex</code> for <code>menu-actions-row</code> to show it on desktop.</p>
+</li>
+<li>
+<p><strong>MonthPicker non-selected month styling improved</strong> — Non-selected month buttons in the month picker dropdown now have a subtle hover background and outline, making them appear clearly interactive and clickable instead of plain text. Selected months remain highlighted in blue with bold text.</p>
+</li>
+<li>
+<p><strong>Local stale-chunk recovery</strong> — Added a client bootstrap safeguard that, on local/dev hosts, unregisters existing service workers, clears Cache Storage, and performs a one-time reload to avoid mixed old/new chunk runtime errors such as <code>TypeError: ... is not a function</code>.</p>
+</li>
+<li>
+<p><strong>AutoComplete no longer crashes the server</strong> — The <code>in-mfapi</code> (MF API) and <code>com-purifiedbytes-nps</code> providers previously called <code>log.Fatal</code> when the autocomplete cache could not be populated, killing the server process. They now log the error at <code>Error</code> level and return an empty suggestion list instead.</p>
+</li>
+<li>
+<p><strong>Typed API via Protobuf/Connect (P3.1)</strong> — Eliminates hand-maintained TypeScript interfaces and <code>ajax</code> fetch wrappers for selected endpoints by driving the API contract from a <code>.proto</code> schema, giving compile-time type safety on both sides.</p>
+</li>
+<li>
+<p><code>proto/api.proto</code> — defines <code>Transaction</code>, <code>Posting</code>, <code>AccountBalance</code>, <code>AccountNode</code>, and the <code>PaisaService</code> service with a <code>GetAccountTree</code> RPC. Package name <code>paisa.v1</code>; Go package <code>github.com/ananthakumaran/paisa/internal/gen/paisa/v1;paisav1</code> (#234).</p>
+</li>
+<li><code>internal/gen/</code> — committed generated Go stubs (<code>api.pb.go</code>, <code>paisav1connect/api.connect.go</code>) produced by <code>protoc-gen-go</code> + <code>protoc-gen-connect-go</code> (#235).</li>
+<li><strong>Connect-Go integrated into Gin</strong> — <code>connectrpc.com/connect</code> is added as a dependency; <code>PaisaService</code> endpoints are mounted at <code>/connect/paisa.v1.PaisaService/…</code> alongside the existing REST routes. <code>TokenAuthMiddleware</code> now protects <code>/connect/</code> paths with the same session-token logic as <code>/api/</code> paths (#235).</li>
+<li><strong><code>GetAccountTree</code> endpoint</strong> — <code>internal/server/connect_service.go</code> implements <code>PaisaServiceHandler.GetAccountTree</code>, which converts the flat <code>[]string</code> from <code>accounting.AllAccounts</code> into a hierarchical <code>AccountNode</code> tree sorted alphabetically at each level. Intermediate-only nodes (not direct leaf accounts) have <code>is_leaf: false</code> (#236).</li>
+<li><code>src/lib/gen/api_pb.ts</code> — committed generated TypeScript types (produced by <code>protoc-gen-es@2.x</code>). Regenerate with <code>npm run generate:proto</code> or <code>make proto</code> (#237).</li>
+<li><strong><code>src/lib/connect_client.ts</code></strong> — typed <code>PaisaService</code> Connect transport client. Uses <code>createConnectTransport</code> from <code>@connectrpc/connect-web</code> targeting <code>/connect</code>; injects the same <code>X-Auth</code> session token as the REST <code>ajax</code> helper (#237, #238).</li>
+<li><strong><code>src/lib/account_tree.ts</code></strong> — <code>fetchAccountTree()</code> calls <code>paisaClient.getAccountTree()</code> with the same <code>loading</code> store behaviour as <code>ajax</code>; <code>flattenAccountTree()</code> converts the tree back to a flat <code>string[]</code> for backward-compatible consumption (#238).</li>
+<li>
+<p><code>make proto</code> / <code>npm run generate:proto</code> — regeneration targets for both backend and frontend stubs (#237).</p>
+</li>
+<li>
+<p><strong>Sync history/log overlay</strong> — A "Sync History" button (clock-rotate-left icon) is added to the header action bar. Clicking it opens a modal overlay that lists all known background jobs in reverse-chronological order, showing status badge (colour-coded: success/danger/info/warning), truncated job ID, created-at timestamp, started/finished timestamps, wall-clock duration, error message snippet (for failed jobs), and an expandable list of per-step <code>details</code>. A "Clear history" button resets the in-memory jobs store. The overlay can be opened and closed at any time without interrupting an in-progress sync. A count badge on the history button shows the total number of tracked jobs (P1.3).</p>
+</li>
+<li><strong>Header syncing indicator</strong> — A non-intrusive "Syncing…" badge with a spinning icon appears in the app header (navbar-end) while any background job is active (<code>isJobRunning</code> is true) and disappears with a smooth fade once the job completes. The indicator is hidden on mobile via <code>is-hidden-mobile</code> to keep the layout stable, and is declared with <code>aria-live="polite"</code> for accessibility. No layout shift occurs because the element is not present in the DOM when idle (P1.3).</li>
+<li><strong>Frontend jobs store</strong> — New <code>src/lib/stores/jobs.ts</code> module provides a global Svelte store (<code>jobs</code>) that tracks background <code>Job</code> objects keyed by their ID. Exposes <code>upsert</code> (insert or replace), <code>updateById</code> (partial merge; returns <code>true</code> when the ID was found), <code>reset</code> (clear all), and <code>snapshot</code> (synchronous read). Derived stores <code>jobsList</code> (sorted by <code>created_at</code>) and <code>isJobRunning</code> (true while any job is pending or running) are exported for reactive UI consumption. The <code>jobs</code>, <code>jobsList</code>, and <code>isJobRunning</code> names are re-exported from <code>src/store.ts</code> for consistency with other app-wide stores (P1.3).</li>
+<li><strong><code>Job</code> and <code>JobStatus</code> types in utils.ts</strong> — Added <code>JobStatus</code> union type (<code>"pending" | "running" | "completed" | "failed"</code>) and <code>Job</code> interface mirroring the Go <code>worker.Job</code> struct. Date fields (<code>created_at</code>, <code>started_at</code>, <code>finished_at</code>) are typed as <code>string</code> because the ajax reviver only converts keys matching <code>/Date|date|time|now/</code>.</li>
+<li><strong><code>POST /api/sync</code> ajax overload updated</strong> — The TypeScript overload for <code>/api/sync</code> now declares the return type as <code>{ job_id: string }</code>, matching the <code>202 Accepted</code> response the backend already returns. A new overload for <code>GET /api/jobs/:id</code> returning <code>Job</code> is also added.</li>
+<li><strong><code>src/lib/sync.ts</code> adapted for async API</strong> — <code>sync()</code> now extracts <code>job_id</code> from the <code>202</code> response and immediately upserts a <code>pending</code> job into the jobs store. Network-level failures (non-2xx, connection errors) are surfaced as a Bulma toast; job-level failures will be surfaced via polling (P1.3-12).</li>
+<li><strong><code>startPolling</code> — background job status polling</strong> — <code>startPolling(jobId, onTerminal?, options?)</code> polls <code>GET /api/jobs/:id</code> in the background at 2-second intervals, updating the jobs store on each response. Polling stops automatically when the job reaches a terminal state (completed or failed) or after 150 attempts (~5 minutes). Up to 5 consecutive network errors are tolerated before polling aborts; the error counter resets on the next successful response. On failure, a Bulma toast is shown with the error message. The <code>onTerminal</code> callback is called with the final job, enabling callers (e.g. <code>Actions.svelte</code>) to trigger a data refresh. All timing and retry parameters are injectable for unit testing (P1.3).</li>
+<li><strong><code>Actions.svelte</code> updated for async sync</strong> — <code>syncWithLoader</code> now calls <code>startPolling</code> after <code>sync()</code> returns a <code>job_id</code>, deferring the data <code>refresh()</code> to the <code>onTerminal</code> callback rather than running it immediately. This ensures the UI reflects the completed sync result rather than stale data (P1.3).</li>
+<li><strong><code>createJobsStore</code> exported</strong> — The <code>createJobsStore</code> factory in <code>src/lib/stores/jobs.ts</code> is now exported so tests and tooling can create isolated store instances without sharing the module-level singleton.</li>
+<li><strong>Asynchronous POST /api/sync</strong> — <code>POST /api/sync</code> now returns <code>202 Accepted</code> immediately with <code>{"job_id": "&lt;uuid&gt;"}</code> instead of blocking until the sync completes. The sync work is performed in the background via the <code>worker.Registry</code>; callers can poll the job status via <code>GET /api/jobs/:id</code> (P1.2). Readonly and authentication behaviour are preserved: the endpoint is still guarded by <code>ReadonlyMiddleware</code> and <code>TokenAuthMiddleware</code>.</li>
+<li><strong>GET /api/jobs/:id</strong> — New read endpoint that returns the current state of a background job as a JSON object (fields: <code>id</code>, <code>status</code>, <code>created_at</code>, <code>started_at</code>, <code>finished_at</code>, <code>error</code>, <code>details</code>). Returns <code>404</code> with the standard error envelope when the job ID is unknown.</li>
+<li><strong>Background worker package</strong> — New <code>internal/service/worker</code> package provides a thread-safe <code>Registry</code> for submitting and tracking background jobs. Each <code>Job</code> progresses through a defined state machine (<code>Pending → Running → Completed | Failed</code>) with creation, start, and finish timestamps. Callers submit a <code>func(context.Context) error</code> via <code>Registry.Submit</code> and receive a unique job ID; status can be polled with <code>Registry.Get</code> or enumerated with <code>Registry.List</code>. This lays the groundwork for the asynchronous sync API (P1.2).</li>
+<li><strong>Per-step job details</strong> — <code>Job</code> now carries a <code>Details []string</code> field that holds per-step diagnostic messages accumulated during job execution. For example, individual commodity fetch failures from a price-scraper job are each recorded as a separate entry rather than collapsed into a single top-level error string. Present on both successful and failed jobs. <code>Registry.SubmitDetailed</code> accepts a <code>func(context.Context) ([]string, error)</code> callback and stores the returned details in the job.</li>
+<li><strong>Price scraper failures in job details</strong> — Each commodity price fetch failure from <code>SyncCommodities</code> (e.g. network errors, missing quote currency) is now recorded as a separate entry in <code>Job.Details</code> so operators can identify the exact failing commodity without inspecting server logs.</li>
+<li><strong>XIRR pre-computation in sync job</strong> — After a journal or price sync, <code>service.WarmXIRRCache</code> pre-computes XIRR for every investment account and stores the results in the SQLite computation cache. Any accounts whose Newton-Raphson XIRR solver does not converge are recorded in <code>Job.Details</code> as warnings so operators can identify data problems. Subsequent API calls to <code>/api/gain</code> and <code>/api/networth</code> are served from cache.</li>
+<li><strong><code>xirr.XIRRWithConvergence</code></strong> — New exported function alongside the existing <code>XIRR</code> that returns <code>(decimal.Decimal, bool)</code>, where the bool reports whether the Newton-Raphson iteration converged. Callers that need to distinguish a genuine zero XIRR from a non-convergent solver can use this variant.</li>
+<li><strong>Explicit Job state-machine enforcement</strong> — The <code>worker</code> package now defines a <code>validTransitions</code> map that enumerates every legal <code>JobStatus</code> transition. A <code>transition()</code> helper validates each state change at runtime and panics on any illegal move (e.g. Completed → Running), making invalid transitions immediately observable. <code>JobStatus.IsTerminal()</code> returns true for <code>Completed</code> and <code>Failed</code>, enabling callers to check whether a job has reached a terminal state without inspecting the status string directly.</li>
+<li><strong>Deterministic <code>Registry.List</code> ordering</strong> — <code>Registry.List()</code> now returns jobs sorted by <code>CreatedAt</code> ascending (oldest job first), replacing the previous non-deterministic map-iteration order. All concurrent-access tests for <code>List</code>, <code>Get</code>, and <code>Submit</code> pass under <code>-race</code>.</li>
+<li><strong>SHA-256 file hash utility</strong> — Added <code>SHA256File(path string) (string, error)</code> in <code>internal/utils/hash.go</code>. Streams file content in chunks for efficient large-file handling, and returns descriptive errors on open/read failures. This utility supports upcoming incremental sync checks (P1.1).</li>
+<li><strong>Metadata key/value table</strong> — New <code>internal/model/metadata</code> package adds a <code>Metadata</code> model backed by a SQLite table (<code>metadata</code>) with a unique index on <code>key</code>. A new schema migration (v3) creates the table for both fresh installs and existing databases.</li>
+<li><strong>Metadata persistence API</strong> — <code>metadata.Get(db, key)</code> returns the stored value or <code>gorm.ErrRecordNotFound</code> for missing keys; <code>metadata.GetOrDefault(db, key, default)</code> returns a caller-supplied fallback for missing keys; <code>metadata.Set(db, key, value)</code> performs an atomic <code>INSERT … ON CONFLICT DO UPDATE</code> upsert, covering both create and update paths consistently.</li>
+<li><strong>SyncJournal hash-skip optimisation</strong> — <code>SyncJournal</code> now computes the SHA-256 hash of the journal file before invoking any ledger CLI commands. When the hash matches the value stored in the <code>journal_hash</code> metadata key from the last successful sync, all CLI validation and parsing work is skipped and the result carries <code>Skipped: true</code>. The hash is only persisted after a fully successful sync, so a partial failure never silently suppresses the next run.</li>
+</ul>
+<h3 id="08-beta-2026-04-26-multi-currency-pricing-rollout">0.8-beta (2026-04-26) — Multi-currency pricing rollout<a class="headerlink" href="#08-beta-2026-04-26-multi-currency-pricing-rollout" title="Permanent link">&para;</a></h3>
+<h4 id="new-features_1">New features<a class="headerlink" href="#new-features_1" title="Permanent link">&para;</a></h4>
 <ul>
 <li><strong>Multi-currency price schema</strong> — <code>prices</code> table gains <code>quote_commodity</code> and
   <code>source</code> columns; a backward-compatible migration (v1 → v2) backfills
@@ -2491,7 +2753,7 @@
 <li><strong>FX Rates Page</strong> — Added a new page for tracking exchange rates (FX Rates) with derived rate support.</li>
 <li><strong>Background Sync</strong> — Implement periodic background sync for backend to improve data freshness, with schedule option for journal and price sync.</li>
 </ul>
-<h4 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h4>
+<h4 id="bug-fixes_1">Bug fixes<a class="headerlink" href="#bug-fixes_1" title="Permanent link">&para;</a></h4>
 <ul>
 <li><strong>Assets -&gt; Gain page calculations</strong> — Fixed units-vs-currency mismatch in XIRR, investment, and absolute return calculations by using historical market prices when ledger falls back to units.</li>
 <li><strong>Same-Day Price/Rate Race Conditions</strong> — Fixed by using EndOfDay pivot.</li>
