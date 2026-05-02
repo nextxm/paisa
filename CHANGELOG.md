@@ -44,6 +44,8 @@
 
 #### Bug fixes
 
+- **Error toast close button fixed** — Removed an unbound inline `delete` button from the global runtime error toast markup in `src/hooks.client.ts` and now rely on Bulma Toast's built-in dismiss control (`dismissible: true`). The visible close X now dismisses error boxes correctly.
+
 - **Config mobile sidebar auto-close on selection** — On mobile widths, choosing a section in More → Configuration now automatically collapses the sidebar overlay so the selected section content is immediately visible.
 
 - **Regression: Configuration schema descriptions** — Updated all regression test fixtures to match the latest configuration schema metadata. This ensures that intentional improvements to configuration documentation (like detailed tooltips and hover text) don't break the regression suite.
