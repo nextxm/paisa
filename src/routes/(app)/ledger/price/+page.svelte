@@ -5,6 +5,7 @@
   import _ from "lodash";
   import { onMount } from "svelte";
   import VirtualList from "svelte-tiny-virtual-list";
+  import PriceExportModal from "$lib/components/PriceExportModal.svelte";
 
   type HistoryMode = "latest" | "all";
 
@@ -22,6 +23,7 @@
   let availableBases: string[] = $state([]);
   let availableQuotes: string[] = $state([]);
   let availableSources: string[] = $state([]);
+  let exportModalOpen = $state(false);
 
   const ITEM_SIZE = 18;
 
@@ -129,10 +131,29 @@
     reportCurrency = "";
   }
 
+  async function handleExport(options: { format: string; scope: string; zip: boolean }) {
+    const params = new URLSearchParams();
+    params.set("format", options.format);
+    if (options.scope === "filtered" && filterBase) {
+      params.set("base", filterBase);
+    }
+    if (options.zip) {
+      params.set("zip", "true");
+    }
+
+    // Reuse other active filters if exporting all or if they are relevant
+    if (filterQuote) params.set("quote", filterQuote);
+    if (filterSource) params.set("source", filterSource);
+
+    window.location.href = `/api/price/export?${params.toString()}`;
+  }
+
   onMount(async () => {
     await Promise.all([loadFilterOptions(), fetchPrice()]);
   });
 </script>
+
+<PriceExportModal bind:open={exportModalOpen} {filterBase} onexport={handleExport} />
 
 <section class="section tab-price">
   <div class="container is-fluid">
@@ -149,6 +170,17 @@
                   <i class="fas fa-trash-can"></i>
                 </span>
                 <span>Clear Price Cache</span>
+              </button>
+            </p>
+            <p class="control">
+              <button
+                class="button is-small is-link invertable is-light"
+                onclick={(_e) => (exportModalOpen = true)}
+              >
+                <span class="icon is-small">
+                  <i class="fa-solid fa-file-arrow-down"></i>
+                </span>
+                <span>Export</span>
               </button>
             </p>
             <p class="control">

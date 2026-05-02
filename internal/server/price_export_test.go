@@ -1,6 +1,8 @@
 package server
 
 import (
+	"archive/zip"
+	"bytes"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -273,5 +275,52 @@ func TestExportPricesHandler_ContentDisposition(t *testing.T) {
 			assert.Contains(t, cd, "attachment")
 			assert.Contains(t, cd, "prices."+tc.ext)
 		})
+	}
+}
+
+// TestExportPricesHandler_ZipMode verifies that ?zip=true returns a ZIP
+// archive containing one file per commodity.
+func TestExportPricesHandler_ZipMode(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+	seedPricesIntoDB(t, db, []price.Price{
+		{CommodityType: config.Unknown, CommodityID: "USD", CommodityName: "USD",
+			QuoteCommodity: "INR", Date: mustParseDate("2024-01-01"),
+			Value: decimal.NewFromFloat(83.0), Source: "journal"},
+		{CommodityType: config.Unknown, CommodityID: "EUR", CommodityName: "EUR",
+			QuoteCommodity: "INR", Date: mustParseDate("2024-01-01"),
+			Value: decimal.NewFromFloat(90.0), Source: "journal"},
+	})
+	r := buildExportRouter(t, db)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/price/export?format=hledger&zip=true", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, "application/zip", rec.Header().Get("Content-Type"))
+	assert.Contains(t, rec.Header().Get("Content-Disposition"), "prices.zip")
+
+	body := rec.Body.Bytes()
+	zr, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
+	require.NoError(t, err)
+
+	// We expect two files: USD.journal and EUR.journal
+	assert.Len(t, zr.File, 2)
+	filenames := []string{zr.File[0].Name, zr.File[1].Name}
+	assert.Contains(t, filenames, "USD.journal")
+	assert.Contains(t, filenames, "EUR.journal")
+
+	for _, f := range zr.File {
+		rc, err := f.Open()
+		require.NoError(t, err)
+		content, _ := io.ReadAll(rc)
+		rc.Close()
+
+		if f.Name == "USD.journal" {
+			assert.Contains(t, string(content), "P 2024-01-01 USD 83 INR")
+		} else {
+			assert.Contains(t, string(content), "P 2024-01-01 EUR 90 INR")
+		}
 	}
 }

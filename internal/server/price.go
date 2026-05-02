@@ -1,6 +1,7 @@
 package server
 
 import (
+	"archive/zip"
 	"fmt"
 	"net/http"
 	"sort"
@@ -404,6 +405,33 @@ func ExportPricesHandler(db *gorm.DB, c *gin.Context) {
 	}
 
 	// --- render ---
+	zipMode := c.Query("zip") == "true"
+	ext := exportFormatToExtension[format]
+
+	if zipMode {
+		grouped := groupPricesByCommodity(prices)
+		c.Header("Content-Disposition", `attachment; filename="prices.zip"`)
+		c.Header("Content-Type", "application/zip")
+
+		zw := zip.NewWriter(c.Writer)
+		for commodity, pList := range grouped {
+			text, err := price.FormatPrices(pList, format)
+			if err != nil {
+				log.WithError(err).Errorf("ExportPricesHandler: failed to format prices for %s", commodity)
+				continue
+			}
+
+			f, err := zw.Create(fmt.Sprintf("%s.%s", commodity, ext))
+			if err != nil {
+				log.WithError(err).Errorf("ExportPricesHandler: failed to create zip entry for %s", commodity)
+				continue
+			}
+			_, _ = f.Write([]byte(text))
+		}
+		zw.Close()
+		return
+	}
+
 	text, err := price.FormatPrices(prices, format)
 	if err != nil {
 		log.WithError(err).Error("ExportPricesHandler: FormatPrices failed")
@@ -412,7 +440,6 @@ func ExportPricesHandler(db *gorm.DB, c *gin.Context) {
 		return
 	}
 
-	ext := exportFormatToExtension[format]
 	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="prices.%s"`, ext))
 	c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(text))
 }
