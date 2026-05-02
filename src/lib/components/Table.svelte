@@ -31,7 +31,11 @@
 
     if (tabulator) {
       if (data.length === 0) {
-        tabulator.clearData();
+        try {
+          await tabulator.clearData();
+        } catch {
+          // component was unmounted before clearData completed
+        }
         return;
       }
 
