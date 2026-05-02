@@ -4,6 +4,18 @@
 
 #### New features
 
+- **Firefly III Webhook Integration** — Added a dedicated `/api/webhooks/firefly` endpoint that automatically parses and imports transactions from Firefly III via webhooks. Supported transactions are appended to the configured `add_journal_path` journal file.
+
+- **Price Export Feature** — Users can now export their commodity price history in Ledger, hLedger, or Beancount formats. The export supports filtering by commodity and provides options for single-file or multi-file (ZIP) output.
+
+- **Dynamic Multi-Currency Reporting** — Improved the Income Statement and Market services to use period-end or dynamic exchange rates for foreign currency transactions, ensuring more accurate marked-to-market financial reporting across different timeframes.
+
+- **Monthly Cashflow Widget** — Added a new multi-currency monthly cashflow breakdown widget to the dashboard. The widget provides a high-level view of income vs. expenses using original ledger quantities.
+
+- **Advanced Journal Configuration** — Added `add_journal_path` to the configuration, allowing users to specify a dedicated journal file for transactions added via the API or webhooks, keeping the main journal file clean.
+
+- **Mobile & PWA Enhancements** — Implemented a responsive navigation layout with a mobile-optimized side menu. Improved PWA support with better icon sizing, manifest validation, and consistent theme switching across mobile devices.
+
 - **Assets Balance flat view + exports** — Added a Flat Accounts toggle on the Assets → Balance page and support for exporting the current view to CSV or Excel. Exports now respect the selected display mode (hierarchy or flat), and `/api/assets/balance` accepts `flat=true` to return non-rollup account rows.
 
 - **Epic: Refining Paisa Configuration Interface** — Redesigned the configuration screen to improve navigation and layout. Transitioned from a monolithic JSON form to a structured, sidebar-based interface with categorized sections for better discoverability and user experience.
