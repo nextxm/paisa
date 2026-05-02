@@ -9,6 +9,10 @@
       "type": "string",
       "description": "Path to your journal file. It can be absolute or relative to the configuration file. The main journal file can refer other files using <code>include</code> as long as all the files are in the same or sub directory"
     },
+    "add_journal_path": {
+      "type": "string",
+      "description": "Path to the journal file where quick-add transactions will be appended. It can be absolute or relative to the configuration file."
+    },
     "db_path": {
       "type": "string",
       "description": "Path to your database file. It can be absolute or relative to the configuration file. The database file will be created if it does not exist."

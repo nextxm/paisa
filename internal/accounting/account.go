@@ -20,7 +20,10 @@ func loadAccountCache(db *gorm.DB) {
 }
 
 func AllAccounts(db *gorm.DB) []string {
-	acache.Do(func() { loadAccountCache(db) })
+	acache.Do(func() {
+		loadAccountCache(db)
+		slices.Sort(acache.accounts)
+	})
 	return acache.accounts
 }
 

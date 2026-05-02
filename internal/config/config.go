@@ -140,6 +140,7 @@ type CreditCard struct {
 
 type Config struct {
 	JournalPath                string       `json:"journal_path" yaml:"journal_path"`
+	AddJournalPath             string       `json:"add_journal_path" yaml:"add_journal_path"`
 	DBPath                     string       `json:"db_path" yaml:"db_path"`
 	SheetsDirectory            string       `json:"sheets_directory" yaml:"sheets_directory"`
 	Readonly                   bool         `json:"readonly" yaml:"readonly"`
@@ -390,6 +391,17 @@ func GetJournalPath() string {
 	}
 
 	return config.JournalPath
+}
+
+func GetAddJournalPath() string {
+	if config.AddJournalPath == "" {
+		return ""
+	}
+	if !filepath.IsAbs(config.AddJournalPath) {
+		return filepath.Join(GetConfigDir(), config.AddJournalPath)
+	}
+
+	return config.AddJournalPath
 }
 
 func GetSheetDir() string {
