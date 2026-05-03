@@ -135,7 +135,7 @@ export function setAllowedDateRange(dates: dayjs.Dayjs[]) {
 }
 
 export const willRefresh = writable(0);
-export function refresh() {
+export async function refresh() {
   if (get(editorState).hasUnsavedChanges) {
     const confirmed = confirm("You have unsaved changes. Are you sure you want to leave?");
     if (!confirmed) {
@@ -143,6 +143,12 @@ export function refresh() {
     } else {
       editorState.update((current) => _.assign({}, current, { hasUnsavedChanges: false }));
     }
+  }
+  try {
+    const { invalidateAll } = await import("$app/navigation");
+    await invalidateAll();
+  } catch (e) {
+    // Ignore in environments where SvelteKit modules are not available
   }
   willRefresh.update((n) => n + 1);
   return true;

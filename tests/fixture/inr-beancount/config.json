@@ -1575,5 +1575,6 @@
     "title": "Paisa",
     "type": "object"
   },
-  "last_price_update": ""
+  "last_price_update": "",
+  "is_journal_dirty": false
 }

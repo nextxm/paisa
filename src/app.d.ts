@@ -73,6 +73,7 @@ interface UserConfig {
   firefly?: FireflyConfig;
   labs?: LabsConfig;
   last_price_update?: string;
+  is_journal_dirty: boolean;
 }
 
 interface Runtime {

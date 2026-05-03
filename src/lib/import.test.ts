@@ -49,7 +49,7 @@ describe("import", () => {
             .toString();
 
           const compiled = Handlebars.compile(template);
-          const result = await parse(new File([input], inputFile));
+          const result = await parse(new File([new Uint8Array(input)], inputFile));
           const rows = asRows(result);
 
           const actual = render(rows, compiled, { trim: true });

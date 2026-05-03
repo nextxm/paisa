@@ -6,7 +6,7 @@ COPY . .
 RUN npx svelte-kit sync && npm run build
 
 # Stage 1: Fetch tools natively for the TARGET architecture
-FROM --platform=$TARGETPLATFORM alpine:3.21 AS tool-provider
+FROM alpine:3.21 AS tool-provider
 RUN apk add --no-cache ledger hledger beancount
 
 # Stage 2: Build Paisa using fast native cross-compilation

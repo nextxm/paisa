@@ -4,6 +4,8 @@
 
 #### New features
 
+- **Price & Journal Freshness Tracking** — Added visual indicators to the navigation bar to track the freshness of your financial data. The "Update Prices" icon turns amber after 24 hours and red after 48 hours. The "Sync Journal" icon turns amber if any journal files have been modified since the last sync.
+
 - **Firefly III Webhook Integration** — Added a dedicated `/api/webhooks/firefly` endpoint that automatically parses and imports transactions from Firefly III via webhooks. Supported transactions are appended to the configured `add_journal_path` journal file.
  
 - **Firefly III Reconciliation (Labs)** — Introduced a new balance reconciliation tool to compare Paisa (Ledger) account balances with Firefly III data. The feature is hidden by default and can be enabled under the new "Labs" configuration section. Includes support for ignoring specific accounts and case-insensitive account matching.

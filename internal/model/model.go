@@ -22,8 +22,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// journalHashKey is the metadata key used to persist the last-synced journal hash.
-const journalHashKey = "journal_hash"
+// JournalHashKey is the metadata key used to persist the last-synced journal hash.
+const JournalHashKey = "journal_hash"
 
 // lastPriceSyncKey is the metadata key used to persist the last-synced price fetch time.
 const LastPriceSyncKey = "last_price_sync"
@@ -65,7 +65,7 @@ func SyncJournal(db *gorm.DB) (SyncResult, error) {
 	// A match means the file has not changed since the last successful sync, so
 	// we can skip all expensive CLI work.
 	if currentHash != "" {
-		cachedHash, err := metadata.GetOrDefault(db, journalHashKey, "")
+		cachedHash, err := metadata.GetOrDefault(db, JournalHashKey, "")
 		if err != nil {
 			log.WithFields(log.Fields{"stage": "journal.hash", "error": err}).
 				Warn("Failed to read cached journal hash; proceeding with full sync")
@@ -129,7 +129,7 @@ func SyncJournal(db *gorm.DB) (SyncResult, error) {
 	// Persist the journal hash only after a fully successful sync so that a
 	// partial failure never causes a subsequent run to be silently skipped.
 	if currentHash != "" {
-		if err := metadata.Set(db, journalHashKey, currentHash); err != nil {
+		if err := metadata.Set(db, JournalHashKey, currentHash); err != nil {
 			log.WithFields(log.Fields{"stage": "journal.hash", "error": err}).
 				Warn("Failed to store journal hash; next sync will not be skipped")
 		}

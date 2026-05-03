@@ -632,6 +632,7 @@ export function ajax(route: "/api/config"): Promise<{
   now: dayjs.Dayjs;
   accounts: string[];
   last_price_update: string;
+  is_journal_dirty: boolean;
 }>;
 export function ajax(
   route: "/api/config/provider-debug-http",

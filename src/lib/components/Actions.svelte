@@ -7,7 +7,7 @@
   import { get } from "svelte/store";
   import { onDestroy } from "svelte";
   import dayjs from "dayjs";
-  import { refresh, now } from "../../store";
+  import { refresh, now, willRefresh } from "../../store";
   import SyncHistoryOverlay from "./SyncHistoryOverlay.svelte";
 
   let showHistory = $state(false);
@@ -42,6 +42,7 @@
   }
 
   const priceStatusClass = $derived.by(() => {
+    $willRefresh;
     const lastUpdate = USER_CONFIG.last_price_update;
     if (!lastUpdate) return "has-text-danger";
 
@@ -49,6 +50,11 @@
     if (diff >= 48) return "has-text-danger";
     if (diff >= 24) return "has-text-warning-dark";
     return "";
+  });
+
+  const journalStatusClass = $derived.by(() => {
+    $willRefresh;
+    return USER_CONFIG.is_journal_dirty ? "has-text-warning-dark" : "";
   });
 </script>
 
@@ -75,7 +81,7 @@
     aria-label="Sync Journal"
     onclick={(_e) => syncWithLoader({ journal: true })}
   >
-    <span class="icon">
+    <span class="icon {journalStatusClass}">
       <i class="fa-regular fa-file-lines"></i>
     </span>
   </button>
