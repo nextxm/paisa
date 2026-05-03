@@ -626,9 +626,13 @@ type RequestOptions = RequestInit & {
   background?: boolean;
 };
 
-export function ajax(
-  route: "/api/config"
-): Promise<{ config: UserConfig; schema: JSONSchema7; now: dayjs.Dayjs; accounts: string[] }>;
+export function ajax(route: "/api/config"): Promise<{
+  config: UserConfig;
+  schema: JSONSchema7;
+  now: dayjs.Dayjs;
+  accounts: string[];
+  last_price_update: string;
+}>;
 export function ajax(
   route: "/api/config/provider-debug-http",
   options?: RequestOptions

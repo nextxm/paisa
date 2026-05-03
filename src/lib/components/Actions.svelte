@@ -1,15 +1,16 @@
 <script lang="ts">
   import { sync, startPolling } from "$lib/sync";
   import { isLoggedIn, logout } from "$lib/utils";
-  import { refresh } from "../../store";
   import { obscure } from "../../persisted_store";
   import { goto } from "$app/navigation";
   import { jobsList } from "$lib/stores/jobs";
   import { get } from "svelte/store";
   import { onDestroy } from "svelte";
+  import dayjs from "dayjs";
+  import { refresh, now } from "../../store";
   import SyncHistoryOverlay from "./SyncHistoryOverlay.svelte";
 
-  let showHistory = false;
+  let showHistory = $state(false);
 
   async function syncWithLoader(request: Record<string, any>) {
     const jobId = await sync(request);
@@ -39,6 +40,16 @@
   function toggleObscure() {
     obscure.set(!$obscure);
   }
+
+  const priceStatusClass = $derived.by(() => {
+    const lastUpdate = USER_CONFIG.last_price_update;
+    if (!lastUpdate) return "has-text-danger";
+
+    const diff = now().diff(dayjs(lastUpdate), "hour");
+    if (diff >= 48) return "has-text-danger";
+    if (diff >= 24) return "has-text-warning-dark";
+    return "";
+  });
 </script>
 
 <div class="is-flex is-align-items-center" style="gap: 0.25rem;">
@@ -75,7 +86,7 @@
     aria-label="Update Prices"
     onclick={(_e) => syncWithLoader({ prices: true })}
   >
-    <span class="icon">
+    <span class="icon {priceStatusClass}">
       <i class="fas fa-dollar-sign"></i>
     </span>
   </button>

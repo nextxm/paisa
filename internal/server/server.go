@@ -14,6 +14,8 @@ import (
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/gen/paisa/v1/paisav1connect"
 	"github.com/ananthakumaran/paisa/internal/generator"
+	"github.com/ananthakumaran/paisa/internal/model"
+	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/session"
 	"github.com/ananthakumaran/paisa/internal/model/template"
 	"github.com/ananthakumaran/paisa/internal/prediction"
@@ -90,7 +92,14 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 			n := utils.Now()
 			now = &n
 		}
-		c.JSON(200, gin.H{"config": config.GetConfig(), "accounts": accounting.AllAccounts(db), "now": now, "schema": config.GetSchema()})
+		lastPriceUpdate, _ := metadata.GetOrDefault(db, model.LastPriceSyncKey, "")
+		c.JSON(200, gin.H{
+			"config":            config.GetConfig(),
+			"accounts":          accounting.AllAccounts(db),
+			"now":               now,
+			"schema":            config.GetSchema(),
+			"last_price_update": lastPriceUpdate,
+		})
 	})
 
 	writeGroup.POST("/api/config", func(c *gin.Context) {

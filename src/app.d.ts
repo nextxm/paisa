@@ -72,6 +72,7 @@ interface UserConfig {
   doctor: DoctorConfig;
   firefly?: FireflyConfig;
   labs?: LabsConfig;
+  last_price_update?: string;
 }
 
 interface Runtime {

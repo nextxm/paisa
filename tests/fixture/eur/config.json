@@ -1563,5 +1563,6 @@
     ],
     "title": "Paisa",
     "type": "object"
-  }
+  },
+  "last_price_update": ""
 }

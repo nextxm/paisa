@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/ledger"
@@ -23,6 +24,9 @@ import (
 
 // journalHashKey is the metadata key used to persist the last-synced journal hash.
 const journalHashKey = "journal_hash"
+
+// lastPriceSyncKey is the metadata key used to persist the last-synced price fetch time.
+const LastPriceSyncKey = "last_price_sync"
 
 // SyncResult holds per-stage outcomes and aggregate counts for a sync run.
 // It is returned by SyncJournal so that callers can surface stage-level
@@ -206,8 +210,12 @@ func SyncCommodities(db *gorm.DB) (SyncCommoditiesResult, error) {
 		for _, e := range errs {
 			message += e.Error() + "\n"
 		}
+		// Even with errors, we might have successfully updated some commodities,
+		// so we record the sync attempt time.
+		_ = metadata.Set(db, LastPriceSyncKey, time.Now().Format(time.RFC3339))
 		return result, fmt.Errorf("%s", strings.Trim(message, "\n"))
 	}
+	_ = metadata.Set(db, LastPriceSyncKey, time.Now().Format(time.RFC3339))
 	return result, nil
 }
 
