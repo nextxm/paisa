@@ -520,13 +520,13 @@
 {:else if schema.type == "array"}
   {#if schema["ui:widget"] == "table"}
     <div class="table-container mb-4">
-      <table class="table is-narrow is-fullwidth config-table">
+      <table class="table is-fullwidth config-table">
         <thead>
           <tr>
             {#each sortedProperties(schema.items as Schema) as [subKey, _subSchema]}
               <th class="is-size-7">{_.startCase(subKey)}</th>
             {/each}
-            <th></th>
+            <th class="action-column"></th>
           </tr>
         </thead>
         <tbody>
@@ -545,7 +545,7 @@
                   />
                 </td>
               {/each}
-              <td class="has-text-right">
+              <td class="action-column">
                 <button
                   type="button"
                   onclick={() => {
@@ -554,7 +554,7 @@
                       value = [...value];
                     }
                   }}
-                  class="button is-small is-ghost has-text-danger p-0"
+                  class="button is-small is-ghost has-text-danger"
                   aria-label="Delete item"
                 >
                   <span class="icon is-small">
