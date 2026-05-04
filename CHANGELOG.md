@@ -4,6 +4,12 @@
 
 #### New features
 
+- **Epic 2: Recent Transactions Widget on Dashboard** — Added a feed of the 15 most recent transactions to the main dashboard for at-a-glance activity overview.
+
+  - **Subtask 2.1 (Backend)** — `GET /api/transaction` now accepts optional `limit` and `offset` query parameters for server-friendly pagination. Both parameters are applied at the transaction level (after grouping postings) so every returned transaction includes all of its postings.
+  - **Subtask 2.2 (Frontend)** — New `RecentTransactionsWidget.svelte` component encapsulates the recent-transactions feed. It accepts a `transactions` prop and an optional `limit` prop (default 15) and renders each entry via `TransactionCard`.
+  - **Subtask 2.3 (Frontend)** — Dashboard (`+page.svelte`) now uses `RecentTransactionsWidget` instead of inline transaction rendering, keeping the layout clean and the widget reusable.
+
 - **Account-Level Transaction Drill-Down** — Users can now click on any account balance widget on the dashboard to view a filtered transaction history for that specific account. A new route `/accounts/[name]/transactions` displays all transactions touching the selected account. The `GET /api/transaction` endpoint now accepts an optional `account` query parameter to return only transactions for the given account prefix.
 
 - **Price & Journal Freshness Tracking** — Added visual indicators to the navigation bar to track the freshness of your financial data. The "Update Prices" icon turns amber after 24 hours and red after 48 hours. The "Sync Journal" icon turns amber if any journal files have been modified since the last sync.

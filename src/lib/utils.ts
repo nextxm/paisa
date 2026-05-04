@@ -666,6 +666,11 @@ export function ajax(route: "/api/firefly/reconcile"): Promise<{ items: Reconcil
 export function ajax(route: "/api/price/filters"): Promise<PriceFilters>;
 export function ajax(route: "/api/transaction"): Promise<{ transactions: Transaction[] }>;
 export function ajax(
+  route: "/api/transaction",
+  options?: RequestOptions,
+  params?: Record<string, string>
+): Promise<{ transactions: Transaction[] }>;
+export function ajax(
   route: "/api/transaction/balanced"
 ): Promise<{ balancedPostings: BalancedPosting[] }>;
 export function ajax(route: "/api/networth"): Promise<{

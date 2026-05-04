@@ -36,6 +36,11 @@ func (q *Query) Limit(n int) *Query {
 	return q
 }
 
+func (q *Query) Offset(n int) *Query {
+	q.context = q.context.Offset(n)
+	return q
+}
+
 func (q *Query) Clone() *Query {
 	return &Query{context: q.context.Session(&gorm.Session{}), order: q.order, includeForecast: q.includeForecast}
 }
