@@ -2,7 +2,6 @@
   import * as cashFlow from "$lib/cash_flow";
   import COLORS from "$lib/colors";
   import LastNMonths from "$lib/components/LastNMonths.svelte";
-  import TransactionCard from "$lib/components/TransactionCard.svelte";
   import * as expense from "$lib/expense/monthly";
   import { enrichTrantionSequence, sortTrantionSequence } from "$lib/transaction_sequence";
   import {
@@ -31,6 +30,7 @@
   import GoalSummaryCard from "$lib/components/GoalSummaryCard.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
   import BalanceCard from "$lib/components/BalanceCard.svelte";
+  import RecentTransactionsWidget from "$lib/components/RecentTransactionsWidget.svelte";
 
   let cashflowLegends: Legend[] = $state([]);
   let month = $state(now().format("YYYY-MM"));
@@ -320,22 +320,7 @@
           <div class="tile">
             <div class="tile is-parent is-12">
               <article class="tile is-child">
-                <div class="content">
-                  <p class="subtitle">
-                    <a class="secondary-link has-text-grey" href="/ledger/transaction"
-                      >Recent Transactions</a
-                    >
-                  </p>
-                  <div>
-                    <div class="masonry-grid masonry-grid-500">
-                      {#each _.take(transactions, 20) as t}
-                        <div class="mr-3 is-flex-grow-1">
-                          <TransactionCard {t} />
-                        </div>
-                      {/each}
-                    </div>
-                  </div>
-                </div>
+                <RecentTransactionsWidget {transactions} />
               </article>
             </div>
           </div>
@@ -354,10 +339,6 @@
 
   .masonry-grid-400 {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  }
-
-  .masonry-grid-500 {
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   }
 
   p.subtitle {

@@ -120,3 +120,89 @@ func TestGetTransactionsHandler_AccountPrefixFilter(t *testing.T) {
 	assert.Len(t, body.Transactions, 1, "expected 1 transaction for income prefix")
 	assert.Equal(t, "Salary", body.Transactions[0].Payee)
 }
+
+func TestGetTransactionsHandler_LimitFilter(t *testing.T) {
+	db := openTestDB(t)
+	gin.SetMode(gin.TestMode)
+
+	d1 := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	d2 := time.Date(2024, 1, 16, 0, 0, 0, 0, time.UTC)
+	d3 := time.Date(2024, 1, 17, 0, 0, 0, 0, time.UTC)
+	seedTransactions(t, db, []posting.Posting{
+		{TransactionID: "tx1", Date: d1, Payee: "Groceries", Account: "expenses:food", Forecast: false},
+		{TransactionID: "tx1", Date: d1, Payee: "Groceries", Account: "assets:checking", Forecast: false},
+		{TransactionID: "tx2", Date: d2, Payee: "Salary", Account: "income:salary", Forecast: false},
+		{TransactionID: "tx2", Date: d2, Payee: "Salary", Account: "assets:checking", Forecast: false},
+		{TransactionID: "tx3", Date: d3, Payee: "Rent", Account: "expenses:rent", Forecast: false},
+		{TransactionID: "tx3", Date: d3, Payee: "Rent", Account: "assets:checking", Forecast: false},
+	})
+
+	r := buildTransactionRouter(t, db)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/transaction?limit=2", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	body := decodeTransactionResponse(t, rec)
+	assert.Len(t, body.Transactions, 2, "expected 2 transactions with limit=2")
+}
+
+func TestGetTransactionsHandler_OffsetFilter(t *testing.T) {
+	db := openTestDB(t)
+	gin.SetMode(gin.TestMode)
+
+	d1 := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	d2 := time.Date(2024, 1, 16, 0, 0, 0, 0, time.UTC)
+	d3 := time.Date(2024, 1, 17, 0, 0, 0, 0, time.UTC)
+	seedTransactions(t, db, []posting.Posting{
+		{TransactionID: "tx1", Date: d1, Payee: "Groceries", Account: "expenses:food", Forecast: false},
+		{TransactionID: "tx1", Date: d1, Payee: "Groceries", Account: "assets:checking", Forecast: false},
+		{TransactionID: "tx2", Date: d2, Payee: "Salary", Account: "income:salary", Forecast: false},
+		{TransactionID: "tx2", Date: d2, Payee: "Salary", Account: "assets:checking", Forecast: false},
+		{TransactionID: "tx3", Date: d3, Payee: "Rent", Account: "expenses:rent", Forecast: false},
+		{TransactionID: "tx3", Date: d3, Payee: "Rent", Account: "assets:checking", Forecast: false},
+	})
+
+	r := buildTransactionRouter(t, db)
+
+	// Transactions are sorted newest-first: Rent (d3), Salary (d2), Groceries (d1).
+	// offset=1 should skip Rent and return Salary and Groceries.
+	req := httptest.NewRequest(http.MethodGet, "/api/transaction?offset=1", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	body := decodeTransactionResponse(t, rec)
+	assert.Len(t, body.Transactions, 2, "expected 2 transactions with offset=1")
+	assert.Equal(t, "Salary", body.Transactions[0].Payee)
+}
+
+func TestGetTransactionsHandler_LimitAndOffsetFilter(t *testing.T) {
+	db := openTestDB(t)
+	gin.SetMode(gin.TestMode)
+
+	d1 := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	d2 := time.Date(2024, 1, 16, 0, 0, 0, 0, time.UTC)
+	d3 := time.Date(2024, 1, 17, 0, 0, 0, 0, time.UTC)
+	seedTransactions(t, db, []posting.Posting{
+		{TransactionID: "tx1", Date: d1, Payee: "Groceries", Account: "expenses:food", Forecast: false},
+		{TransactionID: "tx1", Date: d1, Payee: "Groceries", Account: "assets:checking", Forecast: false},
+		{TransactionID: "tx2", Date: d2, Payee: "Salary", Account: "income:salary", Forecast: false},
+		{TransactionID: "tx2", Date: d2, Payee: "Salary", Account: "assets:checking", Forecast: false},
+		{TransactionID: "tx3", Date: d3, Payee: "Rent", Account: "expenses:rent", Forecast: false},
+		{TransactionID: "tx3", Date: d3, Payee: "Rent", Account: "assets:checking", Forecast: false},
+	})
+
+	r := buildTransactionRouter(t, db)
+
+	// newest-first: Rent, Salary, Groceries → offset=1&limit=1 should return just Salary
+	req := httptest.NewRequest(http.MethodGet, "/api/transaction?offset=1&limit=1", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	body := decodeTransactionResponse(t, rec)
+	require.Len(t, body.Transactions, 1, "expected 1 transaction with offset=1&limit=1")
+	assert.Equal(t, "Salary", body.Transactions[0].Payee)
+}
