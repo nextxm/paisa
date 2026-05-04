@@ -8,7 +8,7 @@
 
   let { data }: { data: PageData } = $props();
 
-  let transactions: T[] = $state(null);
+  let transactions: T[] | null = $state(null);
 
   const mobile = isMobile();
 
