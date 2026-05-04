@@ -6,6 +6,7 @@ Start with [.github/copilot-instructions.md](.github/copilot-instructions.md) fo
 
 - Prefer the owning package or route when making changes; avoid broad repo edits when a local fix is possible.
 - For important behavior changes, add or update the nearest focused regression or unit test before considering the task complete.
+- Always review and update corresponding tests (e.g., `make regen` for fixtures) when features or UI are updated to prevent regression failures.
 - Validate the touched slice first:
   - Go: `gofmt` on touched files, then the narrowest relevant `go test` package(s).
   - Frontend: Prettier on touched `src/**` files, then `npm run check`; run scoped ESLint on touched files when practical.

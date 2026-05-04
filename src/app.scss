@@ -1211,6 +1211,62 @@ span.progress-percent.less-than-10 {
   color: $success;
 }
 
+.config-table {
+  background: transparent !important;
+
+  th {
+    border-bottom: 1px solid $grey-lighter !important;
+    font-weight: 600;
+    color: $grey;
+    white-space: nowrap;
+    padding-bottom: 0.5rem !important;
+  }
+
+  td {
+    border-bottom: 1px solid rgba($grey-lighter, 0.4) !important;
+    vertical-align: middle !important;
+    padding: 0.5rem 0.25rem !important;
+
+    &:last-child {
+      padding-right: 0.25rem !important;
+    }
+
+    .field {
+      margin-bottom: 0 !important;
+    }
+
+    .control {
+      width: 100%;
+    }
+
+    .select,
+    select {
+      width: 100%;
+    }
+  }
+
+  .action-column {
+    width: 40px;
+    text-align: right;
+  }
+
+  tr:last-child td {
+    border-bottom: none !important;
+  }
+}
+
+.button.is-dashed {
+  background: transparent;
+  border: 1px dashed $grey-lighter;
+  color: $grey-light;
+
+  &:hover {
+    border-color: $grey-light;
+    color: $grey;
+    background: rgba(0, 0, 0, 0.02);
+  }
+}
+
 input:invalid,
 textarea:invalid {
   border-color: $danger;
