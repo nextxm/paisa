@@ -4,6 +4,8 @@
 
 #### New features
 
+- **Account-Level Transaction Drill-Down** — Users can now click on any account balance widget on the dashboard to view a filtered transaction history for that specific account. A new route `/accounts/[name]/transactions` displays all transactions touching the selected account. The `GET /api/transaction` endpoint now accepts an optional `account` query parameter to return only transactions for the given account prefix.
+
 - **Price & Journal Freshness Tracking** — Added visual indicators to the navigation bar to track the freshness of your financial data. The "Update Prices" icon turns amber after 24 hours and red after 48 hours. The "Sync Journal" icon turns amber if any journal files have been modified since the last sync.
 
 - **Firefly III Webhook Integration** — Added a dedicated `/api/webhooks/firefly` endpoint that automatically parses and imports transactions from Firefly III via webhooks. Supported transactions are appended to the configured `add_journal_path` journal file.

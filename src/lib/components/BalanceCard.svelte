@@ -17,7 +17,13 @@
       >
     </div>
     <div class="has-text-weight-bold is-size-6">
-      {formatCurrency(assetBreakdown.marketAmount)}
+      <a
+        class="secondary-link has-text-weight-bold"
+        href="/accounts/{encodeURIComponent(assetBreakdown.group)}/transactions"
+        title="View transactions for {assetBreakdown.group}"
+      >
+        {formatCurrency(assetBreakdown.marketAmount)}
+      </a>
     </div>
   </div>
 </div>
