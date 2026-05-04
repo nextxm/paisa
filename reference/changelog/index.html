@@ -574,6 +574,10 @@
       
         
       
+        
+      
+        
+      
     
     
       
@@ -814,6 +818,50 @@
   
   
     <li class="md-nav__item">
+      <a href="../cash-flow/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cash Flow
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../assets/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Assets
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../bulk-edit/" class="md-nav__link">
         
   
@@ -998,7 +1046,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_17" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_19" >
         
           
           
@@ -1015,14 +1063,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_17" id="__nav_3_17_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_19" id="__nav_3_19_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_17_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_17">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_19_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_19">
             <span class="md-nav__icon md-icon"></span>
             Goals
           </label>
@@ -1245,7 +1293,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_24" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_26" >
         
           
           
@@ -1262,14 +1310,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_24" id="__nav_3_24_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_26" id="__nav_3_26_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_24_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_24">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_26_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_26">
             <span class="md-nav__icon md-icon"></span>
             Tax
           </label>
@@ -2536,6 +2584,30 @@
 <h3 id="unreleased-future-changes">Unreleased — Future changes<a class="headerlink" href="#unreleased-future-changes" title="Permanent link">&para;</a></h3>
 <h4 id="new-features">New features<a class="headerlink" href="#new-features" title="Permanent link">&para;</a></h4>
 <ul>
+<li>
+<p><strong>Price &amp; Journal Freshness Tracking</strong> — Added visual indicators to the navigation bar to track the freshness of your financial data. The "Update Prices" icon turns amber after 24 hours and red after 48 hours. The "Sync Journal" icon turns amber if any journal files have been modified since the last sync.</p>
+</li>
+<li>
+<p><strong>Firefly III Webhook Integration</strong> — Added a dedicated <code>/api/webhooks/firefly</code> endpoint that automatically parses and imports transactions from Firefly III via webhooks. Supported transactions are appended to the configured <code>add_journal_path</code> journal file.</p>
+</li>
+<li>
+<p><strong>Firefly III Reconciliation (Labs)</strong> — Introduced a new balance reconciliation tool to compare Paisa (Ledger) account balances with Firefly III data. The feature is hidden by default and can be enabled under the new "Labs" configuration section. Includes support for ignoring specific accounts and case-insensitive account matching.</p>
+</li>
+<li>
+<p><strong>Price Export Feature</strong> — Users can now export their commodity price history in Ledger, hLedger, or Beancount formats. The export supports filtering by commodity and provides options for single-file or multi-file (ZIP) output.</p>
+</li>
+<li>
+<p><strong>Dynamic Multi-Currency Reporting</strong> — Improved the Income Statement and Market services to use period-end or dynamic exchange rates for foreign currency transactions, ensuring more accurate marked-to-market financial reporting across different timeframes.</p>
+</li>
+<li>
+<p><strong>Monthly Cashflow Widget</strong> — Added a new multi-currency monthly cashflow breakdown widget to the dashboard. The widget provides a high-level view of income vs. expenses using original ledger quantities.</p>
+</li>
+<li>
+<p><strong>Advanced Journal Configuration</strong> — Added <code>add_journal_path</code> to the configuration, allowing users to specify a dedicated journal file for transactions added via the API or webhooks, keeping the main journal file clean.</p>
+</li>
+<li>
+<p><strong>Mobile &amp; PWA Enhancements</strong> — Implemented a responsive navigation layout with a mobile-optimized side menu. Improved PWA support with better icon sizing, manifest validation, and consistent theme switching across mobile devices.</p>
+</li>
 <li>
 <p><strong>Assets Balance flat view + exports</strong> — Added a Flat Accounts toggle on the Assets → Balance page and support for exporting the current view to CSV or Excel. Exports now respect the selected display mode (hierarchy or flat), and <code>/api/assets/balance</code> accepts <code>flat=true</code> to return non-rollup account rows.</p>
 </li>
