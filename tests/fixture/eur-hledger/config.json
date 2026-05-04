@@ -204,6 +204,7 @@
         "default": [
           {
             "name": "AAPL",
+            "type": "stock",
             "price": {
               "code": "AAPL",
               "provider": "com-yahoo"

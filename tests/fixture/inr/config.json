@@ -89,6 +89,8 @@
       "firefly_reconcile": false
     }
   },
+  "is_journal_dirty": false,
+  "last_price_update": "",
   "now": "2022-02-07T00:00:00Z",
   "schema": {
     "$id": "https://nextxm.github.io/paisa/schema.json",
@@ -217,7 +219,8 @@
               "code": "AAPL",
               "provider": "com-yahoo"
             },
-            "tax_category": "unlisted_equity"
+            "tax_category": "unlisted_equity",
+            "type": "stock"
           }
         ],
         "description": "Configure how external price data is fetched for your stocks, mutual funds, and other commodities.",
@@ -1572,7 +1575,5 @@
     ],
     "title": "Paisa",
     "type": "object"
-  },
-  "last_price_update": "",
-  "is_journal_dirty": false
+  }
 }
