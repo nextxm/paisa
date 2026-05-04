@@ -1245,14 +1245,14 @@ span.progress-percent.less-than-10 {
     }
   }
 
-    .action-column {
-      width: 40px;
-      text-align: right;
-    }
+  .action-column {
+    width: 40px;
+    text-align: right;
+  }
 
-    tr:last-child td {
-      border-bottom: none !important;
-    }
+  tr:last-child td {
+    border-bottom: none !important;
+  }
 }
 
 .button.is-dashed {
