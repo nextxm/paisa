@@ -33,7 +33,6 @@
       ajax(`/api/transaction?account=${encoded}`),
       ajax("/api/account_notes/:account", null, { account: data.account })
     ]);
-    accountNote = accountNote ?? null;
   });
 </script>
 

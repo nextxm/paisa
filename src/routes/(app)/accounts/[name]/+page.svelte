@@ -30,7 +30,8 @@
         accountNote = result.account_note;
         toast.toast({ message: "Note saved.", type: "is-success", duration: 3000 });
       }
-    } catch {
+    } catch (err) {
+      console.error("Failed to save account note:", err);
       toast.toast({ message: "Failed to save note.", type: "is-danger", duration: 3000 });
     } finally {
       saving = false;
@@ -49,7 +50,8 @@
       accountNote = null;
       noteText = "";
       toast.toast({ message: "Note deleted.", type: "is-success", duration: 3000 });
-    } catch {
+    } catch (err) {
+      console.error("Failed to delete account note:", err);
       toast.toast({ message: "Failed to delete note.", type: "is-danger", duration: 3000 });
     } finally {
       saving = false;
