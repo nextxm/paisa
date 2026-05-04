@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ajax, isMobile, type Transaction as T } from "$lib/utils";
+  import { ajax, isMobile, type AccountNote, type Transaction as T } from "$lib/utils";
   import _ from "lodash";
   import { onMount } from "svelte";
   import VirtualList from "svelte-tiny-virtual-list";
@@ -9,6 +9,7 @@
   let { data }: { data: PageData } = $props();
 
   let transactions: T[] | null = $state(null);
+  let accountNote: AccountNote | null = $state(null);
 
   const mobile = isMobile();
 
@@ -28,7 +29,11 @@
 
   onMount(async () => {
     const encoded = encodeURIComponent(data.account);
-    ({ transactions } = await ajax(`/api/transaction?account=${encoded}`));
+    [{ transactions }, { account_note: accountNote }] = await Promise.all([
+      ajax(`/api/transaction?account=${encoded}`),
+      ajax("/api/account_notes/:account", null, { account: data.account })
+    ]);
+    accountNote = accountNote ?? null;
   });
 </script>
 
@@ -42,10 +47,27 @@
               <div class="level-item">
                 <p class="title is-5">{data.account}</p>
               </div>
+              {#if accountNote?.note}
+                <div class="level-item">
+                  <span class="tag is-info is-light">
+                    <span class="icon is-small mr-1"><i class="fas fa-sticky-note"></i></span>
+                    {accountNote.note}
+                  </span>
+                </div>
+              {/if}
             </div>
             <div class="level-right">
               <div class="level-item">
                 <p class="is-6"><b>{transactions.length}</b> transaction(s)</p>
+              </div>
+              <div class="level-item">
+                <a
+                  href="/accounts/{encodeURIComponent(data.account)}"
+                  class="button is-small is-light"
+                >
+                  <span class="icon is-small"><i class="fas fa-sticky-note"></i></span>
+                  <span>Notes</span>
+                </a>
               </div>
               <div class="level-item">
                 <a href="/ledger/transaction" class="button is-small is-light">

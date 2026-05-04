@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/ananthakumaran/paisa/internal/model/account_note"
 	"github.com/ananthakumaran/paisa/internal/model/cache"
 	"github.com/ananthakumaran/paisa/internal/model/cii"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
@@ -36,6 +37,7 @@ var steps = []step{
 	{Version: 1, Apply: v1Baseline},
 	{Version: 2, Apply: v2AddQuoteCommodity},
 	{Version: 3, Apply: v3AddMetadata},
+	{Version: 4, Apply: v4AddAccountNotes},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -104,6 +106,14 @@ func v2AddQuoteCommodity(db *gorm.DB) error {
 func v3AddMetadata(db *gorm.DB) error {
 	if err := db.AutoMigrate(&metadata.Metadata{}); err != nil {
 		return fmt.Errorf("v3: AutoMigrate metadata failed: %w", err)
+	}
+	return nil
+}
+
+// v4AddAccountNotes creates the account_notes table for per-account user notes.
+func v4AddAccountNotes(db *gorm.DB) error {
+	if err := db.AutoMigrate(&account_note.AccountNote{}); err != nil {
+		return fmt.Errorf("v4: AutoMigrate account_notes failed: %w", err)
 	}
 	return nil
 }
