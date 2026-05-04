@@ -80,6 +80,8 @@
       "firefly_reconcile": false
     }
   },
+  "is_journal_dirty": false,
+  "last_price_update": "",
   "now": "2022-02-07T00:00:00Z",
   "schema": {
     "$id": "https://nextxm.github.io/paisa/schema.json",
@@ -88,15 +90,14 @@
     "description": "Paisa configuration",
     "properties": {
       "accounts": {
-        "default": [
-          {
-            "icon": "fa6-brands:apple",
-            "name": "Assets:Equity:AAPL"
-          }
-        ],
+        "default": [],
         "description": "Customize the display of your accounts, such as assigning unique icons to specific account names.",
         "items": {
           "additionalProperties": false,
+          "default": {
+            "icon": "",
+            "name": ""
+          },
           "properties": {
             "icon": {
               "description": "Account icon name",
@@ -118,25 +119,23 @@
         "itemsUniqueProperties": [
           "name"
         ],
-        "type": "array"
+        "type": "array",
+        "ui:widget": "table"
       },
       "add_journal_path": {
         "description": "Path to the journal file where quick-add transactions will be appended. It can be absolute or relative to the configuration file.",
         "type": "string"
       },
       "allocation_targets": {
-        "default": [
-          {
-            "accounts": [
-              "Assets:Debt:*"
-            ],
-            "name": "Debt",
-            "target": 20
-          }
-        ],
+        "default": [],
         "description": "Define your desired asset allocation (e.g., 60% Equity, 40% Debt) to track deviations in your portfolio.",
         "items": {
           "additionalProperties": false,
+          "default": {
+            "accounts": [],
+            "name": "",
+            "target": 0
+          },
           "properties": {
             "accounts": {
               "default": [
@@ -170,7 +169,8 @@
         "itemsUniqueProperties": [
           "name"
         ],
-        "type": "array"
+        "type": "array",
+        "ui:widget": "table"
       },
       "allow_legacy_auth": {
         "description": "Allow legacy username:password authentication via the X-Auth header. Enable during migration from direct credential auth to session tokens; disable once all clients use session tokens.",
@@ -201,20 +201,19 @@
         "type": "object"
       },
       "commodities": {
-        "default": [
-          {
-            "name": "AAPL",
-            "type": "stock",
-            "price": {
-              "code": "AAPL",
-              "provider": "com-yahoo"
-            },
-            "tax_category": "unlisted_equity"
-          }
-        ],
+        "default": [],
         "description": "Configure how external price data is fetched for your stocks, mutual funds, and other commodities.",
         "items": {
           "additionalProperties": false,
+          "default": {
+            "name": "",
+            "price": {
+              "code": "",
+              "provider": "com-yahoo"
+            },
+            "tax_category": "equity",
+            "type": "stock"
+          },
           "properties": {
             "harvest": {
               "type": "integer"
@@ -282,7 +281,8 @@
         "itemsUniqueProperties": [
           "name"
         ],
-        "type": "array"
+        "type": "array",
+        "ui:widget": "table"
       },
       "credit_cards": {
         "default": [
@@ -556,6 +556,30 @@
         "minimum": 1,
         "type": "integer"
       },
+      "firefly": {
+        "additionalProperties": false,
+        "description": "Firefly III integration settings",
+        "properties": {
+          "ignore_accounts": {
+            "description": "Accounts to ignore from reconciliation",
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "ui:widget": "accounts"
+          },
+          "token": {
+            "description": "Firefly III Personal Access Token",
+            "type": "string",
+            "ui:widget": "password"
+          },
+          "url": {
+            "description": "Firefly III base URL (e.g. https://firefly.example.com)",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "goals": {
         "description": "Track your progress towards financial milestones like retirement or specific savings targets.",
         "properties": {
@@ -731,15 +755,14 @@
         "type": "object"
       },
       "import_templates": {
-        "default": [
-          {
-            "content": "",
-            "name": "ICICI Bank"
-          }
-        ],
+        "default": [],
         "description": "Define templates to help Paisa parse and import transactions from external sources like CSV or bank statements.",
         "items": {
           "additionalProperties": false,
+          "default": {
+            "content": "",
+            "name": ""
+          },
           "properties": {
             "content": {
               "type": "string",
@@ -760,11 +783,24 @@
         "itemsUniqueProperties": [
           "name"
         ],
-        "type": "array"
+        "type": "array",
+        "ui:widget": "table"
       },
       "journal_path": {
         "description": "Path to your journal file. It can be absolute or relative to the configuration file. The main journal file can refer other files using <code>include</code> as long as all the files are in the same or sub directory",
         "type": "string"
+      },
+      "labs": {
+        "additionalProperties": false,
+        "description": "Experimental features (Labs)",
+        "properties": {
+          "firefly_reconcile": {
+            "default": false,
+            "description": "Enable Firefly III balance reconciliation",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
       },
       "ledger_cli": {
         "description": "The ledger client to use",
@@ -796,17 +832,14 @@
         "ui:widget": "hidden"
       },
       "schedule_al": {
-        "default": [
-          {
-            "accounts": [
-              "Assets:Checking"
-            ],
-            "code": "bank"
-          }
-        ],
+        "default": [],
         "description": "Map your accounts to the Indian Income Tax 'Schedule AL' categories for easier tax reporting of assets and liabilities.",
         "items": {
           "additionalProperties": false,
+          "default": {
+            "accounts": [],
+            "code": "bank"
+          },
           "properties": {
             "accounts": {
               "default": [
@@ -845,7 +878,8 @@
         "itemsUniqueProperties": [
           "code"
         ],
-        "type": "array"
+        "type": "array",
+        "ui:widget": "table"
       },
       "sheets_directory": {
         "description": "Path to your sheets directory. It can be absolute or relative to the configuration file. The sheets directory will be created if it does not exist. By default it will be created in the same directory as the journal file.",
@@ -1477,15 +1511,14 @@
         "type": "string"
       },
       "user_accounts": {
-        "default": [
-          {
-            "password": "",
-            "username": "john.doe"
-          }
-        ],
+        "default": [],
         "description": "List of user accounts",
         "items": {
           "additionalProperties": false,
+          "default": {
+            "password": "",
+            "username": ""
+          },
           "description": "User account configuration",
           "properties": {
             "password": {
@@ -1513,49 +1546,14 @@
         "itemsUniqueProperties": [
           "username"
         ],
-        "type": "array"
+        "type": "array",
+        "ui:widget": "table"
       },
       "week_starting_day": {
         "description": "First day of the week. 0 represents Sunday, 1 represents Monday and so on.",
         "maximum": 6,
         "minimum": 0,
         "type": "integer"
-      },
-      "firefly": {
-        "type": "object",
-        "description": "Firefly III integration settings",
-        "properties": {
-          "url": {
-            "type": "string",
-            "description": "Firefly III base URL (e.g. https://firefly.example.com)"
-          },
-          "token": {
-            "type": "string",
-            "ui:widget": "password",
-            "description": "Firefly III Personal Access Token"
-          },
-          "ignore_accounts": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "ui:widget": "accounts",
-            "description": "Accounts to ignore from reconciliation"
-          }
-        },
-        "additionalProperties": false
-      },
-      "labs": {
-        "type": "object",
-        "description": "Experimental features (Labs)",
-        "properties": {
-          "firefly_reconcile": {
-            "type": "boolean",
-            "default": false,
-            "description": "Enable Firefly III balance reconciliation"
-          }
-        },
-        "additionalProperties": false
       }
     },
     "required": [
@@ -1564,7 +1562,5 @@
     ],
     "title": "Paisa",
     "type": "object"
-  },
-  "last_price_update": "",
-  "is_journal_dirty": false
+  }
 }

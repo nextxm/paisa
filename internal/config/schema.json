@@ -699,16 +699,16 @@
     "user_accounts": {
       "description": "List of user accounts",
       "type": "array",
-      "default": [
-        {
-          "username": "john.doe",
-          "password": ""
-        }
-      ],
+      "ui:widget": "table",
+      "default": [],
       "itemsUniqueProperties": ["username"],
       "items": {
         "type": "object",
         "description": "User account configuration",
+        "default": {
+          "username": "",
+          "password": ""
+        },
         "properties": {
           "username": {
             "type": "string",
@@ -905,16 +905,16 @@
     "schedule_al": {
       "description": "Map your accounts to the Indian Income Tax 'Schedule AL' categories for easier tax reporting of assets and liabilities.",
       "type": "array",
-      "default": [
-        {
-          "code": "bank",
-          "accounts": ["Assets:Checking"]
-        }
-      ],
+      "ui:widget": "table",
+      "default": [],
       "itemsUniqueProperties": ["code"],
       "items": {
         "type": "object",
         "ui:header": "code",
+        "default": {
+          "code": "bank",
+          "accounts": []
+        },
         "properties": {
           "code": {
             "type": "string",
@@ -948,17 +948,17 @@
     "allocation_targets": {
       "description": "Define your desired asset allocation (e.g., 60% Equity, 40% Debt) to track deviations in your portfolio.",
       "type": "array",
-      "default": [
-        {
-          "name": "Debt",
-          "target": 20,
-          "accounts": ["Assets:Debt:*"]
-        }
-      ],
+      "ui:widget": "table",
+      "default": [],
       "itemsUniqueProperties": ["name"],
       "items": {
         "type": "object",
         "ui:header": "name",
+        "default": {
+          "name": "",
+          "target": 0,
+          "accounts": []
+        },
         "properties": {
           "name": {
             "type": "string"
@@ -986,20 +986,20 @@
     "commodities": {
       "description": "Configure how external price data is fetched for your stocks, mutual funds, and other commodities.",
       "type": "array",
-      "default": [
-        {
-          "name": "AAPL",
-          "type": "stock",
-          "price": {
-            "provider": "com-yahoo",
-            "code": "AAPL"
-          },
-          "tax_category": "unlisted_equity"
-        }
-      ],
+      "ui:widget": "table",
+      "default": [],
       "itemsUniqueProperties": ["name"],
       "items": {
         "type": "object",
+        "default": {
+          "name": "",
+          "type": "stock",
+          "price": {
+            "provider": "com-yahoo",
+            "code": ""
+          },
+          "tax_category": "equity"
+        },
         "ui:header": "name",
         "properties": {
           "name": {
@@ -1045,16 +1045,16 @@
     "import_templates": {
       "description": "Define templates to help Paisa parse and import transactions from external sources like CSV or bank statements.",
       "type": "array",
-      "default": [
-        {
-          "name": "ICICI Bank",
-          "content": ""
-        }
-      ],
+      "ui:widget": "table",
+      "default": [],
       "itemsUniqueProperties": ["name"],
       "items": {
         "type": "object",
         "ui:header": "name",
+        "default": {
+          "name": "",
+          "content": ""
+        },
         "properties": {
           "name": {
             "type": "string",
@@ -1073,16 +1073,16 @@
     "accounts": {
       "description": "Customize the display of your accounts, such as assigning unique icons to specific account names.",
       "type": "array",
-      "default": [
-        {
-          "name": "Assets:Equity:AAPL",
-          "icon": "fa6-brands:apple"
-        }
-      ],
+      "ui:widget": "table",
+      "default": [],
       "itemsUniqueProperties": ["name"],
       "items": {
         "type": "object",
         "ui:header": "name",
+        "default": {
+          "name": "",
+          "icon": ""
+        },
         "properties": {
           "name": {
             "type": "string",
