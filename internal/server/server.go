@@ -271,7 +271,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, GetBalancedPostings(db))
 	})
 	router.GET("/api/transaction", func(c *gin.Context) {
-		c.JSON(200, GetTransactions(db))
+		GetTransactionsHandler(db, c)
 	})
 	writeGroup.POST("/api/transaction/add", AddTransactionHandler(db))
 	writeGroup.POST("/api/webhooks/firefly", FireflyWebhookHandler(db))

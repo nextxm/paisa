@@ -1,6 +1,7 @@
 package server
 
 import (
+	"net/http"
 	"sort"
 
 	"github.com/ananthakumaran/paisa/internal/accounting"
@@ -19,6 +20,24 @@ func GetTransactions(db *gorm.DB) gin.H {
 	sort.SliceStable(transactions, func(i, j int) bool { return transactions[i].Date.After(transactions[j].Date) })
 
 	return gin.H{"transactions": transactions}
+}
+
+// GetTransactionsHandler handles GET /api/transaction with an optional
+// ?account=<prefix> query parameter to filter to a specific account.
+func GetTransactionsHandler(db *gorm.DB, c *gin.Context) {
+	account := c.Query("account")
+
+	q := query.Init(db).Desc()
+	if account != "" {
+		q = q.AccountPrefix(account)
+	}
+	postings := q.All()
+	transactions := transaction.Build(postings)
+
+	sort.Slice(transactions, func(i, j int) bool { return transactions[i].ID > transactions[j].ID })
+	sort.SliceStable(transactions, func(i, j int) bool { return transactions[i].Date.After(transactions[j].Date) })
+
+	c.JSON(http.StatusOK, gin.H{"transactions": transactions})
 }
 
 func GetBalancedPostings(db *gorm.DB) gin.H {
