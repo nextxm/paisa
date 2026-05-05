@@ -38,15 +38,7 @@ type AssetBreakdown struct {
 }
 
 func GetCheckingBalance(db *gorm.DB, reportCurrency string) gin.H {
-	res := doGetBalance(db, config.GetConfig().CheckingAccounts, false, reportCurrency)
-	breakdowns := res["asset_breakdowns"].(map[string]AssetBreakdown)
-	filtered := make(map[string]AssetBreakdown)
-	for k, v := range breakdowns {
-		if utils.IsCheckingAccount(k) {
-			filtered[k] = v
-		}
-	}
-	return gin.H{"asset_breakdowns": filtered}
+	return doGetBalance(db, config.GetConfig().CheckingAccounts, false, reportCurrency)
 }
 
 func GetBalance(db *gorm.DB, reportCurrency string) gin.H {
@@ -69,21 +61,39 @@ func doGetBalance(db *gorm.DB, patterns []string, rollup bool, reportCurrency st
 	dbPatterns = append(dbPatterns, "Income:CapitalGains")
 	postings := query.Init(db).AccountPrefix(dbPatterns...).All()
 	postings = service.PopulateMarketPrice(db, postings)
-	breakdowns := ComputeBreakdowns(db, postings, rollup)
 
-	// Filter breakdowns to only include those that match the requested patterns.
-	// This prevents internal query accounts like Income:CapitalGains from
-	// appearing in the final output.
-	filtered := make(map[string]AssetBreakdown)
-	for k, v := range breakdowns {
+	var breakdowns map[string]AssetBreakdown
+	if !rollup {
+		breakdowns = make(map[string]AssetBreakdown)
 		for _, p := range patterns {
-			if utils.MatchAccount(k, p) {
-				filtered[k] = v
-				break
+			group := strings.TrimSuffix(p, ":%")
+			if strings.HasPrefix(p, "regex:") {
+				group = "Checking"
+			}
+			ps := lo.Filter(postings, func(pos posting.Posting, _ int) bool {
+				return utils.MatchAccount(pos.Account, p)
+			})
+			if len(ps) > 0 {
+				breakdowns[group] = ComputeBreakdown(db, ps, true, group)
 			}
 		}
+	} else {
+		breakdowns = ComputeBreakdowns(db, postings, rollup)
+
+		// Filter breakdowns to only include those that match the requested patterns.
+		// This prevents internal query accounts like Income:CapitalGains from
+		// appearing in the final output.
+		filtered := make(map[string]AssetBreakdown)
+		for k, v := range breakdowns {
+			for _, p := range patterns {
+				if utils.MatchAccount(k, p) {
+					filtered[k] = v
+					break
+				}
+			}
+		}
+		breakdowns = filtered
 	}
-	breakdowns = filtered
 
 	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
 		breakdowns = convertBreakdownsToReportCurrency(db, breakdowns, reportCurrency)
