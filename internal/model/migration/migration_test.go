@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/ananthakumaran/paisa/internal/model/account_note"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/glebarez/sqlite"
@@ -27,7 +28,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 3, version)
+	assert.Equal(t, 4, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -37,7 +38,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 3, version)
+	assert.Equal(t, 4, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -55,12 +56,12 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	db := openMemoryDB(t)
 
 	// Simulate an existing install that has tables but no schema_versions table.
-	// RunMigrations should create the table and record v3 without error.
+	// RunMigrations should create the table and record v4 without error.
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	// Schema version should be 3 after migration.
-	assert.Equal(t, 3, migration.CurrentVersion(db))
+	// Schema version should be 4 after migration.
+	assert.Equal(t, 4, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -92,13 +93,13 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 	).Error)
 
 	// Manually create the schema_versions table and mark v1 as already applied
-	// so that only v2 runs during RunMigrations.
+	// so that only v2+ runs during RunMigrations.
 	require.NoError(t, db.AutoMigrate(&migration.SchemaVersion{}))
 	require.NoError(t, db.Create(&migration.SchemaVersion{Version: 1, AppliedAt: time.Now()}).Error)
 
-	// Run migrations – only v2 and v3 should execute.
+	// Run migrations – v2, v3, and v4 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 3, migration.CurrentVersion(db))
+	assert.Equal(t, 4, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -155,4 +156,32 @@ func TestV3Migration_MetadataTableExists(t *testing.T) {
 	// Duplicate key via raw SQL must be rejected by the unique index.
 	err = db.Exec("INSERT INTO metadata (key, value) VALUES (?, ?)", "last_hash", "xyz").Error
 	assert.Error(t, err, "inserting a duplicate key must fail")
+}
+
+// TestV4Migration_AccountNotesTableExists verifies that after v4 the
+// account_notes table exists and basic CRUD via the package API works.
+func TestV4Migration_AccountNotesTableExists(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	// Insert a note.
+	note, err := account_note.Upsert(db, "Assets:Checking", "Emergency fund")
+	require.NoError(t, err)
+	assert.Equal(t, "Assets:Checking", note.Account)
+	assert.Equal(t, "Emergency fund", note.Note)
+
+	// Fetch it back.
+	fetched, err := account_note.Get(db, "Assets:Checking")
+	require.NoError(t, err)
+	assert.Equal(t, "Emergency fund", fetched.Note)
+
+	// Upsert should update the note.
+	updated, err := account_note.Upsert(db, "Assets:Checking", "Updated note")
+	require.NoError(t, err)
+	assert.Equal(t, "Updated note", updated.Note)
+
+	// Delete the note.
+	require.NoError(t, account_note.Delete(db, "Assets:Checking"))
+	_, err = account_note.Get(db, "Assets:Checking")
+	assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 }
