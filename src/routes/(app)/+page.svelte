@@ -293,36 +293,32 @@
           </article>
         </div>
         {#if !_.isEmpty(transactionSequences)}
-          <div class="tile">
-            <div class="tile is-parent is-12">
-              <article class="tile is-child">
-                <div class="content">
-                  <p class="subtitle">
-                    <a class="secondary-link has-text-grey" href="/cash_flow/recurring">Recurring</a
-                    >
-                  </p>
-                  <div class="content box">
-                    <div
-                      class="grid grid-rows-1 overflow-hidden"
-                      style="grid-auto-rows: 0px; grid-template-columns: repeat(auto-fit, minmax(130px, 150px));"
-                    >
-                      {#each transactionSequences as ts (ts)}
-                        <UpcomingCard transactionSequece={ts} />
-                      {/each}
-                    </div>
+          <div class="tile is-parent is-12">
+            <article class="tile is-child">
+              <div class="content">
+                <p class="subtitle">
+                  <a class="secondary-link has-text-grey" href="/cash_flow/recurring">Recurring</a
+                  >
+                </p>
+                <div class="content box">
+                  <div
+                    class="grid grid-rows-1 overflow-hidden"
+                    style="grid-auto-rows: 0px; grid-template-columns: repeat(auto-fit, minmax(130px, 150px));"
+                  >
+                    {#each transactionSequences as ts (ts)}
+                      <UpcomingCard transactionSequece={ts} />
+                    {/each}
                   </div>
                 </div>
-              </article>
-            </div>
+              </div>
+            </article>
           </div>
         {/if}
         {#if !_.isEmpty(transactions)}
-          <div class="tile">
-            <div class="tile is-parent is-12">
-              <article class="tile is-child">
-                <RecentTransactionsWidget {transactions} />
-              </article>
-            </div>
+          <div class="tile is-parent is-12">
+            <article class="tile is-child">
+              <RecentTransactionsWidget {transactions} />
+            </article>
           </div>
         {/if}
       </div>
