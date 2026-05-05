@@ -135,6 +135,17 @@
         },
         "description": "List of additional commodity names that should be treated as currencies (e.g. USD, EUR, GBP). The default currency is always included. Used to distinguish currency holdings from securities when computing original balances."
       },
+      "checking_accounts": {
+        "default": [
+          "Assets:Checking"
+        ],
+        "description": "List of accounts that should be treated as checking accounts for the dashboard widget. Supports wildcards (e.g. <code>Assets:Checking:*</code>).",
+        "items": {
+          "type": "string"
+        },
+        "type": "array",
+        "ui:widget": "accounts"
+      },
       "display_precision": {
         "type": "integer",
         "minimum": 0,
