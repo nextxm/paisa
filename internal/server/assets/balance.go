@@ -66,9 +66,25 @@ func doGetBalance(db *gorm.DB, patterns []string, rollup bool, reportCurrency st
 			dbPatterns = append(dbPatterns, p)
 		}
 	}
-	postings := query.Init(db).AccountPrefix(dbPatterns...).Like("Income:CapitalGains:%").All()
+	dbPatterns = append(dbPatterns, "Income:CapitalGains")
+	postings := query.Init(db).AccountPrefix(dbPatterns...).All()
 	postings = service.PopulateMarketPrice(db, postings)
 	breakdowns := ComputeBreakdowns(db, postings, rollup)
+
+	// Filter breakdowns to only include those that match the requested patterns.
+	// This prevents internal query accounts like Income:CapitalGains from
+	// appearing in the final output.
+	filtered := make(map[string]AssetBreakdown)
+	for k, v := range breakdowns {
+		for _, p := range patterns {
+			if utils.MatchAccount(k, p) {
+				filtered[k] = v
+				break
+			}
+		}
+	}
+	breakdowns = filtered
+
 	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
 		breakdowns = convertBreakdownsToReportCurrency(db, breakdowns, reportCurrency)
 	}

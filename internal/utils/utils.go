@@ -168,14 +168,17 @@ func IsCurrency(currency string) bool {
 	return currency == config.DefaultCurrency()
 }
 
+func MatchAccount(account string, pattern string) bool {
+	if strings.HasPrefix(pattern, "regex:") {
+		matched, _ := regexp.MatchString(pattern[6:], account)
+		return matched
+	}
+	return IsSameOrParent(account, pattern)
+}
+
 func IsCheckingAccount(account string) bool {
 	for _, pattern := range config.GetConfig().CheckingAccounts {
-		if strings.HasPrefix(pattern, "regex:") {
-			matched, _ := regexp.MatchString(pattern[6:], account)
-			if matched {
-				return true
-			}
-		} else if IsSameOrParent(account, pattern) {
+		if MatchAccount(account, pattern) {
 			return true
 		}
 	}
