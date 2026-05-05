@@ -113,7 +113,7 @@ export const CONFIG_GROUPS: ConfigGroup[] = [
         id: "accounts",
         label: "Accounts",
         icon: "fa-landmark",
-        schemaKeys: ["accounts"],
+        schemaKeys: ["accounts", "checking_accounts"],
         description: "Custom icons and display settings for account names"
       },
       {

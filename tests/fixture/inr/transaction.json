@@ -6,27 +6,6 @@
       "payee": "Interest",
       "postings": [
         {
-          "id": 42,
-          "transaction_id": "6c08d472-cc1e-5b12-8838-03a21e3d8964",
-          "date": "2022-01-31T00:00:00Z",
-          "payee": "Interest",
-          "account": "Assets:Checking",
-          "commodity": "INR",
-          "quantity": 1000,
-          "amount": 1000,
-          "status": "unmarked",
-          "tag_recurring": "",
-          "tag_period": "",
-          "transaction_begin_line": 42,
-          "transaction_end_line": 46,
-          "file_name": "main.ledger",
-          "forecast": false,
-          "note": "",
-          "transaction_note": " Global note\n :interest:",
-          "market_amount": 0,
-          "balance": 0
-        },
-        {
           "id": 41,
           "transaction_id": "6c08d472-cc1e-5b12-8838-03a21e3d8964",
           "date": "2022-01-31T00:00:00Z",
@@ -45,7 +24,28 @@
           "note": " Posting note",
           "transaction_note": " Global note\n :interest:",
           "market_amount": 0,
-          "balance": 0
+          "balance": -1000
+        },
+        {
+          "id": 42,
+          "transaction_id": "6c08d472-cc1e-5b12-8838-03a21e3d8964",
+          "date": "2022-01-31T00:00:00Z",
+          "payee": "Interest",
+          "account": "Assets:Checking",
+          "commodity": "INR",
+          "quantity": 1000,
+          "amount": 1000,
+          "status": "unmarked",
+          "tag_recurring": "",
+          "tag_period": "",
+          "transaction_begin_line": 42,
+          "transaction_end_line": 46,
+          "file_name": "main.ledger",
+          "forecast": false,
+          "note": "",
+          "transaction_note": " Global note\n :interest:",
+          "market_amount": 0,
+          "balance": 20817.5348
         }
       ],
       "tag_recurring": "",
@@ -60,27 +60,6 @@
       "date": "2022-01-11T00:00:00Z",
       "payee": "Multi Currency Debit",
       "postings": [
-        {
-          "id": 38,
-          "transaction_id": "13751d3a-ebfe-5de8-aca5-8870bc86ff9d",
-          "date": "2022-01-11T00:00:00Z",
-          "payee": "Multi Currency Debit",
-          "account": "Assets:Dollar",
-          "commodity": "USD",
-          "quantity": 10,
-          "amount": 804.42048,
-          "status": "unmarked",
-          "tag_recurring": "",
-          "tag_period": "",
-          "transaction_begin_line": 35,
-          "transaction_end_line": 38,
-          "file_name": "main.ledger",
-          "forecast": false,
-          "note": "",
-          "transaction_note": "",
-          "market_amount": 0,
-          "balance": 0
-        },
         {
           "id": 37,
           "transaction_id": "13751d3a-ebfe-5de8-aca5-8870bc86ff9d",
@@ -100,17 +79,17 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": 100
         },
         {
-          "id": 40,
+          "id": 38,
           "transaction_id": "13751d3a-ebfe-5de8-aca5-8870bc86ff9d",
           "date": "2022-01-11T00:00:00Z",
           "payee": "Multi Currency Debit",
-          "account": "Assets:Checking",
+          "account": "Assets:Dollar",
           "commodity": "USD",
-          "quantity": -10,
-          "amount": -804.42048,
+          "quantity": 10,
+          "amount": 804.42048,
           "status": "unmarked",
           "tag_recurring": "",
           "tag_period": "",
@@ -121,7 +100,7 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": 10
         },
         {
           "id": 39,
@@ -142,7 +121,28 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": 19827.5348
+        },
+        {
+          "id": 40,
+          "transaction_id": "13751d3a-ebfe-5de8-aca5-8870bc86ff9d",
+          "date": "2022-01-11T00:00:00Z",
+          "payee": "Multi Currency Debit",
+          "account": "Assets:Checking",
+          "commodity": "USD",
+          "quantity": -10,
+          "amount": -804.42048,
+          "status": "unmarked",
+          "tag_recurring": "",
+          "tag_period": "",
+          "transaction_begin_line": 35,
+          "transaction_end_line": 38,
+          "file_name": "main.ledger",
+          "forecast": false,
+          "note": "",
+          "transaction_note": "",
+          "market_amount": 0,
+          "balance": 19817.5348
         }
       ],
       "tag_recurring": "",
@@ -158,14 +158,14 @@
       "payee": "Sell",
       "postings": [
         {
-          "id": 36,
+          "id": 34,
           "transaction_id": "b2e50492-9dc7-5845-8ed9-9f4590b301a8",
           "date": "2022-01-10T00:00:00Z",
           "payee": "Sell",
-          "account": "Assets:Checking",
-          "commodity": "INR",
-          "quantity": 10027.3,
-          "amount": 10027.3,
+          "account": "Assets:Equity:AAPL",
+          "commodity": "AAPL",
+          "quantity": -100,
+          "amount": -10000,
           "status": "unmarked",
           "tag_recurring": "",
           "tag_period": "",
@@ -197,17 +197,17 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": -27.3
         },
         {
-          "id": 34,
+          "id": 36,
           "transaction_id": "b2e50492-9dc7-5845-8ed9-9f4590b301a8",
           "date": "2022-01-10T00:00:00Z",
           "payee": "Sell",
-          "account": "Assets:Equity:AAPL",
-          "commodity": "AAPL",
-          "quantity": -100,
-          "amount": -10000,
+          "account": "Assets:Checking",
+          "commodity": "INR",
+          "quantity": 10027.3,
+          "amount": 10027.3,
           "status": "unmarked",
           "tag_recurring": "",
           "tag_period": "",
@@ -218,7 +218,7 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": 19927.5348
         }
       ],
       "tag_recurring": "",
@@ -252,7 +252,7 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": 100
         },
         {
           "id": 33,
@@ -273,7 +273,7 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": 9900.2348
         }
       ],
       "tag_recurring": "",
@@ -307,7 +307,7 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": 0.76
         },
         {
           "id": 31,
@@ -328,7 +328,7 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": 19900.2348
         }
       ],
       "tag_recurring": "",
@@ -343,27 +343,6 @@
       "date": "2022-01-07T00:00:00Z",
       "payee": "Investment",
       "postings": [
-        {
-          "id": 29,
-          "transaction_id": "928a326f-93b5-5967-96e8-fe18ad9bf45f",
-          "date": "2022-01-07T00:00:00Z",
-          "payee": "Investment",
-          "account": "Assets:Equity:NIFTY",
-          "commodity": "NIFTY",
-          "quantity": 800,
-          "amount": 80000,
-          "status": "unmarked",
-          "tag_recurring": "",
-          "tag_period": "",
-          "transaction_begin_line": 18,
-          "transaction_end_line": 20,
-          "file_name": "main.ledger",
-          "forecast": false,
-          "note": "",
-          "transaction_note": "",
-          "market_amount": 0,
-          "balance": 0
-        },
         {
           "id": 28,
           "transaction_id": "928a326f-93b5-5967-96e8-fe18ad9bf45f",
@@ -383,7 +362,28 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": 20000
+        },
+        {
+          "id": 29,
+          "transaction_id": "928a326f-93b5-5967-96e8-fe18ad9bf45f",
+          "date": "2022-01-07T00:00:00Z",
+          "payee": "Investment",
+          "account": "Assets:Equity:NIFTY",
+          "commodity": "NIFTY",
+          "quantity": 800,
+          "amount": 80000,
+          "status": "unmarked",
+          "tag_recurring": "",
+          "tag_period": "",
+          "transaction_begin_line": 18,
+          "transaction_end_line": 20,
+          "file_name": "main.ledger",
+          "forecast": false,
+          "note": "",
+          "transaction_note": "",
+          "market_amount": 0,
+          "balance": 800
         }
       ],
       "tag_recurring": "",
@@ -398,27 +398,6 @@
       "date": "2022-01-06T00:00:00Z",
       "payee": "Bonus",
       "postings": [
-        {
-          "id": 27,
-          "transaction_id": "9ac83c1f-ba46-515b-8e19-3ca8ab332eab",
-          "date": "2022-01-06T00:00:00Z",
-          "payee": "Bonus",
-          "account": "Assets:Checking",
-          "commodity": "INR",
-          "quantity": 20000,
-          "amount": 20000,
-          "status": "unmarked",
-          "tag_recurring": "",
-          "tag_period": "",
-          "transaction_begin_line": 14,
-          "transaction_end_line": 16,
-          "file_name": "main.ledger",
-          "forecast": false,
-          "note": "",
-          "transaction_note": "",
-          "market_amount": 0,
-          "balance": 0
-        },
         {
           "id": 26,
           "transaction_id": "9ac83c1f-ba46-515b-8e19-3ca8ab332eab",
@@ -438,7 +417,28 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": -120000
+        },
+        {
+          "id": 27,
+          "transaction_id": "9ac83c1f-ba46-515b-8e19-3ca8ab332eab",
+          "date": "2022-01-06T00:00:00Z",
+          "payee": "Bonus",
+          "account": "Assets:Checking",
+          "commodity": "INR",
+          "quantity": 20000,
+          "amount": 20000,
+          "status": "unmarked",
+          "tag_recurring": "",
+          "tag_period": "",
+          "transaction_begin_line": 14,
+          "transaction_end_line": 16,
+          "file_name": "main.ledger",
+          "forecast": false,
+          "note": "",
+          "transaction_note": "",
+          "market_amount": 0,
+          "balance": 100000
         }
       ],
       "tag_recurring": "",
@@ -453,27 +453,6 @@
       "date": "2022-01-03T00:00:00Z",
       "payee": "Rent",
       "postings": [
-        {
-          "id": 25,
-          "transaction_id": "67f44c92-c138-550d-9ae2-84034aca39d3",
-          "date": "2022-01-03T00:00:00Z",
-          "payee": "Rent",
-          "account": "Expenses:Rent",
-          "commodity": "INR",
-          "quantity": 20000,
-          "amount": 20000,
-          "status": "unmarked",
-          "tag_recurring": "",
-          "tag_period": "",
-          "transaction_begin_line": 10,
-          "transaction_end_line": 12,
-          "file_name": "main.ledger",
-          "forecast": false,
-          "note": "",
-          "transaction_note": "",
-          "market_amount": 0,
-          "balance": 0
-        },
         {
           "id": 24,
           "transaction_id": "67f44c92-c138-550d-9ae2-84034aca39d3",
@@ -493,7 +472,28 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": 80000
+        },
+        {
+          "id": 25,
+          "transaction_id": "67f44c92-c138-550d-9ae2-84034aca39d3",
+          "date": "2022-01-03T00:00:00Z",
+          "payee": "Rent",
+          "account": "Expenses:Rent",
+          "commodity": "INR",
+          "quantity": 20000,
+          "amount": 20000,
+          "status": "unmarked",
+          "tag_recurring": "",
+          "tag_period": "",
+          "transaction_begin_line": 10,
+          "transaction_end_line": 12,
+          "file_name": "main.ledger",
+          "forecast": false,
+          "note": "",
+          "transaction_note": "",
+          "market_amount": 0,
+          "balance": 20000
         }
       ],
       "tag_recurring": "",
@@ -508,27 +508,6 @@
       "date": "2022-01-01T00:00:00Z",
       "payee": "Salary",
       "postings": [
-        {
-          "id": 23,
-          "transaction_id": "d84b6999-200b-5b90-9a3e-f94dc8a177da",
-          "date": "2022-01-01T00:00:00Z",
-          "payee": "Salary",
-          "account": "Assets:Checking",
-          "commodity": "INR",
-          "quantity": 100000,
-          "amount": 100000,
-          "status": "unmarked",
-          "tag_recurring": "",
-          "tag_period": "",
-          "transaction_begin_line": 6,
-          "transaction_end_line": 8,
-          "file_name": "main.ledger",
-          "forecast": false,
-          "note": "",
-          "transaction_note": "",
-          "market_amount": 0,
-          "balance": 0
-        },
         {
           "id": 22,
           "transaction_id": "d84b6999-200b-5b90-9a3e-f94dc8a177da",
@@ -548,7 +527,28 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": -100000
+        },
+        {
+          "id": 23,
+          "transaction_id": "d84b6999-200b-5b90-9a3e-f94dc8a177da",
+          "date": "2022-01-01T00:00:00Z",
+          "payee": "Salary",
+          "account": "Assets:Checking",
+          "commodity": "INR",
+          "quantity": 100000,
+          "amount": 100000,
+          "status": "unmarked",
+          "tag_recurring": "",
+          "tag_period": "",
+          "transaction_begin_line": 6,
+          "transaction_end_line": 8,
+          "file_name": "main.ledger",
+          "forecast": false,
+          "note": "",
+          "transaction_note": "",
+          "market_amount": 0,
+          "balance": 100000
         }
       ],
       "tag_recurring": "",

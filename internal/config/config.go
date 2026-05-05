@@ -206,6 +206,8 @@ type Config struct {
 	Firefly FireflyConfig `json:"firefly" yaml:"firefly"`
 
 	Labs Labs `json:"labs" yaml:"labs"`
+
+	CheckingAccounts []string `json:"checking_accounts" yaml:"checking_accounts"`
 }
 
 var config Config
@@ -243,6 +245,7 @@ var defaultConfig = Config{
 	CreditCards:                []CreditCard{},
 	Firefly:                    FireflyConfig{IgnoreAccounts: []string{}},
 	Labs:                       Labs{FireflyReconcile: false},
+	CheckingAccounts:           []string{"Assets:Checking"},
 }
 
 var itemsUniquePropertiesMeta = jsonschema.MustCompileString("itemsUniqueProperties.json", `{

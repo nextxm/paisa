@@ -5,7 +5,11 @@
   import PostingStatus from "$lib/components/PostingStatus.svelte";
   import TransactionNote from "./TransactionNote.svelte";
 
-  let { compact = false, t }: { compact?: boolean; t: Transaction } = $props();
+  let {
+    compact = false,
+    t,
+    highlightAccount = ""
+  }: { compact?: boolean; t: Transaction; highlightAccount?: string } = $props();
   const debits = (t: Transaction) => {
     return _.filter(t.postings, (p) => p.amount < 0);
   };
@@ -29,10 +33,10 @@
         </div>
       </div>
       <div class="column is-6 py-0">
-        <Postings postings={debits(t)} />
+        <Postings postings={debits(t)} {highlightAccount} />
       </div>
       <div class="column is-6 py-0">
-        <Postings postings={credits(t)} />
+        <Postings postings={credits(t)} {highlightAccount} />
       </div>
     </div>
   {:else}
@@ -48,10 +52,10 @@
         </div>
       </div>
       <div class="column is-4 py-0">
-        <Postings postings={debits(t)} />
+        <Postings postings={debits(t)} {highlightAccount} />
       </div>
       <div class="column is-5 py-0">
-        <Postings postings={credits(t)} />
+        <Postings postings={credits(t)} {highlightAccount} />
       </div>
     </div>
   {/if}

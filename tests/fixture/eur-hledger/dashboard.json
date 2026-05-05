@@ -27,7 +27,25 @@
     }
   ],
   "checkingBalances": {
-    "asset_breakdowns": {}
+    "asset_breakdowns": {
+      "Assets:Checking": {
+        "group": "Assets:Checking",
+        "investmentAmount": 0,
+        "withdrawalAmount": 0,
+        "marketAmount": 994.95,
+        "balanceUnits": 0,
+        "latestPrice": 0,
+        "xirr": 0,
+        "gainAmount": 994.95,
+        "absoluteReturn": 0,
+        "originalBalances": [
+          {
+            "currency": "EUR",
+            "amount": 994.95
+          }
+        ]
+      }
+    }
   },
   "expenses": {},
   "goalSummaries": [],
@@ -69,7 +87,7 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": 1
         },
         {
           "id": 4,
@@ -90,7 +108,7 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": 994.95
         }
       ],
       "tag_recurring": "",
@@ -105,27 +123,6 @@
       "date": "2022-01-01T00:00:00Z",
       "payee": "Salary",
       "postings": [
-        {
-          "id": 2,
-          "transaction_id": "1",
-          "date": "2022-01-01T00:00:00Z",
-          "payee": "Salary",
-          "account": "Assets:Checking",
-          "commodity": "EUR",
-          "quantity": 11000,
-          "amount": 11000,
-          "status": "unmarked",
-          "tag_recurring": "",
-          "tag_period": "",
-          "transaction_begin_line": 4,
-          "transaction_end_line": 7,
-          "file_name": "main.ledger",
-          "forecast": false,
-          "note": "",
-          "transaction_note": "",
-          "market_amount": 0,
-          "balance": 0
-        },
         {
           "id": 1,
           "transaction_id": "1",
@@ -145,7 +142,28 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 0
+          "balance": -11000
+        },
+        {
+          "id": 2,
+          "transaction_id": "1",
+          "date": "2022-01-01T00:00:00Z",
+          "payee": "Salary",
+          "account": "Assets:Checking",
+          "commodity": "EUR",
+          "quantity": 11000,
+          "amount": 11000,
+          "status": "unmarked",
+          "tag_recurring": "",
+          "tag_period": "",
+          "transaction_begin_line": 4,
+          "transaction_end_line": 7,
+          "file_name": "main.ledger",
+          "forecast": false,
+          "note": "",
+          "transaction_note": "",
+          "market_amount": 0,
+          "balance": 11000
         }
       ],
       "tag_recurring": "",

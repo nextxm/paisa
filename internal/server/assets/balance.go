@@ -38,7 +38,7 @@ type AssetBreakdown struct {
 }
 
 func GetCheckingBalance(db *gorm.DB, reportCurrency string) gin.H {
-	return doGetBalance(db, "Assets:Checking:%", false, reportCurrency)
+	return doGetBalance(db, config.GetConfig().CheckingAccounts, false, reportCurrency)
 }
 
 func GetBalance(db *gorm.DB, reportCurrency string) gin.H {
@@ -46,13 +46,59 @@ func GetBalance(db *gorm.DB, reportCurrency string) gin.H {
 }
 
 func GetBalanceByMode(db *gorm.DB, reportCurrency string, flat bool) gin.H {
-	return doGetBalance(db, "Assets:%", !flat, reportCurrency)
+	return doGetBalance(db, []string{"Assets"}, !flat, reportCurrency)
 }
 
-func doGetBalance(db *gorm.DB, pattern string, rollup bool, reportCurrency string) gin.H {
-	postings := query.Init(db).Like(pattern, "Income:CapitalGains:%").All()
+func doGetBalance(db *gorm.DB, patterns []string, rollup bool, reportCurrency string) gin.H {
+	var dbPatterns []string
+	for _, p := range patterns {
+		if strings.HasPrefix(p, "regex:") {
+			dbPatterns = append(dbPatterns, "Assets")
+		} else {
+			dbPatterns = append(dbPatterns, p)
+		}
+	}
+	dbPatterns = append(dbPatterns, "Income:CapitalGains")
+	postings := query.Init(db).AccountPrefix(dbPatterns...).All()
 	postings = service.PopulateMarketPrice(db, postings)
-	breakdowns := ComputeBreakdowns(db, postings, rollup)
+
+	var breakdowns map[string]AssetBreakdown
+	if !rollup {
+		breakdowns = make(map[string]AssetBreakdown)
+		for _, p := range patterns {
+			group := strings.TrimSuffix(p, ":%")
+			if strings.HasPrefix(p, "regex:") {
+				group = "Checking"
+			}
+			ps := lo.Filter(postings, func(pos posting.Posting, _ int) bool {
+				account := pos.Account
+				if service.IsCapitalGains(pos) {
+					account = service.CapitalGainsSourceAccount(pos.Account)
+				}
+				return utils.MatchAccount(account, p)
+			})
+			if len(ps) > 0 {
+				breakdowns[group] = ComputeBreakdown(db, ps, true, group)
+			}
+		}
+	} else {
+		breakdowns = ComputeBreakdowns(db, postings, rollup)
+
+		// Filter breakdowns to only include those that match the requested patterns.
+		// This prevents internal query accounts like Income:CapitalGains from
+		// appearing in the final output.
+		filtered := make(map[string]AssetBreakdown)
+		for k, v := range breakdowns {
+			for _, p := range patterns {
+				if utils.MatchAccount(k, p) {
+					filtered[k] = v
+					break
+				}
+			}
+		}
+		breakdowns = filtered
+	}
+
 	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
 		breakdowns = convertBreakdownsToReportCurrency(db, breakdowns, reportCurrency)
 	}

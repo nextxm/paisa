@@ -44,7 +44,7 @@
           <nav class="level">
             <div class="level-left">
               <div class="level-item">
-                <p class="title is-5">{data.account}</p>
+                <p class="title is-5 has-text-info">{data.account}</p>
               </div>
               {#if accountNote?.note}
                 <div class="level-item">
@@ -95,7 +95,7 @@
               >
                 <div slot="item" let:index let:style {style}>
                   {@const t = transactions[index]}
-                  <Transaction {t} />
+                  <Transaction {t} highlightAccount={data.account} />
                 </div>
               </VirtualList>
             {/if}

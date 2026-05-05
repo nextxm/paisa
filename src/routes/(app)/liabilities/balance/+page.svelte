@@ -4,6 +4,7 @@
     formatOriginalBalances,
     indendedLiabilityAccountName,
     nonZeroCurrency,
+    nonZeroCurrencyLink,
     nonZeroFloatChange
   } from "$lib/table_formatters";
   import { ajax, buildTree, type LiabilityBreakdown } from "$lib/utils";
@@ -34,19 +35,19 @@
       field: "drawn_amount",
       hozAlign: "right",
       vertAlign: "middle",
-      formatter: nonZeroCurrency
+      formatter: nonZeroCurrencyLink
     },
     {
       title: "Repaid Amount",
       field: "repaid_amount",
       hozAlign: "right",
-      formatter: nonZeroCurrency
+      formatter: nonZeroCurrencyLink
     },
     {
       title: "Balance Amount",
       field: "balance_amount",
       hozAlign: "right",
-      formatter: nonZeroCurrency
+      formatter: nonZeroCurrencyLink
     },
     {
       title: "Original Value",
@@ -58,7 +59,7 @@
       title: "Interest",
       field: "interest_amount",
       hozAlign: "right",
-      formatter: nonZeroCurrency
+      formatter: nonZeroCurrencyLink
     },
     { title: "APR", field: "apr", hozAlign: "right", formatter: nonZeroFloatChange }
   ];

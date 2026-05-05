@@ -8,7 +8,7 @@
   import BoxLabel from "$lib/components/BoxLabel.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
   import Table from "$lib/components/Table.svelte";
-  import { accountName, nonZeroCurrency } from "$lib/table_formatters";
+  import { accountName, nonZeroCurrency, nonZeroCurrencyLink } from "$lib/table_formatters";
   import { ajax, formatPercentage, rem, type Aggregate, type Legend } from "$lib/utils";
   import _ from "lodash";
   import { onMount, tick } from "svelte";
@@ -26,7 +26,7 @@
       title: "Market Value",
       field: "market_amount",
       hozAlign: "right",
-      formatter: nonZeroCurrency
+      formatter: nonZeroCurrencyLink
     },
     {
       title: "Percent",

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -167,8 +168,21 @@ func IsCurrency(currency string) bool {
 	return currency == config.DefaultCurrency()
 }
 
+func MatchAccount(account string, pattern string) bool {
+	if strings.HasPrefix(pattern, "regex:") {
+		matched, _ := regexp.MatchString(pattern[6:], account)
+		return matched
+	}
+	return IsSameOrParent(account, pattern)
+}
+
 func IsCheckingAccount(account string) bool {
-	return IsSameOrParent(account, "Assets:Checking")
+	for _, pattern := range config.GetConfig().CheckingAccounts {
+		if MatchAccount(account, pattern) {
+			return true
+		}
+	}
+	return false
 }
 
 func IsExpenseInterestAccount(account string) bool {

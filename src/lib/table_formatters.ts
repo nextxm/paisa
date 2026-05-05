@@ -60,6 +60,15 @@ export function nonZeroCurrency(cell: CellComponent) {
   return isZero(value) ? "" : formatCurrency(value);
 }
 
+export function nonZeroCurrencyLink(cell: CellComponent) {
+  const value = cell.getValue();
+  if (isZero(value)) return "";
+  const data = cell.getData();
+  const account = data.group || data.account;
+  if (!account) return formatCurrency(value);
+  return `<a href="/accounts/${encodeURIComponent(account)}/transactions">${formatCurrency(value)}</a>`;
+}
+
 export function nonZeroFloatChange(cell: CellComponent) {
   const value = cell.getValue();
   return isZero(value)

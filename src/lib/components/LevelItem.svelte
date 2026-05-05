@@ -7,7 +7,8 @@
     small = false,
     narrow = false,
     color = null,
-    subtitle = null
+    subtitle = null,
+    href = null
   }: {
     title: string;
     value: string;
@@ -15,13 +16,22 @@
     narrow?: boolean;
     color?: string;
     subtitle?: string;
+    href?: string | null;
   } = $props();
 </script>
 
 <div class="level-item {narrow && 'is-narrow'} has-text-left" class:small>
   <div>
     <p class="heading">{title}</p>
-    {#if color}
+    {#if href}
+      <a {href} class="is-block">
+        {#if color}
+          <p class="title" style="padding: 5px; color: {color};">{value}</p>
+        {:else}
+          <p class="title has-text-grey-dark">{value}</p>
+        {/if}
+      </a>
+    {:else if color}
       <p class="title" style="padding: 5px; color: {color};">{value}</p>
     {:else}
       <p class="title has-text-grey-dark">{value}</p>

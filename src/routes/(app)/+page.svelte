@@ -297,8 +297,7 @@
             <article class="tile is-child">
               <div class="content">
                 <p class="subtitle">
-                  <a class="secondary-link has-text-grey" href="/cash_flow/recurring">Recurring</a
-                  >
+                  <a class="secondary-link has-text-grey" href="/cash_flow/recurring">Recurring</a>
                 </p>
                 <div class="content box">
                   <div

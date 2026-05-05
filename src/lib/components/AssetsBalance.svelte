@@ -9,6 +9,7 @@
     formatOriginalBalances,
     indendedAssetAccountName,
     nonZeroCurrency,
+    nonZeroCurrencyLink,
     nonZeroFloatChange,
     nonZeroPercentageChange
   } from "$lib/table_formatters";
@@ -42,7 +43,7 @@
       title: "Balance Units",
       field: "balanceUnits",
       hozAlign: "right",
-      formatter: nonZeroCurrency
+      formatter: nonZeroCurrencyLink
     },
     {
       title: "Original Value",
@@ -50,7 +51,12 @@
       hozAlign: "right",
       formatter: formatOriginalBalances
     },
-    { title: "Market Value", field: "marketAmount", hozAlign: "right", formatter: nonZeroCurrency },
+    {
+      title: "Market Value",
+      field: "marketAmount",
+      hozAlign: "right",
+      formatter: nonZeroCurrencyLink
+    },
     { title: "Change", field: "gainAmount", hozAlign: "right", formatter: formatCurrencyChange },
     { title: "XIRR", field: "xirr", hozAlign: "right", formatter: nonZeroFloatChange },
     {
