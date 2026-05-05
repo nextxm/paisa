@@ -71,7 +71,11 @@ func doGetBalance(db *gorm.DB, patterns []string, rollup bool, reportCurrency st
 				group = "Checking"
 			}
 			ps := lo.Filter(postings, func(pos posting.Posting, _ int) bool {
-				return utils.MatchAccount(pos.Account, p)
+				account := pos.Account
+				if service.IsCapitalGains(pos) {
+					account = service.CapitalGainsSourceAccount(pos.Account)
+				}
+				return utils.MatchAccount(account, p)
 			})
 			if len(ps) > 0 {
 				breakdowns[group] = ComputeBreakdown(db, ps, true, group)

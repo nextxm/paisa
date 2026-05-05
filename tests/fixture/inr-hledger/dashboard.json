@@ -27,7 +27,29 @@
     }
   ],
   "checkingBalances": {
-    "asset_breakdowns": {}
+    "asset_breakdowns": {
+      "Assets:Checking": {
+        "group": "Assets:Checking",
+        "investmentAmount": 0,
+        "withdrawalAmount": 0,
+        "marketAmount": 4072.2455057408,
+        "balanceUnits": 0,
+        "latestPrice": 0,
+        "xirr": 65.38,
+        "gainAmount": 4072.2455057408,
+        "absoluteReturn": 0,
+        "originalBalances": [
+          {
+            "currency": "INR",
+            "amount": 20927.3
+          },
+          {
+            "currency": "USD",
+            "amount": -209.5304
+          }
+        ]
+      }
+    }
   },
   "expenses": {
     "2022-01": [

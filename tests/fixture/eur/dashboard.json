@@ -27,7 +27,25 @@
     }
   ],
   "checkingBalances": {
-    "asset_breakdowns": {}
+    "asset_breakdowns": {
+      "Assets:Checking": {
+        "group": "Assets:Checking",
+        "investmentAmount": 0,
+        "withdrawalAmount": 0,
+        "marketAmount": 994.95,
+        "balanceUnits": 0,
+        "latestPrice": 0,
+        "xirr": 0,
+        "gainAmount": 994.95,
+        "absoluteReturn": 0,
+        "originalBalances": [
+          {
+            "currency": "EUR",
+            "amount": 994.95
+          }
+        ]
+      }
+    }
   },
   "expenses": {},
   "goalSummaries": [],
