@@ -4,6 +4,13 @@
 
 #### New features
 
+- **Epic 3: Simple Account Notes / Metadata** — Users can now attach free-text notes to any account (e.g. "Emergency fund", "Company 401k") without editing the ledger file.
+
+  - **Subtask 3.1 (Backend – DB)** — New `account_notes` SQLite table with a unique index on `account` name. Added as schema migration v4 via `internal/model/account_note` package.
+  - **Subtask 3.2 (Backend – API)** — Four new REST endpoints: `GET /api/account_notes` (list all notes), `GET /api/account_notes/:account` (fetch one note), `POST /api/account_notes/upsert` (create/update), `POST /api/account_notes/delete` (remove). All write endpoints require the `ReadonlyMiddleware` guard.
+  - **Subtask 3.3 (Frontend – Detail Page)** — New `/accounts/[name]/` overview page with a textarea for composing and saving a note, plus a delete button. Notes are persisted immediately via the new API.
+  - **Subtask 3.4 (Frontend – List Widget)** — The `/accounts/[name]/transactions` page now fetches and displays an existing note inline in the page header as a highlighted tag, and includes a "Notes" button to navigate to the notes editor.
+
 - **Epic 2: Recent Transactions Widget on Dashboard** — Added a feed of the 15 most recent transactions to the main dashboard for at-a-glance activity overview.
 
   - **Subtask 2.1 (Backend)** — `GET /api/transaction` now accepts optional `limit` and `offset` query parameters for server-friendly pagination. Both parameters are applied at the transaction level (after grouping postings) so every returned transaction includes all of its postings.

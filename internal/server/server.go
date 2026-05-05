@@ -446,6 +446,22 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, GetCreditCard(db, c.Param("account")))
 	})
 
+	router.GET("/api/account_notes", func(c *gin.Context) {
+		GetAllAccountNotes(db, c)
+	})
+
+	router.GET("/api/account_notes/:account", func(c *gin.Context) {
+		GetAccountNote(db, c)
+	})
+
+	writeGroup.POST("/api/account_notes/upsert", func(c *gin.Context) {
+		UpsertAccountNote(db, c)
+	})
+
+	writeGroup.POST("/api/account_notes/delete", func(c *gin.Context) {
+		DeleteAccountNote(db, c)
+	})
+
 	// ── Connect-RPC (typed) endpoints ────────────────────────────────────────
 	// Mount the Connect handler under /connect/.  Auth is handled by the shared
 	// TokenAuthMiddleware which already guards both /api/ and /connect/ prefixes.

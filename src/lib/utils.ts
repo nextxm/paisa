@@ -620,6 +620,12 @@ export interface ReconcileItem {
   ignored: boolean;
 }
 
+export interface AccountNote {
+  id: number;
+  account: string;
+  note: string;
+}
+
 const tokenKey = "token";
 
 type RequestOptions = RequestInit & {
@@ -758,6 +764,24 @@ export function ajax(
   options?: RequestOptions,
   params?: Record<string, string>
 ): Promise<{ creditCard: CreditCardSummary; found: boolean }>;
+
+export function ajax(route: "/api/account_notes"): Promise<{ account_notes: AccountNote[] }>;
+
+export function ajax(
+  route: "/api/account_notes/:account",
+  options?: RequestOptions,
+  params?: Record<string, string>
+): Promise<{ account_note: AccountNote | null; found: boolean }>;
+
+export function ajax(
+  route: "/api/account_notes/upsert",
+  options?: RequestOptions
+): Promise<{ account_note: AccountNote; saved: boolean }>;
+
+export function ajax(
+  route: "/api/account_notes/delete",
+  options?: RequestOptions
+): Promise<{ success: boolean }>;
 
 export function ajax(route: "/api/goals"): Promise<{ goals: GoalSummary[] }>;
 export function ajax(
