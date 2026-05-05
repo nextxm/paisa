@@ -89,7 +89,10 @@
     },
     "labs": {
       "firefly_reconcile": false
-    }
+    },
+    "checking_accounts": [
+      "Assets:Checking"
+    ]
   },
   "now": "2022-02-07T00:00:00Z",
   "schema": {

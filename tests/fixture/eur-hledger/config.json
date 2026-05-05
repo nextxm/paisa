@@ -78,7 +78,10 @@
     },
     "labs": {
       "firefly_reconcile": false
-    }
+    },
+    "checking_accounts": [
+      "Assets:Checking"
+    ]
   },
   "is_journal_dirty": false,
   "last_price_update": "",

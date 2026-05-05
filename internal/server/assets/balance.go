@@ -38,7 +38,15 @@ type AssetBreakdown struct {
 }
 
 func GetCheckingBalance(db *gorm.DB, reportCurrency string) gin.H {
-	return doGetBalance(db, "Assets:Checking:%", false, reportCurrency)
+	res := doGetBalance(db, config.GetConfig().CheckingAccounts, false, reportCurrency)
+	breakdowns := res["asset_breakdowns"].(map[string]AssetBreakdown)
+	filtered := make(map[string]AssetBreakdown)
+	for k, v := range breakdowns {
+		if utils.IsCheckingAccount(k) {
+			filtered[k] = v
+		}
+	}
+	return gin.H{"asset_breakdowns": filtered}
 }
 
 func GetBalance(db *gorm.DB, reportCurrency string) gin.H {
@@ -46,11 +54,19 @@ func GetBalance(db *gorm.DB, reportCurrency string) gin.H {
 }
 
 func GetBalanceByMode(db *gorm.DB, reportCurrency string, flat bool) gin.H {
-	return doGetBalance(db, "Assets:%", !flat, reportCurrency)
+	return doGetBalance(db, []string{"Assets"}, !flat, reportCurrency)
 }
 
-func doGetBalance(db *gorm.DB, pattern string, rollup bool, reportCurrency string) gin.H {
-	postings := query.Init(db).Like(pattern, "Income:CapitalGains:%").All()
+func doGetBalance(db *gorm.DB, patterns []string, rollup bool, reportCurrency string) gin.H {
+	var dbPatterns []string
+	for _, p := range patterns {
+		if strings.HasPrefix(p, "regex:") {
+			dbPatterns = append(dbPatterns, "Assets")
+		} else {
+			dbPatterns = append(dbPatterns, p)
+		}
+	}
+	postings := query.Init(db).AccountPrefix(dbPatterns...).Like("Income:CapitalGains:%").All()
 	postings = service.PopulateMarketPrice(db, postings)
 	breakdowns := ComputeBreakdowns(db, postings, rollup)
 	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
