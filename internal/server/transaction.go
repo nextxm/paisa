@@ -15,6 +15,7 @@ import (
 
 func GetTransactions(db *gorm.DB) gin.H {
 	postings := query.Init(db).Desc().All()
+	postings = accounting.PopulateBalance(postings)
 	transactions := transaction.Build(postings)
 
 	sort.Slice(transactions, func(i, j int) bool { return transactions[i].ID > transactions[j].ID })
@@ -70,6 +71,7 @@ func GetBalancedPostings(db *gorm.DB) gin.H {
 
 func GetLatestTransactions(db *gorm.DB) []transaction.Transaction {
 	postings := query.Init(db).Desc().Limit(200).All()
+	postings = accounting.PopulateBalance(postings)
 	transactions := transaction.Build(postings)
 
 	sort.Slice(transactions, func(i, j int) bool { return transactions[i].ID > transactions[j].ID })

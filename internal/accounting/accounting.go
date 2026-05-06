@@ -193,12 +193,22 @@ func SortTransactionAsc(transactions []transaction.Transaction) []transaction.Tr
 }
 
 func SortAsc(postings []posting.Posting) []posting.Posting {
-	sort.Slice(postings, func(i, j int) bool { return postings[i].Date.Before(postings[j].Date) })
+	sort.Slice(postings, func(i, j int) bool {
+		if postings[i].Date.Equal(postings[j].Date) {
+			return postings[i].ID < postings[j].ID
+		}
+		return postings[i].Date.Before(postings[j].Date)
+	})
 	return postings
 }
 
 func SortDesc(postings []posting.Posting) []posting.Posting {
-	sort.Slice(postings, func(i, j int) bool { return postings[i].Date.After(postings[j].Date) })
+	sort.Slice(postings, func(i, j int) bool {
+		if postings[i].Date.Equal(postings[j].Date) {
+			return postings[i].ID > postings[j].ID
+		}
+		return postings[i].Date.After(postings[j].Date)
+	})
 	return postings
 }
 
