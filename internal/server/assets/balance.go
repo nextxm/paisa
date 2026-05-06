@@ -53,7 +53,7 @@ func doGetBalance(db *gorm.DB, patterns []string, rollup bool, reportCurrency st
 	var dbPatterns []string
 	for _, p := range patterns {
 		if strings.HasPrefix(p, "regex:") {
-			dbPatterns = append(dbPatterns, "Assets")
+			dbPatterns = append(dbPatterns, "Assets", "Liabilities")
 		} else {
 			dbPatterns = append(dbPatterns, p)
 		}
@@ -66,19 +66,39 @@ func doGetBalance(db *gorm.DB, patterns []string, rollup bool, reportCurrency st
 	if !rollup {
 		breakdowns = make(map[string]AssetBreakdown)
 		for _, p := range patterns {
-			group := strings.TrimSuffix(p, ":%")
 			if strings.HasPrefix(p, "regex:") {
-				group = "Checking"
-			}
-			ps := lo.Filter(postings, func(pos posting.Posting, _ int) bool {
-				account := pos.Account
-				if service.IsCapitalGains(pos) {
-					account = service.CapitalGainsSourceAccount(pos.Account)
+				matchedAccounts := make(map[string]bool)
+				for _, pos := range postings {
+					account := pos.Account
+					if service.IsCapitalGains(pos) {
+						account = service.CapitalGainsSourceAccount(pos.Account)
+					}
+					if utils.MatchAccount(account, p) {
+						matchedAccounts[account] = true
+					}
 				}
-				return utils.MatchAccount(account, p)
-			})
-			if len(ps) > 0 {
-				breakdowns[group] = ComputeBreakdown(db, ps, true, group)
+				for account := range matchedAccounts {
+					ps := lo.Filter(postings, func(pos posting.Posting, _ int) bool {
+						acc := pos.Account
+						if service.IsCapitalGains(pos) {
+							acc = service.CapitalGainsSourceAccount(pos.Account)
+						}
+						return acc == account
+					})
+					breakdowns[account] = ComputeBreakdown(db, ps, true, account)
+				}
+			} else {
+				group := strings.TrimSuffix(p, ":%")
+				ps := lo.Filter(postings, func(pos posting.Posting, _ int) bool {
+					account := pos.Account
+					if service.IsCapitalGains(pos) {
+						account = service.CapitalGainsSourceAccount(pos.Account)
+					}
+					return utils.MatchAccount(account, p)
+				})
+				if len(ps) > 0 {
+					breakdowns[group] = ComputeBreakdown(db, ps, true, group)
+				}
 			}
 		}
 	} else {
