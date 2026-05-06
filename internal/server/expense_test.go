@@ -1,6 +1,7 @@
 package server
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -147,7 +148,7 @@ func TestComputeExpenseTrends_VariancePct(t *testing.T) {
 	assert.True(t, tr.Variance.Equal(decimal.NewFromFloat(30)))
 	require.NotNil(t, tr.VariancePct)
 	// (450 - 420) / 420 * 100 = 7.142857... rounded to 2dp = 7.14
-	assert.True(t, tr.VariancePct.Equal(decimal.NewFromFloat(7.14)), "got %s", tr.VariancePct.String())
+	assert.Truef(t, tr.VariancePct.Equal(decimal.NewFromFloat(7.14)), "got %s", tr.VariancePct.String())
 }
 
 // TestComputeExpenseTrends_TaxExcluded verifies that Expenses:Tax postings are
@@ -190,7 +191,7 @@ func TestComputeExpenseTrends_MultipleCategories(t *testing.T) {
 	accounts := []string{"Expenses:Utilities", "Expenses:Groceries", "Expenses:Dining"}
 	for i, acc := range accounts {
 		require.NoError(t, db.Create(&posting.Posting{
-			TransactionID: "t" + string(rune('0'+i)),
+			TransactionID: "t" + strconv.Itoa(i),
 			Date:          parseDay("2024-03-15"),
 			Account:       acc,
 			Amount:        decimal.NewFromFloat(float64((i + 1) * 100)),
