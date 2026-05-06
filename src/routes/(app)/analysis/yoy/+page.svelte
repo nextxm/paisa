@@ -27,10 +27,10 @@
   let selectedCategorySeries = $derived((category ? categorySeries[category] : undefined) || {});
   let insights = $derived(calculateYoYInsights(expenseSeries, incomeSeries, categorySeries));
 
-  async function refresh() {
+  async function refresh(selectedYearCount: number) {
     const [expenseData, incomeData] = await Promise.all([
-      ajax(`/api/expense?years=${yearCount}`),
-      ajax(`/api/income?years=${yearCount}`)
+      ajax(`/api/expense?years=${selectedYearCount}`),
+      ajax(`/api/income?years=${selectedYearCount}`)
     ]);
 
     expenseSeries = expenseData.multi_year || {};
@@ -62,7 +62,7 @@
   }
 
   $effect(() => {
-    void refresh();
+    void refresh(yearCount);
   });
 </script>
 

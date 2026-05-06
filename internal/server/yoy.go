@@ -32,6 +32,8 @@ func parseYearsParam(raw string) int {
 }
 
 func computeYoYMonthlySeries(postings []posting.Posting, years int, amountFn func(decimal.Decimal) decimal.Decimal) map[string]YoYMonthlySeries {
+	// Defensive normalization so direct callers (tests/helpers) are still safe
+	// even when years is not parsed through parseYearsParam.
 	if years < 1 {
 		years = 1
 	}

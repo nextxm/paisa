@@ -15,6 +15,8 @@ export interface YoYInsightSummary {
 }
 
 function expenseCategory(account: string) {
+  // Expected format is "Expenses:<Category>[:SubCategory...]".
+  // If the second segment is missing, we fall back to the original account.
   const parts = account.split(":");
   return parts.length >= 2 ? parts[1] : account;
 }
@@ -46,15 +48,6 @@ export function buildCategoryYoYSeries(
 ): Record<string, Record<string, YoYSeries>> {
   const yearSet = new Set(years);
   const result: Record<string, Record<string, YoYSeries>> = {};
-
-  for (const year of years) {
-    for (let month = 1; month <= 12; month++) {
-      const key = `${year}-${String(month).padStart(2, "0")}`;
-      for (const category of Object.keys(result)) {
-        result[category][year].month[key] = result[category][year].month[key] || 0;
-      }
-    }
-  }
 
   for (const posting of postings) {
     if (!posting.account.startsWith("Expenses:")) {
