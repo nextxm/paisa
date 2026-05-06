@@ -5,6 +5,7 @@
     ajax,
     secondName,
     type Posting,
+    type ExpenseTrend,
     formatCurrency,
     formatPercentage,
     type Legend
@@ -17,6 +18,7 @@
   import { dateRange, month, setAllowedDateRange } from "../../../../store";
   import { writable } from "svelte/store";
   import PostingCard from "$lib/components/PostingCard.svelte";
+  import ExpenseTrendCard from "$lib/components/ExpenseTrendCard.svelte";
   import LevelItem from "$lib/components/LevelItem.svelte";
   import COLORS from "$lib/colors";
   import ZeroState from "$lib/components/ZeroState.svelte";
@@ -32,6 +34,7 @@
     grouped_incomes: Record<string, Posting[]> = $state(null),
     grouped_investments: Record<string, Posting[]> = $state(null),
     grouped_taxes: Record<string, Posting[]> = $state(null),
+    trends: ExpenseTrend[] = $state([]),
     destroy: () => void = $state();
 
   let legends: Legend[] = $state([]);
@@ -72,6 +75,23 @@
       : ""
   );
 
+  /**
+   * Build a per-category monthly total map (last 6 months) from grouped_expenses,
+   * keyed by "YYYY-MM".  Used to render sparklines next to each trend card.
+   */
+  function categorySparklineData(category: string): Record<string, number> {
+    if (!grouped_expenses) return {};
+    const result: Record<string, number> = {};
+    for (const [ym, postings] of Object.entries(grouped_expenses)) {
+      const total = _.sumBy(
+        postings.filter((p) => secondName(p.account) === category),
+        (p) => p.amount
+      );
+      if (total > 0) result[ym] = total;
+    }
+    return result;
+  }
+
   $effect(() => {
     if (grouped_expenses && z && renderer) {
       renderCalendar($month, grouped_expenses[$month], z, $groups);
@@ -88,6 +108,7 @@
   onMount(async () => {
     ({
       expenses: expenses,
+      trends: trends,
       month_wise: {
         expenses: grouped_expenses,
         incomes: grouped_incomes,
@@ -185,6 +206,25 @@
               <svg id="d3-current-month-breakdown" width="100%" />
             </div>
           </div>
+          {#if trends.length > 0}
+            <div class="column is-full">
+              <div class="box">
+                <p class="has-text-weight-semibold has-text-grey mb-3">
+                  30-Day Spending Trends (vs. previous 30 days)
+                </p>
+                <div class="columns is-multiline is-mobile">
+                  {#each trends as trend}
+                    {@const sparkData = categorySparklineData(trend.category)}
+                    {@const cardColor = z ? z(trend.category) : COLORS.lossText}
+                    <div class="column is-half-mobile is-one-third-tablet is-one-quarter-desktop">
+                      <ExpenseTrendCard {trend} color={cardColor} {sparkData} />
+                    </div>
+                  {/each}
+                </div>
+              </div>
+              <BoxLabel text="Month-over-Month Trends" />
+            </div>
+          {/if}
           <div class="column is-full">
             <div class="box">
               <ZeroState item={expenses}>

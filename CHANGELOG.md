@@ -4,6 +4,12 @@
 
 #### New features
 
+- **Epic 4: Month-over-Month Spending Trends** — Added rolling 30-day spending trend comparison to the Monthly Expenses page. Each expense category now shows its current 30-day total alongside the previous 30-day total, a variance amount, a colour-coded percentage change (↑ red / ↓ green), and a 6-month sparkline bar chart.
+
+  - **Subtask 4.1 (Backend – Monthly Expense Trends)** — `GetExpense()` in `internal/server/expense.go` now computes and returns a `trends` array. Each entry contains `category`, `current_month`, `previous_month`, `variance`, and `variance_pct` (null when there are no previous-period expenses). Rolling windows: today−30 to today (current) and today−60 to today−30 (previous). `Expenses:Tax` postings are excluded. Six unit tests added in `internal/server/expense_test.go`.
+  - **Subtask 4.2 (Frontend – Trend Indicators)** — New `ExpenseTrendCard.svelte` component renders the category name, current amount, previous amount, and a coloured arrow + percentage badge. The Monthly Expenses page now displays a "30-Day Spending Trends" grid below the calendar using this component.
+  - **Subtask 4.3 (Frontend – Monthly Trend Sparkline)** — New `SparklineChart.svelte` component renders a compact SVG bar chart for up to 6 months of per-category spending history. The last bar (current month) is highlighted in the category colour; a dashed red average line is overlaid. Sparklines are embedded inside each `ExpenseTrendCard` when more than one month of history is available.
+
 - **Epic 3: Simple Account Notes / Metadata** — Users can now attach free-text notes to any account (e.g. "Emergency fund", "Company 401k") without editing the ledger file.
 
   - **Subtask 3.1 (Backend – DB)** — New `account_notes` SQLite table with a unique index on `account` name. Added as schema migration v4 via `internal/model/account_note` package.

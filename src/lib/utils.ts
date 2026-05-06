@@ -570,6 +570,14 @@ export interface GoalSummary {
   priority: number;
 }
 
+export interface ExpenseTrend {
+  category: string;
+  current_month: number;
+  previous_month: number;
+  variance: number;
+  variance_pct: number | null;
+}
+
 export interface SheetLineResult {
   line: number;
   result: string;
@@ -722,6 +730,7 @@ export function ajax(route: "/api/income"): Promise<{
 }>;
 export function ajax(route: "/api/expense"): Promise<{
   expenses: Posting[];
+  trends: ExpenseTrend[];
   month_wise: {
     expenses: { [key: string]: Posting[] };
     incomes: { [key: string]: Posting[] };
