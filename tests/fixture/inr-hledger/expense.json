@@ -814,5 +814,21 @@
     },
     "taxes": {},
     "liabilities": {}
-  }
+  },
+  "trends": [
+    {
+      "category": "Charges",
+      "current_month": 100,
+      "previous_month": 0,
+      "variance": 100,
+      "variance_pct": null
+    },
+    {
+      "category": "Rent",
+      "current_month": 0,
+      "previous_month": 20000,
+      "variance": -20000,
+      "variance_pct": -100
+    }
+  ]
 }
