@@ -14,6 +14,15 @@ import (
 	"gorm.io/gorm"
 )
 
+// ExpenseTrend holds month-over-month spending data for a single expense category.
+type ExpenseTrend struct {
+	Category      string           `json:"category"`
+	CurrentMonth  decimal.Decimal  `json:"current_month"`
+	PreviousMonth decimal.Decimal  `json:"previous_month"`
+	Variance      decimal.Decimal  `json:"variance"`
+	VariancePct   *decimal.Decimal `json:"variance_pct"`
+}
+
 type Node struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
@@ -33,6 +42,86 @@ type Pair struct {
 type Graph struct {
 	Nodes []Node `json:"nodes"`
 	Links []Link `json:"links"`
+}
+
+// expenseCategory returns the second segment of an account name
+// (e.g. "Expenses:Groceries:Supermarket" → "Groceries").
+func expenseCategory(account string) string {
+	parts := strings.SplitN(account, ":", 3)
+	if len(parts) >= 2 {
+		return parts[1]
+	}
+	return account
+}
+
+// ComputeExpenseTrends calculates month-over-month spending trends for each
+// expense category.  "Current month" is the rolling 30-day window ending
+// today; "previous month" is the 30-day window immediately before that.
+func ComputeExpenseTrends(db *gorm.DB) []ExpenseTrend {
+	now := utils.Now()
+	currentEnd := utils.EndOfDay(now)
+	currentStart := utils.ToDate(now.AddDate(0, 0, -30))
+	previousStart := utils.ToDate(now.AddDate(0, 0, -60))
+
+	currentPostings := query.Init(db).
+		Where("date >= ? and date <= ?", currentStart, currentEnd).
+		Like("Expenses:%").
+		NotAccountPrefix("Expenses:Tax").
+		All()
+
+	previousPostings := query.Init(db).
+		Where("date >= ? and date < ?", previousStart, currentStart).
+		Like("Expenses:%").
+		NotAccountPrefix("Expenses:Tax").
+		All()
+
+	// Aggregate amounts per category.
+	currentByCategory := make(map[string]decimal.Decimal)
+	for _, p := range currentPostings {
+		cat := expenseCategory(p.Account)
+		currentByCategory[cat] = currentByCategory[cat].Add(p.Amount)
+	}
+
+	previousByCategory := make(map[string]decimal.Decimal)
+	for _, p := range previousPostings {
+		cat := expenseCategory(p.Account)
+		previousByCategory[cat] = previousByCategory[cat].Add(p.Amount)
+	}
+
+	// Union of categories from both windows.
+	seen := make(map[string]bool)
+	for cat := range currentByCategory {
+		seen[cat] = true
+	}
+	for cat := range previousByCategory {
+		seen[cat] = true
+	}
+
+	categories := lo.Keys(seen)
+	sort.Strings(categories)
+
+	trends := make([]ExpenseTrend, 0, len(categories))
+	for _, cat := range categories {
+		current := currentByCategory[cat]
+		previous := previousByCategory[cat]
+		variance := current.Sub(previous)
+
+		var variancePct *decimal.Decimal
+		if !previous.IsZero() {
+			pct := variance.Div(previous).Mul(decimal.NewFromInt(100)).Round(2)
+			variancePct = &pct
+		}
+
+		trends = append(trends, ExpenseTrend{
+			Category:      cat,
+			CurrentMonth:  current,
+			PreviousMonth: previous,
+			Variance:      variance,
+			VariancePct:   variancePct,
+		})
+	}
+
+	return trends
 }
 
 func GetCurrentExpense(db *gorm.DB) map[string][]posting.Posting {
@@ -70,6 +159,7 @@ func GetExpense(db *gorm.DB) gin.H {
 
 	return gin.H{
 		"expenses": expenses,
+		"trends":   ComputeExpenseTrends(db),
 		"month_wise": gin.H{
 			"expenses":    utils.GroupByMonth(expenses),
 			"incomes":     utils.GroupByMonth(incomes),
