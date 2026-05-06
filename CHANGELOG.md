@@ -4,6 +4,12 @@
 
 #### New features
 
+- **Epic 11: Year-over-Year Comparison Charts** — Added backend multi-year series support and a new YoY analysis experience for comparing spending and income trends across calendar years.
+
+  - **Subtask 11.1 (Backend – Multi-Year Expense/Income Data)** — `GET /api/expense` and `GET /api/income` now accept an optional `years` query parameter (default `1`, max `10`) and return `multi_year` data shaped as `{ "<year>": { month: { "YYYY-MM": amount }, total } }`. Leap-day transactions are naturally included in February aggregates.
+  - **Subtask 11.2 (Frontend – YoY Comparison Chart)** — Added reusable `YoYChart.svelte` component supporting line and grouped-bar modes with Jan–Dec alignment, year legends, and month-level hover tooltips across all selected years.
+  - **Subtask 11.3 (Frontend – YoY Analysis Page)** — Added `/analysis/yoy` page with configurable year range (2–5 years), spending + income YoY charts, category YoY chart (line/bar toggle), computed YoY insights, and CSV export.
+
 - **Epic 4: Month-over-Month Spending Trends** — Added rolling 30-day spending trend comparison to the Monthly Expenses page. Each expense category now shows its current 30-day total alongside the previous 30-day total, a variance amount, a colour-coded percentage change (↑ red / ↓ green), and a 6-month sparkline bar chart.
 
   - **Subtask 4.1 (Backend – Monthly Expense Trends)** — `GetExpense()` in `internal/server/expense.go` now computes and returns a `trends` array. Each entry contains `category`, `current_month`, `previous_month`, `variance`, and `variance_pct` (null when there are no previous-period expenses). Rolling windows: today−30 to today (current) and today−60 to today−30 (previous). `Expenses:Tax` postings are excluded. Six unit tests added in `internal/server/expense_test.go`.

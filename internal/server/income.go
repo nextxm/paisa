@@ -31,16 +31,34 @@ type Tax struct {
 	Postings  []posting.Posting `json:"postings"`
 }
 
-func GetIncome(db *gorm.DB) gin.H {
+func GetIncome(db *gorm.DB, years ...int) gin.H {
 	incomePostings := query.Init(db).Like("Income:%").All()
 	taxPostings := query.Init(db).AccountPrefix("Expenses:Tax").All()
 	p := query.Init(db).First()
-
-	if p == nil {
-		return gin.H{"income_timeline": []Income{}, "tax_timeline": []Tax{}, "yearly_cards": []IncomeYearlyCard{}}
+	requestedYears := 1
+	if len(years) > 0 {
+		requestedYears = years[0]
 	}
 
-	return gin.H{"income_timeline": computeIncomeTimeline(incomePostings), "tax_timeline": computeTaxTimeline(taxPostings), "yearly_cards": computeIncomeYearlyCard(p.Date, taxPostings, incomePostings)}
+	if p == nil {
+		return gin.H{
+			"income_timeline": []Income{},
+			"tax_timeline":    []Tax{},
+			"yearly_cards":    []IncomeYearlyCard{},
+			"multi_year":      map[string]YoYMonthlySeries{},
+		}
+	}
+
+	return gin.H{
+		"income_timeline": computeIncomeTimeline(incomePostings),
+		"tax_timeline":    computeTaxTimeline(taxPostings),
+		"yearly_cards":    computeIncomeYearlyCard(p.Date, taxPostings, incomePostings),
+		"multi_year": computeYoYMonthlySeries(
+			incomePostings,
+			requestedYears,
+			func(amount decimal.Decimal) decimal.Decimal { return amount.Neg() },
+		),
+	}
 }
 
 func computeIncomeTimeline(postings []posting.Posting) []Income {

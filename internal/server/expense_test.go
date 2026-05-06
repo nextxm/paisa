@@ -226,3 +226,55 @@ func TestComputeExpenseTrends_OutsideWindowIgnored(t *testing.T) {
 	trends := ComputeExpenseTrends(db)
 	assert.Empty(t, trends, "postings outside the 60-day window must be ignored")
 }
+
+func TestComputeYoYMonthlySeries_InitializesYearsAndHandlesLeapDay(t *testing.T) {
+	utils.SetNow("2025-03-20")
+	defer utils.UnsetNow()
+
+	series := computeYoYMonthlySeries(
+		[]posting.Posting{
+			{Date: parseDay("2024-02-29"), Amount: decimal.NewFromFloat(120.5)},
+			{Date: parseDay("2025-01-03"), Amount: decimal.NewFromFloat(80)},
+		},
+		2,
+		nil,
+	)
+
+	require.Contains(t, series, "2025")
+	require.Contains(t, series, "2024")
+	assert.Len(t, series["2025"].Month, 12)
+	assert.Len(t, series["2024"].Month, 12)
+
+	assert.True(t, series["2024"].Month["2024-02"].Equal(decimal.NewFromFloat(120.5)))
+	assert.True(t, series["2025"].Month["2025-01"].Equal(decimal.NewFromFloat(80)))
+}
+
+func TestGetExpense_MultiYearSeries(t *testing.T) {
+	loadTestConfig(t, false)
+	utils.SetNow("2025-03-20")
+	defer utils.UnsetNow()
+
+	db := openTestDB(t)
+	require.NoError(t, db.Create(&posting.Posting{
+		TransactionID: "t1",
+		Date:          parseDay("2025-01-10"),
+		Account:       "Expenses:Groceries",
+		Amount:        decimal.NewFromFloat(100),
+		Commodity:     "INR",
+	}).Error)
+	require.NoError(t, db.Create(&posting.Posting{
+		TransactionID: "t2",
+		Date:          parseDay("2024-01-12"),
+		Account:       "Expenses:Dining",
+		Amount:        decimal.NewFromFloat(60),
+		Commodity:     "INR",
+	}).Error)
+
+	response := GetExpense(db, 2)
+	series := response["multi_year"].(map[string]YoYMonthlySeries)
+
+	assert.True(t, series["2025"].Total.Equal(decimal.NewFromFloat(100)))
+	assert.True(t, series["2024"].Total.Equal(decimal.NewFromFloat(60)))
+	assert.True(t, series["2025"].Month["2025-01"].Equal(decimal.NewFromFloat(100)))
+	assert.True(t, series["2024"].Month["2024-01"].Equal(decimal.NewFromFloat(60)))
+}
