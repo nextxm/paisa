@@ -280,6 +280,11 @@ export interface IncomeYearlyCard {
   net_income: number;
 }
 
+export interface YoYSeries {
+  month: Record<string, number>;
+  total: number;
+}
+
 export interface Tax {
   gain: number;
   taxable: number;
@@ -727,10 +732,12 @@ export function ajax(route: "/api/income"): Promise<{
   income_timeline: Income[];
   tax_timeline: Tax[];
   yearly_cards: IncomeYearlyCard[];
+  multi_year: Record<string, YoYSeries>;
 }>;
 export function ajax(route: "/api/expense"): Promise<{
   expenses: Posting[];
   trends: ExpenseTrend[];
+  multi_year: Record<string, YoYSeries>;
   month_wise: {
     expenses: { [key: string]: Posting[] };
     incomes: { [key: string]: Posting[] };

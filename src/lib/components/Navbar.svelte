@@ -119,6 +119,12 @@
     },
     { label: "Income", href: "/income" },
     {
+      label: "Analysis",
+      href: "/analysis",
+      tag: "alpha",
+      children: [{ label: "YoY", href: "/yoy", tag: "alpha" }]
+    },
+    {
       label: "Ledger",
       href: "/ledger",
       children: [

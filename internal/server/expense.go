@@ -129,8 +129,12 @@ func GetCurrentExpense(db *gorm.DB) map[string][]posting.Posting {
 	return utils.GroupByMonth(expenses)
 }
 
-func GetExpense(db *gorm.DB) gin.H {
+func GetExpense(db *gorm.DB, years ...int) gin.H {
 	postings := query.Init(db).All()
+	requestedYears := 1
+	if len(years) > 0 {
+		requestedYears = years[0]
+	}
 
 	expenses := []posting.Posting{}
 	incomes := []posting.Posting{}
@@ -160,6 +164,11 @@ func GetExpense(db *gorm.DB) gin.H {
 	return gin.H{
 		"expenses": expenses,
 		"trends":   ComputeExpenseTrends(db),
+		"multi_year": computeYoYMonthlySeries(
+			expenses,
+			requestedYears,
+			nil,
+		),
 		"month_wise": gin.H{
 			"expenses":    utils.GroupByMonth(expenses),
 			"incomes":     utils.GroupByMonth(incomes),
