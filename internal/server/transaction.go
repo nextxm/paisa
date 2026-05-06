@@ -35,6 +35,7 @@ func GetTransactionsHandler(db *gorm.DB, c *gin.Context) {
 		q = q.AccountPrefix(account)
 	}
 	postings := q.All()
+	postings = accounting.PopulateBalance(postings)
 	transactions := transaction.Build(postings)
 
 	sort.Slice(transactions, func(i, j int) bool { return transactions[i].ID > transactions[j].ID })

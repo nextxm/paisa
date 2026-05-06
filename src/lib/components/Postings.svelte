@@ -13,7 +13,8 @@
     }
   };
 
-  let { postings }: { postings: Posting[] } = $props();
+  let { postings, highlightAccount = "" }: { postings: Posting[]; highlightAccount?: string } =
+    $props();
 </script>
 
 <div style="margin: 4px 0;">
@@ -30,6 +31,16 @@
         <div class="has-text-right" style="min-width: 50px;">
           {formatCurrency(p.amount, 2)}
         </div>
+        {#if highlightAccount && (p.account === highlightAccount || p.account.startsWith(highlightAccount + ":"))}
+          <div class="has-text-right ml-4" style="min-width: 80px;">
+            {formatFloatUptoPrecision(p.quantity, 2)}
+            {p.commodity}
+          </div>
+          <div class="has-text-right ml-4 has-text-grey" style="min-width: 100px;">
+            {formatCurrency(p.balance)}
+            {p.commodity}
+          </div>
+        {/if}
       </div>
     </div>
   {/each}
