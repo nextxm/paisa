@@ -1,6 +1,4 @@
 name: Test
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 on:
   workflow_dispatch:
   push:
@@ -22,7 +20,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: nixbuild/nix-quick-install-action@v34
       - uses: nix-community/cache-nix-action@v7
         with:
@@ -46,7 +44,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: nixbuild/nix-quick-install-action@v34
       - uses: nix-community/cache-nix-action@v7
         with:
@@ -71,7 +69,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: nixbuild/nix-quick-install-action@v34
       - uses: nix-community/cache-nix-action@v7
         with:
