@@ -8,6 +8,7 @@
     formatCurrency,
     formatFloat,
     type AccountGain,
+    type AccountReconciliationStatus,
     type Networth,
     type PortfolioAggregate,
     type AssetBreakdown,
@@ -22,6 +23,11 @@
   import { iconify } from "$lib/icon";
   import BoxLabel from "$lib/components/BoxLabel.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
+  import {
+    reconciliationLabel,
+    reconciliationTagClass,
+    reconciliationIcon
+  } from "$lib/reconciliation";
 
   let commodities: string[] = $state([]);
   let selectedCommodities: string[] = $state([]);
@@ -44,6 +50,7 @@
 
   let destroyCallback = () => {};
   let postings: Posting[] = $state([]);
+  let reconciliationStatus: AccountReconciliationStatus | null = $state(null);
 
   let securityTypeR: any = $state(null),
     portfolioR: any = $state(null),
@@ -55,11 +62,23 @@
   });
 
   onMount(async () => {
-    ({
-      gain_timeline_breakdown: gain,
-      asset_breakdown: assetBreakdown,
-      portfolio_allocation: { name_and_security_type, security_type, rating, industry, commodities }
-    } = await ajax("/api/gain/:name", null, data));
+    [
+      {
+        gain_timeline_breakdown: gain,
+        asset_breakdown: assetBreakdown,
+        portfolio_allocation: {
+          name_and_security_type,
+          security_type,
+          rating,
+          industry,
+          commodities
+        }
+      },
+      reconciliationStatus
+    ] = await Promise.all([
+      ajax("/api/gain/:name", null, data),
+      ajax("/api/accounts/:account/reconciliation", null, { account: data.name })
+    ]);
 
     overview = _.last(gain.networthTimeline);
     postings = _.chain(gain.postings)
@@ -196,6 +215,18 @@
                 <span class="has-text-weight-bold">{formatCurrency(overview.withdrawalAmount)}</span
                 >
               </div>
+              {#if reconciliationStatus}
+                <div class="ml-3">
+                  <a
+                    href="/accounts/{encodeURIComponent(data.name)}?reconcile=1"
+                    class="tag is-light {reconciliationTagClass(reconciliationStatus)} is-rounded"
+                    title={reconciliationLabel(reconciliationStatus)}
+                    style="padding: 0 0.5em;"
+                  >
+                    <span class="custom-icon">{reconciliationIcon(reconciliationStatus)}</span>
+                  </a>
+                </div>
+              {/if}
               {#if overview.balanceUnits > 0}
                 <div class="ml-3">
                   <span class="mr-1 is-size-7 has-text-grey">Balance Units</span>

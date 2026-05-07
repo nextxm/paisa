@@ -5,15 +5,18 @@
 #### Performance
 
 - **SQL-level aggregation for balance queries** — Introduces `query.GroupSum()` as a reusable SQL aggregation primitive and improves the `ComputeBreakdowns` algorithm.
-
   - `query.GroupSum()` — new method on `Query` that returns per `(account, commodity)` aggregated `SUM(amount)` and `SUM(quantity)` rows directly from the database, as a lightweight alternative to `All()` when only totals are needed.
   - `ComputeBreakdowns` — internal O(A × N) loop replaced with a two-phase O(N + A × C) approach: postings are first grouped by effective account in O(N), then each breakdown group collects from the pre-built index (O(A × C) where C is the number of distinct leaf accounts).
   - Unit tests added for `GroupSum` and `ComputeBreakdowns`.
 
 #### New features
 
-- **Epic: Import feature improvements (Subtask 1)** — Added `POST /api/import/preview` to parse CSV content in dry-run mode and return row-by-row preview data with validation status/error messages before committing anything to journal files.
+- **Epic 12: Account Reconciliation Status Tracker** — Added account reconciliation metadata storage, reconciliation status badges, and a dashboard reconciliation summary widget.
+  - **Subtask 12.1 (Backend – Account Reconciliation Metadata)** — Added schema migration v6 with new `account_reconciliation` table (`account`, `last_reconciled_date`, `frequency_days`) and new APIs: `GET /api/accounts/reconciliation`, `GET /api/accounts/:account/reconciliation`, and `PATCH /api/accounts/:account/reconciliation`. Responses include computed `days_since` and `is_overdue`.
+  - **Subtask 12.2 (Frontend – Reconciliation Status Badge)** — Assets balance rows and account detail pages now show color-coded reconciliation badges ("Last reconciled: ..."). Clicking a badge opens reconciliation actions on the account detail page.
+  - **Subtask 12.3 (Frontend – Reconciliation Dashboard Widget)** — Dashboard now includes an "Account Reconciliation" widget with up-to-date/overdue counts and quick links to reconcile overdue accounts.
 
+- **Epic: Import feature improvements (Subtask 1)** — Added `POST /api/import/preview` to parse CSV content in dry-run mode and return row-by-row preview data with validation status/error messages before committing anything to journal files.
   - **Subtask 2 (Frontend preview table)** — Added reusable `ImportPreviewTable.svelte` with per-row valid/invalid badges, error messages, and include/exclude checkboxes (plus select-all) for import previews.
   - **Subtask 3 (Confirm-and-write flow)** — Import page now saves only selected preview rows via `POST /api/editor/save` and shows loading state while confirming/writing.
   - **Subtask 4 (Import preset CRUD API)** — Added `GET/POST/DELETE /api/import/presets` backed by a new SQLite model + migration for reusable import presets (name, column mappings, date format, default accounts, delimiter).
@@ -21,26 +24,22 @@
   - **Subtask 6 (Built-in presets)** — Added built-in import presets for common formats: Generic Bank CSV, Chase Credit Card CSV, SBI Account Statement CSV, and ICICI Credit Card CSV.
 
 - **Epic 11: Year-over-Year Comparison Charts** — Added backend multi-year series support and a new YoY analysis experience for comparing spending and income trends across calendar years.
-
   - **Subtask 11.1 (Backend – Multi-Year Expense/Income Data)** — `GET /api/expense` and `GET /api/income` now accept an optional `years` query parameter (default `1`, max `10`) and return `multi_year` data shaped as `{ "<year>": { month: { "YYYY-MM": amount }, total } }`. Leap-day transactions are naturally included in February aggregates.
   - **Subtask 11.2 (Frontend – YoY Comparison Chart)** — Added reusable `YoYChart.svelte` component supporting line and grouped-bar modes with Jan–Dec alignment, year legends, and month-level hover tooltips across all selected years.
   - **Subtask 11.3 (Frontend – YoY Analysis Page)** — Added `/analysis/yoy` page with configurable year range (2–5 years), spending + income YoY charts, category YoY chart (line/bar toggle), computed YoY insights, and CSV export.
 
 - **Epic 4: Month-over-Month Spending Trends** — Added rolling 30-day spending trend comparison to the Monthly Expenses page. Each expense category now shows its current 30-day total alongside the previous 30-day total, a variance amount, a colour-coded percentage change (↑ red / ↓ green), and a 6-month sparkline bar chart.
-
   - **Subtask 4.1 (Backend – Monthly Expense Trends)** — `GetExpense()` in `internal/server/expense.go` now computes and returns a `trends` array. Each entry contains `category`, `current_month`, `previous_month`, `variance`, and `variance_pct` (null when there are no previous-period expenses). Rolling windows: today−30 to today (current) and today−60 to today−30 (previous). `Expenses:Tax` postings are excluded. Six unit tests added in `internal/server/expense_test.go`.
   - **Subtask 4.2 (Frontend – Trend Indicators)** — New `ExpenseTrendCard.svelte` component renders the category name, current amount, previous amount, and a coloured arrow + percentage badge. The Monthly Expenses page now displays a "30-Day Spending Trends" grid below the calendar using this component.
   - **Subtask 4.3 (Frontend – Monthly Trend Sparkline)** — New `SparklineChart.svelte` component renders a compact SVG bar chart for up to 6 months of per-category spending history. The last bar (current month) is highlighted in the category colour; a dashed red average line is overlaid. Sparklines are embedded inside each `ExpenseTrendCard` when more than one month of history is available.
 
 - **Epic 3: Simple Account Notes / Metadata** — Users can now attach free-text notes to any account (e.g. "Emergency fund", "Company 401k") without editing the ledger file.
-
   - **Subtask 3.1 (Backend – DB)** — New `account_notes` SQLite table with a unique index on `account` name. Added as schema migration v4 via `internal/model/account_note` package.
   - **Subtask 3.2 (Backend – API)** — Four new REST endpoints: `GET /api/account_notes` (list all notes), `GET /api/account_notes/:account` (fetch one note), `POST /api/account_notes/upsert` (create/update), `POST /api/account_notes/delete` (remove). All write endpoints require the `ReadonlyMiddleware` guard.
   - **Subtask 3.3 (Frontend – Detail Page)** — New `/accounts/[name]/` overview page with a textarea for composing and saving a note, plus a delete button. Notes are persisted immediately via the new API.
   - **Subtask 3.4 (Frontend – List Widget)** — The `/accounts/[name]/transactions` page now fetches and displays an existing note inline in the page header as a highlighted tag, and includes a "Notes" button to navigate to the notes editor.
 
 - **Epic 2: Recent Transactions Widget on Dashboard** — Added a feed of the 15 most recent transactions to the main dashboard for at-a-glance activity overview.
-
   - **Subtask 2.1 (Backend)** — `GET /api/transaction` now accepts optional `limit` and `offset` query parameters for server-friendly pagination. Both parameters are applied at the transaction level (after grouping postings) so every returned transaction includes all of its postings.
   - **Subtask 2.2 (Frontend)** — New `RecentTransactionsWidget.svelte` component encapsulates the recent-transactions feed. It accepts a `transactions` prop and an optional `limit` prop (default 15) and renders each entry via `TransactionCard`.
   - **Subtask 2.3 (Frontend)** — Dashboard (`+page.svelte`) now uses `RecentTransactionsWidget` instead of inline transaction rendering, keeping the layout clean and the widget reusable.
@@ -50,7 +49,7 @@
 - **Price & Journal Freshness Tracking** — Added visual indicators to the navigation bar to track the freshness of your financial data. The "Update Prices" icon turns amber after 24 hours and red after 48 hours. The "Sync Journal" icon turns amber if any journal files have been modified since the last sync.
 
 - **Firefly III Webhook Integration** — Added a dedicated `/api/webhooks/firefly` endpoint that automatically parses and imports transactions from Firefly III via webhooks. Supported transactions are appended to the configured `add_journal_path` journal file.
- 
+
 - **Firefly III Reconciliation (Labs)** — Introduced a new balance reconciliation tool to compare Paisa (Ledger) account balances with Firefly III data. The feature is hidden by default and can be enabled under the new "Labs" configuration section. Includes support for ignoring specific accounts and case-insensitive account matching.
 
 - **Price Export Feature** — Users can now export their commodity price history in Ledger, hLedger, or Beancount formats. The export supports filtering by commodity and provides options for single-file or multi-file (ZIP) output.
@@ -68,7 +67,6 @@
 - **Epic: Refining Paisa Configuration Interface** — Redesigned the configuration screen to improve navigation and layout. Transitioned from a monolithic JSON form to a structured, sidebar-based interface with categorized sections for better discoverability and user experience.
 
 - **Epic 2: Architectural Alignment & Cleanup** — Finalized structural patterns and removed legacy Svelte 4 compatibility:
-
   - **Snippet Transition (2.1)** — `Modal.svelte` migrated from named `<slot>` elements to typed snippet props (`head`, `body`, `foot`). All consumers updated to use `{#snippet head(close)}...{/snippet}` blocks: `FileModal`, `PriceCodeSearchModal`, `DiffViewModal`, `SyncHistoryOverlay`, and the import page inline modal.
   - **Callback Prop Migration (2.2)** — `createEventDispatcher` removed from `FileModal.svelte` (replaced with `onsave` callback) and `PriceCodeSearchModal.svelte` (replaced with `onselect` callback). All four `FileModal` call-sites and `JsonSchemaForm`'s `PriceCodeSearchModal` usage updated to pass callback props directly.
   - **Global Store Evolution (2.3)** — New `src/lib/state/ui.svelte.ts` (`UIState`) and `src/lib/state/persisted.svelte.ts` (`PersistedState`) class-based wrappers created using `fromStore`. Components can now access stores via `uiState.<prop>.current` or continue using the existing `$store` syntax.
@@ -78,7 +76,6 @@
   - `svelte-check` now reports **0 errors and 0 warnings** across the entire frontend.
 
 - **Epic 1: Component Modernization (Runes & Event Syntax)** — Systematically migrated all Svelte components and route pages from Svelte 4 syntax to Svelte 5 runes:
-
   - All `export let` props converted to `$props()` / `$bindable()`
   - All `$:` reactive statements converted to `$derived()` or `$effect()`
   - All mutable local state annotated with `$state()`
@@ -90,7 +87,6 @@
 - **Svelte 5 runes migration (P2.3)** — Converted 15 remaining `src/lib/components/` files and 5 route pages from Svelte 4 syntax to Svelte 5 runes: `export let` → `$props()` / `$bindable()`, `$:` derived expressions → `$derived()`, `$:` side-effect blocks → `$effect()`, and mutable local state → `$state()`. `createEventDispatcher` in `BulkEditForm`, `DiffViewModal`, and `FileTree` replaced with callback props (`onpreview`, `onsave`, `onselect`); all callers updated. `<svelte:self>` in `FileTree` replaced with an explicit self-import. Goals pages (`savings`, `retirement`) converted all `onMount`-assigned variables to `$state()` for correct reactivity.
 
 - **Svelte 5 upgrade & UI modernization (P2.2)** — Upgrades the frontend framework to Svelte 5 and begins the incremental migration to rune-based reactivity:
-
   - **Svelte 5** (`^5.0.0`), **svelte-check** (`^4.0.0`), **@sveltejs/vite-plugin-svelte** (`^4.0.0`), and **eslint-plugin-svelte** (`^3.0.0`) bumped in `package.json` (#226).
   - **Svelte 4 compatibility layer** enabled in `svelte.config.js` via `compilerOptions.compatibility.componentApi: 4`, allowing all existing components to keep working while new ones adopt runes (#227).
   - **Modal.svelte migrated to Svelte 5 runes** — props use `$props()` / `$bindable()`; internal state uses `$state()`; `on:click` replaced with `onclick`. Bulma structural classes (`modal`, `modal-background`, `modal-card`, `modal-card-head/body/foot`, `is-active`) replaced with DaisyUI equivalents (`du-modal`, `du-modal-box`, `du-modal-backdrop`, `du-modal-open`) and Tailwind flex utilities (#228 #229).
@@ -172,7 +168,6 @@
 - **AutoComplete no longer crashes the server** — The `in-mfapi` (MF API) and `com-purifiedbytes-nps` providers previously called `log.Fatal` when the autocomplete cache could not be populated, killing the server process. They now log the error at `Error` level and return an empty suggestion list instead.
 
 - **Typed API via Protobuf/Connect (P3.1)** — Eliminates hand-maintained TypeScript interfaces and `ajax` fetch wrappers for selected endpoints by driving the API contract from a `.proto` schema, giving compile-time type safety on both sides.
-
   - `proto/api.proto` — defines `Transaction`, `Posting`, `AccountBalance`, `AccountNode`, and the `PaisaService` service with a `GetAccountTree` RPC. Package name `paisa.v1`; Go package `github.com/ananthakumaran/paisa/internal/gen/paisa/v1;paisav1` (#234).
   - `internal/gen/` — committed generated Go stubs (`api.pb.go`, `paisav1connect/api.connect.go`) produced by `protoc-gen-go` + `protoc-gen-connect-go` (#235).
   - **Connect-Go integrated into Gin** — `connectrpc.com/connect` is added as a dependency; `PaisaService` endpoints are mounted at `/connect/paisa.v1.PaisaService/…` alongside the existing REST routes. `TokenAuthMiddleware` now protects `/connect/` paths with the same session-token logic as `/api/` paths (#235).

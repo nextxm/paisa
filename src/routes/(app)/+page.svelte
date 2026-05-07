@@ -17,7 +17,8 @@
     type Legend,
     now,
     type GoalSummary,
-    type AssetBreakdown
+    type AssetBreakdown,
+    type AccountReconciliationStatus
   } from "$lib/utils";
   import _ from "lodash";
   import { onMount } from "svelte";
@@ -31,6 +32,7 @@
   import LegendCard from "$lib/components/LegendCard.svelte";
   import BalanceCard from "$lib/components/BalanceCard.svelte";
   import RecentTransactionsWidget from "$lib/components/RecentTransactionsWidget.svelte";
+  import ReconciliationWidget from "$lib/components/ReconciliationWidget.svelte";
 
   let cashflowLegends: Legend[] = $state([]);
   let month = $state(now().format("YYYY-MM"));
@@ -48,6 +50,7 @@
   let currentBudget = $derived(budgetsByMonth[month]);
   let isEmpty = $state(false);
   let checkingBalances: Record<string, AssetBreakdown> = $state({});
+  let reconciliations: AccountReconciliationStatus[] = $state([]);
 
   $effect(() => {
     if (renderer) {
@@ -61,16 +64,19 @@
   }
 
   onMount(async () => {
-    ({
-      expenses,
-      cashFlows,
-      goalSummaries,
-      budget: { budgetsByMonth },
-      transactionSequences,
-      networth: { networth, xirr },
-      checkingBalances: { asset_breakdowns: checkingBalances },
-      transactions
-    } = await ajax("/api/dashboard"));
+    [
+      {
+        expenses,
+        cashFlows,
+        goalSummaries,
+        budget: { budgetsByMonth },
+        transactionSequences,
+        networth: { networth, xirr },
+        checkingBalances: { asset_breakdowns: checkingBalances },
+        transactions
+      },
+      { reconciliations }
+    ] = await Promise.all([ajax("/api/dashboard"), ajax("/api/accounts/reconciliation")]);
 
     goalSummaries = _.sortBy(goalSummaries, (g) => -g.priority);
 
@@ -271,6 +277,11 @@
             </div>
           </div>
         {/if}
+        <div class="tile is-parent">
+          <article class="tile is-child">
+            <ReconciliationWidget {reconciliations} />
+          </article>
+        </div>
       </div>
       <div class="tile is-vertical">
         <div class="tile is-parent is-12">
