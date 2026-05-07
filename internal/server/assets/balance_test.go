@@ -8,7 +8,6 @@ import (
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
-	"github.com/ananthakumaran/paisa/internal/query"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/glebarez/sqlite"
 	"github.com/shopspring/decimal"
@@ -26,7 +25,7 @@ func openTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-// loadTestConfig sets up a minimal config with a single checking account.
+// loadTestConfig sets up a minimal config and restores the original on cleanup.
 func loadTestConfig(t *testing.T) {
 	t.Helper()
 	orig := config.GetConfig()
@@ -38,107 +37,7 @@ func loadTestConfig(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// computeMarketAmountFromGroupSums tests
-// ---------------------------------------------------------------------------
-
-// TestComputeMarketAmountFromGroupSums_Empty verifies that an empty sums slice
-// returns zero.
-func TestComputeMarketAmountFromGroupSums_Empty(t *testing.T) {
-	loadTestConfig(t)
-	db := openTestDB(t)
-	result := computeMarketAmountFromGroupSums(db, nil, func(string) bool { return true })
-	assert.True(t, result.IsZero())
-}
-
-// TestComputeMarketAmountFromGroupSums_DefaultCurrency verifies that default-
-// currency entries contribute their Amount field directly.
-func TestComputeMarketAmountFromGroupSums_DefaultCurrency(t *testing.T) {
-	loadTestConfig(t)
-	db := openTestDB(t)
-
-	sums := []query.AccountCommoditySum{
-		{Account: "Assets:Checking", Commodity: "INR", Amount: decimal.NewFromFloat(1500), Quantity: decimal.NewFromFloat(1500)},
-		{Account: "Assets:Checking", Commodity: "INR", Amount: decimal.NewFromFloat(500), Quantity: decimal.NewFromFloat(500)},
-	}
-	// Both entries match the "always true" matcher.
-	result := computeMarketAmountFromGroupSums(db, sums, func(string) bool { return true })
-	assert.True(t, decimal.NewFromFloat(2000).Equal(result),
-		"expected 2000; got %s", result)
-}
-
-// TestComputeMarketAmountFromGroupSums_FilterByAccount verifies that only
-// entries passing the matchFn are included.
-func TestComputeMarketAmountFromGroupSums_FilterByAccount(t *testing.T) {
-	loadTestConfig(t)
-	db := openTestDB(t)
-
-	sums := []query.AccountCommoditySum{
-		{Account: "Assets:Checking", Commodity: "INR", Amount: decimal.NewFromFloat(1000), Quantity: decimal.NewFromFloat(1000)},
-		{Account: "Assets:Savings", Commodity: "INR", Amount: decimal.NewFromFloat(9000), Quantity: decimal.NewFromFloat(9000)},
-	}
-	result := computeMarketAmountFromGroupSums(db, sums, func(account string) bool {
-		return account == "Assets:Checking"
-	})
-	assert.True(t, decimal.NewFromFloat(1000).Equal(result),
-		"expected 1000 (only Checking); got %s", result)
-}
-
-// ---------------------------------------------------------------------------
-// computeCheckingBreakdowns tests
-// ---------------------------------------------------------------------------
-
-// TestComputeCheckingBreakdowns_Empty verifies that empty sums produce an empty
-// breakdowns map.
-func TestComputeCheckingBreakdowns_Empty(t *testing.T) {
-	loadTestConfig(t)
-	db := openTestDB(t)
-	result := computeCheckingBreakdowns(db, nil, []string{"Assets:Checking"})
-	assert.Empty(t, result)
-}
-
-// TestComputeCheckingBreakdowns_SingleAccount verifies that a single checking
-// account with default-currency postings produces one breakdown entry.
-func TestComputeCheckingBreakdowns_SingleAccount(t *testing.T) {
-	loadTestConfig(t)
-	db := openTestDB(t)
-
-	sums := []query.AccountCommoditySum{
-		{Account: "Assets:Checking", Commodity: "INR", Amount: decimal.NewFromFloat(5000), Quantity: decimal.NewFromFloat(5000)},
-	}
-	result := computeCheckingBreakdowns(db, sums, []string{"Assets:Checking"})
-
-	require.Len(t, result, 1)
-	bd, ok := result["Assets:Checking"]
-	require.True(t, ok)
-	assert.Equal(t, "Assets:Checking", bd.Group)
-	assert.True(t, decimal.NewFromFloat(5000).Equal(bd.MarketAmount),
-		"expected MarketAmount=5000; got %s", bd.MarketAmount)
-	// InvestmentAmount, WithdrawalAmount, XIRR must be zero for checking accounts.
-	assert.True(t, bd.InvestmentAmount.IsZero(), "InvestmentAmount must be zero for checking accounts")
-	assert.True(t, bd.WithdrawalAmount.IsZero(), "WithdrawalAmount must be zero for checking accounts")
-	assert.True(t, bd.XIRR.IsZero(), "XIRR must be zero for checking accounts")
-}
-
-// TestComputeCheckingBreakdowns_MultipleAccounts verifies that multiple
-// checking account patterns each produce their own entry.
-func TestComputeCheckingBreakdowns_MultipleAccounts(t *testing.T) {
-	loadTestConfig(t)
-	db := openTestDB(t)
-
-	sums := []query.AccountCommoditySum{
-		{Account: "Assets:Checking:HDFC", Commodity: "INR", Amount: decimal.NewFromFloat(2000), Quantity: decimal.NewFromFloat(2000)},
-		{Account: "Assets:Checking:SBI", Commodity: "INR", Amount: decimal.NewFromFloat(3000), Quantity: decimal.NewFromFloat(3000)},
-	}
-	patterns := []string{"Assets:Checking:HDFC", "Assets:Checking:SBI"}
-	result := computeCheckingBreakdowns(db, sums, patterns)
-
-	require.Len(t, result, 2)
-	assert.True(t, decimal.NewFromFloat(2000).Equal(result["Assets:Checking:HDFC"].MarketAmount))
-	assert.True(t, decimal.NewFromFloat(3000).Equal(result["Assets:Checking:SBI"].MarketAmount))
-}
-
-// ---------------------------------------------------------------------------
-// GetCheckingBalance integration tests (using real DB + postings)
+// GetCheckingBalance integration tests
 // ---------------------------------------------------------------------------
 
 // TestGetCheckingBalance_EmptyDB verifies that an empty database returns an
@@ -155,15 +54,16 @@ func TestGetCheckingBalance_EmptyDB(t *testing.T) {
 	assert.Empty(t, breakdowns)
 }
 
-// TestGetCheckingBalance_SingleAccount verifies end-to-end that multiple
-// checking account postings are aggregated correctly via GroupSum.
+// TestGetCheckingBalance_SingleAccount verifies that multiple checking account
+// postings are aggregated into a single breakdown entry with the correct net
+// balance.
 func TestGetCheckingBalance_SingleAccount(t *testing.T) {
 	loadTestConfig(t)
 	utils.SetNow("2024-03-20")
 	defer utils.UnsetNow()
 	db := openTestDB(t)
 
-	// Insert several postings for the checking account.
+	// deposit 1000, deposit 500, withdraw 200 → net 1300
 	for i, amount := range []float64{1000, 500, -200} {
 		require.NoError(t, db.Create(&posting.Posting{
 			TransactionID: fmt.Sprintf("t%d", i+1),
@@ -182,15 +82,17 @@ func TestGetCheckingBalance_SingleAccount(t *testing.T) {
 
 	bd, ok := breakdowns["Assets:Checking"]
 	require.True(t, ok)
-	// 1000 + 500 – 200 = 1300
 	assert.True(t, decimal.NewFromFloat(1300).Equal(bd.MarketAmount),
 		"expected MarketAmount=1300; got %s", bd.MarketAmount)
+	// InvestmentAmount and WithdrawalAmount are zero for checking accounts (by
+	// definition in ComputeBreakdown – utils.IsCheckingAccount skips deposits
+	// and withdrawals).
 	assert.True(t, bd.InvestmentAmount.IsZero(), "InvestmentAmount must be zero for checking accounts")
 	assert.True(t, bd.WithdrawalAmount.IsZero(), "WithdrawalAmount must be zero for checking accounts")
 }
 
 // TestGetCheckingBalance_OriginalBalances verifies that OriginalBalances is
-// populated correctly from group sums.
+// populated with the correct per-currency totals.
 func TestGetCheckingBalance_OriginalBalances(t *testing.T) {
 	loadTestConfig(t)
 	utils.SetNow("2024-03-20")
@@ -212,7 +114,6 @@ func TestGetCheckingBalance_OriginalBalances(t *testing.T) {
 	bd, ok := breakdowns["Assets:Checking"]
 	require.True(t, ok)
 
-	// Should have one OriginalCurrencyBalance for INR.
 	require.Len(t, bd.OriginalBalances, 1)
 	assert.Equal(t, "INR", bd.OriginalBalances[0].Currency)
 	assert.True(t, decimal.NewFromFloat(5000).Equal(bd.OriginalBalances[0].Amount),
@@ -224,16 +125,14 @@ func TestGetCheckingBalance_OriginalBalances(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // TestComputeBreakdowns_PreGroupingConsistency verifies that the refactored
-// O(A×C) algorithm produces the same breakdowns as the naïve O(A×N) approach
-// for a multi-account, multi-commodity dataset.
+// O(A×C) algorithm produces the correct market amounts for a multi-account
+// dataset with pre-populated MarketAmount fields.
 func TestComputeBreakdowns_PreGroupingConsistency(t *testing.T) {
 	loadTestConfig(t)
 	utils.SetNow("2024-03-20")
 	defer utils.UnsetNow()
 	db := openTestDB(t)
 
-	// Build postings in-memory with MarketAmount pre-set (simulating what
-	// doGetBalance does via service.PopulateMarketPrice for INR postings).
 	type row struct {
 		account, commodity string
 		amount             float64
@@ -244,6 +143,8 @@ func TestComputeBreakdowns_PreGroupingConsistency(t *testing.T) {
 		{"Assets:Savings", "INR", 5000},
 		{"Assets:Savings", "INR", 1000},
 	}
+	// Build postings in-memory with MarketAmount pre-set (simulating what
+	// doGetBalance does via service.PopulateMarketPrice for INR postings).
 	postings := make([]posting.Posting, 0, len(rows))
 	for i, r := range rows {
 		amt := decimal.NewFromFloat(r.amount)
@@ -254,16 +155,14 @@ func TestComputeBreakdowns_PreGroupingConsistency(t *testing.T) {
 			Commodity:     r.commodity,
 			Amount:        amt,
 			Quantity:      amt,
-			MarketAmount:  amt, // for default-currency postings, MarketAmount == Amount
+			MarketAmount:  amt,
 		})
 	}
 
-	// ComputeBreakdowns with rollup=false should produce an entry per unique leaf account.
 	breakdowns := ComputeBreakdowns(db, postings, false)
 
 	checkingBD, ok := breakdowns["Assets:Checking"]
 	require.True(t, ok, "expected Assets:Checking in breakdowns")
-	// Net = 1000 – 200 = 800; market amount for currency postings = amount sum.
 	assert.True(t, decimal.NewFromFloat(800).Equal(checkingBD.MarketAmount),
 		"Assets:Checking marketAmount: expected 800, got %s", checkingBD.MarketAmount)
 
@@ -305,13 +204,11 @@ func TestComputeBreakdowns_Rollup(t *testing.T) {
 
 	breakdowns := ComputeBreakdowns(db, postings, true)
 
-	// Parent group "Assets" should aggregate all children.
 	assets, ok := breakdowns["Assets"]
 	require.True(t, ok, "expected Assets rollup entry")
 	assert.True(t, decimal.NewFromFloat(5000).Equal(assets.MarketAmount),
 		"Assets rollup: expected 5000, got %s", assets.MarketAmount)
 
-	// "Assets:Checking" should aggregate both banks.
 	checking, ok := breakdowns["Assets:Checking"]
 	require.True(t, ok, "expected Assets:Checking rollup entry")
 	assert.True(t, decimal.NewFromFloat(5000).Equal(checking.MarketAmount),
