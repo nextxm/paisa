@@ -9,6 +9,7 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model"
+	accountbalance "github.com/ananthakumaran/paisa/internal/model/account_balance"
 	"github.com/ananthakumaran/paisa/internal/model/cii"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
@@ -428,4 +429,63 @@ func TestSyncJournal_ProceedsOnChangedHash(t *testing.T) {
 	} else {
 		assert.NotEmpty(t, result.FailedStage, "a non-skip failure must set FailedStage")
 	}
+}
+
+// TestSyncJournal_AccountBalancesRefreshed verifies that the account_balances
+// table is populated atomically alongside postings in a sync transaction, and
+// that a rollback clears both postings and balance rows together.
+func TestSyncJournal_AccountBalancesRefreshed(t *testing.T) {
+	db := openTestDB(t)
+
+	postings := []*posting.Posting{
+		{TransactionID: "t1", Account: "Assets:Checking", Commodity: "INR", Quantity: decimal.NewFromFloat(1000), Amount: decimal.NewFromFloat(1000)},
+		{TransactionID: "t2", Account: "Expenses:Groceries", Commodity: "INR", Quantity: decimal.NewFromFloat(-500), Amount: decimal.NewFromFloat(-500)},
+	}
+
+	// Simulate the write portion of SyncJournal: postings + balance refresh.
+	require.NoError(t, db.Transaction(func(tx *gorm.DB) error {
+		if err := posting.UpsertAll(tx, postings); err != nil {
+			return err
+		}
+		return accountbalance.RefreshFromPostings(tx, postings)
+	}))
+
+	// Verify account balances are now materialized.
+	balances, err := accountbalance.All(db)
+	require.NoError(t, err)
+	require.Len(t, balances, 2, "one row per distinct (account, commodity) pair")
+
+	byAcc := make(map[string]accountbalance.AccountBalance)
+	for _, b := range balances {
+		byAcc[b.Account] = b
+	}
+	assert.True(t, decimal.NewFromFloat(1000).Equal(byAcc["Assets:Checking"].Amount),
+		"checking balance must be 1000; got %s", byAcc["Assets:Checking"].Amount)
+	assert.True(t, decimal.NewFromFloat(-500).Equal(byAcc["Expenses:Groceries"].Amount),
+		"expenses balance must be -500; got %s", byAcc["Expenses:Groceries"].Amount)
+
+	// Verify rollback clears both postings and balances atomically.
+	simulatedErr := errors.New("sync failure")
+	newPostings := []*posting.Posting{
+		{TransactionID: "t3", Account: "Income:Salary", Commodity: "INR", Quantity: decimal.NewFromFloat(5000), Amount: decimal.NewFromFloat(5000)},
+	}
+	err = db.Transaction(func(tx *gorm.DB) error {
+		if err := posting.UpsertAll(tx, newPostings); err != nil {
+			return err
+		}
+		if err := accountbalance.RefreshFromPostings(tx, newPostings); err != nil {
+			return err
+		}
+		return simulatedErr
+	})
+	require.ErrorIs(t, err, simulatedErr)
+
+	// Original data must be intact after rollback.
+	var postingCount int64
+	db.Model(&posting.Posting{}).Count(&postingCount)
+	assert.Equal(t, int64(2), postingCount, "postings must be unchanged after rollback")
+
+	balancesAfterRollback, err := accountbalance.All(db)
+	require.NoError(t, err)
+	assert.Len(t, balancesAfterRollback, 2, "account_balances must be unchanged after rollback")
 }

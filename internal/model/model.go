@@ -7,6 +7,7 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/ledger"
+	"github.com/ananthakumaran/paisa/internal/model/account_balance"
 	"github.com/ananthakumaran/paisa/internal/model/cii"
 	"github.com/ananthakumaran/paisa/internal/model/commodity"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
@@ -109,7 +110,10 @@ func SyncJournal(db *gorm.DB) (SyncResult, error) {
 		if err := price.UpsertAllByType(tx, config.Unknown, prices); err != nil {
 			return err
 		}
-		return posting.UpsertAll(tx, postings)
+		if err := posting.UpsertAll(tx, postings); err != nil {
+			return err
+		}
+		return account_balance.RefreshFromPostings(tx, postings)
 	})
 	if err != nil {
 		log.WithFields(log.Fields{"stage": "journal.db_write", "error": err}).Error("Journal database write failed")

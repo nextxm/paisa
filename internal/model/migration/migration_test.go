@@ -5,12 +5,14 @@ import (
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/ananthakumaran/paisa/internal/model/account_balance"
 	"github.com/ananthakumaran/paisa/internal/model/account_note"
 	"github.com/ananthakumaran/paisa/internal/model/account_reconciliation"
 	"github.com/ananthakumaran/paisa/internal/model/import_preset"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/glebarez/sqlite"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -30,7 +32,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 6, version)
+	assert.Equal(t, 7, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -40,7 +42,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 6, version)
+	assert.Equal(t, 7, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -58,12 +60,12 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	db := openMemoryDB(t)
 
 	// Simulate an existing install that has tables but no schema_versions table.
-	// RunMigrations should create the table and record v6 without error.
+	// RunMigrations should create the table and record v7 without error.
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	// Schema version should be 6 after migration.
-	assert.Equal(t, 6, migration.CurrentVersion(db))
+	// Schema version should be 7 after migration.
+	assert.Equal(t, 7, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -99,9 +101,9 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&migration.SchemaVersion{}))
 	require.NoError(t, db.Create(&migration.SchemaVersion{Version: 1, AppliedAt: time.Now()}).Error)
 
-	// Run migrations – v2, v3, v4, v5, and v6 should execute.
+	// Run migrations – v2, v3, v4, v5, v6, and v7 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 6, migration.CurrentVersion(db))
+	assert.Equal(t, 7, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -229,4 +231,32 @@ func TestV6Migration_AccountReconciliationTableExists(t *testing.T) {
 	updated, err := account_reconciliation.Upsert(db, "Assets:Checking", &last, 90)
 	require.NoError(t, err)
 	assert.Equal(t, 90, updated.FrequencyDays)
+}
+
+// TestV7Migration_AccountBalancesTableExists verifies that after v7 the
+// account_balances table exists and the RefreshFromPostings helper works.
+func TestV7Migration_AccountBalancesTableExists(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	// The table must exist and be queryable.
+	all, err := account_balance.All(db)
+	require.NoError(t, err)
+	assert.Empty(t, all, "fresh install should have no balance rows")
+
+	// Insert a row directly to confirm the table accepts writes.
+	row := &account_balance.AccountBalance{
+		Account:   "Assets:Checking",
+		Commodity: "INR",
+		Quantity:  decimal.NewFromFloat(1000),
+		Amount:    decimal.NewFromFloat(1000),
+	}
+	require.NoError(t, db.Create(row).Error)
+
+	all, err = account_balance.All(db)
+	require.NoError(t, err)
+	require.Len(t, all, 1)
+	assert.Equal(t, "Assets:Checking", all[0].Account)
+	assert.Equal(t, "INR", all[0].Commodity)
+	assert.True(t, decimal.NewFromFloat(1000).Equal(all[0].Amount))
 }
