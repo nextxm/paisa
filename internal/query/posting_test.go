@@ -1,6 +1,7 @@
 package query
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -62,7 +63,7 @@ func TestGroupSum_MultiplePostingsSameAccountCommodity(t *testing.T) {
 	db := openTestDB(t)
 	for i, amount := range []float64{500, 300, 200} {
 		require.NoError(t, db.Create(&posting.Posting{
-			TransactionID: "t" + string(rune('1'+i)),
+			TransactionID: fmt.Sprintf("t%d", i+1),
 			Date:          time.Date(2024, 1, 10+i, 0, 0, 0, 0, time.UTC),
 			Account:       "Assets:Checking",
 			Commodity:     "INR",

@@ -1,6 +1,7 @@
 package assets
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -165,7 +166,7 @@ func TestGetCheckingBalance_SingleAccount(t *testing.T) {
 	// Insert several postings for the checking account.
 	for i, amount := range []float64{1000, 500, -200} {
 		require.NoError(t, db.Create(&posting.Posting{
-			TransactionID: "t" + string(rune('1'+i)),
+			TransactionID: fmt.Sprintf("t%d", i+1),
 			Date:          time.Date(2024, 1, 10+i, 0, 0, 0, 0, time.UTC),
 			Account:       "Assets:Checking",
 			Commodity:     "INR",
@@ -247,7 +248,7 @@ func TestComputeBreakdowns_PreGroupingConsistency(t *testing.T) {
 	for i, r := range rows {
 		amt := decimal.NewFromFloat(r.amount)
 		postings = append(postings, posting.Posting{
-			TransactionID: "tx" + string(rune('1'+i)),
+			TransactionID: fmt.Sprintf("tx%d", i+1),
 			Date:          time.Date(2024, 1, 10+i, 0, 0, 0, 0, time.UTC),
 			Account:       r.account,
 			Commodity:     r.commodity,
