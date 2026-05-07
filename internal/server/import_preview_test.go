@@ -85,23 +85,6 @@ func TestColumnName(t *testing.T) {
 
 func buildImportPreviewTestRouter() *gin.Engine {
 	router := gin.New()
-	router.POST("/api/import/preview", func(c *gin.Context) {
-		var req ImportPreviewRequest
-		if !BindJSONOrError(c, &req) {
-			return
-		}
-
-		rows, err := PreviewImport(req)
-		if err != nil {
-			RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, err.Error())
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"template": req.Template,
-			"dry_run":  true,
-			"rows":     rows,
-		})
-	})
+	router.POST("/api/import/preview", handleImportPreview)
 	return router
 }

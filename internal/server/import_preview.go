@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ananthakumaran/paisa/internal/model/template"
+	"github.com/gin-gonic/gin"
 )
 
 type ImportPreviewRequest struct {
@@ -35,10 +36,11 @@ func PreviewImport(req ImportPreviewRequest) ([]ImportPreviewRow, error) {
 	reader.FieldsPerRecord = -1
 
 	if req.Delimiter != "" {
-		if len([]rune(req.Delimiter)) != 1 {
+		delimiterRunes := []rune(req.Delimiter)
+		if len(delimiterRunes) != 1 {
 			return nil, fmt.Errorf("delimiter must be a single character")
 		}
-		reader.Comma = []rune(req.Delimiter)[0]
+		reader.Comma = delimiterRunes[0]
 	}
 
 	records, err := reader.ReadAll()
@@ -46,10 +48,10 @@ func PreviewImport(req ImportPreviewRequest) ([]ImportPreviewRow, error) {
 		return nil, fmt.Errorf("failed to parse csv content: %w", err)
 	}
 
-	expectedColumns := -1
+	expectedColumns := 0
 	rows := make([]ImportPreviewRow, 0, len(records))
 	for i, record := range records {
-		if expectedColumns == -1 {
+		if i == 0 {
 			expectedColumns = len(record)
 		}
 
@@ -94,6 +96,25 @@ func templateExists(name string) bool {
 		}
 	}
 	return false
+}
+
+func handleImportPreview(c *gin.Context) {
+	var req ImportPreviewRequest
+	if !BindJSONOrError(c, &req) {
+		return
+	}
+
+	rows, err := PreviewImport(req)
+	if err != nil {
+		RespondError(c, 400, ErrCodeInvalidRequest, err.Error())
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"template": req.Template,
+		"dry_run":  true,
+		"rows":     rows,
+	})
 }
 
 func columnName(index int) string {
