@@ -6,6 +6,12 @@
 
 - **Epic: Import feature improvements (Subtask 1)** — Added `POST /api/import/preview` to parse CSV content in dry-run mode and return row-by-row preview data with validation status/error messages before committing anything to journal files.
 
+  - **Subtask 2 (Frontend preview table)** — Added reusable `ImportPreviewTable.svelte` with per-row valid/invalid badges, error messages, and include/exclude checkboxes (plus select-all) for import previews.
+  - **Subtask 3 (Confirm-and-write flow)** — Import page now saves only selected preview rows via `POST /api/editor/save` and shows loading state while confirming/writing.
+  - **Subtask 4 (Import preset CRUD API)** — Added `GET/POST/DELETE /api/import/presets` backed by a new SQLite model + migration for reusable import presets (name, column mappings, date format, default accounts, delimiter).
+  - **Subtask 5 (Preset selector UI)** — Added `PresetSelector.svelte` on the import page with preset dropdown and “Save Current” action.
+  - **Subtask 6 (Built-in presets)** — Added built-in import presets for common formats: Generic Bank CSV, Chase Credit Card CSV, SBI Account Statement CSV, and ICICI Credit Card CSV.
+
 - **Epic 11: Year-over-Year Comparison Charts** — Added backend multi-year series support and a new YoY analysis experience for comparing spending and income trends across calendar years.
 
   - **Subtask 11.1 (Backend – Multi-Year Expense/Income Data)** — `GET /api/expense` and `GET /api/income` now accept an optional `years` query parameter (default `1`, max `10`) and return `multi_year` data shaped as `{ "<year>": { month: { "YYYY-MM": amount }, total } }`. Leap-day transactions are naturally included in February aggregates.

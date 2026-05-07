@@ -49,6 +49,8 @@ var writeEndpoints = []struct {
 	{http.MethodPost, "/api/price/providers/delete/test", ``},
 	{http.MethodPost, "/api/editor/save", `{"name":"main.ledger","content":""}`},
 	{http.MethodPost, "/api/sheets/save", `{"name":"main.paisa","content":""}`},
+	{http.MethodPost, "/api/import/presets", `{"name":"preset","delimiter":","}`},
+	{http.MethodDelete, "/api/import/presets", `{"name":"preset"}`},
 	{http.MethodPost, "/api/templates/upsert", `{"name":"t","content":""}`},
 	{http.MethodPost, "/api/templates/delete", `{"name":"t"}`},
 }
@@ -180,6 +182,8 @@ func TestIntegration_ErrorEnvelope_InvalidJSONOnWriteEndpoints(t *testing.T) {
 		{http.MethodPost, "/api/sync"},
 		{http.MethodPost, "/api/editor/save"},
 		{http.MethodPost, "/api/sheets/save"},
+		{http.MethodPost, "/api/import/presets"},
+		{http.MethodDelete, "/api/import/presets"},
 		{http.MethodPost, "/api/templates/upsert"},
 		{http.MethodPost, "/api/templates/delete"},
 	}

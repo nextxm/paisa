@@ -412,6 +412,9 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.POST("/api/import/preview", handleImportPreview)
+	router.GET("/api/import/presets", handleGetImportPresets(db))
+	writeGroup.POST("/api/import/presets", handleUpsertImportPreset(db))
+	writeGroup.DELETE("/api/import/presets", handleDeleteImportPreset(db))
 
 	writeGroup.POST("/api/templates/upsert", func(c *gin.Context) {
 		var t template.Template

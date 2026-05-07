@@ -9,11 +9,18 @@
     updateContent as updatePreviewContent
   } from "$lib/editor";
   import Dropzone from "$lib/components/Dropzone.svelte";
+  import ImportPreviewTable from "$lib/components/ImportPreviewTable.svelte";
+  import PresetSelector from "$lib/components/PresetSelector.svelte";
   import { parse, asRows, render as renderJournal } from "$lib/spreadsheet";
   import _ from "lodash";
   import type { EditorView } from "codemirror";
   import { onMount } from "svelte";
-  import { ajax, type ImportTemplate } from "$lib/utils";
+  import { ajax, type ImportPreset, type ImportPreviewRow, type ImportTemplate } from "$lib/utils";
+  import {
+    defaultIncludedFromValidation,
+    filterSelectedRows,
+    toCSVContent
+  } from "$lib/import_preview_utils";
   import { accountTfIdf } from "../../../../store";
   import * as toast from "bulma-toast";
   import FileModal from "$lib/components/FileModal.svelte";
@@ -22,15 +29,18 @@
   let templates: ImportTemplate[] = $state([]);
   let selectedTemplate: ImportTemplate = $state(null);
   let saveAsName: string = $state(null);
-  let lastTemplate: any;
-  let lastData: any;
   let preview = $state("");
   let parseErrorMessage: string = $state(null);
   let columnCount: number = $state(0);
   let data: any[][] = $state([]);
   let rows: Array<Record<string, any>> = $state([]);
-  let lastOptions: any;
+  let previewRows: ImportPreviewRow[] = $state([]);
+  let includedPreviewRows: boolean[] = $state([]);
+  let importPresets: ImportPreset[] = $state([]);
+  let selectedPreset: ImportPreset = $state(null);
+  let delimiter: string = $state(",");
   let options: { reverse: boolean; trim: boolean } = $state({ reverse: false, trim: true });
+  let importSaving = $state(false);
 
   let templateEditorDom: Element = $state();
   let templateEditor: EditorView = $state();
@@ -41,6 +51,9 @@
   onMount(async () => {
     accountTfIdf.set(await ajax("/api/account/tf_idf"));
     ({ templates } = await ajax("/api/templates"));
+    ({ presets: importPresets } = await ajax("/api/import/presets"));
+    selectedPreset = _.find(importPresets, { name: "Generic Bank CSV" }) || importPresets[0];
+    delimiter = selectedPreset?.delimiter || ",";
     selectedTemplate = templates[0];
     saveAsName = selectedTemplate.name;
     templateEditor = createTemplateEditor(selectedTemplate.content, templateEditorDom);
@@ -49,6 +62,9 @@
 
   const saveAsNameDuplicate = $derived(
     !!_.find(templates, { name: saveAsName, template_type: "custom" })
+  );
+  const selectedPreviewCount = $derived(
+    filterSelectedRows(previewRows, includedPreviewRows).length
   );
 
   async function save() {
@@ -117,23 +133,15 @@
 
   $effect(() => {
     if (!_.isEmpty(data) && $templateEditorState.template) {
-      if (
-        lastTemplate != $templateEditorState.template ||
-        lastData != data ||
-        lastOptions != options
-      ) {
-        try {
-          preview = renderJournal(rows, $templateEditorState.template, {
-            reverse: options.reverse,
-            trim: options.trim
-          });
-          updatePreviewContent(previewEditor, preview);
-          lastTemplate = $templateEditorState.template;
-          lastData = data;
-          lastOptions = _.clone(options);
-        } catch (e) {
-          console.log(e);
-        }
+      try {
+        const selectedRows = filterSelectedRows(rows, includedPreviewRows);
+        preview = renderJournal(selectedRows, $templateEditorState.template, {
+          reverse: options.reverse,
+          trim: options.trim
+        });
+        updatePreviewContent(previewEditor, preview);
+      } catch (e) {
+        console.log(e);
       }
     }
   });
@@ -143,6 +151,15 @@
       if (templateEditor.state.doc.toString() != selectedTemplate.content) {
         templateEditor.destroy();
         templateEditor = createTemplateEditor(selectedTemplate.content, templateEditorDom);
+      }
+    }
+  });
+
+  $effect(() => {
+    if (selectedPreset) {
+      delimiter = selectedPreset.delimiter || ",";
+      if (!_.isEmpty(data)) {
+        refreshImportPreview();
       }
     }
   });
@@ -162,7 +179,36 @@
       _.each(data, (row) => {
         row.length = columnCount;
       });
+
+      await refreshImportPreview();
     }
+  }
+
+  async function refreshImportPreview() {
+    if (_.isEmpty(data) || !selectedTemplate) {
+      return;
+    }
+    const response: any = await ajax("/api/import/preview", {
+      method: "POST",
+      body: JSON.stringify({
+        template: selectedTemplate.name,
+        content: toCSVContent(data),
+        delimiter,
+        dry_run: true
+      }),
+      background: true
+    });
+
+    if (response.error) {
+      parseErrorMessage = response.error.message;
+      previewRows = [];
+      includedPreviewRows = [];
+      return;
+    }
+
+    parseErrorMessage = null;
+    previewRows = response.rows;
+    includedPreviewRows = defaultIncludedFromValidation(previewRows);
   }
 
   async function copyToClipboard() {
@@ -183,15 +229,24 @@
 
   let modalOpen = $state(false);
   function openSaveModal() {
+    if (selectedPreviewCount === 0) {
+      toast.toast({
+        message: "Select at least one row to import",
+        type: "is-danger"
+      });
+      return;
+    }
     modalOpen = true;
   }
 
   async function saveToFile(destinationFile: string) {
+    importSaving = true;
     const { saved, message } = await ajax("/api/editor/save", {
       method: "POST",
       body: JSON.stringify({ name: destinationFile, content: preview, operation: "overwrite" }),
       background: true
     });
+    importSaving = false;
 
     if (saved) {
       toast.toast({
@@ -208,6 +263,47 @@
         duration: 10000
       });
     }
+  }
+
+  async function saveCurrentAsPreset() {
+    const name = prompt("Preset name");
+    if (_.isEmpty(name)) {
+      return;
+    }
+
+    const columnMappings = _.fromPairs(
+      _.range(0, columnCount).map((index) => {
+        const col = String.fromCharCode(65 + index);
+        return [col, col];
+      })
+    );
+
+    const response: any = await ajax("/api/import/presets", {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        column_mappings: columnMappings,
+        date_format: "",
+        default_accounts: {},
+        delimiter
+      }),
+      background: true
+    });
+
+    if (response.error || !response.saved) {
+      toast.toast({
+        message: `Failed to save preset ${name}`,
+        type: "is-danger"
+      });
+      return;
+    }
+
+    ({ presets: importPresets } = await ajax("/api/import/presets", { background: true }));
+    selectedPreset = _.find(importPresets, { id: response.preset.id });
+    toast.toast({
+      message: `Saved preset ${name}`,
+      type: "is-success"
+    });
   }
 
   function builtinNotAllowed(action: string, template: ImportTemplate) {
@@ -365,10 +461,11 @@
               </button>
               <button
                 data-tippy-followCursor="false"
-                data-tippy-content="Save"
+                data-tippy-content="Confirm & Save"
                 class="button save"
-                aria-label="Save preview to file"
-                disabled={_.isEmpty(preview)}
+                class:is-loading={importSaving}
+                aria-label="Confirm selected rows and save"
+                disabled={_.isEmpty(preview) || selectedPreviewCount === 0 || importSaving}
                 onclick={openSaveModal}
               >
                 <span class="icon">
@@ -389,6 +486,25 @@
           >
             Drag 'n' drop CSV, TXT, XLS, XLSX, PDF file here or click to select
           </Dropzone>
+        </div>
+        <div class="box p-3 mb-3">
+          <PresetSelector
+            presets={importPresets}
+            bind:selectedPreset
+            onsavecurrent={saveCurrentAsPreset}
+          />
+          <div class="field is-grouped is-align-items-center">
+            <label class="label mb-0 mr-2" for="import-delimiter">Delimiter</label>
+            <div class="control">
+              <input
+                id="import-delimiter"
+                class="input is-small"
+                maxlength="1"
+                bind:value={delimiter}
+                onblur={() => refreshImportPreview()}
+              />
+            </div>
+          </div>
         </div>
         <div class="is-flex justify-end mb-3 gap-4">
           <div class="field color-switch">
@@ -417,30 +533,7 @@
           </div>
         {/if}
         {#if !_.isEmpty(data)}
-          <div class="table-wrapper">
-            <table
-              class="mt-0 table is-bordered is-size-7 is-narrow has-sticky-header has-sticky-column"
-            >
-              <thead>
-                <tr>
-                  <th></th>
-                  {#each _.range(0, columnCount) as ci}
-                    <th class="has-background-light">{String.fromCharCode(65 + ci)}</th>
-                  {/each}
-                </tr>
-              </thead>
-              <tbody>
-                {#each data as row, ri}
-                  <tr>
-                    <th class="has-background-light"><b>{ri}</b></th>
-                    {#each row as cell}
-                      <td>{cell || ""}</td>
-                    {/each}
-                  </tr>
-                {/each}
-              </tbody>
-            </table>
-          </div>
+          <ImportPreviewTable rows={previewRows} bind:included={includedPreviewRows} />
         {/if}
       </div>
     </div>
@@ -465,12 +558,6 @@
     position: absolute !important;
     right: 40px;
     z-index: 1;
-  }
-
-  .table-wrapper {
-    overflow-x: auto;
-    overflow-y: auto;
-    max-height: $import-full-height;
   }
 
   .color-switch {

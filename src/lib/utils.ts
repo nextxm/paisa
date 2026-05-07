@@ -512,6 +512,23 @@ export interface ImportTemplate {
   template_type: string;
 }
 
+export interface ImportPreviewRow {
+  index: number;
+  row: Record<string, string>;
+  valid: boolean;
+  errors?: string[];
+}
+
+export interface ImportPreset {
+  id: string;
+  name: string;
+  column_mappings: Record<string, string>;
+  date_format: string;
+  default_accounts: Record<string, string>;
+  delimiter: string;
+  preset_type: string;
+}
+
 export interface Log {
   time: dayjs.Dayjs;
   level: string;
@@ -824,6 +841,15 @@ export function ajax(
   route: "/api/templates/delete",
   options?: RequestOptions
 ): Promise<{ success: boolean; message?: string }>;
+
+export function ajax(
+  route: "/api/import/preview",
+  options?: RequestOptions
+): Promise<{ template: string; dry_run: boolean; rows: ImportPreviewRow[] }>;
+export function ajax(
+  route: "/api/import/presets",
+  options?: RequestOptions
+): Promise<{ presets: ImportPreset[]; preset?: ImportPreset; saved?: boolean; success?: boolean }>;
 
 export function ajax(
   route: "/api/editor/files",
