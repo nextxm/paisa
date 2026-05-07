@@ -26,7 +26,8 @@
   import {
     reconciliationLabel,
     reconciliationTagClass,
-    reconciliationIcon
+    reconciliationIcon,
+    reconciliationTextClass
   } from "$lib/reconciliation";
 
   let commodities: string[] = $state([]);
@@ -219,9 +220,8 @@
                 <div class="ml-3">
                   <a
                     href="/accounts/{encodeURIComponent(data.name)}?reconcile=1"
-                    class="tag is-light {reconciliationTagClass(reconciliationStatus)} is-rounded"
+                    class={reconciliationTextClass(reconciliationStatus)}
                     title={reconciliationLabel(reconciliationStatus)}
-                    style="padding: 0 0.5em;"
                   >
                     <span class="custom-icon">{reconciliationIcon(reconciliationStatus)}</span>
                   </a>

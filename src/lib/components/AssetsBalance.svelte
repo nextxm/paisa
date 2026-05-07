@@ -8,7 +8,8 @@
   import {
     reconciliationLabel,
     reconciliationTagClass,
-    reconciliationIcon
+    reconciliationIcon,
+    reconciliationTextClass
   } from "$lib/reconciliation";
   import { iconText } from "$lib/icon";
   import _ from "lodash";
@@ -52,7 +53,7 @@
   <span class="has-text-grey custom-icon">${iconText(account)}</span>
   <a href="/assets/gain/${account}">${accountText}</a>
   <span class="has-text-grey-light is-size-7">${children}</span>
-  <a href="/accounts/${encodeURIComponent(account)}?reconcile=1" class="ml-2 tag is-light ${klass} is-rounded" title="${label}" style="padding: 0 0.5em;">
+  <a href="/accounts/${encodeURIComponent(account)}?reconcile=1" class="ml-2 ${reconciliationTextClass(status)}" title="${label}">
     <span class="custom-icon">${icon}</span>
   </a>
 </span>

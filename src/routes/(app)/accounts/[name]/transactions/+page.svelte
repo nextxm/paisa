@@ -4,6 +4,7 @@
   import { onMount } from "svelte";
   import VirtualList from "svelte-tiny-virtual-list";
   import Transaction from "$lib/components/Transaction.svelte";
+  import TransactionHeader from "$lib/components/TransactionHeader.svelte";
   import type { PageData } from "./$types";
 
   let { data }: { data: PageData } = $props();
@@ -13,17 +14,9 @@
 
   const mobile = isMobile();
 
-  const debits = (t: T) => {
-    return _.filter(t.postings, (p) => p.amount < 0);
-  };
-
-  const credits = (t: T) => {
-    return _.filter(t.postings, (p) => p.amount >= 0);
-  };
-
   const itemSize = (i: number) => {
     const t = transactions[i];
-    const count = mobile ? t.postings.length : Math.max(credits(t).length, debits(t).length);
+    const count = t.postings.length;
     return 8 + count * 22 + (mobile ? 25 : 0);
   };
 
@@ -87,6 +80,7 @@
                 No transactions found for <strong>{data.account}</strong>.
               </p>
             {:else}
+              <TransactionHeader showExtraColumns={true} />
               <VirtualList
                 width="100%"
                 height={window.innerHeight - 150}

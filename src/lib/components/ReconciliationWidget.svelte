@@ -2,7 +2,8 @@
   import {
     reconciliationLabel,
     reconciliationTagClass,
-    reconciliationIcon
+    reconciliationIcon,
+    reconciliationTextClass
   } from "$lib/reconciliation";
   import type { AccountReconciliationStatus } from "$lib/utils";
 
@@ -28,9 +29,8 @@
           <a href="/accounts/{encodeURIComponent(status.account)}">{status.account}</a>
           <a
             href="/accounts/{encodeURIComponent(status.account)}?reconcile=1"
-            class="tag is-light {reconciliationTagClass(status)} is-rounded"
+            class={reconciliationTextClass(status)}
             title={reconciliationLabel(status)}
-            style="padding: 0 0.5em;"
           >
             <span class="custom-icon">{reconciliationIcon(status)}</span>
           </a>

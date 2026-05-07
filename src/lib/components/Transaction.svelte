@@ -10,13 +10,6 @@
     t,
     highlightAccount = ""
   }: { compact?: boolean; t: Transaction; highlightAccount?: string } = $props();
-  const debits = (t: Transaction) => {
-    return _.filter(t.postings, (p) => p.amount < 0);
-  };
-
-  const credits = (t: Transaction) => {
-    return _.filter(t.postings, (p) => p.amount >= 0);
-  };
 </script>
 
 <div class="column is-12">
@@ -32,16 +25,13 @@
           >
         </div>
       </div>
-      <div class="column is-6 py-0">
-        <Postings postings={debits(t)} {highlightAccount} />
-      </div>
-      <div class="column is-6 py-0">
-        <Postings postings={credits(t)} {highlightAccount} />
+      <div class="column is-12 py-0">
+        <Postings postings={t.postings} {highlightAccount} />
       </div>
     </div>
   {:else}
     <div class="columns is-flex-wrap-wrap transaction bordered">
-      <div class="column is-3 py-0 truncate">
+      <div class="column py-0 truncate" style="flex: 0 0 30%; max-width: 30%;">
         <div class="description mt-2 is-size-7">
           <b>{t.date.format("DD MMM YYYY")}</b>
           <span title={t.payee}
@@ -51,11 +41,8 @@
           >
         </div>
       </div>
-      <div class="column is-4 py-0">
-        <Postings postings={debits(t)} {highlightAccount} />
-      </div>
-      <div class="column is-5 py-0">
-        <Postings postings={credits(t)} {highlightAccount} />
+      <div class="column py-0" style="flex: 0 0 70%; max-width: 70%;">
+        <Postings postings={t.postings} {highlightAccount} />
       </div>
     </div>
   {/if}

@@ -4,6 +4,7 @@
   import { onDestroy, onMount } from "svelte";
   import VirtualList from "svelte-tiny-virtual-list";
   import Transaction from "$lib/components/Transaction.svelte";
+  import TransactionHeader from "$lib/components/TransactionHeader.svelte";
   import BulkEditForm from "$lib/components/BulkEditForm.svelte";
   import { slide } from "svelte/transition";
   import * as bulkEdit from "$lib/bulk_edit";
@@ -24,14 +25,6 @@
   let accounts: string[] = $state([]);
   let commodities: string[] = $state([]);
 
-  const debits = (t: T) => {
-    return _.filter(t.postings, (p) => p.amount < 0);
-  };
-
-  const credits = (t: T) => {
-    return _.filter(t.postings, (p) => p.amount >= 0);
-  };
-
   function handleInputRaw(predicate: (t: T) => boolean) {
     filtered = _.filter(transactions, predicate);
   }
@@ -50,7 +43,7 @@
 
   const itemSize = (i: number) => {
     const t = filtered[i];
-    const count = mobile ? t.postings.length : Math.max(credits(t).length, debits(t).length);
+    const count = t.postings.length;
     return 8 + count * 22 + (mobile ? 25 : 0);
   };
 
@@ -182,6 +175,7 @@
       <div class="columns">
         <div class="column is-12">
           <div class="box">
+            <TransactionHeader showExtraColumns={false} />
             <VirtualList
               width="100%"
               height={window.innerHeight - 150}

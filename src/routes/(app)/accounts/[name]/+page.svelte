@@ -7,7 +7,8 @@
   import {
     reconciliationLabel,
     reconciliationTagClass,
-    reconciliationIcon
+    reconciliationIcon,
+    reconciliationTextClass
   } from "$lib/reconciliation";
 
   let { data }: { data: PageData } = $props();
@@ -118,10 +119,11 @@
                 <div class="level-item">
                   <button
                     type="button"
-                    class="tag is-light {reconciliationTagClass(reconciliationStatus)} is-rounded"
+                    class="button is-ghost p-0 h-auto {reconciliationTextClass(
+                      reconciliationStatus
+                    )}"
                     onclick={() => (reconciliationModalOpen = true)}
                     title={reconciliationLabel(reconciliationStatus)}
-                    style="padding: 0 0.5em;"
                   >
                     <span class="custom-icon">{reconciliationIcon(reconciliationStatus)}</span>
                   </button>
