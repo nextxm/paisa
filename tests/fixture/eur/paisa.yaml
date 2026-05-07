@@ -4,3 +4,4 @@ ledger_cli: ledger
 default_currency: EUR
 locale: es-EU
 time_zone: UTC
+enable_reconciliation: false

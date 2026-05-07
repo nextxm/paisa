@@ -207,7 +207,8 @@ type Config struct {
 
 	Labs Labs `json:"labs" yaml:"labs"`
 
-	CheckingAccounts []string `json:"checking_accounts" yaml:"checking_accounts"`
+	CheckingAccounts     []string `json:"checking_accounts" yaml:"checking_accounts"`
+	EnableReconciliation bool     `json:"enable_reconciliation" yaml:"enable_reconciliation"`
 }
 
 var config Config
@@ -246,6 +247,7 @@ var defaultConfig = Config{
 	Firefly:                    FireflyConfig{IgnoreAccounts: []string{}},
 	Labs:                       Labs{FireflyReconcile: false},
 	CheckingAccounts:           []string{"Assets:Checking"},
+	EnableReconciliation:       false,
 }
 
 var itemsUniquePropertiesMeta = jsonschema.MustCompileString("itemsUniqueProperties.json", `{

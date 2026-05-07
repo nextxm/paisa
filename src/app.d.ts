@@ -56,6 +56,7 @@ interface UserConfig {
   default_currency: string;
   currencies: string[];
   readonly: boolean;
+  enable_reconciliation: boolean;
   provider_debug_http: boolean;
   locale: string;
   journal_path: string;

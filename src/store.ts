@@ -135,6 +135,10 @@ export function setAllowedDateRange(dates: dayjs.Dayjs[]) {
 }
 
 export const willRefresh = writable(0);
+export const reconciliationModalState = writable<{ account: string | null; open: boolean }>({
+  account: null,
+  open: false
+});
 export async function refresh() {
   if (get(editorState).hasUnsavedChanges) {
     const confirmed = confirm("You have unsaved changes. Are you sure you want to leave?");

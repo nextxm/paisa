@@ -76,7 +76,12 @@
         transactions
       },
       { reconciliations }
-    ] = await Promise.all([ajax("/api/dashboard"), ajax("/api/accounts/reconciliation")]);
+    ] = await Promise.all([
+      ajax("/api/dashboard"),
+      USER_CONFIG.enable_reconciliation
+        ? ajax("/api/accounts/reconciliation")
+        : { reconciliations: [] }
+    ]);
 
     goalSummaries = _.sortBy(goalSummaries, (g) => -g.priority);
 
@@ -277,11 +282,13 @@
             </div>
           </div>
         {/if}
-        <div class="tile is-parent">
-          <article class="tile is-child">
-            <ReconciliationWidget {reconciliations} />
-          </article>
-        </div>
+        {#if USER_CONFIG.enable_reconciliation}
+          <div class="tile is-parent">
+            <article class="tile is-child">
+              <ReconciliationWidget {reconciliations} />
+            </article>
+          </div>
+        {/if}
       </div>
       <div class="tile is-vertical">
         <div class="tile is-parent is-12">

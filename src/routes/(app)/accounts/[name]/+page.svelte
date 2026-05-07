@@ -3,13 +3,13 @@
   import { onMount } from "svelte";
   import type { PageData } from "./$types";
   import * as toast from "bulma-toast";
-  import Modal from "$lib/components/Modal.svelte";
   import {
     reconciliationLabel,
     reconciliationTagClass,
     reconciliationIcon,
     reconciliationTextClass
   } from "$lib/reconciliation";
+  import { reconciliationModalState } from "../../../../store";
 
   let { data }: { data: PageData } = $props();
 
@@ -18,20 +18,21 @@
   let saving = $state(false);
   let loaded = $state(false);
   let reconciliationStatus: AccountReconciliationStatus | null = $state(null);
-  let reconciliationModalOpen = $state(false);
-  let reconciliationFrequencyDays = $state(30);
 
   onMount(async () => {
     const [noteResult, reconciliationResult] = await Promise.all([
       ajax("/api/account_notes/:account", null, { account: data.account }),
-      ajax("/api/accounts/:account/reconciliation", null, { account: data.account })
+      USER_CONFIG.enable_reconciliation
+        ? ajax("/api/accounts/:account/reconciliation", null, { account: data.account })
+        : Promise.resolve(null)
     ]);
     accountNote = noteResult.account_note ?? null;
     noteText = accountNote?.note ?? "";
     reconciliationStatus = reconciliationResult;
-    reconciliationFrequencyDays = reconciliationResult.frequency_days;
     const searchParams = new URLSearchParams(window.location.search);
-    reconciliationModalOpen = searchParams.get("reconcile") === "1";
+    if (searchParams.get("reconcile") === "1") {
+      reconciliationModalState.set({ account: data.account, open: true });
+    }
     loaded = true;
   });
 
@@ -74,35 +75,6 @@
       saving = false;
     }
   }
-
-  async function markReconciledNow() {
-    if (saving) return;
-    saving = true;
-    try {
-      reconciliationStatus = await ajax(
-        "/api/accounts/:account/reconciliation",
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            mark_reconciled_now: true,
-            frequency_days: reconciliationFrequencyDays
-          })
-        },
-        { account: data.account }
-      );
-      toast.toast({ message: "Account marked as reconciled.", type: "is-success", duration: 3000 });
-      reconciliationModalOpen = false;
-    } catch (err) {
-      console.error("Failed to update reconciliation:", err);
-      toast.toast({
-        message: "Failed to update reconciliation.",
-        type: "is-danger",
-        duration: 3000
-      });
-    } finally {
-      saving = false;
-    }
-  }
 </script>
 
 {#if loaded}
@@ -115,17 +87,21 @@
               <div class="level-item">
                 <p class="title is-5">{data.account}</p>
               </div>
-              {#if reconciliationStatus}
+              {#if USER_CONFIG.enable_reconciliation && reconciliationStatus}
                 <div class="level-item">
                   <button
                     type="button"
-                    class="button is-ghost p-0 h-auto {reconciliationTextClass(
+                    class="button is-ghost p-0 h-auto is-small {reconciliationTextClass(
                       reconciliationStatus
                     )}"
-                    onclick={() => (reconciliationModalOpen = true)}
+                    onclick={() =>
+                      reconciliationModalState.set({ account: data.account, open: true })}
                     title={reconciliationLabel(reconciliationStatus)}
+                    style="vertical-align: baseline; height: 1.2em; width: 1.2em; line-height: 1;"
                   >
-                    <span class="custom-icon">{reconciliationIcon(reconciliationStatus)}</span>
+                    <span class="custom-icon" style="font-size: 0.9em;"
+                      >{reconciliationIcon(reconciliationStatus)}</span
+                    >
                   </button>
                 </div>
               {/if}
@@ -190,41 +166,3 @@
     </div>
   </section>
 {/if}
-
-<Modal bind:active={reconciliationModalOpen}>
-  {#snippet head(close)}
-    <p class="text-base font-semibold flex-1">Reconciliation — {data.account}</p>
-    <button
-      class="du-btn du-btn-sm du-btn-circle du-btn-ghost"
-      aria-label="close"
-      onclick={() => close()}
-    >
-      <i class="fas fa-times" aria-hidden="true"></i>
-    </button>
-  {/snippet}
-  {#snippet body()}
-    {#if reconciliationStatus}
-      <p class="mb-2">{reconciliationLabel(reconciliationStatus)}</p>
-      <p class="mb-4">Frequency: every {reconciliationStatus.frequency_days} days</p>
-    {/if}
-    <div class="field">
-      <label class="label" for="reconciliation-frequency">Frequency (days)</label>
-      <div class="control">
-        <input
-          id="reconciliation-frequency"
-          class="input"
-          type="number"
-          min="1"
-          bind:value={reconciliationFrequencyDays}
-          disabled={saving}
-        />
-      </div>
-    </div>
-  {/snippet}
-  {#snippet foot(close)}
-    <button class="du-btn du-btn-success du-btn-sm" disabled={saving} onclick={markReconciledNow}>
-      Mark Reconciled
-    </button>
-    <button class="du-btn du-btn-sm" onclick={() => close()}>Close</button>
-  {/snippet}
-</Modal>

@@ -6,10 +6,27 @@
   import Spinner from "$lib/components/Spinner.svelte";
   import Navbar from "$lib/components/Navbar.svelte";
   import ReloadPrompt from "$lib/components/ReloadPrompt.svelte";
-  import { willClearTippy, willRefresh } from "../../store";
+  import ReconciliationModal from "$lib/components/ReconciliationModal.svelte";
+  import { willClearTippy, willRefresh, reconciliationModalState } from "../../store";
+  import { onMount } from "svelte";
 
-  let { children }: { children: Snippet } = $props();
+  let { children, data }: { children: Snippet; data?: any } = $props();
   let isBurger: boolean = $state(null);
+
+  onMount(() => {
+    (window as any).openReconciliationModal = (account: string) => {
+      reconciliationModalState.set({ account, open: true });
+    };
+
+    if (USER_CONFIG.enable_reconciliation) {
+      const searchParams = new URLSearchParams(window.location.search);
+      const reconcile = searchParams.get("reconcile");
+      const account = searchParams.get("account") || (data as any)?.account || (data as any)?.name;
+      if (reconcile === "1" && account) {
+        (window as any).openReconciliationModal(account);
+      }
+    }
+  });
 
   function clearTippy() {
     hideAll();
@@ -67,3 +84,6 @@
 {/key}
 
 <ReloadPrompt />
+{#if USER_CONFIG.enable_reconciliation}
+  <ReconciliationModal />
+{/if}

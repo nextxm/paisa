@@ -53,9 +53,16 @@
   <span class="has-text-grey custom-icon">${iconText(account)}</span>
   <a href="/assets/gain/${account}">${accountText}</a>
   <span class="has-text-grey-light is-size-7">${children}</span>
-  <a href="/accounts/${encodeURIComponent(account)}?reconcile=1" class="ml-2 ${reconciliationTextClass(status)}" title="${label}">
-    <span class="custom-icon">${icon}</span>
-  </a>
+  ${
+    USER_CONFIG.enable_reconciliation
+      ? `
+  <button type="button" onclick="openReconciliationModal('${account.replace(/'/g, "\\'")}')" class="button is-ghost p-0 h-auto ml-2 is-small ${reconciliationTextClass(
+    status
+  )}" title="${label}" style="vertical-align: baseline; height: 1.2em; width: 1.2em; line-height: 1;">
+    <span class="custom-icon" style="font-size: 0.9em;">${icon}</span>
+  </button>`
+      : ""
+  }
 </span>
 `;
   }

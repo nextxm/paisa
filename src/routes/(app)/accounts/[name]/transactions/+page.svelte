@@ -1,16 +1,29 @@
 <script lang="ts">
-  import { ajax, isMobile, type AccountNote, type Transaction as T } from "$lib/utils";
+  import {
+    ajax,
+    isMobile,
+    type AccountNote,
+    type Transaction as T,
+    type AccountReconciliationStatus
+  } from "$lib/utils";
   import _ from "lodash";
   import { onMount } from "svelte";
   import VirtualList from "svelte-tiny-virtual-list";
   import Transaction from "$lib/components/Transaction.svelte";
   import TransactionHeader from "$lib/components/TransactionHeader.svelte";
   import type { PageData } from "./$types";
+  import {
+    reconciliationLabel,
+    reconciliationIcon,
+    reconciliationTextClass
+  } from "$lib/reconciliation";
+  import { reconciliationModalState } from "../../../../../store";
 
   let { data }: { data: PageData } = $props();
 
   let transactions: T[] | null = $state(null);
   let accountNote: AccountNote | null = $state(null);
+  let reconciliationStatus: AccountReconciliationStatus | null = $state(null);
 
   const mobile = isMobile();
 
@@ -22,10 +35,19 @@
 
   onMount(async () => {
     const encoded = encodeURIComponent(data.account);
-    [{ transactions }, { account_note: accountNote }] = await Promise.all([
-      ajax(`/api/transaction?account=${encoded}`),
-      ajax("/api/account_notes/:account", null, { account: data.account })
+    transactions = (await ajax(`/api/transaction?account=${encoded}`)).transactions;
+    const [noteResult, reconciliationResult] = await Promise.all([
+      ajax("/api/account_notes/:account", null, { account: data.account }),
+      USER_CONFIG.enable_reconciliation
+        ? ajax("/api/accounts/:account/reconciliation", null, { account: data.account })
+        : Promise.resolve(null)
     ]);
+    accountNote = noteResult.account_note;
+    reconciliationStatus = reconciliationResult;
+    const searchParams = new URLSearchParams(window.location.search);
+    if (USER_CONFIG.enable_reconciliation && searchParams.get("reconcile") === "1") {
+      reconciliationModalState.set({ account: data.account, open: true });
+    }
   });
 </script>
 
@@ -45,6 +67,24 @@
                     <span class="icon is-small mr-1"><i class="fas fa-sticky-note"></i></span>
                     {accountNote.note}
                   </span>
+                </div>
+              {/if}
+              {#if USER_CONFIG.enable_reconciliation && reconciliationStatus}
+                <div class="level-item">
+                  <button
+                    type="button"
+                    class="button is-ghost p-0 h-auto is-small {reconciliationTextClass(
+                      reconciliationStatus
+                    )}"
+                    onclick={() =>
+                      reconciliationModalState.set({ account: data.account, open: true })}
+                    title={reconciliationLabel(reconciliationStatus)}
+                    style="vertical-align: baseline; height: 1.2em; width: 1.2em; line-height: 1;"
+                  >
+                    <span class="custom-icon" style="font-size: 0.9em;"
+                      >{reconciliationIcon(reconciliationStatus)}</span
+                    >
+                  </button>
                 </div>
               {/if}
             </div>

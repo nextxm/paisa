@@ -6,6 +6,7 @@
     reconciliationTextClass
   } from "$lib/reconciliation";
   import type { AccountReconciliationStatus } from "$lib/utils";
+  import { reconciliationModalState } from "../../store";
 
   let { reconciliations = [] }: { reconciliations: AccountReconciliationStatus[] } = $props();
 
@@ -27,13 +28,14 @@
       {#each overdue as status}
         <div class="is-flex is-align-items-center is-justify-content-space-between">
           <a href="/accounts/{encodeURIComponent(status.account)}">{status.account}</a>
-          <a
-            href="/accounts/{encodeURIComponent(status.account)}?reconcile=1"
-            class={reconciliationTextClass(status)}
+          <button
+            type="button"
+            class="button is-ghost p-0 h-auto {reconciliationTextClass(status)}"
+            onclick={() => reconciliationModalState.set({ account: status.account, open: true })}
             title={reconciliationLabel(status)}
           >
             <span class="custom-icon">{reconciliationIcon(status)}</span>
-          </a>
+          </button>
         </div>
       {/each}
     </div>

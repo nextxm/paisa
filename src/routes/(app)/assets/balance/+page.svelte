@@ -24,11 +24,13 @@
     const [, currencyResult, reconciliationResult] = await Promise.all([
       fetchBreakdowns(),
       ajax("/api/price/currencies"),
-      ajax("/api/accounts/reconciliation")
+      USER_CONFIG.enable_reconciliation
+        ? ajax("/api/accounts/reconciliation")
+        : Promise.resolve({ reconciliations: [] })
     ]);
     availableCurrencies = currencyResult.currencies || [];
     reconciliationStatuses = Object.fromEntries(
-      reconciliationResult.reconciliations.map((status) => [status.account, status])
+      (reconciliationResult.reconciliations || []).map((status) => [status.account, status])
     );
   });
 </script>

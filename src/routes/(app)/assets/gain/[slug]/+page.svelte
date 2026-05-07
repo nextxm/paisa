@@ -29,6 +29,7 @@
     reconciliationIcon,
     reconciliationTextClass
   } from "$lib/reconciliation";
+  import { reconciliationModalState } from "../../../../../store";
 
   let commodities: string[] = $state([]);
   let selectedCommodities: string[] = $state([]);
@@ -78,7 +79,9 @@
       reconciliationStatus
     ] = await Promise.all([
       ajax("/api/gain/:name", null, data),
-      ajax("/api/accounts/:account/reconciliation", null, { account: data.name })
+      USER_CONFIG.enable_reconciliation
+        ? ajax("/api/accounts/:account/reconciliation", null, { account: data.name })
+        : Promise.resolve(null)
     ]);
 
     overview = _.last(gain.networthTimeline);
@@ -216,15 +219,18 @@
                 <span class="has-text-weight-bold">{formatCurrency(overview.withdrawalAmount)}</span
                 >
               </div>
-              {#if reconciliationStatus}
+              {#if USER_CONFIG.enable_reconciliation && reconciliationStatus}
                 <div class="ml-3">
-                  <a
-                    href="/accounts/{encodeURIComponent(data.name)}?reconcile=1"
-                    class={reconciliationTextClass(reconciliationStatus)}
+                  <button
+                    type="button"
+                    class="button is-ghost p-0 h-auto {reconciliationTextClass(
+                      reconciliationStatus
+                    )}"
+                    onclick={() => reconciliationModalState.set({ account: data.name, open: true })}
                     title={reconciliationLabel(reconciliationStatus)}
                   >
                     <span class="custom-icon">{reconciliationIcon(reconciliationStatus)}</span>
-                  </a>
+                  </button>
                 </div>
               {/if}
               {#if overview.balanceUnits > 0}
