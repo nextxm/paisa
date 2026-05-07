@@ -411,6 +411,25 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, gin.H{"templates": template.All()})
 	})
 
+	router.POST("/api/import/preview", func(c *gin.Context) {
+		var req ImportPreviewRequest
+		if !BindJSONOrError(c, &req) {
+			return
+		}
+
+		rows, err := PreviewImport(req)
+		if err != nil {
+			RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, err.Error())
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"template": req.Template,
+			"dry_run":  true,
+			"rows":     rows,
+		})
+	})
+
 	writeGroup.POST("/api/templates/upsert", func(c *gin.Context) {
 		var t template.Template
 		if !BindJSONOrError(c, &t) {

@@ -4,6 +4,8 @@
 
 #### New features
 
+- **Epic: Import feature improvements (Subtask 1)** — Added `POST /api/import/preview` to parse CSV content in dry-run mode and return row-by-row preview data with validation status/error messages before committing anything to journal files.
+
 - **Epic 11: Year-over-Year Comparison Charts** — Added backend multi-year series support and a new YoY analysis experience for comparing spending and income trends across calendar years.
 
   - **Subtask 11.1 (Backend – Multi-Year Expense/Income Data)** — `GET /api/expense` and `GET /api/income` now accept an optional `years` query parameter (default `1`, max `10`) and return `multi_year` data shaped as `{ "<year>": { month: { "YYYY-MM": amount }, total } }`. Leap-day transactions are naturally included in February aggregates.
