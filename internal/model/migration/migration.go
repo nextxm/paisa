@@ -6,6 +6,7 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/account_note"
+	"github.com/ananthakumaran/paisa/internal/model/account_reconciliation"
 	"github.com/ananthakumaran/paisa/internal/model/cache"
 	"github.com/ananthakumaran/paisa/internal/model/cii"
 	"github.com/ananthakumaran/paisa/internal/model/import_preset"
@@ -40,6 +41,7 @@ var steps = []step{
 	{Version: 3, Apply: v3AddMetadata},
 	{Version: 4, Apply: v4AddAccountNotes},
 	{Version: 5, Apply: v5AddImportPresets},
+	{Version: 6, Apply: v6AddAccountReconciliation},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -124,6 +126,14 @@ func v4AddAccountNotes(db *gorm.DB) error {
 func v5AddImportPresets(db *gorm.DB) error {
 	if err := db.AutoMigrate(&import_preset.Preset{}); err != nil {
 		return fmt.Errorf("v5: AutoMigrate import_presets failed: %w", err)
+	}
+	return nil
+}
+
+// v6AddAccountReconciliation creates the account_reconciliation table for per-account reconciliation metadata.
+func v6AddAccountReconciliation(db *gorm.DB) error {
+	if err := db.AutoMigrate(&account_reconciliation.AccountReconciliation{}); err != nil {
+		return fmt.Errorf("v6: AutoMigrate account_reconciliation failed: %w", err)
 	}
 	return nil
 }

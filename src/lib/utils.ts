@@ -656,6 +656,14 @@ export interface AccountNote {
   note: string;
 }
 
+export interface AccountReconciliationStatus {
+  account: string;
+  last_reconciled: string | null;
+  frequency_days: number;
+  days_since: number | null;
+  is_overdue: boolean;
+}
+
 const tokenKey = "token";
 
 type RequestOptions = RequestInit & {
@@ -815,6 +823,16 @@ export function ajax(
   route: "/api/account_notes/delete",
   options?: RequestOptions
 ): Promise<{ success: boolean }>;
+
+export function ajax(route: "/api/accounts/reconciliation"): Promise<{
+  reconciliations: AccountReconciliationStatus[];
+}>;
+
+export function ajax(
+  route: "/api/accounts/:account/reconciliation",
+  options?: RequestOptions,
+  params?: Record<string, string>
+): Promise<AccountReconciliationStatus>;
 
 export function ajax(route: "/api/goals"): Promise<{ goals: GoalSummary[] }>;
 export function ajax(
