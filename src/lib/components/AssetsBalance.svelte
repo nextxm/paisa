@@ -36,8 +36,9 @@
     const accountText = compact ? lastName(account) : account;
     let children = "";
     const data = cell.getData();
-    if ((data._children?.length || 0) > 0) {
-      children = `(${data._children?.length})`;
+    const childCount = data._children?.length || 0;
+    if (childCount > 0) {
+      children = `(${childCount})`;
     }
     return `
 <span class="whitespace-nowrap" style="max-width: max(15rem, 33.33vw); overflow: hidden;">

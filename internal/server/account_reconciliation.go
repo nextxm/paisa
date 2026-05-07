@@ -48,7 +48,7 @@ func toAccountReconciliationResponse(account string, reconciliation *account_rec
 
 	lastReconciledDate := normalizeDate(*reconciliation.LastReconciledDate)
 	now := normalizeDate(utils.Now())
-	daysSince := int(now.Sub(lastReconciledDate).Hours() / 24)
+	daysSince := int(now.Sub(lastReconciledDate) / (24 * time.Hour))
 	if daysSince < 0 {
 		daysSince = 0
 	}

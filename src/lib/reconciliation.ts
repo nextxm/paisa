@@ -1,8 +1,7 @@
 import type { AccountReconciliationStatus } from "./utils";
 
 export function reconciliationTagClass(status: AccountReconciliationStatus): string {
-  if (status.days_since === null) return "is-danger";
-  if (status.days_since > status.frequency_days) return "is-danger";
+  if (status.days_since === null || status.days_since > status.frequency_days) return "is-danger";
   if (status.days_since >= Math.floor(status.frequency_days * 0.8)) return "is-warning";
   return "is-success";
 }
