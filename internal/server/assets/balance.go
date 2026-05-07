@@ -37,6 +37,8 @@ type AssetBreakdown struct {
 	OriginalBalances []OriginalCurrencyBalance `json:"originalBalances"`
 }
 
+// GetCheckingBalance returns a breakdown of the current balance for all
+// configured checking accounts.
 func GetCheckingBalance(db *gorm.DB, reportCurrency string) gin.H {
 	return doGetBalance(db, config.GetConfig().CheckingAccounts, false, reportCurrency)
 }
@@ -153,7 +155,16 @@ func convertBreakdownsToReportCurrency(db *gorm.DB, breakdowns map[string]AssetB
 	return result
 }
 
+// ComputeBreakdowns builds a per-account AssetBreakdown map for every account
+// (and optionally its parent groups when rollup is true) present in postings.
+//
+// Performance: postings are first grouped by their effective account in O(N),
+// then for each breakdown group the relevant postings are collected in O(A×C)
+// where A is the number of groups and C is the number of distinct leaf
+// accounts.  This is substantially better than the naïve O(A×N) approach of
+// filtering the full postings slice once per group.
 func ComputeBreakdowns(db *gorm.DB, postings []posting.Posting, rollup bool) map[string]AssetBreakdown {
+	// Phase 1: identify all breakdown groups and classify leaf vs. parent.
 	accounts := make(map[string]bool)
 	for _, p := range postings {
 		if service.IsCapitalGains(p) {
@@ -168,19 +179,30 @@ func ComputeBreakdowns(db *gorm.DB, postings []posting.Posting, rollup bool) map
 			}
 		}
 		accounts[p.Account] = true
-
 	}
 
-	result := make(map[string]AssetBreakdown)
+	// Phase 2: pre-group postings by effective account (O(N)).
+	// Capital-gains postings are remapped to their source account so they
+	// aggregate alongside the corresponding asset postings.
+	byEffectiveAccount := make(map[string][]posting.Posting, len(accounts))
+	for _, p := range postings {
+		effAcc := p.Account
+		if service.IsCapitalGains(p) {
+			effAcc = service.CapitalGainsSourceAccount(p.Account)
+		}
+		byEffectiveAccount[effAcc] = append(byEffectiveAccount[effAcc], p)
+	}
 
+	// Phase 3: for each breakdown group collect postings from all matching
+	// child accounts (O(A×C)) and compute the breakdown.
+	result := make(map[string]AssetBreakdown)
 	for group, leaf := range accounts {
-		ps := lo.Filter(postings, func(p posting.Posting, _ int) bool {
-			account := p.Account
-			if service.IsCapitalGains(p) {
-				account = service.CapitalGainsSourceAccount(p.Account)
+		var ps []posting.Posting
+		for effAcc, accPostings := range byEffectiveAccount {
+			if utils.IsSameOrParent(effAcc, group) {
+				ps = append(ps, accPostings...)
 			}
-			return utils.IsSameOrParent(account, group)
-		})
+		}
 		result[group] = ComputeBreakdown(db, ps, leaf, group)
 	}
 

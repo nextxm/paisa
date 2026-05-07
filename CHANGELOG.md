@@ -2,6 +2,14 @@
 
 ### Unreleased — Future changes
 
+#### Performance
+
+- **SQL-level aggregation for balance queries** — Introduces `query.GroupSum()` as a reusable SQL aggregation primitive and improves the `ComputeBreakdowns` algorithm.
+
+  - `query.GroupSum()` — new method on `Query` that returns per `(account, commodity)` aggregated `SUM(amount)` and `SUM(quantity)` rows directly from the database, as a lightweight alternative to `All()` when only totals are needed.
+  - `ComputeBreakdowns` — internal O(A × N) loop replaced with a two-phase O(N + A × C) approach: postings are first grouped by effective account in O(N), then each breakdown group collects from the pre-built index (O(A × C) where C is the number of distinct leaf accounts).
+  - Unit tests added for `GroupSum` and `ComputeBreakdowns`.
+
 #### New features
 
 - **Epic: Import feature improvements (Subtask 1)** — Added `POST /api/import/preview` to parse CSV content in dry-run mode and return row-by-row preview data with validation status/error messages before committing anything to journal files.

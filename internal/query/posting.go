@@ -7,9 +7,20 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
+
+// AccountCommoditySum holds aggregated totals for a single (account, commodity)
+// pair.  It is returned by Query.GroupSum and used as a lightweight alternative
+// to loading every individual posting row when only totals are required.
+type AccountCommoditySum struct {
+	Account   string
+	Commodity string
+	Amount    decimal.Decimal
+	Quantity  decimal.Decimal
+}
 
 type Query struct {
 	context         *gorm.DB
@@ -129,6 +140,25 @@ func (q *Query) NotLike(account string) *Query {
 func (q *Query) Where(query interface{}, args ...interface{}) *Query {
 	q.context = q.context.Where(query, args...)
 	return q
+}
+
+// GroupSum executes a SQL GROUP BY account, commodity query and returns one
+// AccountCommoditySum per distinct pair with the aggregated SUM(amount) and
+// SUM(quantity).  This is significantly more efficient than All() when callers
+// only need totals rather than individual posting rows – for example, when
+// computing current market balances where per-posting detail (historical prices,
+// XIRR cash-flows) is not required.
+func (q *Query) GroupSum() []AccountCommoditySum {
+	var sums []AccountCommoditySum
+	q.context = q.context.Where("forecast = ?", q.includeForecast)
+	result := q.context.Model(&posting.Posting{}).
+		Select("account, commodity, SUM(amount) as amount, SUM(quantity) as quantity").
+		Group("account, commodity").
+		Scan(&sums)
+	if result.Error != nil {
+		log.Fatal(result.Error)
+	}
+	return sums
 }
 
 func (q *Query) All() []posting.Posting {
