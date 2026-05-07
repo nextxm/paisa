@@ -37,8 +37,140 @@ type AssetBreakdown struct {
 	OriginalBalances []OriginalCurrencyBalance `json:"originalBalances"`
 }
 
+// GetCheckingBalance returns a breakdown of the current balance for all
+// configured checking accounts.  It uses SQL-level GROUP BY aggregation
+// (via query.GroupSum) instead of loading every individual posting row,
+// which is significantly faster for large ledgers.  Because checking
+// accounts never carry investment amounts, withdrawal amounts, or XIRR,
+// only the current market balance and per-currency original balances are
+// computed.
 func GetCheckingBalance(db *gorm.DB, reportCurrency string) gin.H {
-	return doGetBalance(db, config.GetConfig().CheckingAccounts, false, reportCurrency)
+	patterns := config.GetConfig().CheckingAccounts
+
+	// Checking accounts do not hold capital-gains postings, so we can query
+	// them directly without the Income:CapitalGains prefix that doGetBalance
+	// normally appends.
+	var dbPatterns []string
+	hasRegex := false
+	for _, p := range patterns {
+		if strings.HasPrefix(p, "regex:") {
+			hasRegex = true
+			// Fall back to the full postings path for regex patterns; the
+			// GroupSum optimisation only applies to prefix-based patterns.
+			break
+		}
+		dbPatterns = append(dbPatterns, p)
+	}
+
+	if hasRegex {
+		return doGetBalance(db, patterns, false, reportCurrency)
+	}
+
+	sums := query.Init(db).AccountPrefix(dbPatterns...).GroupSum()
+	breakdowns := computeCheckingBreakdowns(db, sums, patterns)
+
+	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
+		breakdowns = convertBreakdownsToReportCurrency(db, breakdowns, reportCurrency)
+	}
+	return gin.H{"asset_breakdowns": breakdowns}
+}
+
+// computeCheckingBreakdowns builds an AssetBreakdown per pattern using
+// pre-aggregated SQL sums.  InvestmentAmount, WithdrawalAmount, and XIRR
+// are always zero for checking accounts and are therefore omitted.
+func computeCheckingBreakdowns(db *gorm.DB, sums []query.AccountCommoditySum, patterns []string) map[string]AssetBreakdown {
+	result := make(map[string]AssetBreakdown)
+	for _, p := range patterns {
+		group := strings.TrimSuffix(p, ":%")
+		matchFn := func(account string) bool { return utils.MatchAccount(account, p) }
+		marketAmount := computeMarketAmountFromGroupSums(db, sums, matchFn)
+		if marketAmount.IsZero() {
+			continue
+		}
+		originalBalances := computeOriginalBalancesFromGroupSums(db, sums, matchFn)
+		result[group] = AssetBreakdown{
+			Group:            group,
+			MarketAmount:     marketAmount,
+			OriginalBalances: originalBalances,
+		}
+	}
+	return result
+}
+
+// computeMarketAmountFromGroupSums returns the current market value (in the
+// default currency) of all (account, commodity) sums that satisfy matchFn.
+//
+//   - Default-currency sums contribute SUM(amount) directly.
+//   - Other commodities contribute SUM(quantity) × current unit price; when
+//     no price is available the stored SUM(amount) is used as a fallback
+//     (consistent with service.GetMarketPrice behaviour).
+func computeMarketAmountFromGroupSums(db *gorm.DB, sums []query.AccountCommoditySum, matchFn func(string) bool) decimal.Decimal {
+	dc := config.DefaultCurrency()
+	date := utils.EndOfToday()
+	total := decimal.Zero
+	for _, s := range sums {
+		if !matchFn(s.Account) {
+			continue
+		}
+		if s.Commodity == dc {
+			total = total.Add(s.Amount)
+		} else {
+			pc := service.GetUnitPrice(db, s.Commodity, date)
+			if !pc.Value.IsZero() {
+				total = total.Add(s.Quantity.Mul(pc.Value))
+			} else {
+				total = total.Add(s.Amount)
+			}
+		}
+	}
+	return total
+}
+
+// computeOriginalBalancesFromGroupSums produces per-currency balance entries
+// from pre-aggregated SQL sums, applying the same classification rules as
+// computeOriginalBalances.
+func computeOriginalBalancesFromGroupSums(db *gorm.DB, sums []query.AccountCommoditySum, matchFn func(string) bool) []OriginalCurrencyBalance {
+	dc := config.DefaultCurrency()
+	date := utils.EndOfToday()
+
+	securityQty := make(map[string]decimal.Decimal)
+	currencyAmt := make(map[string]decimal.Decimal)
+
+	for _, s := range sums {
+		if !matchFn(s.Account) {
+			continue
+		}
+		if utils.IsCurrency(s.Commodity) {
+			currencyAmt[dc] = currencyAmt[dc].Add(s.Amount)
+		} else if service.IsForeignCurrency(s.Commodity) {
+			currencyAmt[s.Commodity] = currencyAmt[s.Commodity].Add(s.Quantity)
+		} else if utils.IsSameOrParent(s.Account, "Assets:Equity") || service.IsSecurity(db, s.Commodity) {
+			securityQty[s.Commodity] = securityQty[s.Commodity].Add(s.Quantity)
+		} else {
+			currencyAmt[s.Commodity] = currencyAmt[s.Commodity].Add(s.Quantity)
+		}
+	}
+
+	for commodity, qty := range securityQty {
+		if qty.IsZero() {
+			continue
+		}
+		unitPrice, quoteCurrency, ok := service.GetNativeUnitPrice(db, commodity, date)
+		if ok && !unitPrice.IsZero() {
+			currencyAmt[quoteCurrency] = currencyAmt[quoteCurrency].Add(qty.Mul(unitPrice))
+		}
+	}
+
+	var result []OriginalCurrencyBalance
+	for currency, amount := range currencyAmt {
+		if !amount.IsZero() {
+			result = append(result, OriginalCurrencyBalance{Currency: currency, Amount: amount})
+		}
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Currency < result[j].Currency
+	})
+	return result
 }
 
 func GetBalance(db *gorm.DB, reportCurrency string) gin.H {
@@ -153,7 +285,16 @@ func convertBreakdownsToReportCurrency(db *gorm.DB, breakdowns map[string]AssetB
 	return result
 }
 
+// ComputeBreakdowns builds a per-account AssetBreakdown map for every account
+// (and optionally its parent groups when rollup is true) present in postings.
+//
+// Performance: postings are first grouped by their effective account in O(N),
+// then for each breakdown group the relevant postings are collected in O(A×C)
+// where A is the number of groups and C is the number of distinct leaf
+// accounts.  This is substantially better than the naïve O(A×N) approach of
+// filtering the full postings slice once per group.
 func ComputeBreakdowns(db *gorm.DB, postings []posting.Posting, rollup bool) map[string]AssetBreakdown {
+	// Phase 1: identify all breakdown groups and classify leaf vs. parent.
 	accounts := make(map[string]bool)
 	for _, p := range postings {
 		if service.IsCapitalGains(p) {
@@ -168,19 +309,30 @@ func ComputeBreakdowns(db *gorm.DB, postings []posting.Posting, rollup bool) map
 			}
 		}
 		accounts[p.Account] = true
-
 	}
 
-	result := make(map[string]AssetBreakdown)
+	// Phase 2: pre-group postings by effective account (O(N)).
+	// Capital-gains postings are remapped to their source account so they
+	// aggregate alongside the corresponding asset postings.
+	byEffectiveAccount := make(map[string][]posting.Posting, len(accounts))
+	for _, p := range postings {
+		effAcc := p.Account
+		if service.IsCapitalGains(p) {
+			effAcc = service.CapitalGainsSourceAccount(p.Account)
+		}
+		byEffectiveAccount[effAcc] = append(byEffectiveAccount[effAcc], p)
+	}
 
+	// Phase 3: for each breakdown group collect postings from all matching
+	// child accounts (O(A×C)) and compute the breakdown.
+	result := make(map[string]AssetBreakdown)
 	for group, leaf := range accounts {
-		ps := lo.Filter(postings, func(p posting.Posting, _ int) bool {
-			account := p.Account
-			if service.IsCapitalGains(p) {
-				account = service.CapitalGainsSourceAccount(p.Account)
+		var ps []posting.Posting
+		for effAcc, accPostings := range byEffectiveAccount {
+			if utils.IsSameOrParent(effAcc, group) {
+				ps = append(ps, accPostings...)
 			}
-			return utils.IsSameOrParent(account, group)
-		})
+		}
 		result[group] = ComputeBreakdown(db, ps, leaf, group)
 	}
 

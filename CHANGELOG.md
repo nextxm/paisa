@@ -2,6 +2,15 @@
 
 ### Unreleased — Future changes
 
+#### Performance
+
+- **SQL-level aggregation for balance queries** — Balance calculations for checking accounts now use a SQL `GROUP BY account, commodity` query (via `query.GroupSum`) instead of loading every individual posting row.  The dashboard's checking-balance section therefore scales to arbitrarily large ledgers without a proportional increase in memory or query time.
+
+  - `query.GroupSum()` — new method on `Query` that returns per `(account, commodity)` aggregated `SUM(amount)` and `SUM(quantity)` rows directly from the database.
+  - `GetCheckingBalance` — refactored to call `GroupSum()` and compute market amounts by multiplying aggregate quantities by the current unit price (one price-cache lookup per unique commodity rather than per posting).
+  - `ComputeBreakdowns` — internal O(A × N) loop replaced with a two-phase O(N + A × C) approach: postings are first grouped by effective account (O(N)), then each breakdown group collects from the pre-built index (O(A × C) where C is the number of distinct leaf accounts).
+  - Unit tests added for `GroupSum`, `computeMarketAmountFromGroupSums`, `computeCheckingBreakdowns`, `GetCheckingBalance`, and `ComputeBreakdowns`.
+
 #### New features
 
 - **Epic: Import feature improvements (Subtask 1)** — Added `POST /api/import/preview` to parse CSV content in dry-run mode and return row-by-row preview data with validation status/error messages before committing anything to journal files.
