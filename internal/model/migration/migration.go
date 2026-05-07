@@ -8,6 +8,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/account_note"
 	"github.com/ananthakumaran/paisa/internal/model/cache"
 	"github.com/ananthakumaran/paisa/internal/model/cii"
+	"github.com/ananthakumaran/paisa/internal/model/import_preset"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	mutualfundModel "github.com/ananthakumaran/paisa/internal/model/mutualfund/scheme"
 	npsModel "github.com/ananthakumaran/paisa/internal/model/nps/scheme"
@@ -38,6 +39,7 @@ var steps = []step{
 	{Version: 2, Apply: v2AddQuoteCommodity},
 	{Version: 3, Apply: v3AddMetadata},
 	{Version: 4, Apply: v4AddAccountNotes},
+	{Version: 5, Apply: v5AddImportPresets},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -114,6 +116,14 @@ func v3AddMetadata(db *gorm.DB) error {
 func v4AddAccountNotes(db *gorm.DB) error {
 	if err := db.AutoMigrate(&account_note.AccountNote{}); err != nil {
 		return fmt.Errorf("v4: AutoMigrate account_notes failed: %w", err)
+	}
+	return nil
+}
+
+// v5AddImportPresets creates the import_presets table for reusable import mappings.
+func v5AddImportPresets(db *gorm.DB) error {
+	if err := db.AutoMigrate(&import_preset.Preset{}); err != nil {
+		return fmt.Errorf("v5: AutoMigrate import_presets failed: %w", err)
 	}
 	return nil
 }

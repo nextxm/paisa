@@ -6,6 +6,7 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/account_note"
+	"github.com/ananthakumaran/paisa/internal/model/import_preset"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/glebarez/sqlite"
@@ -28,7 +29,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 4, version)
+	assert.Equal(t, 5, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -38,7 +39,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 4, version)
+	assert.Equal(t, 5, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -56,12 +57,12 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	db := openMemoryDB(t)
 
 	// Simulate an existing install that has tables but no schema_versions table.
-	// RunMigrations should create the table and record v4 without error.
+	// RunMigrations should create the table and record v5 without error.
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	// Schema version should be 4 after migration.
-	assert.Equal(t, 4, migration.CurrentVersion(db))
+	// Schema version should be 5 after migration.
+	assert.Equal(t, 5, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -97,9 +98,9 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&migration.SchemaVersion{}))
 	require.NoError(t, db.Create(&migration.SchemaVersion{Version: 1, AppliedAt: time.Now()}).Error)
 
-	// Run migrations – v2, v3, and v4 should execute.
+	// Run migrations – v2, v3, v4, and v5 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 4, migration.CurrentVersion(db))
+	assert.Equal(t, 5, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -184,4 +185,28 @@ func TestV4Migration_AccountNotesTableExists(t *testing.T) {
 	require.NoError(t, account_note.Delete(db, "Assets:Checking"))
 	_, err = account_note.Get(db, "Assets:Checking")
 	assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+}
+
+// TestV5Migration_ImportPresetsTableExists verifies that after v5 the
+// import_presets table exists and basic CRUD via package API works.
+func TestV5Migration_ImportPresetsTableExists(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	saved, err := import_preset.Upsert(db, import_preset.ImportPreset{
+		Name:            "My Preset",
+		ColumnMappings:  map[string]string{"date": "A", "amount": "B"},
+		DateFormat:      "YYYY-MM-DD",
+		DefaultAccounts: map[string]string{"asset": "Assets:Checking"},
+		Delimiter:       ",",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "My Preset", saved.Name)
+	assert.Equal(t, import_preset.Custom, saved.PresetType)
+
+	all, err := import_preset.All(db)
+	require.NoError(t, err)
+	assert.NotEmpty(t, all)
+
+	require.NoError(t, import_preset.Delete(db, "My Preset"))
 }
