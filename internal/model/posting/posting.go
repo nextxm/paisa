@@ -114,19 +114,19 @@ func (p Posting) HasBehaviour(behaviour string) bool {
 }
 
 func UpsertAll(db *gorm.DB, postings []*Posting) error {
+	const batchSize = 500
+
 	return db.Transaction(func(tx *gorm.DB) error {
 		err := tx.Exec("DELETE FROM postings").Error
 		if err != nil {
 			return err
 		}
-		for _, posting := range postings {
-			err := tx.Create(posting).Error
-			if err != nil {
-				return err
-			}
+
+		if len(postings) == 0 {
+			return nil
 		}
 
-		return nil
+		return tx.CreateInBatches(postings, batchSize).Error
 	})
 }
 

@@ -136,6 +136,28 @@ func TestPostingUpsertAll_Atomic(t *testing.T) {
 	assert.Equal(t, int64(1), count, "UpsertAll must replace all postings atomically")
 }
 
+// TestPostingUpsertAll_BatchInsert verifies that UpsertAll inserts all rows
+// when the input size exceeds a single batch.
+func TestPostingUpsertAll_BatchInsert(t *testing.T) {
+	db := openTestDB(t)
+
+	postings := make([]*posting.Posting, 0, 1100)
+	for i := 0; i < 1100; i++ {
+		postings = append(postings, &posting.Posting{
+			TransactionID: fmt.Sprintf("txn-%d", i),
+			Account:       "Assets:Bank",
+			Commodity:     "USD",
+			Amount:        decimal.NewFromInt(1),
+		})
+	}
+
+	require.NoError(t, posting.UpsertAll(db, postings))
+
+	var count int64
+	db.Model(&posting.Posting{}).Count(&count)
+	assert.Equal(t, int64(len(postings)), count, "all postings must be inserted across batches")
+}
+
 // TestCIIUpsertAll_ReturnsError verifies that cii.UpsertAll returns errors
 // instead of crashing, and that repeated calls are idempotent.
 func TestCIIUpsertAll_ReturnsError(t *testing.T) {
