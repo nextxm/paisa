@@ -4,6 +4,13 @@
 
 #### Performance
 
+- **Materialized account balance summary table** — Introduces `account_balances` table (migration v7) that stores pre-computed per-`(account, commodity)` balance totals updated atomically on every journal sync.
+  - `account_balance.RefreshFromPostings(tx, postings)` — computes sums in-memory from the already-loaded postings slice and atomically replaces the entire `account_balances` table within the sync transaction. Forecast postings are excluded.
+  - `account_balance.ByAccount(db, account)` — O(1) index lookup for a single account's balance rows, replacing the previous O(N) full `postings` table scan.
+  - `account_balance.All(db)` — returns all materialized balance rows ordered by account and commodity.
+  - `SyncJournal` now calls `RefreshFromPostings` inside the same DB transaction as `posting.UpsertAll`, guaranteeing the summary table is always consistent with the postings table.
+  - Unit tests added for `RefreshFromPostings`, `All`, and `ByAccount` covering aggregation, forecast exclusion, idempotent replacement, and empty-slice clearing.
+
 - **SQL-level aggregation for balance queries** — Introduces `query.GroupSum()` as a reusable SQL aggregation primitive and improves the `ComputeBreakdowns` algorithm.
   - `query.GroupSum()` — new method on `Query` that returns per `(account, commodity)` aggregated `SUM(amount)` and `SUM(quantity)` rows directly from the database, as a lightweight alternative to `All()` when only totals are needed.
   - `ComputeBreakdowns` — internal O(A × N) loop replaced with a two-phase O(N + A × C) approach: postings are first grouped by effective account in O(N), then each breakdown group collects from the pre-built index (O(A × C) where C is the number of distinct leaf accounts).

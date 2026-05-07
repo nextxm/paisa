@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/ananthakumaran/paisa/internal/model/account_balance"
 	"github.com/ananthakumaran/paisa/internal/model/account_note"
 	"github.com/ananthakumaran/paisa/internal/model/account_reconciliation"
 	"github.com/ananthakumaran/paisa/internal/model/cache"
@@ -42,6 +43,7 @@ var steps = []step{
 	{Version: 4, Apply: v4AddAccountNotes},
 	{Version: 5, Apply: v5AddImportPresets},
 	{Version: 6, Apply: v6AddAccountReconciliation},
+	{Version: 7, Apply: v7AddAccountBalances},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -134,6 +136,15 @@ func v5AddImportPresets(db *gorm.DB) error {
 func v6AddAccountReconciliation(db *gorm.DB) error {
 	if err := db.AutoMigrate(&account_reconciliation.AccountReconciliation{}); err != nil {
 		return fmt.Errorf("v6: AutoMigrate account_reconciliation failed: %w", err)
+	}
+	return nil
+}
+
+// v7AddAccountBalances creates the account_balances materialized-summary table that
+// stores pre-computed per-(account, commodity) balance totals refreshed on every sync.
+func v7AddAccountBalances(db *gorm.DB) error {
+	if err := db.AutoMigrate(&account_balance.AccountBalance{}); err != nil {
+		return fmt.Errorf("v7: AutoMigrate account_balances failed: %w", err)
 	}
 	return nil
 }
