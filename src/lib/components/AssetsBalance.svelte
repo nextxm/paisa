@@ -1,13 +1,18 @@
 <script lang="ts">
-  import { type AssetBreakdown, buildTree } from "$lib/utils";
+  import {
+    type AccountReconciliationStatus,
+    type AssetBreakdown,
+    buildTree,
+    lastName
+  } from "$lib/utils";
+  import { reconciliationLabel, reconciliationTagClass } from "$lib/reconciliation";
+  import { iconText } from "$lib/icon";
   import _ from "lodash";
   import Table from "./Table.svelte";
   import type { ColumnDefinition } from "tabulator-tables";
   import {
-    accountName,
     formatCurrencyChange,
     formatOriginalBalances,
-    indendedAssetAccountName,
     nonZeroCurrency,
     nonZeroCurrencyLink,
     nonZeroFloatChange,
@@ -16,14 +21,40 @@
 
   let {
     breakdowns,
+    reconciliationStatuses = {},
     indent = true
-  }: { breakdowns: Record<string, AssetBreakdown>; indent?: boolean } = $props();
+  }: {
+    breakdowns: Record<string, AssetBreakdown>;
+    reconciliationStatuses?: Record<string, AccountReconciliationStatus>;
+    indent?: boolean;
+  } = $props();
+
+  function accountNameWithReconciliation(account: string, cell: any, compact = false) {
+    const status = reconciliationStatuses[account];
+    const label = status ? reconciliationLabel(status) : "Last reconciled: never";
+    const klass = status ? reconciliationTagClass(status) : "is-danger";
+    const accountText = compact ? lastName(account) : account;
+    let children = "";
+    const data = cell.getData();
+    const childCount = data._children?.length || 0;
+    if (childCount > 0) {
+      children = `(${childCount})`;
+    }
+    return `
+<span class="whitespace-nowrap" style="max-width: max(15rem, 33.33vw); overflow: hidden;">
+  <span class="has-text-grey custom-icon">${iconText(account)}</span>
+  <a href="/assets/gain/${account}">${accountText}</a>
+  <span class="has-text-grey-light is-size-7">${children}</span>
+  <a href="/accounts/${encodeURIComponent(account)}?reconcile=1" class="ml-2 tag is-light ${klass}" title="${label}">${label}</a>
+</span>
+`;
+  }
 
   const columns: ColumnDefinition[] = $derived([
     {
       title: "Account",
       field: "group",
-      formatter: indent ? indendedAssetAccountName : accountName,
+      formatter: (cell) => accountNameWithReconciliation(cell.getValue(), cell, indent),
       frozen: true
     },
     {

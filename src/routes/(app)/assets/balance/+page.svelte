@@ -1,13 +1,14 @@
 <script lang="ts">
   import AssetsBalance from "$lib/components/AssetsBalance.svelte";
   import { downloadAssetBalanceCSV, downloadAssetBalanceExcel } from "$lib/export";
-  import { ajax, type AssetBreakdown } from "$lib/utils";
+  import { ajax, type AccountReconciliationStatus, type AssetBreakdown } from "$lib/utils";
   import { onMount } from "svelte";
 
   let breakdowns: Record<string, AssetBreakdown> = $state({});
   let reportCurrency = $state("");
   let availableCurrencies: string[] = $state([]);
   let flatAccounts = $state(false);
+  let reconciliationStatuses = $state<Record<string, AccountReconciliationStatus>>({});
 
   async function fetchBreakdowns() {
     const params = new URLSearchParams();
@@ -20,11 +21,15 @@
   }
 
   onMount(async () => {
-    const [, currencyResult] = await Promise.all([
+    const [, currencyResult, reconciliationResult] = await Promise.all([
       fetchBreakdowns(),
-      ajax("/api/price/currencies")
+      ajax("/api/price/currencies"),
+      ajax("/api/accounts/reconciliation")
     ]);
     availableCurrencies = currencyResult.currencies || [];
+    reconciliationStatuses = Object.fromEntries(
+      reconciliationResult.reconciliations.map((status) => [status.account, status])
+    );
   });
 </script>
 
@@ -104,7 +109,7 @@
         </div>
       </div>
       <div class="column is-12 pb-0">
-        <AssetsBalance {breakdowns} indent={!flatAccounts} />
+        <AssetsBalance {breakdowns} {reconciliationStatuses} indent={!flatAccounts} />
       </div>
     </div>
   </div>

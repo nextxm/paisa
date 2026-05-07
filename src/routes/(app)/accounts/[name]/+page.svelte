@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { ajax, type AccountNote } from "$lib/utils";
+  import { ajax, type AccountNote, type AccountReconciliationStatus } from "$lib/utils";
   import { onMount } from "svelte";
   import type { PageData } from "./$types";
   import * as toast from "bulma-toast";
+  import Modal from "$lib/components/Modal.svelte";
+  import { reconciliationLabel, reconciliationTagClass } from "$lib/reconciliation";
 
   let { data }: { data: PageData } = $props();
 
@@ -10,11 +12,21 @@
   let noteText: string = $state("");
   let saving = $state(false);
   let loaded = $state(false);
+  let reconciliationStatus: AccountReconciliationStatus | null = $state(null);
+  let reconciliationModalOpen = $state(false);
+  let reconciliationFrequencyDays = $state(30);
 
   onMount(async () => {
-    const result = await ajax("/api/account_notes/:account", null, { account: data.account });
-    accountNote = result.account_note ?? null;
+    const [noteResult, reconciliationResult] = await Promise.all([
+      ajax("/api/account_notes/:account", null, { account: data.account }),
+      ajax("/api/accounts/:account/reconciliation", null, { account: data.account })
+    ]);
+    accountNote = noteResult.account_note ?? null;
     noteText = accountNote?.note ?? "";
+    reconciliationStatus = reconciliationResult;
+    reconciliationFrequencyDays = reconciliationResult.frequency_days;
+    const searchParams = new URLSearchParams(window.location.search);
+    reconciliationModalOpen = searchParams.get("reconcile") === "1";
     loaded = true;
   });
 
@@ -57,6 +69,35 @@
       saving = false;
     }
   }
+
+  async function markReconciledNow() {
+    if (saving) return;
+    saving = true;
+    try {
+      reconciliationStatus = await ajax(
+        "/api/accounts/:account/reconciliation",
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            mark_reconciled_now: true,
+            frequency_days: reconciliationFrequencyDays
+          })
+        },
+        { account: data.account }
+      );
+      toast.toast({ message: "Account marked as reconciled.", type: "is-success", duration: 3000 });
+      reconciliationModalOpen = false;
+    } catch (err) {
+      console.error("Failed to update reconciliation:", err);
+      toast.toast({
+        message: "Failed to update reconciliation.",
+        type: "is-danger",
+        duration: 3000
+      });
+    } finally {
+      saving = false;
+    }
+  }
 </script>
 
 {#if loaded}
@@ -69,6 +110,17 @@
               <div class="level-item">
                 <p class="title is-5">{data.account}</p>
               </div>
+              {#if reconciliationStatus}
+                <div class="level-item">
+                  <button
+                    type="button"
+                    class="tag is-light {reconciliationTagClass(reconciliationStatus)}"
+                    onclick={() => (reconciliationModalOpen = true)}
+                  >
+                    {reconciliationLabel(reconciliationStatus)}
+                  </button>
+                </div>
+              {/if}
             </div>
             <div class="level-right">
               <div class="level-item">
@@ -130,3 +182,41 @@
     </div>
   </section>
 {/if}
+
+<Modal bind:active={reconciliationModalOpen}>
+  {#snippet head(close)}
+    <p class="text-base font-semibold flex-1">Reconciliation — {data.account}</p>
+    <button
+      class="du-btn du-btn-sm du-btn-circle du-btn-ghost"
+      aria-label="close"
+      onclick={() => close()}
+    >
+      <i class="fas fa-times" aria-hidden="true"></i>
+    </button>
+  {/snippet}
+  {#snippet body()}
+    {#if reconciliationStatus}
+      <p class="mb-2">{reconciliationLabel(reconciliationStatus)}</p>
+      <p class="mb-4">Frequency: every {reconciliationStatus.frequency_days} days</p>
+    {/if}
+    <div class="field">
+      <label class="label" for="reconciliation-frequency">Frequency (days)</label>
+      <div class="control">
+        <input
+          id="reconciliation-frequency"
+          class="input"
+          type="number"
+          min="1"
+          bind:value={reconciliationFrequencyDays}
+          disabled={saving}
+        />
+      </div>
+    </div>
+  {/snippet}
+  {#snippet foot(close)}
+    <button class="du-btn du-btn-success du-btn-sm" disabled={saving} onclick={markReconciledNow}>
+      Mark Reconciled
+    </button>
+    <button class="du-btn du-btn-sm" onclick={() => close()}>Close</button>
+  {/snippet}
+</Modal>

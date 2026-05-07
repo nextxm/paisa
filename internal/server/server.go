@@ -459,6 +459,18 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		GetAccountNote(db, c)
 	})
 
+	router.GET("/api/accounts/reconciliation", func(c *gin.Context) {
+		GetAllAccountReconciliations(db, c)
+	})
+
+	router.GET("/api/accounts/:account/reconciliation", func(c *gin.Context) {
+		GetAccountReconciliation(db, c)
+	})
+
+	writeGroup.PATCH("/api/accounts/:account/reconciliation", func(c *gin.Context) {
+		PatchAccountReconciliation(db, c)
+	})
+
 	writeGroup.POST("/api/account_notes/upsert", func(c *gin.Context) {
 		UpsertAccountNote(db, c)
 	})
