@@ -95,6 +95,10 @@
 
 #### Bug fixes
 
+- **Journal sync posting writes optimized** — `posting.UpsertAll` now performs replacement
+  inserts using GORM `CreateInBatches` instead of one-row-at-a-time inserts, reducing sync
+  time on large journals while preserving atomic replace behavior.
+
 - **Error toast close button fixed** — Removed an unbound inline `delete` button from the global runtime error toast markup in `src/hooks.client.ts` and now rely on Bulma Toast's built-in dismiss control (`dismissible: true`). The visible close X now dismisses error boxes correctly.
 
 - **Config mobile sidebar auto-close on selection** — On mobile widths, choosing a section in More → Configuration now automatically collapses the sidebar overlay so the selected section content is immediately visible.
