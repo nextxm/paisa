@@ -93,7 +93,6 @@
     "checking_accounts": [
       "Assets:Checking"
     ],
-    "enable_reconciliation": false,
     "inactive_accounts": []
   },
   "now": "2022-02-07T00:00:00Z",
@@ -1584,11 +1583,6 @@
           }
         },
         "additionalProperties": false
-      },
-      "enable_reconciliation": {
-        "type": "boolean",
-        "default": false,
-        "description": "Enable reconciliation feature. When enabled, a reconciliation badge will be shown for each account, allowing you to track when it was last reconciled with your bank statement."
       },
       "inactive_accounts": {
         "default": [],

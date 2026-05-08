@@ -82,8 +82,7 @@
     "checking_accounts": [
       "Assets:Checking"
     ],
-    "inactive_accounts": [],
-    "enable_reconciliation": false
+    "inactive_accounts": []
   },
   "is_journal_dirty": false,
   "last_price_update": "",
@@ -569,11 +568,6 @@
           }
         },
         "type": "object"
-      },
-      "enable_reconciliation": {
-        "default": false,
-        "description": "Enable reconciliation feature. When enabled, a reconciliation badge will be shown for each account, allowing you to track when it was last reconciled with your bank statement.",
-        "type": "boolean"
       },
       "financial_year_starting_month": {
         "description": "First month of the financial year. This can be set to 1 to follow January to December.",

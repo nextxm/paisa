@@ -2,13 +2,7 @@ import { writable, derived, get } from "svelte/store";
 import * as d3 from "d3";
 
 import dayjs from "dayjs";
-import type {
-  AccountTfIdf,
-  LedgerFileError,
-  SheetFileError,
-  SheetLineResult,
-  AccountReconciliationStatus
-} from "$lib/utils";
+import type { AccountTfIdf, LedgerFileError, SheetFileError, SheetLineResult } from "$lib/utils";
 import _ from "lodash";
 
 export function now() {
@@ -152,28 +146,6 @@ export function setAllowedDateRange(dates: dayjs.Dayjs[]) {
 }
 
 export const willRefresh = writable(0);
-export const reconciliationModalState = writable<{ account: string | null; open: boolean }>({
-  account: null,
-  open: false
-});
-
-export const reconciliationStatuses = writable<Record<string, AccountReconciliationStatus>>({});
-export const reconciliationUpdateCount = writable(0);
-
-export function setReconciliationStatuses(reconciliations: AccountReconciliationStatus[]) {
-  reconciliationStatuses.set(
-    Object.fromEntries(reconciliations.map((status) => [status.account, status]))
-  );
-  reconciliationUpdateCount.update((n) => n + 1);
-}
-
-export function updateReconciliationStatus(account: string, status: AccountReconciliationStatus) {
-  reconciliationStatuses.update((current) => ({
-    ...current,
-    [account]: status
-  }));
-  reconciliationUpdateCount.update((n) => n + 1);
-}
 export async function refresh() {
   if (get(editorState).hasUnsavedChanges) {
     const confirmed = confirm("You have unsaved changes. Are you sure you want to leave?");

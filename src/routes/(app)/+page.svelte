@@ -17,8 +17,7 @@
     type Legend,
     now,
     type GoalSummary,
-    type AssetBreakdown,
-    type AccountReconciliationStatus
+    type AssetBreakdown
   } from "$lib/utils";
   import _ from "lodash";
   import { onMount } from "svelte";
@@ -26,13 +25,12 @@
   import BudgetCard from "$lib/components/BudgetCard.svelte";
   import LevelItem from "$lib/components/LevelItem.svelte";
   import ZeroState from "$lib/components/ZeroState.svelte";
-  import { refresh, reconciliationStatuses, setReconciliationStatuses } from "../../store";
+  import { refresh } from "../../store";
   import UpcomingCard from "$lib/components/UpcomingCard.svelte";
   import GoalSummaryCard from "$lib/components/GoalSummaryCard.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
   import BalanceCard from "$lib/components/BalanceCard.svelte";
   import RecentTransactionsWidget from "$lib/components/RecentTransactionsWidget.svelte";
-  import ReconciliationWidget from "$lib/components/ReconciliationWidget.svelte";
 
   let cashflowLegends: Legend[] = $state([]);
   let month = $state(now().format("YYYY-MM"));
@@ -50,7 +48,6 @@
   let currentBudget = $derived(budgetsByMonth[month]);
   let isEmpty = $state(false);
   let checkingBalances: Record<string, AssetBreakdown> = $state({});
-  let reconciliationsArray = $derived(Object.values($reconciliationStatuses));
 
   $effect(() => {
     if (renderer) {
@@ -64,12 +61,7 @@
   }
 
   onMount(async () => {
-    const [dashboardResult, reconciliationResult] = await Promise.all([
-      ajax("/api/dashboard"),
-      USER_CONFIG.enable_reconciliation
-        ? ajax("/api/accounts/reconciliation")
-        : { reconciliations: [] }
-    ]);
+    const dashboardResult = await ajax("/api/dashboard");
 
     ({
       expenses,
@@ -81,8 +73,6 @@
       checkingBalances: { asset_breakdowns: checkingBalances },
       transactions
     } = dashboardResult);
-
-    setReconciliationStatuses(reconciliationResult.reconciliations || []);
 
     goalSummaries = _.sortBy(goalSummaries, (g) => -g.priority);
 
@@ -281,13 +271,6 @@
                 </div>
               </article>
             </div>
-          </div>
-        {/if}
-        {#if USER_CONFIG.enable_reconciliation}
-          <div class="tile is-parent">
-            <article class="tile is-child">
-              <ReconciliationWidget reconciliations={reconciliationsArray} />
-            </article>
           </div>
         {/if}
       </div>

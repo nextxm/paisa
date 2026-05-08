@@ -1,18 +1,5 @@
 <script lang="ts">
-  import {
-    type AccountReconciliationStatus,
-    type AssetBreakdown,
-    buildTree,
-    lastName
-  } from "$lib/utils";
-  import {
-    reconciliationLabel,
-    reconciliationTagClass,
-    reconciliationIcon,
-    reconciliationTextClass
-  } from "$lib/reconciliation";
-  import { iconText } from "$lib/icon";
-  import _ from "lodash";
+  import { type AssetBreakdown, buildTree } from "$lib/utils";
   import Table from "./Table.svelte";
   import type { ColumnDefinition } from "tabulator-tables";
   import {
@@ -26,60 +13,34 @@
 
   let props: {
     breakdowns: Record<string, AssetBreakdown>;
-    reconciliationStatuses?: Record<string, AccountReconciliationStatus>;
     indent?: boolean;
     filterInactive?: boolean;
     filterZero?: boolean;
   } = $props();
 
-  function accountNameWithReconciliation(
-    account: string,
-    cell: any,
-    compact = false,
-    statuses: Record<string, AccountReconciliationStatus> = {}
-  ) {
-    const status = statuses[account];
-    const label = status ? reconciliationLabel(status) : "Last reconciled: never";
-    const icon = status
-      ? reconciliationIcon(status)
-      : reconciliationIcon({ days_since: null } as any);
-    const accountText = compact ? lastName(account) : account;
-    let children = "";
-    const data = cell.getData();
-    const childCount = data._children?.length || 0;
-    if (childCount > 0) {
-      children = `(${childCount})`;
-    }
-    return `
-<span class="whitespace-nowrap" style="max-width: max(15rem, 33.33vw); overflow: hidden;">
-  <span class="has-text-grey custom-icon">${iconText(account)}</span>
-  <a href="/assets/gain/${account}">${accountText}</a>
-  <span class="has-text-grey-light is-size-7">${children}</span>
-  ${
-    USER_CONFIG.enable_reconciliation
-      ? `
-  <button type="button" onclick="openReconciliationModal('${account.replace(/'/g, "\\'")}')" class="button is-ghost p-0 h-auto ml-2 is-small ${reconciliationTextClass(
-    status
-  )}" title="${label}" style="vertical-align: baseline; height: 1.2em; width: 1.2em; line-height: 1;">
-    <span class="custom-icon" style="font-size: 0.9em;">${icon}</span>
-  </button>`
-      : ""
-  }
-</span>
-`;
+  function accountName(account: string, indent: number) {
+    const parts = account.split(":");
+    const name = parts[parts.length - 1];
+    const padding = indent * 20;
+    return `<span style="padding-left: ${padding}px">${name}</span>`;
   }
 
   const columns: ColumnDefinition[] = $derived.by(() => {
-    // Explicitly access properties to ensure Svelte tracks them as dependencies
-    const reconciliationStatuses = props.reconciliationStatuses;
     const indent = props.indent;
 
     return [
       {
         title: "Account",
         field: "group",
-        formatter: (cell) =>
-          accountNameWithReconciliation(cell.getValue(), cell, indent, reconciliationStatuses),
+        headerSort: false,
+        width: 300,
+        formatter: (cell) => {
+          const account = cell.getValue();
+          if (indent) {
+            return accountName(account, cell.getData().indent);
+          }
+          return account;
+        },
         frozen: true
       },
       {

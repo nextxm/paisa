@@ -1,13 +1,8 @@
 <script lang="ts">
   import AssetsBalance from "$lib/components/AssetsBalance.svelte";
   import { downloadAssetBalanceCSV, downloadAssetBalanceExcel } from "$lib/export";
-  import { ajax, type AccountReconciliationStatus, type AssetBreakdown } from "$lib/utils";
+  import { ajax, type AssetBreakdown } from "$lib/utils";
   import { onMount } from "svelte";
-  import {
-    reconciliationStatuses,
-    reconciliationUpdateCount,
-    setReconciliationStatuses
-  } from "../../../../store";
 
   let breakdowns: Record<string, AssetBreakdown> = $state({});
   let reportCurrency = $state("");
@@ -26,15 +21,11 @@
   }
 
   onMount(async () => {
-    const [, currencyResult, reconciliationResult] = await Promise.all([
+    const [, currencyResult] = await Promise.all([
       fetchBreakdowns(),
-      ajax("/api/price/currencies"),
-      USER_CONFIG.enable_reconciliation
-        ? ajax("/api/accounts/reconciliation")
-        : Promise.resolve({ reconciliations: [] })
+      ajax("/api/price/currencies")
     ]);
     availableCurrencies = currencyResult.currencies || [];
-    setReconciliationStatuses(reconciliationResult.reconciliations || []);
   });
 </script>
 
@@ -137,15 +128,7 @@
         </div>
       </div>
       <div class="column is-12 pb-0">
-        {#key $reconciliationUpdateCount}
-          <AssetsBalance
-            {breakdowns}
-            reconciliationStatuses={$reconciliationStatuses}
-            {filterInactive}
-            {filterZero}
-            indent={!flatAccounts}
-          />
-        {/key}
+        <AssetsBalance {breakdowns} {filterInactive} {filterZero} indent={!flatAccounts} />
       </div>
     </div>
   </div>

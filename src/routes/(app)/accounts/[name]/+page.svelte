@@ -1,19 +1,8 @@
 <script lang="ts">
-  import { ajax, type AccountNote, type AccountReconciliationStatus } from "$lib/utils";
+  import { ajax, type AccountNote } from "$lib/utils";
   import { onMount } from "svelte";
   import type { PageData } from "./$types";
   import * as toast from "bulma-toast";
-  import {
-    reconciliationLabel,
-    reconciliationTagClass,
-    reconciliationIcon,
-    reconciliationTextClass
-  } from "$lib/reconciliation";
-  import {
-    reconciliationModalState,
-    reconciliationStatuses,
-    updateReconciliationStatus
-  } from "../../../../store";
 
   let { data }: { data: PageData } = $props();
 
@@ -23,19 +12,9 @@
   let loaded = $state(false);
 
   onMount(async () => {
-    const [noteResult, reconciliationResult] = await Promise.all([
-      ajax("/api/account_notes/:account", null, { account: data.account }),
-      USER_CONFIG.enable_reconciliation
-        ? ajax("/api/accounts/:account/reconciliation", null, { account: data.account })
-        : Promise.resolve(null)
-    ]);
+    const noteResult = await ajax("/api/account_notes/:account", null, { account: data.account });
     accountNote = noteResult.account_note ?? null;
     noteText = accountNote?.note ?? "";
-    updateReconciliationStatus(data.account, reconciliationResult);
-    const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.get("reconcile") === "1") {
-      reconciliationModalState.set({ account: data.account, open: true });
-    }
     loaded = true;
   });
 
@@ -90,24 +69,6 @@
               <div class="level-item">
                 <p class="title is-5">{data.account}</p>
               </div>
-              {#if USER_CONFIG.enable_reconciliation && $reconciliationStatuses[data.account]}
-                <div class="level-item">
-                  <button
-                    type="button"
-                    class="button is-ghost p-0 h-auto is-small {reconciliationTextClass(
-                      $reconciliationStatuses[data.account]
-                    )}"
-                    onclick={() =>
-                      reconciliationModalState.set({ account: data.account, open: true })}
-                    title={reconciliationLabel($reconciliationStatuses[data.account])}
-                    style="vertical-align: baseline; height: 1.2em; width: 1.2em; line-height: 1;"
-                  >
-                    <span class="custom-icon" style="font-size: 0.9em;"
-                      >{reconciliationIcon($reconciliationStatuses[data.account])}</span
-                    >
-                  </button>
-                </div>
-              {/if}
             </div>
             <div class="level-right">
               <div class="level-item">

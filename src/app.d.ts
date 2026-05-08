@@ -56,7 +56,6 @@ interface UserConfig {
   default_currency: string;
   currencies: string[];
   readonly: boolean;
-  enable_reconciliation: boolean;
   inactive_accounts: string[];
   provider_debug_http: boolean;
   locale: string;
