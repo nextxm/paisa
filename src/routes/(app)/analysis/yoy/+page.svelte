@@ -1,5 +1,6 @@
 <script lang="ts">
   import _ from "lodash";
+  import dayjs from "dayjs";
   import Papa from "papaparse";
   import BoxLabel from "$lib/components/BoxLabel.svelte";
   import YoYChart from "$lib/components/YoYChart.svelte";
@@ -12,7 +13,11 @@
     type YoYChartType
   } from "$lib/yoy_utils";
 
+  const currentYear = dayjs().year();
+  const availableUntilYears = _.range(currentYear, currentYear - 11, -1).map(String);
+
   let yearCount = $state(2);
+  let untilYear = $state(String(currentYear));
   let expenseSeries: Record<string, YoYSeries> = $state({});
   let incomeSeries: Record<string, YoYSeries> = $state({});
   let expensePostings: Posting[] = $state([]);
@@ -27,10 +32,10 @@
   let selectedCategorySeries = $derived((category ? categorySeries[category] : undefined) || {});
   let insights = $derived(calculateYoYInsights(expenseSeries, incomeSeries, categorySeries));
 
-  async function refresh(selectedYearCount: number) {
+  async function refresh(selectedYearCount: number, selectedUntilYear: string) {
     const [expenseData, incomeData] = await Promise.all([
-      ajax(`/api/expense?years=${selectedYearCount}`),
-      ajax(`/api/income?years=${selectedYearCount}`)
+      ajax(`/api/expense?years=${selectedYearCount}&until_year=${selectedUntilYear}`),
+      ajax(`/api/income?years=${selectedYearCount}&until_year=${selectedUntilYear}`)
     ]);
 
     expenseSeries = expenseData.multi_year || {};
@@ -62,7 +67,7 @@
   }
 
   $effect(() => {
-    void refresh(yearCount);
+    void refresh(yearCount, untilYear);
   });
 </script>
 
@@ -72,16 +77,30 @@
       <div
         class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap gap-2"
       >
-        <div class="field">
-          <label class="label mb-1" for="yoy-years">Years to compare</label>
-          <div class="control">
-            <div class="select is-small">
-              <select id="yoy-years" bind:value={yearCount}>
-                <option value={2}>2 years</option>
-                <option value={3}>3 years</option>
-                <option value={4}>4 years</option>
-                <option value={5}>5 years</option>
-              </select>
+        <div class="is-flex gap-2">
+          <div class="field">
+            <label class="label mb-1" for="yoy-years">Years to compare</label>
+            <div class="control">
+              <div class="select is-small">
+                <select id="yoy-years" bind:value={yearCount}>
+                  <option value={2}>2 years</option>
+                  <option value={3}>3 years</option>
+                  <option value={4}>4 years</option>
+                  <option value={5}>5 years</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label mb-1" for="yoy-until-year">Until year</label>
+            <div class="control">
+              <div class="select is-small">
+                <select id="yoy-until-year" bind:value={untilYear}>
+                  {#each availableUntilYears as year}
+                    <option value={year}>{year}</option>
+                  {/each}
+                </select>
+              </div>
             </div>
           </div>
         </div>

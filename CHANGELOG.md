@@ -2,6 +2,10 @@
 
 ### Unreleased — Future changes
 
+#### Features
+
+- **Year-over-Year "Until year" selector** — The Year-over-Year analysis page now includes an "Until year" dropdown alongside "Years to compare". Users can select an end year (e.g. 2025) so the comparison covers the N years up to and including that year (e.g. last 3 years until 2025 = 2023, 2024, 2025). Defaults to the current year, preserving existing behaviour. The `/api/expense` and `/api/income` endpoints now accept an optional `until_year` query parameter.
+
 #### Documentation
 
 - **Reference documentation updated** — All new features from this release cycle are now documented in the reference section:

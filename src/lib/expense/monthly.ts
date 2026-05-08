@@ -145,6 +145,8 @@ export function renderMonthlyExpensesTimeline(
     margin = { top: rem(15), right: rem(30), bottom: rem(60), left: rem(40) },
     el = document.getElementById(id.substring(1));
 
+  const groups = _.chain(postings).map(expenseGroup).uniq().sort().value();
+
   if (!el || !el.parentElement) {
     return {
       z: generateColorScheme(groups),
@@ -156,8 +158,6 @@ export function renderMonthlyExpensesTimeline(
   const width = el.parentElement.clientWidth - margin.left - margin.right,
     height = +svg.attr("height") - margin.top - margin.bottom,
     g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-  const groups = _.chain(postings).map(expenseGroup).uniq().sort().value();
 
   const defaultValues = _.zipObject(
     groups,

@@ -31,18 +31,35 @@ func parseYearsParam(raw string) int {
 	return years
 }
 
-func computeYoYMonthlySeries(postings []posting.Posting, years int, amountFn func(decimal.Decimal) decimal.Decimal) map[string]YoYMonthlySeries {
+func parseUntilYearParam(raw string) int {
+	if raw == "" {
+		return utils.Now().Year()
+	}
+
+	year, err := strconv.Atoi(raw)
+	if err != nil || year < 1900 {
+		return utils.Now().Year()
+	}
+
+	return year
+}
+
+func computeYoYMonthlySeries(postings []posting.Posting, years, untilYear int, amountFn func(decimal.Decimal) decimal.Decimal) map[string]YoYMonthlySeries {
 	// Defensive normalization so direct callers (tests/helpers) are still safe
 	// even when years is not parsed through parseYearsParam.
 	if years < 1 {
 		years = 1
 	}
 
+	if untilYear <= 0 {
+		untilYear = utils.Now().Year()
+	}
+
 	if amountFn == nil {
 		amountFn = func(amount decimal.Decimal) decimal.Decimal { return amount }
 	}
 
-	currentYear := utils.Now().Year()
+	currentYear := untilYear
 	series := map[string]YoYMonthlySeries{}
 	for i := 0; i < years; i++ {
 		year := currentYear - i

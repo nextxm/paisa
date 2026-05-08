@@ -237,6 +237,7 @@ func TestComputeYoYMonthlySeries_InitializesYearsAndHandlesLeapDay(t *testing.T)
 			{Date: parseDay("2025-01-03"), Amount: decimal.NewFromFloat(80)},
 		},
 		2,
+		0,
 		nil,
 	)
 
@@ -270,7 +271,7 @@ func TestGetExpense_MultiYearSeries(t *testing.T) {
 		Commodity:     "INR",
 	}).Error)
 
-	response := GetExpense(db, 2)
+	response := GetExpense(db, 2, 0)
 	series := response["multi_year"].(map[string]YoYMonthlySeries)
 
 	assert.True(t, series["2025"].Total.Equal(decimal.NewFromFloat(100)))

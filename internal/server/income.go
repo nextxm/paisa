@@ -31,13 +31,13 @@ type Tax struct {
 	Postings  []posting.Posting `json:"postings"`
 }
 
-func GetIncome(db *gorm.DB, years ...int) gin.H {
+func GetIncome(db *gorm.DB, years, untilYear int) gin.H {
 	incomePostings := query.Init(db).Like("Income:%").All()
 	taxPostings := query.Init(db).AccountPrefix("Expenses:Tax").All()
 	p := query.Init(db).First()
-	requestedYears := 1
-	if len(years) > 0 {
-		requestedYears = years[0]
+	requestedYears := years
+	if requestedYears < 1 {
+		requestedYears = 1
 	}
 
 	if p == nil {
@@ -56,6 +56,7 @@ func GetIncome(db *gorm.DB, years ...int) gin.H {
 		"multi_year": computeYoYMonthlySeries(
 			incomePostings,
 			requestedYears,
+			untilYear,
 			func(amount decimal.Decimal) decimal.Decimal { return amount.Neg() },
 		),
 	}
