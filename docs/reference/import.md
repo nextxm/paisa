@@ -329,3 +329,68 @@ with `or` helper to return a default account.
 {{or (match ROW.C Expenses:Shopping="Amazon|Flipkart" Expenses:Groceries="BigBasket")
      "Expenses:Unknown"}}
 ```
+
+## Import Preview
+
+Before writing any transactions to your journal file, you can use the
+**Preview** step to review the results of applying the template.  When
+you click **Preview**, Paisa sends the file content to
+`POST /api/import/preview` in dry-run mode.  The response includes a
+row-by-row table that shows:
+
+- A **valid** or **invalid** badge for each row.
+- The error message for rows that failed to parse.
+- A checkbox (selected by default) for each valid row, letting you
+  include or exclude individual rows before committing.
+
+A **Select All / Deselect All** control is provided at the top.  Only
+the selected rows are written when you click **Confirm**.
+
+## Import Presets
+
+Frequently reused column mappings, date formats, default accounts, and
+delimiter settings can be saved as a named **preset** so you don't
+have to reconfigure the template every time you import from the same
+bank.
+
+### Saving a Preset
+
+After configuring the template, click the **Save Current** button in
+the **Preset** selector above the template editor and give the preset
+a name.  The preset is stored in Paisa's SQLite database and is
+available across sessions.
+
+### Loading a Preset
+
+Select a previously saved preset from the dropdown.  The template
+editor immediately switches to the stored configuration.
+
+### Deleting a Preset
+
+Open the preset dropdown, choose the preset you want to remove, and
+click the **Delete** button.
+
+### Built-in Presets
+
+Paisa ships with the following built-in presets that cover common
+statement formats.  Built-in presets cannot be deleted.
+
+| Preset Name               | Format description                          |
+|---------------------------|---------------------------------------------|
+| Generic Bank CSV          | Simple date / description / amount CSV      |
+| Chase Credit Card CSV     | Chase card statement CSV export             |
+| SBI Account Statement CSV | State Bank of India account statement       |
+| ICICI Credit Card CSV     | ICICI Bank credit card statement            |
+
+You can also add your own user-defined templates via `paisa.yaml`:
+
+```yaml
+import_templates:
+  - name: My Bank Statement
+    content: |
+      {{#if (isDate ROW.A "DD/MM/YYYY")}}
+        {{date ROW.A "DD/MM/YYYY"}} {{ROW.C}}
+          {{predictAccount prefix="Expenses"}}    {{amount ROW.F}} INR
+          Assets:Checking
+      {{/if}}
+```

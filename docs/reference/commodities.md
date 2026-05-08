@@ -302,3 +302,18 @@ Paisa fetches the latest price of the commodities only when you
 the top right hand side corner or via `paisa update` command. Make
 sure to update the prices after you make any changes to your journal
 file or you want to fetch the latest value of the commodities.
+
+## Price Export
+
+You can export your commodity price history from the **Ledger → Price**
+page.  The export is available in three formats:
+
+| Format | Description |
+|--------|-------------|
+| **Ledger** | `P YYYY/MM/DD HH:MM:SS SYMBOL AMOUNT CURRENCY` directives |
+| **hLedger** | `P YYYY-MM-DD SYMBOL AMOUNT CURRENCY` directives |
+| **Beancount** | `YYYY-MM-DD price SYMBOL AMOUNT CURRENCY` directives |
+
+You can optionally filter the export to a specific commodity before
+downloading.  When more than one commodity is selected, Paisa offers a
+**multi-file ZIP** option in addition to the single-file download.

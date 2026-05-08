@@ -2,6 +2,18 @@
 
 ### Unreleased — Future changes
 
+#### Documentation
+
+- **Reference documentation updated** — All new features from this release cycle are now documented in the reference section:
+  - [Dashboard](docs/reference/dashboard.md) — new page covering the recent-transactions widget, monthly cashflow widget, reconciliation widget, and account drill-down.
+  - [Accounts](docs/reference/accounts.md) — account notes, account reconciliation (badges, dashboard widget, API), and account-level transaction history.
+  - [Analysis](docs/reference/analysis.md) — Year-over-Year comparison charts (`/analysis/yoy`).
+  - [Cash Flow](docs/reference/cash-flow.md) — 30-day spending trends with sparklines and the monthly cashflow widget.
+  - [Commodities](docs/reference/commodities.md) — price export feature (Ledger / hLedger / Beancount formats, single-file and ZIP).
+  - [Import](docs/reference/import.md) — import preview (dry-run), import presets (save / load / delete), and built-in presets.
+  - [Sync](docs/reference/sync.md) — async sync with job polling, sync history overlay, price & journal freshness indicators, Firefly III webhook integration, and Firefly III reconciliation (Labs).
+  - [Configuration](docs/reference/config.md) — `add_journal_path`, `enable_reconciliation`, `firefly` block, and `labs` block.
+
 #### Performance
 
 - **Materialized account balance summary table** — Introduces `account_balances` table (migration v7) that stores pre-computed per-`(account, commodity)` balance totals updated atomically on every journal sync.

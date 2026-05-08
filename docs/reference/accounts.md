@@ -174,3 +174,69 @@ four icon sets.
     size. Feel free to start a discussion if you feel strongly about
     any icon set. The current icon sets are not final, they may be
     replaced if a better alternative is found.
+
+## Account Notes
+
+You can attach a free-text note to any account (for example
+"Emergency fund", "Company 401k") without editing the ledger file.
+Notes are stored in Paisa's database and do not affect journal
+parsing.
+
+- Navigate to **Accounts → [account name]** to open the account
+  overview page, which contains a textarea for composing or editing a
+  note, plus a **Delete** button to remove it.
+- On the **Accounts → [account name] → Transactions** page, an
+  existing note is shown inline in the page header as a highlighted
+  tag.  A **Notes** button next to the tag takes you directly to the
+  notes editor.
+
+Notes are persisted immediately via the API when you save them.
+
+## Account-Level Transaction History
+
+Click on any account balance widget on the dashboard or on an account
+row in the Assets or Accounts list to open a filtered transaction
+history for that specific account.  The route
+`/accounts/[name]/transactions` shows all transactions that touch the
+selected account (or any sub-account below it).
+
+## Account Reconciliation
+
+!!! note
+    Reconciliation is disabled by default.  Enable it by setting
+    `enable_reconciliation: true` in `paisa.yaml`.
+
+When reconciliation is enabled, Paisa tracks the last date each
+account was reconciled and how frequently it should be reconciled.
+
+### Reconciliation Status Badge
+
+A color-coded badge appears next to every account balance row and on
+the account detail page:
+
+- **Green** – reconciled within the expected frequency window.
+- **Amber** – overdue (more days have elapsed than the configured
+  `frequency_days`).
+
+Clicking a badge opens an in-page modal where you can update the
+reconciliation date without navigating away, preserving page state on
+the Dashboard, Assets, and Account detail pages.
+
+### Dashboard Reconciliation Widget
+
+When reconciliation is enabled, the dashboard shows an **Account
+Reconciliation** widget with:
+
+- Counts of up-to-date and overdue accounts.
+- Quick links to reconcile overdue accounts.
+
+### Reconciliation API
+
+| Method  | Endpoint                                   | Description                                          |
+|---------|--------------------------------------------|------------------------------------------------------|
+| `GET`   | `/api/accounts/reconciliation`             | List reconciliation metadata for all accounts.       |
+| `GET`   | `/api/accounts/:account/reconciliation`    | Fetch metadata for a single account.                 |
+| `PATCH` | `/api/accounts/:account/reconciliation`    | Update `last_reconciled_date` and `frequency_days`.  |
+
+Responses include computed `days_since` (days since the last
+reconciliation) and `is_overdue` fields.

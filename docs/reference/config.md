@@ -41,6 +41,12 @@ the behavior will be undefined.
 # REQUIRED
 journal_path: /home/john/Documents/paisa/main.ledger
 
+# Path to a dedicated journal file where transactions added via the API
+# or webhooks (e.g. Firefly III) are appended, keeping the main journal
+# clean. Must be an existing file. Absolute or relative to the config file.
+# OPTIONAL
+add_journal_path: /home/john/Documents/paisa/added.ledger
+
 # Path to your database file. It can be absolute or relative to the
 # configuration file. The database file will be created if it does not exist.
 # REQUIRED
@@ -323,4 +329,36 @@ credit_cards:
     # Required, the last 4 digits of the card number
     expiration_date: "2029-05-01"
     # Required, the expiration date of the card
+
+## Firefly III Integration
+
+# Settings for Firefly III webhook and reconciliation integration.
+# OPTIONAL
+firefly:
+  # Base URL of your Firefly III instance
+  url: https://firefly.example.com
+  # Personal Access Token from Firefly III
+  token: your-personal-access-token
+  # Accounts to skip during reconciliation (prefix match)
+  ignore_accounts:
+    - Assets:Cash
+
+## Labs
+
+Experimental features that are hidden by default.  Enable individual
+flags to opt in.
+
+# OPTIONAL, DEFAULT: {}
+labs:
+  # Enable the Firefly III balance-reconciliation tool.
+  # OPTIONAL, DEFAULT: false
+  firefly_reconcile: false
+
+## Account Reconciliation
+
+# Whether to enable account reconciliation tracking and UI.
+# When enabled, reconciliation badges appear on account rows and
+# a reconciliation widget appears on the dashboard.
+# OPTIONAL, DEFAULT: false
+enable_reconciliation: false
 ```
