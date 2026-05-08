@@ -115,9 +115,17 @@ function flattenTreeRows(
 
 export function buildAssetBalanceExportRows(
   breakdowns: Record<string, AssetBreakdown>,
-  flat: boolean
+  flat: boolean,
+  filterInactive = false,
+  filterZero = false
 ): AssetBalanceExportRow[] {
-  const values = Object.values(breakdowns);
+  let values = Object.values(breakdowns);
+  if (filterInactive) {
+    values = values.filter((i) => !i.inactive);
+  }
+  if (filterZero) {
+    values = values.filter((i) => i.marketAmount !== 0);
+  }
   if (flat) {
     return values
       .sort((a, b) => a.group.localeCompare(b.group))
@@ -128,8 +136,13 @@ export function buildAssetBalanceExportRows(
   return flattenTreeRows(tree, 0, hierarchyAccountLabel);
 }
 
-export function downloadAssetBalanceCSV(breakdowns: Record<string, AssetBreakdown>, flat: boolean) {
-  const rows = buildAssetBalanceExportRows(breakdowns, flat);
+export function downloadAssetBalanceCSV(
+  breakdowns: Record<string, AssetBreakdown>,
+  flat: boolean,
+  filterInactive = false,
+  filterZero = false
+) {
+  const rows = buildAssetBalanceExportRows(breakdowns, flat, filterInactive, filterZero);
   const csv = Papa.unparse(rows);
   const downloadLink = document.createElement("a");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -140,9 +153,11 @@ export function downloadAssetBalanceCSV(breakdowns: Record<string, AssetBreakdow
 
 export function downloadAssetBalanceExcel(
   breakdowns: Record<string, AssetBreakdown>,
-  flat: boolean
+  flat: boolean,
+  filterInactive = false,
+  filterZero = false
 ) {
-  const rows = buildAssetBalanceExportRows(breakdowns, flat);
+  const rows = buildAssetBalanceExportRows(breakdowns, flat, filterInactive, filterZero);
   const worksheet = XLSX.utils.json_to_sheet(rows);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Asset Balance");

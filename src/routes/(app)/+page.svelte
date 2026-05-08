@@ -26,7 +26,7 @@
   import BudgetCard from "$lib/components/BudgetCard.svelte";
   import LevelItem from "$lib/components/LevelItem.svelte";
   import ZeroState from "$lib/components/ZeroState.svelte";
-  import { refresh } from "../../store";
+  import { refresh, reconciliationStatuses, setReconciliationStatuses } from "../../store";
   import UpcomingCard from "$lib/components/UpcomingCard.svelte";
   import GoalSummaryCard from "$lib/components/GoalSummaryCard.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
@@ -50,7 +50,7 @@
   let currentBudget = $derived(budgetsByMonth[month]);
   let isEmpty = $state(false);
   let checkingBalances: Record<string, AssetBreakdown> = $state({});
-  let reconciliations: AccountReconciliationStatus[] = $state([]);
+  let reconciliationsArray = $derived(Object.values($reconciliationStatuses));
 
   $effect(() => {
     if (renderer) {
@@ -64,24 +64,25 @@
   }
 
   onMount(async () => {
-    [
-      {
-        expenses,
-        cashFlows,
-        goalSummaries,
-        budget: { budgetsByMonth },
-        transactionSequences,
-        networth: { networth, xirr },
-        checkingBalances: { asset_breakdowns: checkingBalances },
-        transactions
-      },
-      { reconciliations }
-    ] = await Promise.all([
+    const [dashboardResult, reconciliationResult] = await Promise.all([
       ajax("/api/dashboard"),
       USER_CONFIG.enable_reconciliation
         ? ajax("/api/accounts/reconciliation")
         : { reconciliations: [] }
     ]);
+
+    ({
+      expenses,
+      cashFlows,
+      goalSummaries,
+      budget: { budgetsByMonth },
+      transactionSequences,
+      networth: { networth, xirr },
+      checkingBalances: { asset_breakdowns: checkingBalances },
+      transactions
+    } = dashboardResult);
+
+    setReconciliationStatuses(reconciliationResult.reconciliations || []);
 
     goalSummaries = _.sortBy(goalSummaries, (g) => -g.priority);
 
@@ -285,7 +286,7 @@
         {#if USER_CONFIG.enable_reconciliation}
           <div class="tile is-parent">
             <article class="tile is-child">
-              <ReconciliationWidget {reconciliations} />
+              <ReconciliationWidget reconciliations={reconciliationsArray} />
             </article>
           </div>
         {/if}

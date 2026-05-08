@@ -44,8 +44,7 @@
         {#if posting.commodity !== USER_CONFIG.default_currency}
           <span>{formatFloat(posting.quantity)} {posting.commodity}</span>
           <span class="is-size-7 has-text-grey has-text-weight-normal ml-1">
-            ({formatCurrency(posting.amount)}
-            {USER_CONFIG.default_currency})
+            ({formatCurrency(posting.amount)})
           </span>
         {:else}
           {formatCurrency(posting.amount)}

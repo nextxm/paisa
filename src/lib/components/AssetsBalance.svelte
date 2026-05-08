@@ -24,13 +24,7 @@
     nonZeroPercentageChange
   } from "$lib/table_formatters";
 
-  let {
-    breakdowns,
-    reconciliationStatuses = {},
-    indent = true,
-    filterInactive = true,
-    filterZero = true
-  }: {
+  let props: {
     breakdowns: Record<string, AssetBreakdown>;
     reconciliationStatuses?: Record<string, AccountReconciliationStatus>;
     indent?: boolean;
@@ -38,10 +32,14 @@
     filterZero?: boolean;
   } = $props();
 
-  function accountNameWithReconciliation(account: string, cell: any, compact = false) {
-    const status = reconciliationStatuses[account];
+  function accountNameWithReconciliation(
+    account: string,
+    cell: any,
+    compact = false,
+    statuses: Record<string, AccountReconciliationStatus> = {}
+  ) {
+    const status = statuses[account];
     const label = status ? reconciliationLabel(status) : "Last reconciled: never";
-    const klass = status ? reconciliationTagClass(status) : "is-danger";
     const icon = status
       ? reconciliationIcon(status)
       : reconciliationIcon({ days_since: null } as any);
@@ -71,81 +69,83 @@
 `;
   }
 
-  const columns: ColumnDefinition[] = $derived([
-    {
-      title: "Account",
-      field: "group",
-      formatter: (cell) => accountNameWithReconciliation(cell.getValue(), cell, indent),
-      frozen: true
-    },
-    {
-      title: "Investment Amount",
-      field: "investmentAmount",
-      hozAlign: "right",
-      vertAlign: "middle",
-      formatter: nonZeroCurrency
-    },
-    {
-      title: "Withdrawal Amount",
-      field: "withdrawalAmount",
-      hozAlign: "right",
-      formatter: nonZeroCurrency
-    },
-    {
-      title: "Balance Units",
-      field: "balanceUnits",
-      hozAlign: "right",
-      formatter: nonZeroCurrencyLink
-    },
-    {
-      title: "Original Value",
-      field: "originalBalances",
-      hozAlign: "right",
-      formatter: formatOriginalBalances
-    },
-    {
-      title: "Market Value",
-      field: "marketAmount",
-      hozAlign: "right",
-      formatter: nonZeroCurrencyLink
-    },
-    { title: "Change", field: "gainAmount", hozAlign: "right", formatter: formatCurrencyChange },
-    { title: "XIRR", field: "xirr", hozAlign: "right", formatter: nonZeroFloatChange },
-    {
-      title: "Absolute Return",
-      field: "absoluteReturn",
-      hozAlign: "right",
-      formatter: nonZeroPercentageChange
-    }
-  ]);
+  const columns: ColumnDefinition[] = $derived.by(() => {
+    // Explicitly access properties to ensure Svelte tracks them as dependencies
+    const reconciliationStatuses = props.reconciliationStatuses;
+    const indent = props.indent;
 
-  let tree = $derived.by(() => {
-    if (!breakdowns) return [];
-    let filteredBreakdowns = Object.values(breakdowns);
-    if (filterInactive) {
-      filteredBreakdowns = filteredBreakdowns.filter((i) => !i.inactive);
-    }
-    if (filterZero) {
-      filteredBreakdowns = filteredBreakdowns.filter((i) => i.marketAmount !== 0);
-    }
-    return buildTree(filteredBreakdowns, (i) => i.group);
+    return [
+      {
+        title: "Account",
+        field: "group",
+        formatter: (cell) =>
+          accountNameWithReconciliation(cell.getValue(), cell, indent, reconciliationStatuses),
+        frozen: true
+      },
+      {
+        title: "Investment Amount",
+        field: "investmentAmount",
+        hozAlign: "right",
+        vertAlign: "middle",
+        formatter: nonZeroCurrency
+      },
+      {
+        title: "Withdrawal Amount",
+        field: "withdrawalAmount",
+        hozAlign: "right",
+        formatter: nonZeroCurrency
+      },
+      {
+        title: "Balance Units",
+        field: "balanceUnits",
+        hozAlign: "right",
+        formatter: nonZeroCurrencyLink
+      },
+      {
+        title: "Original Value",
+        field: "originalBalances",
+        hozAlign: "right",
+        formatter: formatOriginalBalances
+      },
+      {
+        title: "Market Value",
+        field: "marketAmount",
+        hozAlign: "right",
+        formatter: nonZeroCurrencyLink
+      },
+      { title: "Change", field: "gainAmount", hozAlign: "right", formatter: formatCurrencyChange },
+      { title: "XIRR", field: "xirr", hozAlign: "right", formatter: nonZeroFloatChange },
+      {
+        title: "Absolute Return",
+        field: "absoluteReturn",
+        hozAlign: "right",
+        formatter: nonZeroPercentageChange
+      }
+    ];
   });
 
-  let displayBreakdowns = $derived.by(() => {
-    if (!breakdowns) return [];
-    let values = Object.values(breakdowns);
-    if (filterInactive) {
+  let filteredBreakdowns = $derived.by(() => {
+    if (!props.breakdowns) return [];
+    let values = Object.values(props.breakdowns);
+    if (props.filterInactive) {
       values = values.filter((i) => !i.inactive);
     }
-    if (filterZero) {
+    if (props.filterZero) {
       values = values.filter((i) => i.marketAmount !== 0);
     }
     return values;
   });
+
+  let tree = $derived(buildTree(filteredBreakdowns, (i) => i.group));
+
+  let displayBreakdowns = $derived.by(() => {
+    if (props.indent) return tree;
+    return filteredBreakdowns;
+  });
 </script>
 
-{#if indent}
-  <Table data={tree} tree {columns} />
+{#if props.indent}
+  <Table data={tree} tree={true} {columns} />
 {:else}
   <Table data={displayBreakdowns} {columns} />
 {/if}

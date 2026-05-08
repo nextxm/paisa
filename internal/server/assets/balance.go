@@ -59,6 +59,9 @@ func GetBalance(db *gorm.DB, reportCurrency string) gin.H {
 }
 
 func GetBalanceByMode(db *gorm.DB, reportCurrency string, flat bool) gin.H {
+	if flat {
+		return doGetBalance(db, []string{"regex:^Assets(:|$)"}, false, reportCurrency)
+	}
 	return doGetBalance(db, []string{"Assets"}, !flat, reportCurrency)
 }
 

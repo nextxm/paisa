@@ -3,6 +3,11 @@
   import { downloadAssetBalanceCSV, downloadAssetBalanceExcel } from "$lib/export";
   import { ajax, type AccountReconciliationStatus, type AssetBreakdown } from "$lib/utils";
   import { onMount } from "svelte";
+  import {
+    reconciliationStatuses,
+    reconciliationUpdateCount,
+    setReconciliationStatuses
+  } from "../../../../store";
 
   let breakdowns: Record<string, AssetBreakdown> = $state({});
   let reportCurrency = $state("");
@@ -10,12 +15,10 @@
   let flatAccounts = $state(false);
   let filterInactive = $state(true);
   let filterZero = $state(true);
-  let reconciliationStatuses = $state<Record<string, AccountReconciliationStatus>>({});
 
   async function fetchBreakdowns() {
     const params = new URLSearchParams();
     if (reportCurrency) params.set("report_currency", reportCurrency);
-    if (flatAccounts) params.set("flat", "true");
     const query = params.toString();
     ({ asset_breakdowns: breakdowns } = await ajax(
       query ? `/api/assets/balance?${query}` : "/api/assets/balance"
@@ -31,9 +34,7 @@
         : Promise.resolve({ reconciliations: [] })
     ]);
     availableCurrencies = currencyResult.currencies || [];
-    reconciliationStatuses = Object.fromEntries(
-      (reconciliationResult.reconciliations || []).map((status) => [status.account, status])
-    );
+    setReconciliationStatuses(reconciliationResult.reconciliations || []);
   });
 </script>
 
@@ -80,7 +81,6 @@
                   type="checkbox"
                   class="switch is-rounded is-small"
                   bind:checked={flatAccounts}
-                  onchange={() => fetchBreakdowns()}
                 />
                 <label for="flat-assets-balance">Flat Accounts</label>
               </div>
@@ -111,7 +111,8 @@
               <button
                 type="button"
                 class="button is-small is-text"
-                onclick={() => downloadAssetBalanceCSV(breakdowns, flatAccounts)}
+                onclick={() =>
+                  downloadAssetBalanceCSV(breakdowns, flatAccounts, filterInactive, filterZero)}
               >
                 <span class="icon is-small">
                   <i class="fa-solid fa-file-csv"></i>
@@ -123,7 +124,8 @@
               <button
                 type="button"
                 class="button is-small is-text"
-                onclick={() => downloadAssetBalanceExcel(breakdowns, flatAccounts)}
+                onclick={() =>
+                  downloadAssetBalanceExcel(breakdowns, flatAccounts, filterInactive, filterZero)}
               >
                 <span class="icon is-small">
                   <i class="fa-solid fa-file-excel"></i>
@@ -135,13 +137,15 @@
         </div>
       </div>
       <div class="column is-12 pb-0">
-        <AssetsBalance
-          {breakdowns}
-          {reconciliationStatuses}
-          {filterInactive}
-          {filterZero}
-          indent={!flatAccounts}
-        />
+        {#key $reconciliationUpdateCount}
+          <AssetsBalance
+            {breakdowns}
+            reconciliationStatuses={$reconciliationStatuses}
+            {filterInactive}
+            {filterZero}
+            indent={!flatAccounts}
+          />
+        {/key}
       </div>
     </div>
   </div>

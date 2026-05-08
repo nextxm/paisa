@@ -143,10 +143,17 @@ export function renderMonthlyExpensesTimeline(
   const MAX_BAR_WIDTH = rem(40);
   const svg = d3.select(id),
     margin = { top: rem(15), right: rem(30), bottom: rem(60), left: rem(40) },
-    width =
-      document.getElementById(id.substring(1)).parentElement.clientWidth -
-      margin.left -
-      margin.right,
+    el = document.getElementById(id.substring(1));
+
+  if (!el || !el.parentElement) {
+    return {
+      z: generateColorScheme(groups),
+      destroy: () => {},
+      legends: []
+    };
+  }
+
+  const width = el.parentElement.clientWidth - margin.left - margin.right,
     height = +svg.attr("height") - margin.top - margin.bottom,
     g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -420,10 +427,13 @@ export function renderCurrentExpensesBreakdown(z: d3.ScaleOrdinal<string, string
   const TEXT_WIDTH = rem(135);
   const svg = d3.select(id),
     margin = { top: 0, right: rem(160), bottom: rem(20), left: rem(100) },
-    width =
-      document.getElementById(id.substring(1)).parentElement.clientWidth -
-      margin.left -
-      margin.right,
+    el = document.getElementById(id.substring(1));
+
+  if (!el || !el.parentElement) {
+    return (postings: Posting[]) => {};
+  }
+
+  const width = el.parentElement.clientWidth - margin.left - margin.right,
     g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
   const x = d3.scaleLinear().range([0, width]);

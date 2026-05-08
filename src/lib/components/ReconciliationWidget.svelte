@@ -8,10 +8,10 @@
   import type { AccountReconciliationStatus } from "$lib/utils";
   import { reconciliationModalState } from "../../store";
 
-  let { reconciliations = [] }: { reconciliations: AccountReconciliationStatus[] } = $props();
+  let props: { reconciliations: AccountReconciliationStatus[] } = $props();
 
-  const upToDate = $derived(reconciliations.filter((status) => !status.is_overdue));
-  const overdue = $derived(reconciliations.filter((status) => status.is_overdue));
+  const upToDate = $derived((props.reconciliations || []).filter((status) => !status.is_overdue));
+  const overdue = $derived((props.reconciliations || []).filter((status) => status.is_overdue));
 </script>
 
 <p class="subtitle">

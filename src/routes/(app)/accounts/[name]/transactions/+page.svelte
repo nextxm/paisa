@@ -17,13 +17,16 @@
     reconciliationIcon,
     reconciliationTextClass
   } from "$lib/reconciliation";
-  import { reconciliationModalState } from "../../../../../store";
+  import {
+    reconciliationModalState,
+    reconciliationStatuses,
+    updateReconciliationStatus
+  } from "../../../../../store";
 
   let { data }: { data: PageData } = $props();
 
   let transactions: T[] | null = $state(null);
   let accountNote: AccountNote | null = $state(null);
-  let reconciliationStatus: AccountReconciliationStatus | null = $state(null);
 
   const mobile = isMobile();
 
@@ -43,7 +46,7 @@
         : Promise.resolve(null)
     ]);
     accountNote = noteResult.account_note;
-    reconciliationStatus = reconciliationResult;
+    updateReconciliationStatus(data.account, reconciliationResult);
     const searchParams = new URLSearchParams(window.location.search);
     if (USER_CONFIG.enable_reconciliation && searchParams.get("reconcile") === "1") {
       reconciliationModalState.set({ account: data.account, open: true });
@@ -69,20 +72,20 @@
                   </span>
                 </div>
               {/if}
-              {#if USER_CONFIG.enable_reconciliation && reconciliationStatus}
+              {#if USER_CONFIG.enable_reconciliation && $reconciliationStatuses[data.account]}
                 <div class="level-item">
                   <button
                     type="button"
                     class="button is-ghost p-0 h-auto is-small {reconciliationTextClass(
-                      reconciliationStatus
+                      $reconciliationStatuses[data.account]
                     )}"
                     onclick={() =>
                       reconciliationModalState.set({ account: data.account, open: true })}
-                    title={reconciliationLabel(reconciliationStatus)}
+                    title={reconciliationLabel($reconciliationStatuses[data.account])}
                     style="vertical-align: baseline; height: 1.2em; width: 1.2em; line-height: 1;"
                   >
                     <span class="custom-icon" style="font-size: 0.9em;"
-                      >{reconciliationIcon(reconciliationStatus)}</span
+                      >{reconciliationIcon($reconciliationStatuses[data.account])}</span
                     >
                   </button>
                 </div>

@@ -2,7 +2,13 @@ import { writable, derived, get } from "svelte/store";
 import * as d3 from "d3";
 
 import dayjs from "dayjs";
-import type { AccountTfIdf, LedgerFileError, SheetFileError, SheetLineResult } from "$lib/utils";
+import type {
+  AccountTfIdf,
+  LedgerFileError,
+  SheetFileError,
+  SheetLineResult,
+  AccountReconciliationStatus
+} from "$lib/utils";
 import _ from "lodash";
 
 export function now() {
@@ -80,7 +86,16 @@ export const dateRange = derived(
 
 export const theme = writable("light");
 
-export const loading = writable(false);
+function createLoadingStore() {
+  const { subscribe, set, update } = writable(0);
+  return {
+    subscribe,
+    set: (v: boolean) => update((n) => (v ? n + 1 : Math.max(0, n - 1))),
+    reset: () => set(0)
+  };
+}
+
+export const loading = createLoadingStore();
 
 const DELAY = 200;
 const DEBOUNCE_DELAY = 200;
@@ -93,11 +108,12 @@ export const delayedLoading = derived(
       clearTimeout(timeoutId);
     }
 
+    const isLoading = $l > 0;
     timeoutId = setTimeout(
       () => {
-        return set($l);
+        return set(isLoading);
       },
-      $l ? DELAY : DEBOUNCE_DELAY
+      isLoading ? DELAY : DEBOUNCE_DELAY
     );
   },
   false
@@ -111,11 +127,12 @@ export const delayedUnLoading = derived(
       clearTimeout(swithcTimeoutId);
     }
 
-    if ($l) {
-      set($l);
+    const isLoading = $l > 0;
+    if (isLoading) {
+      set(isLoading);
     } else {
       swithcTimeoutId = setTimeout(() => {
-        return set($l);
+        return set(isLoading);
       }, DEBOUNCE_DELAY);
     }
   },
@@ -139,6 +156,24 @@ export const reconciliationModalState = writable<{ account: string | null; open:
   account: null,
   open: false
 });
+
+export const reconciliationStatuses = writable<Record<string, AccountReconciliationStatus>>({});
+export const reconciliationUpdateCount = writable(0);
+
+export function setReconciliationStatuses(reconciliations: AccountReconciliationStatus[]) {
+  reconciliationStatuses.set(
+    Object.fromEntries(reconciliations.map((status) => [status.account, status]))
+  );
+  reconciliationUpdateCount.update((n) => n + 1);
+}
+
+export function updateReconciliationStatus(account: string, status: AccountReconciliationStatus) {
+  reconciliationStatuses.update((current) => ({
+    ...current,
+    [account]: status
+  }));
+  reconciliationUpdateCount.update((n) => n + 1);
+}
 export async function refresh() {
   if (get(editorState).hasUnsavedChanges) {
     const confirmed = confirm("You have unsaved changes. Are you sure you want to leave?");

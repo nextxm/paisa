@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import { reconciliationModalState, refresh } from "../../store";
+  import { reconciliationModalState, updateReconciliationStatus } from "../../store";
   import { ajax, type AccountReconciliationStatus } from "$lib/utils";
   import { reconciliationLabel } from "$lib/reconciliation";
   import Modal from "$lib/components/Modal.svelte";
@@ -24,7 +24,11 @@
 
   async function load() {
     try {
-      const res = await ajax("/api/accounts/:account/reconciliation", null, { account });
+      const res = await ajax(
+        "/api/accounts/:account/reconciliation",
+        { background: true },
+        { account }
+      );
       reconciliationStatus = res;
       reconciliationFrequencyDays = res.frequency_days;
     } catch (err) {
@@ -36,20 +40,21 @@
     if (saving || !account) return;
     saving = true;
     try {
-      await ajax(
+      const res = await ajax(
         "/api/accounts/:account/reconciliation",
         {
           method: "PATCH",
           body: JSON.stringify({
             mark_reconciled_now: true,
             frequency_days: reconciliationFrequencyDays
-          })
+          }),
+          background: true
         },
         { account }
       );
       toast.toast({ message: "Account marked as reconciled.", type: "is-success", duration: 3000 });
       close();
-      await refresh();
+      updateReconciliationStatus(account, res);
     } catch (err) {
       console.error("Failed to update reconciliation:", err);
       toast.toast({

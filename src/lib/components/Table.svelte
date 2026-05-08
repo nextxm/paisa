@@ -3,11 +3,7 @@
   import { onDestroy } from "svelte";
   import { TabulatorFull as Tabulator, type ColumnDefinition } from "tabulator-tables";
 
-  let {
-    data,
-    columns,
-    tree = false
-  }: {
+  let props: {
     data: any[];
     columns: ColumnDefinition[];
     tree?: boolean;
@@ -24,7 +20,7 @@
 
   $effect(() => {
     // React to data changing
-    const currentData = data;
+    const currentData = props.data;
     if (tabulator && isBuilt) {
       tabulator.setData(currentData || []).catch(() => {});
     } else if (tabulator && !isBuilt) {
@@ -34,9 +30,10 @@
 
   $effect(() => {
     // React to columns changing
-    const currentColumns = columns;
+    const currentColumns = props.columns;
     if (tabulator && isBuilt) {
       tabulator.setColumns(currentColumns);
+      tabulator.redraw(true);
     }
   });
 
@@ -47,7 +44,7 @@
     }
 
     tabulator = new Tabulator(el, {
-      dataTree: tree,
+      dataTree: props.tree,
       dataTreeStartExpanded: [true, true, false],
       dataTreeBranchElement: false,
       dataTreeChildIndent: rem(30),
@@ -55,8 +52,8 @@
         "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-up'></i></span>",
       dataTreeExpandElement:
         "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-down'></i></span>",
-      data: data || [],
-      columns: columns,
+      data: props.data || [],
+      columns: props.columns,
       layout: "fitDataTable"
     });
 
