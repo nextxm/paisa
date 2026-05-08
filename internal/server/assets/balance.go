@@ -32,15 +32,26 @@ type AssetBreakdown struct {
 	BalanceUnits     decimal.Decimal           `json:"balanceUnits"`
 	LatestPrice      decimal.Decimal           `json:"latestPrice"`
 	XIRR             decimal.Decimal           `json:"xirr"`
-	GainAmount       decimal.Decimal           `json:"gainAmount"`
 	AbsoluteReturn   decimal.Decimal           `json:"absoluteReturn"`
+	GainAmount       decimal.Decimal           `json:"gainAmount"`
 	OriginalBalances []OriginalCurrencyBalance `json:"originalBalances"`
+	Inactive         bool                      `json:"inactive"`
 }
 
 // GetCheckingBalance returns a breakdown of the current balance for all
 // configured checking accounts.
 func GetCheckingBalance(db *gorm.DB, reportCurrency string) gin.H {
-	return doGetBalance(db, config.GetConfig().CheckingAccounts, false, reportCurrency)
+	result := doGetBalance(db, config.GetConfig().CheckingAccounts, false, reportCurrency)
+	if breakdowns, ok := result["asset_breakdowns"].(map[string]AssetBreakdown); ok {
+		filtered := make(map[string]AssetBreakdown)
+		for k, v := range breakdowns {
+			if !v.Inactive || !v.MarketAmount.IsZero() {
+				filtered[k] = v
+			}
+		}
+		result["asset_breakdowns"] = filtered
+	}
+	return result
 }
 
 func GetBalance(db *gorm.DB, reportCurrency string) gin.H {
@@ -150,6 +161,7 @@ func convertBreakdownsToReportCurrency(db *gorm.DB, breakdowns map[string]AssetB
 			GainAmount:       v.GainAmount.Mul(rate),
 			AbsoluteReturn:   v.AbsoluteReturn,
 			OriginalBalances: v.OriginalBalances,
+			Inactive:         v.Inactive,
 		}
 	}
 	return result
@@ -256,6 +268,7 @@ func ComputeBreakdown(db *gorm.DB, ps []posting.Posting, leaf bool, group string
 		GainAmount:       gainAmount,
 		AbsoluteReturn:   absoluteReturn,
 		OriginalBalances: originalBalances,
+		Inactive:         utils.IsInactiveAccount(group),
 	}
 }
 

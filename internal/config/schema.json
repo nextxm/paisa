@@ -51,6 +51,15 @@
       "ui:widget": "accounts",
       "description": "List of accounts that should be treated as checking accounts for the dashboard widget. Supports wildcards (e.g. <code>Assets:Checking:*</code>)."
     },
+    "inactive_accounts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "ui:widget": "accounts",
+      "description": "List of accounts that should be treated as inactive. Supports wildcards (e.g. <code>Assets:OldBank:*</code>)."
+    },
     "enable_reconciliation": {
       "type": "boolean",
       "default": false,
@@ -1107,6 +1116,10 @@
             "type": "string",
             "description": "Account icon name",
             "ui:widget": "icon"
+          },
+          "inactive": {
+            "type": "boolean",
+            "description": "Flag the account as inactive"
           }
         },
         "required": ["name"],

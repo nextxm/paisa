@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/accounting"
+	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/query"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/gin-gonic/gin"
@@ -27,12 +28,13 @@ func (c CashFlow) GroupDate() time.Time {
 }
 
 func GetCashFlow(db *gorm.DB) gin.H {
-	return gin.H{"cash_flows": computeCashFlow(query.Init(db), decimal.Zero)}
+	return gin.H{"cash_flows": computeCashFlow(query.Init(db).NotInactive(), decimal.Zero)}
 }
 
 func GetCurrentCashFlow(db *gorm.DB) []CashFlow {
-	balance := accounting.CostSum(query.Init(db).BeforeNMonths(3).AccountPrefix("Assets:Checking").All())
-	return computeCashFlow(query.Init(db).LastNMonths(3), balance)
+	checkingAccounts := config.GetConfig().CheckingAccounts
+	balance := accounting.CostSum(query.Init(db).NotInactive().BeforeNMonths(3).AccountPrefix(checkingAccounts...).All())
+	return computeCashFlow(query.Init(db).NotInactive().LastNMonths(3), balance)
 }
 
 func computeCashFlow(q *query.Query, balance decimal.Decimal) []CashFlow {
@@ -41,9 +43,9 @@ func computeCashFlow(q *query.Query, balance decimal.Decimal) []CashFlow {
 	expenses := utils.GroupByMonth(q.Clone().Like("Expenses:%").NotAccountPrefix("Expenses:Tax").All())
 	incomes := utils.GroupByMonth(q.Clone().Like("Income:%").All())
 	liabilities := utils.GroupByMonth(q.Clone().Like("Liabilities:%").All())
-	investments := utils.GroupByMonth(q.Clone().Like("Assets:%").NotAccountPrefix("Assets:Checking").All())
+	investments := utils.GroupByMonth(q.Clone().Like("Assets:%").NotAccountPrefix(config.GetConfig().CheckingAccounts...).All())
 	taxes := utils.GroupByMonth(q.Clone().AccountPrefix("Expenses:Tax").All())
-	checkings := utils.GroupByMonth(q.Clone().AccountPrefix("Assets:Checking").All())
+	checkings := utils.GroupByMonth(q.Clone().AccountPrefix(config.GetConfig().CheckingAccounts...).All())
 	postings := q.Clone().All()
 
 	if len(postings) == 0 {

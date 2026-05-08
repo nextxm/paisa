@@ -113,8 +113,29 @@ func (q *Query) AccountPrefix(account ...string) *Query {
 	return q
 }
 
-func (q *Query) NotAccountPrefix(account string) *Query {
-	q.context = q.context.Where("account not like ? and account != ?", account+":%", account)
+func (q *Query) NotAccountPrefix(accounts ...string) *Query {
+	for _, account := range accounts {
+		q.context = q.context.Where("account not like ? and account != ?", account+":%", account)
+	}
+	return q
+}
+
+func (q *Query) NotInactive() *Query {
+	conf := config.GetConfig()
+	for _, account := range conf.InactiveAccounts {
+		q.NotAccountPrefix(account)
+	}
+
+	var inactiveAccounts []string
+	for _, a := range conf.Accounts {
+		if a.Inactive {
+			inactiveAccounts = append(inactiveAccounts, a.Name)
+		}
+	}
+	if len(inactiveAccounts) > 0 {
+		q.context = q.context.Where("account not in ?", inactiveAccounts)
+	}
+
 	return q
 }
 

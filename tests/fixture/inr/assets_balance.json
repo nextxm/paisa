@@ -15,7 +15,8 @@
           "currency": "INR",
           "amount": 101145.7
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Checking": {
       "group": "Assets:Checking",
@@ -36,7 +37,8 @@
           "currency": "USD",
           "amount": -109.7652
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Dollar": {
       "group": "Assets:Dollar",
@@ -53,7 +55,8 @@
           "currency": "USD",
           "amount": 10
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Equity": {
       "group": "Assets:Equity",
@@ -74,7 +77,8 @@
           "currency": "USD",
           "amount": 99.7652
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Equity:AAPL": {
       "group": "Assets:Equity:AAPL",
@@ -86,7 +90,8 @@
       "xirr": 170.5,
       "gainAmount": 27.3,
       "absoluteReturn": 0.00273,
-      "originalBalances": null
+      "originalBalances": null,
+      "inactive": false
     },
     "Assets:Equity:ABNB": {
       "group": "Assets:Equity:ABNB",
@@ -103,7 +108,8 @@
           "currency": "USD",
           "amount": 99.7652
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Equity:NIFTY": {
       "group": "Assets:Equity:NIFTY",
@@ -120,7 +126,8 @@
           "currency": "INR",
           "amount": 80218.4
         }
-      ]
+      ],
+      "inactive": false
     }
   }
 }

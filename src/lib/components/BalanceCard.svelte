@@ -22,7 +22,15 @@
         href="/accounts/{encodeURIComponent(assetBreakdown.group)}/transactions"
         title="View transactions for {assetBreakdown.group}"
       >
-        {formatCurrency(assetBreakdown.marketAmount)}
+        {#if assetBreakdown.originalBalances && assetBreakdown.originalBalances.length > 0}
+          {#each assetBreakdown.originalBalances as ob}
+            {formatCurrency(ob.amount)}
+            {ob.currency}
+          {/each}
+        {:else}
+          {formatCurrency(assetBreakdown.marketAmount)}
+          {USER_CONFIG.default_currency}
+        {/if}
       </a>
     </div>
   </div>

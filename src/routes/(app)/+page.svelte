@@ -297,7 +297,7 @@
               <span
                 ><a class="secondary-link has-text-grey" href="/expense/monthly">Expenses</a>
                 <span class="is-size-5 has-text-weight-bold px-2" style="color: {COLORS.expenses}"
-                  >{formatCurrency(totalExpense)}</span
+                  >{formatCurrency(totalExpense)} {USER_CONFIG.default_currency}</span
                 ></span
               >
               <LastNMonths n={3} bind:value={month} />

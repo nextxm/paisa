@@ -47,7 +47,8 @@
             "currency": "USD",
             "amount": -109.7652
           }
-        ]
+        ],
+        "inactive": false
       }
     }
   },

@@ -57,6 +57,7 @@ interface UserConfig {
   currencies: string[];
   readonly: boolean;
   enable_reconciliation: boolean;
+  inactive_accounts: string[];
   provider_debug_http: boolean;
   locale: string;
   journal_path: string;
@@ -69,6 +70,7 @@ interface UserConfig {
   accounts: {
     name: string;
     icon: string;
+    inactive: boolean;
   }[];
   doctor: DoctorConfig;
   firefly?: FireflyConfig;

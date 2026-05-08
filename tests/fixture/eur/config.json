@@ -82,7 +82,8 @@
     "checking_accounts": [
       "Assets:Checking"
     ],
-    "enable_reconciliation": false
+    "enable_reconciliation": false,
+    "inactive_accounts": []
   },
   "is_journal_dirty": false,
   "last_price_update": "",
@@ -112,6 +113,10 @@
               "description": "Name of the account",
               "minLength": 1,
               "type": "string"
+            },
+            "inactive": {
+              "description": "Flag the account as inactive",
+              "type": "boolean"
             }
           },
           "required": [
@@ -1574,6 +1579,15 @@
         "maximum": 6,
         "minimum": 0,
         "type": "integer"
+      },
+      "inactive_accounts": {
+        "default": [],
+        "description": "List of accounts that should be treated as inactive. Supports wildcards (e.g. <code>Assets:OldBank:*</code>).",
+        "items": {
+          "type": "string"
+        },
+        "type": "array",
+        "ui:widget": "accounts"
       }
     },
     "required": [

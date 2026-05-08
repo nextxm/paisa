@@ -185,6 +185,21 @@ func IsCheckingAccount(account string) bool {
 	return false
 }
 
+func IsInactiveAccount(account string) bool {
+	for _, pattern := range config.GetConfig().InactiveAccounts {
+		if MatchAccount(account, pattern) {
+			return true
+		}
+	}
+
+	for _, a := range config.GetConfig().Accounts {
+		if a.Name == account && a.Inactive {
+			return true
+		}
+	}
+	return false
+}
+
 func IsExpenseInterestAccount(account string) bool {
 	return IsSameOrParent(account, "Expenses:Interest")
 }

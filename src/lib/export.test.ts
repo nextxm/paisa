@@ -13,7 +13,8 @@ function breakdown(group: string): AssetBreakdown {
     xirr: 0.1,
     gainAmount: 4,
     absoluteReturn: 0.4,
-    originalBalances: [{ currency: "USD", amount: 12 }]
+    originalBalances: [{ currency: "USD", amount: 12 }],
+    inactive: false
   };
 }
 

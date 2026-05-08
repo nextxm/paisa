@@ -193,6 +193,7 @@ export interface AssetBreakdown {
   gainAmount: number;
   absoluteReturn: number;
   originalBalances: OriginalCurrencyBalance[];
+  inactive: boolean;
 }
 
 export interface LiabilityBreakdown {

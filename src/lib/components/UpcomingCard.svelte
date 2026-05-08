@@ -42,7 +42,10 @@
           <i class="fas {icon.icon}"></i>
         </span>
       </div>
-      <span>{formatCurrencyCrude(totalRecurring(transactionSequece))}</span>
+      <span
+        >{formatCurrencyCrude(totalRecurring(transactionSequece))}
+        {USER_CONFIG.default_currency}</span
+      >
       <span>due {n.fromNow()}</span>
     </div>
   </div>

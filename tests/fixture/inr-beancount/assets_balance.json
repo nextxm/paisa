@@ -13,7 +13,7 @@
       "originalBalances": [
         {
           "currency": "BTC",
-          "amount": 1e-08
+          "amount": 1e-8
         },
         {
           "currency": "INR",
@@ -23,7 +23,8 @@
           "currency": "USD",
           "amount": -99.76562772
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Checking": {
       "group": "Assets:Checking",
@@ -44,7 +45,8 @@
           "currency": "USD",
           "amount": -109.76562772
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Coinbase": {
       "group": "Assets:Coinbase",
@@ -59,16 +61,17 @@
       "originalBalances": [
         {
           "currency": "BTC",
-          "amount": 1e-08
+          "amount": 1e-8
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Coinbase:BTC": {
       "group": "Assets:Coinbase:BTC",
       "investmentAmount": 0,
       "withdrawalAmount": 0,
       "marketAmount": 0,
-      "balanceUnits": 1e-08,
+      "balanceUnits": 1e-8,
       "latestPrice": 0,
       "xirr": 0,
       "gainAmount": 0,
@@ -76,9 +79,10 @@
       "originalBalances": [
         {
           "currency": "BTC",
-          "amount": 1e-08
+          "amount": 1e-8
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Dollar": {
       "group": "Assets:Dollar",
@@ -95,7 +99,8 @@
           "currency": "USD",
           "amount": 10
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Equity": {
       "group": "Assets:Equity",
@@ -112,7 +117,8 @@
           "currency": "INR",
           "amount": 80218.4
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Equity:AAPL": {
       "group": "Assets:Equity:AAPL",
@@ -124,7 +130,8 @@
       "xirr": 167.56,
       "gainAmount": 27,
       "absoluteReturn": 0.0027,
-      "originalBalances": null
+      "originalBalances": null,
+      "inactive": false
     },
     "Assets:Equity:ABNB": {
       "group": "Assets:Equity:ABNB",
@@ -136,7 +143,8 @@
       "xirr": 0,
       "gainAmount": 0,
       "absoluteReturn": 0,
-      "originalBalances": null
+      "originalBalances": null,
+      "inactive": false
     },
     "Assets:Equity:NIFTY": {
       "group": "Assets:Equity:NIFTY",
@@ -153,7 +161,8 @@
           "currency": "INR",
           "amount": 80218.4
         }
-      ]
+      ],
+      "inactive": false
     }
   }
 }

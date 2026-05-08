@@ -8,6 +8,8 @@
   let reportCurrency = $state("");
   let availableCurrencies: string[] = $state([]);
   let flatAccounts = $state(false);
+  let filterInactive = $state(true);
+  let filterZero = $state(true);
   let reconciliationStatuses = $state<Record<string, AccountReconciliationStatus>>({});
 
   async function fetchBreakdowns() {
@@ -83,6 +85,28 @@
                 <label for="flat-assets-balance">Flat Accounts</label>
               </div>
             </div>
+            <div class="control">
+              <div class="field mb-0">
+                <input
+                  id="filter-inactive-balance"
+                  type="checkbox"
+                  class="switch is-rounded is-small"
+                  bind:checked={filterInactive}
+                />
+                <label for="filter-inactive-balance">Filter Inactive</label>
+              </div>
+            </div>
+            <div class="control">
+              <div class="field mb-0">
+                <input
+                  id="filter-zero-balance"
+                  type="checkbox"
+                  class="switch is-rounded is-small"
+                  bind:checked={filterZero}
+                />
+                <label for="filter-zero-balance">Filter 0</label>
+              </div>
+            </div>
             <p class="control">
               <button
                 type="button"
@@ -111,7 +135,13 @@
         </div>
       </div>
       <div class="column is-12 pb-0">
-        <AssetsBalance {breakdowns} {reconciliationStatuses} indent={!flatAccounts} />
+        <AssetsBalance
+          {breakdowns}
+          {reconciliationStatuses}
+          {filterInactive}
+          {filterZero}
+          indent={!flatAccounts}
+        />
       </div>
     </div>
   </div>

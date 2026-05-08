@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/glebarez/sqlite"
@@ -263,4 +264,66 @@ func TestGroupSum_NegativeAmounts(t *testing.T) {
 	require.Len(t, sums, 1)
 	assert.True(t, decimal.NewFromFloat(700).Equal(sums[0].Amount),
 		"net balance should be 700 after deposit and withdrawal; got %s", sums[0].Amount)
+}
+
+// TestNotAccountPrefix verifies that NotAccountPrefix excludes matching accounts.
+func TestNotAccountPrefix(t *testing.T) {
+	db := openTestDB(t)
+	require.NoError(t, db.Create(&posting.Posting{
+		TransactionID: "t1",
+		Account:       "Assets:Checking:HDFC",
+		Amount:        decimal.NewFromInt(1000),
+	}).Error)
+	require.NoError(t, db.Create(&posting.Posting{
+		TransactionID: "t2",
+		Account:       "Assets:Savings:SBI",
+		Amount:        decimal.NewFromInt(2000),
+	}).Error)
+
+	postings := Init(db).NotAccountPrefix("Assets:Checking").All()
+	require.Len(t, postings, 1)
+	assert.Equal(t, "Assets:Savings:SBI", postings[0].Account)
+
+	postings = Init(db).NotAccountPrefix("Assets:Checking", "Assets:Savings").All()
+	assert.Empty(t, postings)
+}
+
+// TestNotInactive verifies that NotInactive filters out inactive accounts.
+func TestNotInactive(t *testing.T) {
+	db := openTestDB(t)
+	require.NoError(t, db.Create(&posting.Posting{
+		TransactionID: "t1",
+		Account:       "Assets:Active",
+		Amount:        decimal.NewFromInt(1000),
+	}).Error)
+	require.NoError(t, db.Create(&posting.Posting{
+		TransactionID: "t2",
+		Account:       "Assets:InactivePattern",
+		Amount:        decimal.NewFromInt(2000),
+	}).Error)
+	require.NoError(t, db.Create(&posting.Posting{
+		TransactionID: "t3",
+		Account:       "Assets:InactiveFlag",
+		Amount:        decimal.NewFromInt(3000),
+	}).Error)
+
+	// Setup config
+	orig := config.GetConfig()
+	t.Cleanup(func() {
+		config.SaveConfigObject(orig)
+	})
+	yaml := `
+journal_path: test.ledger
+db_path: test.db
+inactive_accounts:
+  - Assets:InactivePattern
+accounts:
+  - name: Assets:InactiveFlag
+    inactive: true
+`
+	require.NoError(t, config.LoadConfig([]byte(yaml), ""))
+
+	postings := Init(db).NotInactive().All()
+	require.Len(t, postings, 1)
+	assert.Equal(t, "Assets:Active", postings[0].Account)
 }

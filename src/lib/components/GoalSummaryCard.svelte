@@ -58,7 +58,7 @@
       narrow
       title="Current"
       color={COLORS.gainText}
-      value={formatCurrency(goal.current)}
+      value={formatCurrency(goal.current) + " " + USER_CONFIG.default_currency}
     />
 
     <LevelItem
@@ -66,7 +66,7 @@
       narrow
       title="Target"
       color={COLORS.primary}
-      value={formatCurrency(goal.target)}
+      value={formatCurrency(goal.target) + " " + USER_CONFIG.default_currency}
     />
   </nav>
   <Progress small showPercent={false} progressPercent={completed} />

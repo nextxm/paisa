@@ -8,14 +8,15 @@
       "balanceUnits": 0,
       "latestPrice": 0,
       "xirr": 12.85,
-      "gainAmount": 4317.9455057408,
       "absoluteReturn": 0.0404093706767309,
+      "gainAmount": 4317.9455057408,
       "originalBalances": [
         {
           "currency": "INR",
           "amount": 101145.7
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Checking": {
       "group": "Assets:Checking",
@@ -25,8 +26,8 @@
       "balanceUnits": 0,
       "latestPrice": 0,
       "xirr": 65.38,
-      "gainAmount": 4072.2455057408,
       "absoluteReturn": 0,
+      "gainAmount": 4072.2455057408,
       "originalBalances": [
         {
           "currency": "INR",
@@ -36,7 +37,8 @@
           "currency": "USD",
           "amount": -209.5304
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Dollar": {
       "group": "Assets:Dollar",
@@ -46,14 +48,15 @@
       "balanceUnits": 10,
       "latestPrice": 0,
       "xirr": 0,
-      "gainAmount": 0,
       "absoluteReturn": 0,
+      "gainAmount": 0,
       "originalBalances": [
         {
           "currency": "USD",
           "amount": 10
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Equity": {
       "group": "Assets:Equity",
@@ -63,8 +66,8 @@
       "balanceUnits": 0,
       "latestPrice": 0,
       "xirr": 3.01,
-      "gainAmount": 245.7,
       "absoluteReturn": 0.0023168178321967,
+      "gainAmount": 245.7,
       "originalBalances": [
         {
           "currency": "INR",
@@ -74,7 +77,8 @@
           "currency": "USD",
           "amount": 199.5304
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Equity:AAPL": {
       "group": "Assets:Equity:AAPL",
@@ -84,9 +88,10 @@
       "balanceUnits": -100,
       "latestPrice": 0,
       "xirr": 170.5,
-      "gainAmount": 27.3,
       "absoluteReturn": 0.00273,
-      "originalBalances": null
+      "gainAmount": 27.3,
+      "originalBalances": null,
+      "inactive": false
     },
     "Assets:Equity:ABNB": {
       "group": "Assets:Equity:ABNB",
@@ -96,14 +101,15 @@
       "balanceUnits": 1.52,
       "latestPrice": 0,
       "xirr": 0,
-      "gainAmount": 0,
       "absoluteReturn": 0,
+      "gainAmount": 0,
       "originalBalances": [
         {
           "currency": "USD",
           "amount": 199.5304
         }
-      ]
+      ],
+      "inactive": false
     },
     "Assets:Equity:NIFTY": {
       "group": "Assets:Equity:NIFTY",
@@ -113,14 +119,15 @@
       "balanceUnits": 800,
       "latestPrice": 0,
       "xirr": 3.21,
-      "gainAmount": 218.4,
       "absoluteReturn": 0.00273,
+      "gainAmount": 218.4,
       "originalBalances": [
         {
           "currency": "INR",
           "amount": 80218.4
         }
-      ]
+      ],
+      "inactive": false
     }
   }
 }

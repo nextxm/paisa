@@ -58,17 +58,23 @@
       {#if !compact}
         <div class="mr-3">
           <span class="budget-label mr-1">Budget</span>
-          <span class="budget-amount">{formatCurrency(accountBudget.forecast)}</span>
+          <span class="budget-amount"
+            >{formatCurrency(accountBudget.forecast)} {USER_CONFIG.default_currency}</span
+          >
         </div>
         <div class="mr-3">
           <span class="budget-label mr-1">Spent</span>
-          <span class="budget-amount">{formatCurrency(accountBudget.actual)}</span>
+          <span class="budget-amount"
+            >{formatCurrency(accountBudget.actual)} {USER_CONFIG.default_currency}</span
+          >
         </div>
       {/if}
       {#if !compact && accountBudget.rollover != 0}
         <div class="mr-3">
           <span class="budget-label mr-1">Rollover</span>
-          <span class="budget-amount warn">{formatCurrency(accountBudget.rollover)}</span>
+          <span class="budget-amount warn"
+            >{formatCurrency(accountBudget.rollover)} {USER_CONFIG.default_currency}</span
+          >
         </div>
       {/if}
       <div>
@@ -76,7 +82,7 @@
           >{accountBudget.available >= 0 ? "Available" : "Overspent"}</span
         >
         <span class="budget-amount {color(accountBudget)}"
-          >{formatCurrency(Math.abs(accountBudget.available))}</span
+          >{formatCurrency(Math.abs(accountBudget.available))} {USER_CONFIG.default_currency}</span
         >
       </div>
     </div>

@@ -27,11 +27,15 @@
   let {
     breakdowns,
     reconciliationStatuses = {},
-    indent = true
+    indent = true,
+    filterInactive = true,
+    filterZero = true
   }: {
     breakdowns: Record<string, AssetBreakdown>;
     reconciliationStatuses?: Record<string, AccountReconciliationStatus>;
     indent?: boolean;
+    filterInactive?: boolean;
+    filterZero?: boolean;
   } = $props();
 
   function accountNameWithReconciliation(account: string, cell: any, compact = false) {
@@ -115,16 +119,33 @@
     }
   ]);
 
-  let tree: AssetBreakdown[] = $state([]);
-  $effect(() => {
-    if (breakdowns) {
-      tree = buildTree(Object.values(breakdowns), (i) => i.group);
+  let tree = $derived.by(() => {
+    if (!breakdowns) return [];
+    let filteredBreakdowns = Object.values(breakdowns);
+    if (filterInactive) {
+      filteredBreakdowns = filteredBreakdowns.filter((i) => !i.inactive);
     }
+    if (filterZero) {
+      filteredBreakdowns = filteredBreakdowns.filter((i) => i.marketAmount !== 0);
+    }
+    return buildTree(filteredBreakdowns, (i) => i.group);
+  });
+
+  let displayBreakdowns = $derived.by(() => {
+    if (!breakdowns) return [];
+    let values = Object.values(breakdowns);
+    if (filterInactive) {
+      values = values.filter((i) => !i.inactive);
+    }
+    if (filterZero) {
+      values = values.filter((i) => i.marketAmount !== 0);
+    }
+    return values;
   });
 </script>
 
 {#if indent}
   <Table data={tree} tree {columns} />
 {:else}
-  <Table data={Object.values(breakdowns)} {columns} />
+  <Table data={displayBreakdowns} {columns} />
 {/if}

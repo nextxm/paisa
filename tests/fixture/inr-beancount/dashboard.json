@@ -47,7 +47,8 @@
             "currency": "USD",
             "amount": -109.76562772
           }
-        ]
+        ],
+        "inactive": false
       }
     }
   },
@@ -234,7 +235,7 @@
           "payee": "Purchased 0.00000001 BTC",
           "account": "Assets:Coinbase:BTC",
           "commodity": "BTC",
-          "quantity": 1e-08,
+          "quantity": 1e-8,
           "amount": 0,
           "status": "cleared",
           "tag_recurring": "",
@@ -246,7 +247,7 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 1e-08
+          "balance": 1e-8
         },
         {
           "id": 21,

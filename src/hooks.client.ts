@@ -122,13 +122,19 @@ function displayError(error: any) {
 }
 
 window.addEventListener("unhandledrejection", (event) => {
-  if (event.reason?.message?.includes("ResizeObserver loop limit exceeded")) {
+  if (
+    event.reason?.message?.includes("ResizeObserver loop limit exceeded") ||
+    event.reason?.message?.includes("ResizeObserver loop completed with undelivered notifications")
+  ) {
     return;
   }
   displayError(event.reason);
 });
 window.addEventListener("error", (event) => {
-  if (event.message?.includes("ResizeObserver loop limit exceeded")) {
+  if (
+    event.message?.includes("ResizeObserver loop limit exceeded") ||
+    event.message?.includes("ResizeObserver loop completed with undelivered notifications")
+  ) {
     return;
   }
   displayError(event.error || event.message);

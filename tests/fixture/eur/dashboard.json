@@ -43,7 +43,8 @@
             "currency": "EUR",
             "amount": 994.95
           }
-        ]
+        ],
+        "inactive": false
       }
     }
   },

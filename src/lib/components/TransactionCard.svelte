@@ -3,6 +3,7 @@
   import { iconText } from "$lib/icon";
   import {
     formatCurrency,
+    formatFloat,
     postingUrl,
     restName,
     type Posting,
@@ -39,8 +40,16 @@
         >
         {restName(posting.account)}
       </div>
-      <div class="has-text-weight-bold is-size-6">
-        {formatCurrency(posting.amount)}
+      <div class="has-text-weight-bold is-size-6 has-text-right whitespace-nowrap">
+        {#if posting.commodity !== USER_CONFIG.default_currency}
+          <span>{formatFloat(posting.quantity)} {posting.commodity}</span>
+          <span class="is-size-7 has-text-grey has-text-weight-normal ml-1">
+            ({formatCurrency(posting.amount)}
+            {USER_CONFIG.default_currency})
+          </span>
+        {:else}
+          {formatCurrency(posting.amount)}
+        {/if}
       </div>
     </div>
   {/each}

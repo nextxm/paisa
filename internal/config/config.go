@@ -64,8 +64,9 @@ type Commodity struct {
 }
 
 type Account struct {
-	Name string `json:"name" yaml:"name"`
-	Icon string `json:"icon" yaml:"icon"`
+	Name     string `json:"name" yaml:"name"`
+	Icon     string `json:"icon" yaml:"icon"`
+	Inactive bool   `json:"inactive" yaml:"inactive"`
 }
 
 type UserAccount struct {
@@ -208,6 +209,7 @@ type Config struct {
 	Labs Labs `json:"labs" yaml:"labs"`
 
 	CheckingAccounts     []string `json:"checking_accounts" yaml:"checking_accounts"`
+	InactiveAccounts     []string `json:"inactive_accounts" yaml:"inactive_accounts"`
 	EnableReconciliation bool     `json:"enable_reconciliation" yaml:"enable_reconciliation"`
 }
 
@@ -247,6 +249,7 @@ var defaultConfig = Config{
 	Firefly:                    FireflyConfig{IgnoreAccounts: []string{}},
 	Labs:                       Labs{FireflyReconcile: false},
 	CheckingAccounts:           []string{"Assets:Checking"},
+	InactiveAccounts:           []string{},
 	EnableReconciliation:       false,
 }
 
