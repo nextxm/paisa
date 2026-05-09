@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
@@ -150,21 +151,66 @@ type SyncCommoditiesResult struct {
 	Failures []string
 }
 
+const commodityFetchWorkers = 5
+
+type commodityPriceFetchResult struct {
+	commodity config.Commodity
+	prices    []*price.Price
+	err       error
+}
+
 func SyncCommodities(db *gorm.DB) (SyncCommoditiesResult, error) {
 	log.WithFields(log.Fields{"stage": "commodities"}).Info("Fetching commodities price history")
-	commodities := lo.Shuffle(commodity.All())
+	return syncCommodities(db, lo.Shuffle(commodity.All()), scraper.GetProviderByCode, commodityFetchWorkers)
+}
+
+func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByCode func(string) price.PriceProvider, workers int) (SyncCommoditiesResult, error) {
+	if workers <= 0 {
+		workers = 1
+	}
+	if workers > len(commodities) && len(commodities) > 0 {
+		workers = len(commodities)
+	}
 
 	var result SyncCommoditiesResult
 	var errs []error
-	for _, commodity := range commodities {
-		name := commodity.Name
-		log.WithFields(log.Fields{"stage": "commodities", "commodity": name}).Info("Fetching commodity")
-		code := commodity.Price.Code
-		var prices []*price.Price
-		var err error
+	jobs := make(chan config.Commodity)
+	results := make(chan commodityPriceFetchResult, len(commodities))
+	var wg sync.WaitGroup
 
-		provider := scraper.GetProviderByCode(commodity.Price.Provider)
-		prices, err = provider.GetPrices(code, name)
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for commodity := range jobs {
+				name := commodity.Name
+				log.WithFields(log.Fields{"stage": "commodities", "commodity": name}).Info("Fetching commodity")
+				provider := getProviderByCode(commodity.Price.Provider)
+				prices, err := provider.GetPrices(commodity.Price.Code, name)
+				results <- commodityPriceFetchResult{
+					commodity: commodity,
+					prices:    prices,
+					err:       err,
+				}
+			}
+		}()
+	}
+
+	for _, commodity := range commodities {
+		jobs <- commodity
+	}
+	close(jobs)
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	for fetched := range results {
+		commodity := fetched.commodity
+		name := commodity.Name
+		prices := fetched.prices
+		err := fetched.err
 
 		if err != nil {
 			log.WithFields(log.Fields{"stage": "commodities", "commodity": name, "error": err}).Error("Failed to fetch commodity prices")
@@ -201,7 +247,7 @@ func SyncCommodities(db *gorm.DB) (SyncCommoditiesResult, error) {
 			}
 		}
 
-		if err := price.UpsertAllByTypeNameAndID(db, commodity.Type, name, code, prices); err != nil {
+		if err := price.UpsertAllByTypeNameAndID(db, commodity.Type, name, commodity.Price.Code, prices); err != nil {
 			log.WithFields(log.Fields{"stage": "commodities", "commodity": name, "error": err}).Error("Failed to save commodity prices")
 			msg := fmt.Sprintf("Failed to save price for %s: %s", name, err.Error())
 			errs = append(errs, fmt.Errorf("%s", msg))
