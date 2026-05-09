@@ -23,6 +23,8 @@ type Networth struct {
 	NetInvestmentAmount decimal.Decimal `json:"netInvestmentAmount"`
 }
 
+// normalizeWindowDecimal trims sub-epsilon floating-point artifacts introduced by
+// SQLite window SUM aggregation while preserving intentional fractional values.
 func normalizeWindowDecimal(value decimal.Decimal) decimal.Decimal {
 	rounded := value.Round(10)
 	if value.Sub(rounded).Abs().LessThan(decimal.NewFromFloat(1e-12)) {

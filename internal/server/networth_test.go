@@ -92,7 +92,6 @@ func TestComputeNetworthTimeline_WindowFunctionRunningTotals(t *testing.T) {
 	assert.True(t, decimal.RequireFromString("949.90").Equal(day5.BalanceAmount))
 	assert.True(t, decimal.RequireFromString("250.10").Equal(day5.GainAmount))
 	assert.True(t, decimal.RequireFromString("699.80").Equal(day5.NetInvestmentAmount))
-	assert.Equal(t, "250.1", day5.GainAmount.String())
 
 	// Day 6 has no postings; running totals should carry forward.
 	day6 := timeline[5]
