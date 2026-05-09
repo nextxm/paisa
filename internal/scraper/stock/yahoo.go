@@ -217,3 +217,7 @@ func (p *YahooPriceProvider) GetPrices(code string, commodityName string, since 
 	}
 	return price.FilterSince(prices, since), nil
 }
+
+func (p *YahooPriceProvider) GetPricesBatch(codes []string, commodityNames []string) (map[string][]*price.Price, error) {
+	return price.GetPricesBatchSequentially(p, codes, commodityNames)
+}

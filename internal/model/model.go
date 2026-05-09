@@ -159,6 +159,11 @@ type commodityPriceFetchResult struct {
 	err       error
 }
 
+type commodityBatchFetchJob struct {
+	providerCode string
+	commodities  []config.Commodity
+}
+
 func SyncCommodities(db *gorm.DB, forcePrices bool, progressFn func(completed, total int)) (SyncCommoditiesResult, error) {
 	log.WithFields(log.Fields{"stage": "commodities"}).Info("Fetching commodities price history")
 	return syncCommodities(db, lo.Shuffle(commodity.All()), scraper.GetProviderByCode, commodityFetchWorkers, forcePrices, progressFn)
@@ -168,10 +173,6 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 	if workers <= 0 {
 		workers = 1
 	}
-	if workers > len(commodities) && len(commodities) > 0 {
-		workers = len(commodities)
-	}
-
 	// Determine the since timestamp from the last successful price sync.
 	// A zero value means fetch the full history (first run or metadata missing).
 	var since time.Time
@@ -192,7 +193,12 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 
 	var result SyncCommoditiesResult
 	var errs []error
-	jobs := make(chan config.Commodity)
+	batchJobs := groupCommodityBatchJobs(commodities)
+	if workers > len(batchJobs) && len(batchJobs) > 0 {
+		workers = len(batchJobs)
+	}
+
+	jobs := make(chan commodityBatchFetchJob)
 	results := make(chan commodityPriceFetchResult, len(commodities))
 	var wg sync.WaitGroup
 
@@ -200,22 +206,44 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for commodity := range jobs {
-				name := commodity.Name
-				log.WithFields(log.Fields{"stage": "commodities", "commodity": name}).Info("Fetching commodity")
-				provider := getProviderByCode(commodity.Price.Provider)
-				prices, err := provider.GetPrices(commodity.Price.Code, name, since)
-				results <- commodityPriceFetchResult{
-					commodity: commodity,
-					prices:    prices,
-					err:       err,
+			for job := range jobs {
+				provider := getProviderByCode(job.providerCode)
+				if len(job.commodities) == 1 {
+					commodity := job.commodities[0]
+					name := commodity.Name
+					log.WithFields(log.Fields{"stage": "commodities", "commodity": name}).Info("Fetching commodity")
+					prices, err := provider.GetPrices(commodity.Price.Code, name, since)
+					results <- commodityPriceFetchResult{
+						commodity: commodity,
+						prices:    prices,
+						err:       err,
+					}
+					continue
+				}
+
+				codes := make([]string, len(job.commodities))
+				names := make([]string, len(job.commodities))
+				for i, commodity := range job.commodities {
+					codes[i] = commodity.Price.Code
+					names[i] = commodity.Name
+				}
+
+				log.WithFields(log.Fields{"stage": "commodities", "provider": job.providerCode, "count": len(job.commodities)}).
+					Info("Fetching commodity batch")
+				pricesByCode, err := provider.GetPricesBatch(codes, names)
+				for _, commodity := range job.commodities {
+					results <- commodityPriceFetchResult{
+						commodity: commodity,
+						prices:    price.FilterSince(pricesByCode[commodity.Price.Code], since),
+						err:       err,
+					}
 				}
 			}
 		}()
 	}
 
-	for _, commodity := range commodities {
-		jobs <- commodity
+	for _, job := range batchJobs {
+		jobs <- job
 	}
 	close(jobs)
 
@@ -291,6 +319,27 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 	}
 	_ = metadata.Set(db, LastPriceSyncKey, time.Now().Format(time.RFC3339))
 	return result, nil
+}
+
+func groupCommodityBatchJobs(commodities []config.Commodity) []commodityBatchFetchJob {
+	batches := make([]commodityBatchFetchJob, 0)
+	indexByProvider := make(map[string]int, len(commodities))
+
+	for _, commodity := range commodities {
+		providerCode := commodity.Price.Provider
+		if index, ok := indexByProvider[providerCode]; ok {
+			batches[index].commodities = append(batches[index].commodities, commodity)
+			continue
+		}
+
+		indexByProvider[providerCode] = len(batches)
+		batches = append(batches, commodityBatchFetchJob{
+			providerCode: providerCode,
+			commodities:  []config.Commodity{commodity},
+		})
+	}
+
+	return batches
 }
 
 func SyncCII(db *gorm.DB) error {

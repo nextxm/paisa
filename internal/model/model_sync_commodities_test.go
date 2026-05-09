@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -26,8 +27,12 @@ func openSyncCommoditiesTestDB(t *testing.T) *gorm.DB {
 }
 
 type trackingPriceProvider struct {
-	current atomic.Int64
-	max     atomic.Int64
+	current      atomic.Int64
+	max          atomic.Int64
+	singleCalls  atomic.Int64
+	batchCalls   atomic.Int64
+	batchSizesMu sync.Mutex
+	batchSizes   []int
 }
 
 func (p *trackingPriceProvider) Name() string {
@@ -58,6 +63,7 @@ func (p *trackingPriceProvider) ClearCache(*gorm.DB) {
 }
 
 func (p *trackingPriceProvider) GetPrices(code string, commodityName string, since time.Time) ([]*price.Price, error) {
+	p.singleCalls.Add(1)
 	current := p.current.Add(1)
 	for {
 		maxSeen := p.max.Load()
@@ -81,6 +87,40 @@ func (p *trackingPriceProvider) GetPrices(code string, commodityName string, sin
 	}, nil
 }
 
+func (p *trackingPriceProvider) GetPricesBatch(codes []string, commodityNames []string) (map[string][]*price.Price, error) {
+	p.batchCalls.Add(1)
+	p.batchSizesMu.Lock()
+	p.batchSizes = append(p.batchSizes, len(codes))
+	p.batchSizesMu.Unlock()
+
+	current := p.current.Add(1)
+	for {
+		maxSeen := p.max.Load()
+		if current <= maxSeen || p.max.CompareAndSwap(maxSeen, current) {
+			break
+		}
+	}
+
+	time.Sleep(100 * time.Millisecond)
+	p.current.Add(-1)
+
+	pricesByCode := make(map[string][]*price.Price, len(codes))
+	for i, code := range codes {
+		pricesByCode[code] = []*price.Price{
+			{
+				CommodityType:  config.Stock,
+				CommodityID:    code,
+				CommodityName:  commodityNames[i],
+				Date:           time.Now().UTC(),
+				QuoteCommodity: "INR",
+				Value:          decimal.NewFromInt(1),
+			},
+		}
+	}
+
+	return pricesByCode, nil
+}
+
 func TestSyncCommodities_UsesBoundedConcurrentFetching(t *testing.T) {
 	db := openSyncCommoditiesTestDB(t)
 	provider := &trackingPriceProvider{}
@@ -91,7 +131,7 @@ func TestSyncCommodities_UsesBoundedConcurrentFetching(t *testing.T) {
 			Name: fmt.Sprintf("Commodity-%d", i),
 			Type: config.Stock,
 			Price: config.Price{
-				Provider: "test-provider",
+				Provider: fmt.Sprintf("test-provider-%d", i/2),
 				Code:     fmt.Sprintf("C%d", i),
 			},
 		})
@@ -105,6 +145,9 @@ func TestSyncCommodities_UsesBoundedConcurrentFetching(t *testing.T) {
 
 	assert.Greater(t, provider.max.Load(), int64(1), "expected concurrent fetches")
 	assert.LessOrEqual(t, provider.max.Load(), int64(5), "must not exceed worker limit")
+	assert.Zero(t, provider.singleCalls.Load(), "batched provider groups should not fall back to single fetches")
+	assert.Equal(t, int64(6), provider.batchCalls.Load(), "expected one batch fetch per provider group")
+	assert.ElementsMatch(t, []int{2, 2, 2, 2, 2, 2}, provider.batchSizes)
 
 	var count int64
 	require.NoError(t, db.Model(&price.Price{}).Count(&count).Error)
@@ -131,6 +174,9 @@ func (p *sincePriceProvider) ClearCache(_ *gorm.DB) {}
 func (p *sincePriceProvider) GetPrices(_ string, _ string, since time.Time) ([]*price.Price, error) {
 	p.receivedSince = since
 	return p.prices, nil
+}
+func (p *sincePriceProvider) GetPricesBatch(codes []string, commodityNames []string) (map[string][]*price.Price, error) {
+	return price.GetPricesBatchSequentially(p, codes, commodityNames)
 }
 
 // TestSyncCommodities_PassesSinceToProvider verifies that syncCommodities reads

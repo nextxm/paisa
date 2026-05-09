@@ -35,6 +35,10 @@
 
 #### Performance
 
+- **Provider-level batch price sync orchestration** — `syncCommodities` now groups configured commodities by price provider and dispatches grouped fetches through a new `PriceProvider.GetPricesBatch(...)` contract before processing per-commodity results.
+  - Existing single-code providers preserve behaviour through a shared sequential fallback helper, while provider implementations can now override batching without changing sync orchestration.
+  - Single-commodity provider groups still use `GetPrices(..., since)` so incremental price syncs continue to pass the stored `last_price_sync` timestamp unchanged.
+
 - **Parallel commodity price fetching in sync** — `SyncCommodities` now fetches price histories using a bounded worker pool (5 concurrent fetches) with goroutines and `sync.WaitGroup`, reducing end-to-end sync time when many commodities are configured while avoiding unbounded provider request fan-out.
 
 - **Materialized account balance summary table** — Introduces `account_balances` table (migration v7) that stores pre-computed per-`(account, commodity)` balance totals updated atomically on every journal sync.
