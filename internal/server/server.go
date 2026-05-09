@@ -147,9 +147,10 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		}
 
 		jobID := registry.SubmitDetailed(context.Background(), map[string]any{
-			"journal":    syncRequest.Journal,
-			"prices":     syncRequest.Prices,
-			"portfolios": syncRequest.Portfolios,
+			"journal":      syncRequest.Journal,
+			"prices":       syncRequest.Prices,
+			"force_prices": syncRequest.ForcePrices,
+			"portfolios":   syncRequest.Portfolios,
 		}, func(_ context.Context, progress func(int, int)) ([]string, error) {
 			// context.Background() is intentional: the sync job must outlive the
 			// HTTP request.  Using c.Request.Context() would cancel the job as

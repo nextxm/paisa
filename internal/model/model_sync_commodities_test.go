@@ -99,7 +99,7 @@ func TestSyncCommodities_UsesBoundedConcurrentFetching(t *testing.T) {
 
 	result, err := syncCommodities(db, commodities, func(string) price.PriceProvider {
 		return provider
-	}, 5, nil)
+	}, 5, false, nil)
 	require.NoError(t, err)
 	assert.Empty(t, result.Failures)
 
@@ -165,7 +165,7 @@ func TestSyncCommodities_PassesSinceToProvider(t *testing.T) {
 	getProvider := func(_ string) price.PriceProvider { return stub }
 
 	// First call: no metadata → since must be zero (full history fetch).
-	_, err := syncCommodities(db, commodities, getProvider, 1, nil)
+	_, err := syncCommodities(db, commodities, getProvider, 1, false, nil)
 	require.NoError(t, err)
 	assert.True(t, stub.receivedSince.IsZero(), "since must be zero when no last_price_sync metadata exists")
 
@@ -175,10 +175,16 @@ func TestSyncCommodities_PassesSinceToProvider(t *testing.T) {
 
 	// Second call: since must match the stored timestamp.
 	stub.receivedSince = time.Time{} // reset
-	_, err = syncCommodities(db, commodities, getProvider, 1, nil)
+	_, err = syncCommodities(db, commodities, getProvider, 1, false, nil)
 	require.NoError(t, err)
 	assert.Equal(t, lastSync.UTC().Truncate(time.Second), stub.receivedSince.UTC().Truncate(time.Second),
 		"since must match the last_price_sync metadata value")
+
+	// Force refresh: ignore metadata and fetch full history again.
+	stub.receivedSince = lastSync
+	_, err = syncCommodities(db, commodities, getProvider, 1, true, nil)
+	require.NoError(t, err)
+	assert.True(t, stub.receivedSince.IsZero(), "force refresh must ignore last_price_sync metadata")
 }
 
 // TestSyncCommodities_IncrementalUpsertPreservesHistory verifies that on an
@@ -216,7 +222,7 @@ func TestSyncCommodities_IncrementalUpsertPreservesHistory(t *testing.T) {
 	}
 	getProvider := func(_ string) price.PriceProvider { return stub }
 
-	_, err := syncCommodities(db, commodities, getProvider, 1, nil)
+	_, err := syncCommodities(db, commodities, getProvider, 1, false, nil)
 	require.NoError(t, err)
 
 	var count int64
@@ -235,7 +241,7 @@ func TestSyncCommodities_IncrementalUpsertPreservesHistory(t *testing.T) {
 			QuoteCommodity: "USD",
 		},
 	}
-	_, err = syncCommodities(db, commodities, getProvider, 1, nil)
+	_, err = syncCommodities(db, commodities, getProvider, 1, false, nil)
 	require.NoError(t, err)
 
 	db.Model(&price.Price{}).Count(&count)
@@ -273,7 +279,7 @@ func TestSyncCommodities_ReportsProgress(t *testing.T) {
 		calls = append(calls, struct{ completed, total int }{completed, total})
 	}
 
-	_, err := syncCommodities(db, commodities, getProvider, 1, progressFn)
+	_, err := syncCommodities(db, commodities, getProvider, 1, false, progressFn)
 	require.NoError(t, err)
 
 	assert.Len(t, calls, len(commodities), "progressFn must be called once per commodity")
