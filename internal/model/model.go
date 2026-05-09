@@ -179,16 +179,16 @@ func (l *providerRateLimiter) WaitTurn() {
 		return
 	}
 
-	for {
-		l.mu.Lock()
-		now := time.Now()
-		wait := l.nextAllowed.Sub(now)
-		if wait <= 0 {
-			l.nextAllowed = now.Add(l.minInterval)
-			l.mu.Unlock()
-			return
-		}
-		l.mu.Unlock()
+	l.mu.Lock()
+	wait := time.Until(l.nextAllowed)
+	if wait < 0 {
+		wait = 0
+	}
+	startAt := time.Now().Add(wait)
+	l.nextAllowed = startAt.Add(l.minInterval)
+	l.mu.Unlock()
+
+	if wait > 0 {
 		time.Sleep(wait)
 	}
 }

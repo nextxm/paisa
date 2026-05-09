@@ -150,6 +150,9 @@ func TestSyncCommodities_UsesBoundedConcurrentFetching(t *testing.T) {
 	assert.Empty(t, result.Failures)
 
 	assert.Greater(t, provider.max.Load(), int64(1), "expected concurrent fetches")
+	// Each pair of commodities maps to a distinct provider code (6 groups total).
+	// syncCommodities runs one provider lane per code, so the observed peak
+	// concurrency cannot exceed the number of provider lanes.
 	assert.LessOrEqual(t, provider.max.Load(), int64(6), "must not exceed one in-flight batch per provider lane")
 	assert.Zero(t, provider.singleCalls.Load(), "batched provider groups should not fall back to single fetches")
 	assert.Equal(t, int64(6), provider.batchCalls.Load(), "expected one batch fetch per provider group")
