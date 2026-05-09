@@ -191,7 +191,7 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 
 	var result SyncCommoditiesResult
 	var errs []error
-	jobsCh := make(chan config.Commodity)
+	jobs := make(chan config.Commodity)
 	results := make(chan commodityPriceFetchResult, len(commodities))
 	var wg sync.WaitGroup
 
@@ -199,7 +199,7 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for commodity := range jobsCh {
+			for commodity := range jobs {
 				name := commodity.Name
 				log.WithFields(log.Fields{"stage": "commodities", "commodity": name}).Info("Fetching commodity")
 				provider := getProviderByCode(commodity.Price.Provider)
@@ -214,9 +214,9 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 	}
 
 	for _, commodity := range commodities {
-		jobsCh <- commodity
+		jobs <- commodity
 	}
-	close(jobsCh)
+	close(jobs)
 
 	go func() {
 		wg.Wait()
@@ -224,11 +224,11 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 	}()
 
 	total := len(commodities)
-	completed := 0
+	itemsCompleted := 0
 	for fetched := range results {
-		completed++
+		itemsCompleted++
 		if progressFn != nil {
-			progressFn(completed, total)
+			progressFn(itemsCompleted, total)
 		}
 		commodity := fetched.commodity
 		name := commodity.Name
