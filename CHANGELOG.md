@@ -35,6 +35,11 @@
 
 #### Performance
 
+- **Lazy commodity price-cache warming after sync** — Market price cache warming no longer rebuilds default-currency B-Trees for every commodity immediately after each sync.
+  - `WarmCache` now initializes the price cache container and pre-warms only FX rate trees.
+  - Commodity price trees are loaded and synthesized into default-currency values lazily on first lookup (`GetUnitPrice`), reducing post-sync CPU work while keeping cache invalidation semantics unchanged.
+  - `loadPriceCache` now supports targeted refreshes for specific commodities, enabling incremental updates without rebuilding unrelated commodity trees.
+
 - **Provider-aware price sync throttling** — `SyncCommodities` now applies per-provider rate-limit metadata to schedule provider fetches independently, so strict sources (like Alpha Vantage) are paced without slowing faster providers.
   - `PriceProvider` now exposes `RateLimit()` metadata (`max concurrent requests` + `min interval between requests`).
   - Commodity sync uses provider-specific worker lanes and per-provider throttling gates; throttled providers fetch per-commodity with enforced spacing while non-throttled providers continue using batch fetches.
