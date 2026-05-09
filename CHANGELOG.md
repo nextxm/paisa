@@ -4,6 +4,14 @@
 
 #### Features
 
+- **Granular progress reporting for sync jobs** — Users can now see per-commodity progress during long price sync operations instead of a static "Syncing…" spinner.
+  - `Job` (worker package) gains `items_completed` and `total_items` integer fields, serialised as JSON and exposed via `GET /api/jobs/:id`.
+  - `DetailedJobFn` now receives a thread-safe `progress func(completed, total int)` callback. `runDetailed` creates the callback and updates the job fields under the registry lock, eliminating any data race.
+  - `syncCommodities` accepts a `progressFn func(completed, total int)` parameter and calls it after each commodity result is processed (the results loop is sequential, so the counter is exact).
+  - The navbar `SyncingIndicator` switches from "Syncing…" to an "X / Y" label while the price-scraper stage is active.
+  - The Sync History overlay shows a Bulma `<progress>` bar labelled "X of Y commodities" for any running job that has reported `total_items > 0`.
+  - The TypeScript `Job` interface in `utils.ts` mirrors the new `items_completed` and `total_items` fields. The `runningJob` derived store (in `src/lib/stores/jobs.ts`) exposes the active non-terminal job for consumption by `SyncingIndicator`.
+
 - **Year-over-Year "Until year" selector** — The Year-over-Year analysis page now includes an "Until year" dropdown alongside "Years to compare". Users can select an end year (e.g. 2025) so the comparison covers the N years up to and including that year (e.g. last 3 years until 2025 = 2023, 2024, 2025). Defaults to the current year, preserving existing behaviour. The `/api/expense` and `/api/income` endpoints now accept an optional `until_year` query parameter.
 
 - **Incremental price sync (delta updates)** — `SyncCommodities` now performs incremental syncs instead of fetching and replacing the full price history on every run.

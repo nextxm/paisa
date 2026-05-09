@@ -78,6 +78,20 @@
                 </div>
               </div>
 
+              {#if job.status === "running" && job.total_items && job.total_items > 0}
+                <div class="mt-2">
+                  <progress
+                    class="progress is-info is-small mb-1"
+                    value={job.items_completed ?? 0}
+                    max={job.total_items}
+                    aria-label="Sync progress"
+                  ></progress>
+                  <span class="is-size-7 has-text-grey">
+                    {job.items_completed ?? 0} of {job.total_items} commodities
+                  </span>
+                </div>
+              {/if}
+
               {#if job.error}
                 <div
                   class="mt-2 p-2 has-background-danger-light has-text-danger-dark is-size-7 sync-error-snippet"

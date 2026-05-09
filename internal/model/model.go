@@ -159,12 +159,12 @@ type commodityPriceFetchResult struct {
 	err       error
 }
 
-func SyncCommodities(db *gorm.DB) (SyncCommoditiesResult, error) {
+func SyncCommodities(db *gorm.DB, progressFn func(completed, total int)) (SyncCommoditiesResult, error) {
 	log.WithFields(log.Fields{"stage": "commodities"}).Info("Fetching commodities price history")
-	return syncCommodities(db, lo.Shuffle(commodity.All()), scraper.GetProviderByCode, commodityFetchWorkers)
+	return syncCommodities(db, lo.Shuffle(commodity.All()), scraper.GetProviderByCode, commodityFetchWorkers, progressFn)
 }
 
-func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByCode func(string) price.PriceProvider, workers int) (SyncCommoditiesResult, error) {
+func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByCode func(string) price.PriceProvider, workers int, progressFn func(completed, total int)) (SyncCommoditiesResult, error) {
 	if workers <= 0 {
 		workers = 1
 	}
@@ -223,7 +223,13 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 		close(results)
 	}()
 
+	total := len(commodities)
+	itemsCompleted := 0
 	for fetched := range results {
+		itemsCompleted++
+		if progressFn != nil {
+			progressFn(itemsCompleted, total)
+		}
 		commodity := fetched.commodity
 		name := commodity.Name
 		prices := fetched.prices

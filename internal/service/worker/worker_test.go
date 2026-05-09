@@ -336,7 +336,7 @@ func TestRegistry_ConcurrentSubmitAndGet(t *testing.T) {
 // returns a non-empty job ID.
 func TestSubmitDetailed_ReturnsNonEmptyID(t *testing.T) {
 	r := worker.NewRegistry()
-	id := r.SubmitDetailed(context.Background(), nil, func(_ context.Context) ([]string, error) {
+	id := r.SubmitDetailed(context.Background(), nil, func(_ context.Context, _ func(int, int)) ([]string, error) {
 		return nil, nil
 	})
 	assert.NotEmpty(t, id, "SubmitDetailed must return a non-empty job ID")
@@ -347,7 +347,7 @@ func TestSubmitDetailed_ReturnsNonEmptyID(t *testing.T) {
 // Details slice.
 func TestSubmitDetailed_Completed_NoDetails(t *testing.T) {
 	r := worker.NewRegistry()
-	id := r.SubmitDetailed(context.Background(), nil, func(_ context.Context) ([]string, error) {
+	id := r.SubmitDetailed(context.Background(), nil, func(_ context.Context, _ func(int, int)) ([]string, error) {
 		return nil, nil
 	})
 
@@ -370,7 +370,7 @@ func TestSubmitDetailed_Completed_WithDetails(t *testing.T) {
 	r := worker.NewRegistry()
 	want := []string{"commodity A failed", "commodity B failed"}
 
-	id := r.SubmitDetailed(context.Background(), nil, func(_ context.Context) ([]string, error) {
+	id := r.SubmitDetailed(context.Background(), nil, func(_ context.Context, _ func(int, int)) ([]string, error) {
 		return want, nil
 	})
 
@@ -394,7 +394,7 @@ func TestSubmitDetailed_Failed_WithDetails(t *testing.T) {
 	sentinelErr := errors.New("sync failed")
 	want := []string{"XIRR did not converge for account: Assets:Equity:AAPL"}
 
-	id := r.SubmitDetailed(context.Background(), nil, func(_ context.Context) ([]string, error) {
+	id := r.SubmitDetailed(context.Background(), nil, func(_ context.Context, _ func(int, int)) ([]string, error) {
 		return want, sentinelErr
 	})
 
@@ -408,4 +408,45 @@ func TestSubmitDetailed_Failed_WithDetails(t *testing.T) {
 	assert.Equal(t, worker.StatusFailed, job.Status)
 	assert.Equal(t, sentinelErr.Error(), job.Error)
 	assert.Equal(t, want, job.Details, "Details must be stored even when the job fails")
+}
+
+// TestSubmitDetailed_Progress verifies that the progress callback passed to the
+// job function updates ItemsCompleted and TotalItems on the Job while it runs,
+// and that the final values are preserved after the job completes.
+func TestSubmitDetailed_Progress(t *testing.T) {
+	r := worker.NewRegistry()
+
+	ready := make(chan struct{})
+	done := make(chan struct{})
+
+	id := r.SubmitDetailed(context.Background(), nil, func(_ context.Context, progress func(int, int)) ([]string, error) {
+		progress(1, 3)
+		close(ready) // signal that progress has been reported
+		<-done       // wait before finishing
+		progress(3, 3)
+		return nil, nil
+	})
+
+	// Wait until the first progress update is reported.
+	select {
+	case <-ready:
+	case <-time.After(2 * time.Second):
+		t.Fatal("job never reported first progress update")
+	}
+
+	job, ok := r.Get(id)
+	require.True(t, ok)
+	assert.Equal(t, 1, job.ItemsCompleted, "ItemsCompleted must reflect the reported value")
+	assert.Equal(t, 3, job.TotalItems, "TotalItems must reflect the reported value")
+
+	close(done) // allow the job to finish
+
+	assert.Eventually(t, func() bool {
+		j, _ := r.Get(id)
+		return j.Status == worker.StatusCompleted
+	}, 2*time.Second, 5*time.Millisecond, "job must reach Completed")
+
+	job, _ = r.Get(id)
+	assert.Equal(t, 3, job.ItemsCompleted, "ItemsCompleted must be final value after completion")
+	assert.Equal(t, 3, job.TotalItems, "TotalItems must be final value after completion")
 }

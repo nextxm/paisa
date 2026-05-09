@@ -18,7 +18,12 @@ type SyncRequest struct {
 // response payload together with a (possibly empty) slice of per-step
 // diagnostic messages that should be surfaced to operators via the job
 // Details field.
-func Sync(db *gorm.DB, request SyncRequest) (gin.H, []string) {
+//
+// progressFn, when non-nil, is forwarded to [model.SyncCommodities] so that
+// the caller receives incremental "X of Y commodities" updates while the
+// price-scraper stage is in progress.  Pass nil when progress reporting is
+// not needed (e.g. the one-shot /api/init bootstrap).
+func Sync(db *gorm.DB, request SyncRequest, progressFn func(completed, total int)) (gin.H, []string) {
 	cache.Clear()
 
 	var journalResult model.SyncResult
@@ -37,7 +42,7 @@ func Sync(db *gorm.DB, request SyncRequest) (gin.H, []string) {
 	}
 
 	if request.Prices {
-		commoditiesResult, err := model.SyncCommodities(db)
+		commoditiesResult, err := model.SyncCommodities(db, progressFn)
 		// Accumulate per-commodity failures into details regardless of whether
 		// the overall sync succeeded or failed.
 		details = append(details, commoditiesResult.Failures...)
