@@ -52,34 +52,6 @@ func defaultQuoteCommodity() string {
 
 func UpsertAllByTypeNameAndID(db *gorm.DB, commodityType config.CommodityType, commodityName string, commodityID string, prices []*Price) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		// Build the complete set of names and IDs to delete.  Providers may
-		// return companion entries (e.g., exchange-rate rows) alongside the
-		// main commodity rows; including them here ensures stale companion
-		// rows are removed on each resync rather than accumulating.
-		nameSet := map[string]struct{}{commodityName: {}}
-		idSet := map[string]struct{}{commodityID: {}}
-		for _, p := range prices {
-			if p.CommodityName != "" {
-				nameSet[p.CommodityName] = struct{}{}
-			}
-			if p.CommodityID != "" {
-				idSet[p.CommodityID] = struct{}{}
-			}
-		}
-		names := make([]string, 0, len(nameSet))
-		for n := range nameSet {
-			names = append(names, n)
-		}
-		ids := make([]string, 0, len(idSet))
-		for id := range idSet {
-			ids = append(ids, id)
-		}
-
-		err := tx.Delete(&Price{}, "commodity_type = ? and (commodity_name IN ? or commodity_id IN ?)", commodityType, names, ids).Error
-		if err != nil {
-			return err
-		}
-
 		dc := defaultQuoteCommodity()
 		for _, price := range deduplicatePricePointers(prices) {
 			if price.QuoteCommodity == "" {
@@ -96,6 +68,25 @@ func UpsertAllByTypeNameAndID(db *gorm.DB, commodityType config.CommodityType, c
 
 		return nil
 	})
+}
+
+// FilterSince returns only the prices whose date falls on or after the
+// start-of-day (UTC) of since.  When since is the zero time all prices are
+// returned unchanged, so callers may pass a zero value to disable filtering.
+func FilterSince(prices []*Price, since time.Time) []*Price {
+	if since.IsZero() {
+		return prices
+	}
+	sinceDay := since.UTC().Truncate(24 * time.Hour)
+	out := make([]*Price, 0, len(prices))
+	for _, p := range prices {
+		// !Before is equivalent to (After || Equal): include prices on sinceDay
+		// itself as well as any later date.
+		if !p.Date.UTC().Before(sinceDay) {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 // deduplicatePricePointers returns a new slice with only the last price seen

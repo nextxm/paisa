@@ -210,6 +210,10 @@ func (p *YahooPriceProvider) AutoComplete(db *gorm.DB, field string, filter map[
 func (p *YahooPriceProvider) ClearCache(db *gorm.DB) {
 }
 
-func (p *YahooPriceProvider) GetPrices(code string, commodityName string) ([]*price.Price, error) {
-	return GetHistory(code, commodityName)
+func (p *YahooPriceProvider) GetPrices(code string, commodityName string, since time.Time) ([]*price.Price, error) {
+	prices, err := GetHistory(code, commodityName)
+	if err != nil {
+		return nil, err
+	}
+	return price.FilterSince(prices, since), nil
 }
