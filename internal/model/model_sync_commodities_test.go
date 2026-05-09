@@ -51,6 +51,10 @@ func (p *trackingPriceProvider) Description() string {
 	return "tracking provider for sync concurrency tests"
 }
 
+func (p *trackingPriceProvider) RateLimit() price.ProviderRateLimit {
+	return price.ProviderRateLimit{MaxConcurrentRequests: 5}
+}
+
 func (p *trackingPriceProvider) AutoCompleteFields() []price.AutoCompleteField {
 	return nil
 }
@@ -146,7 +150,10 @@ func TestSyncCommodities_UsesBoundedConcurrentFetching(t *testing.T) {
 	assert.Empty(t, result.Failures)
 
 	assert.Greater(t, provider.max.Load(), int64(1), "expected concurrent fetches")
-	assert.LessOrEqual(t, provider.max.Load(), int64(5), "must not exceed worker limit")
+	// Each pair of commodities maps to a distinct provider code (6 groups total).
+	// syncCommodities runs one provider lane per code, so the observed peak
+	// concurrency cannot exceed the number of provider lanes.
+	assert.LessOrEqual(t, provider.max.Load(), int64(6), "must not exceed one in-flight batch per provider lane")
 	assert.Zero(t, provider.singleCalls.Load(), "batched provider groups should not fall back to single fetches")
 	assert.Equal(t, int64(6), provider.batchCalls.Load(), "expected one batch fetch per provider group")
 	assert.ElementsMatch(t, []int{2, 2, 2, 2, 2, 2}, provider.batchSizes)
@@ -166,6 +173,9 @@ type sincePriceProvider struct {
 func (p *sincePriceProvider) Code() string        { return "since-stub" }
 func (p *sincePriceProvider) Label() string       { return "Since Stub" }
 func (p *sincePriceProvider) Description() string { return "" }
+func (p *sincePriceProvider) RateLimit() price.ProviderRateLimit {
+	return price.ProviderRateLimit{MaxConcurrentRequests: 1}
+}
 func (p *sincePriceProvider) AutoCompleteFields() []price.AutoCompleteField {
 	return []price.AutoCompleteField{}
 }
@@ -338,4 +348,116 @@ func TestSyncCommodities_ReportsProgress(t *testing.T) {
 		assert.Equal(t, len(commodities), c.total, "total must be constant across all progress calls")
 		assert.Greater(t, c.completed, 0, "completed must always be positive")
 	}
+}
+
+type timedProvider struct {
+	code       string
+	limit      price.ProviderRateLimit
+	delay      time.Duration
+	startTimes []time.Time
+	mu         sync.Mutex
+}
+
+func (p *timedProvider) Code() string  { return p.code }
+func (p *timedProvider) Label() string { return p.code }
+func (p *timedProvider) Description() string {
+	return p.code
+}
+func (p *timedProvider) RateLimit() price.ProviderRateLimit { return p.limit }
+func (p *timedProvider) AutoCompleteFields() []price.AutoCompleteField {
+	return []price.AutoCompleteField{}
+}
+func (p *timedProvider) AutoComplete(_ *gorm.DB, _ string, _ map[string]string) []price.AutoCompleteItem {
+	return []price.AutoCompleteItem{}
+}
+func (p *timedProvider) ClearCache(_ *gorm.DB) {}
+func (p *timedProvider) GetPrices(code string, commodityName string, _ time.Time) ([]*price.Price, error) {
+	p.mu.Lock()
+	p.startTimes = append(p.startTimes, time.Now())
+	p.mu.Unlock()
+
+	if p.delay > 0 {
+		time.Sleep(p.delay)
+	}
+
+	return []*price.Price{
+		{
+			CommodityType:  config.Stock,
+			CommodityID:    code,
+			CommodityName:  commodityName,
+			Date:           time.Now().UTC(),
+			QuoteCommodity: "INR",
+			Value:          decimal.NewFromInt(1),
+		},
+	}, nil
+}
+func (p *timedProvider) GetPricesBatch(codes []string, commodityNames []string) (map[string][]*price.Price, error) {
+	return price.GetPricesBatchSequentially(p, codes, commodityNames)
+}
+
+func (p *timedProvider) starts() []time.Time {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	out := make([]time.Time, len(p.startTimes))
+	copy(out, p.startTimes)
+	return out
+}
+
+func TestSyncCommodities_ProviderAwareThrottlingDoesNotBlockFastProviders(t *testing.T) {
+	db := openSyncCommoditiesTestDB(t)
+
+	slowProvider := &timedProvider{
+		code:  "slow-provider",
+		delay: 15 * time.Millisecond,
+		limit: price.ProviderRateLimit{
+			MaxConcurrentRequests:      1,
+			MinIntervalBetweenRequests: 120 * time.Millisecond,
+		},
+	}
+	fastProvider := &timedProvider{
+		code:  "fast-provider",
+		delay: 5 * time.Millisecond,
+		limit: price.ProviderRateLimit{
+			MaxConcurrentRequests: 1,
+		},
+	}
+
+	commodities := []config.Commodity{
+		{Name: "Slow A", Type: config.Stock, Price: config.Price{Provider: slowProvider.code, Code: "SLOW-A"}},
+		{Name: "Slow B", Type: config.Stock, Price: config.Price{Provider: slowProvider.code, Code: "SLOW-B"}},
+		{Name: "Fast A", Type: config.Stock, Price: config.Price{Provider: fastProvider.code, Code: "FAST-A"}},
+	}
+
+	getProvider := func(code string) price.PriceProvider {
+		switch code {
+		case slowProvider.code:
+			return slowProvider
+		case fastProvider.code:
+			return fastProvider
+		default:
+			t.Fatalf("unexpected provider code: %s", code)
+			return nil
+		}
+	}
+
+	result, err := syncCommodities(db, commodities, getProvider, 1, false, nil)
+	require.NoError(t, err)
+	assert.Empty(t, result.Failures)
+
+	slowStarts := slowProvider.starts()
+	fastStarts := fastProvider.starts()
+	require.Len(t, slowStarts, 2, "slow provider should fetch each commodity separately under throttling")
+	require.Len(t, fastStarts, 1, "fast provider should fetch once")
+
+	assert.GreaterOrEqual(
+		t,
+		slowStarts[1].Sub(slowStarts[0]),
+		slowProvider.limit.MinIntervalBetweenRequests-15*time.Millisecond,
+		"slow provider requests must respect configured pacing",
+	)
+	assert.True(
+		t,
+		fastStarts[0].Before(slowStarts[1]),
+		"fast provider should be scheduled without waiting for throttled provider's next slot",
+	)
 }

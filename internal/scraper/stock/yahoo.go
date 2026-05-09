@@ -197,6 +197,10 @@ func (p *YahooPriceProvider) Description() string {
 	return "Supports a large set of stocks, ETFs, mutual funds, currencies, bonds, commodities, and cryptocurrencies. Prices are stored in their native currency; exchange rates are saved separately and used for automatic conversion to the default currency."
 }
 
+func (p *YahooPriceProvider) RateLimit() price.ProviderRateLimit {
+	return price.ProviderRateLimit{MaxConcurrentRequests: 2}
+}
+
 func (p *YahooPriceProvider) AutoCompleteFields() []price.AutoCompleteField {
 	return []price.AutoCompleteField{
 		{Label: "Ticker", ID: "ticker", Help: "Stock ticker symbol, can be located on Yahoo's website. For example, AAPL is the ticker symbol for Apple Inc. (AAPL)", InputType: "text"},
