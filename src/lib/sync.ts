@@ -124,7 +124,14 @@ export function startPolling(
       }
 
       setTimeout(poll, intervalMs);
-    } catch (_err) {
+    } catch (err: any) {
+      if (err.status === 404) {
+        jobs.updateById(jobId, {
+          status: "failed",
+          error: "Job not found on server (it may have expired or the server restarted)"
+        });
+        return;
+      }
       consecutiveErrors++;
       if (consecutiveErrors >= maxErrors) {
         return;

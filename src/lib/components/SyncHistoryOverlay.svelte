@@ -45,10 +45,10 @@
                     </span>
                     <span>&nbsp;{job.status}</span>
                   </span>
-                  <span class="has-text-grey is-size-7" title={job.id}>
-                    #{job.id.slice(0, 8)}
+                  <span class="has-text-grey is-size-7" title={job?.id}>
+                    #{job?.id?.slice(0, 8) ?? "unknown"}
                   </span>
-                  {#if job.metadata}
+                  {#if job?.metadata}
                     <span class="has-text-weight-semibold is-size-7 ml-2">
                       {#if job.metadata.journal}Journal{/if}
                       {#if job.metadata.prices}{job.metadata.journal ? " + " : ""}Prices{/if}

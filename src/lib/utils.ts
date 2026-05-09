@@ -981,10 +981,26 @@ export async function ajax(
     loading.set(false);
   }
 
-  if (response.status == 401 && route != "/api/ping") {
-    logout();
-    await goto("/login");
-    error(401, "Unauthorized");
+  if (!response.ok) {
+    if (response.status == 401 && route != "/api/ping") {
+      logout();
+      await goto("/login");
+      error(401, "Unauthorized");
+    }
+    let errorObj;
+    try {
+      errorObj = JSON.parse(body);
+    } catch (e) {
+      errorObj = { error: { message: body || response.statusText } };
+    }
+    const message =
+      errorObj.error?.message ||
+      errorObj.message ||
+      `Request failed with status ${response.status}`;
+    const err = new Error(message) as any;
+    err.status = response.status;
+    err.body = errorObj;
+    throw err;
   }
 
   return JSON.parse(body, (key, value) => {
