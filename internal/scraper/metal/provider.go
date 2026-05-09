@@ -32,6 +32,10 @@ func (p *PriceProvider) Description() string {
 	return "Supports IBJA (India) gold and silver prices at various level of purity."
 }
 
+func (p *PriceProvider) RateLimit() price.ProviderRateLimit {
+	return price.ProviderRateLimit{MaxConcurrentRequests: 1}
+}
+
 func (p *PriceProvider) AutoCompleteFields() []price.AutoCompleteField {
 	return []price.AutoCompleteField{
 		{Label: "Metal", ID: "metal", Help: "Metal name with purity."},

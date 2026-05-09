@@ -58,6 +58,10 @@ func (p *PriceProvider) Description() string {
 		"(absolute, or relative to the config directory)."
 }
 
+func (p *PriceProvider) RateLimit() price.ProviderRateLimit {
+	return price.ProviderRateLimit{MaxConcurrentRequests: 4}
+}
+
 func (p *PriceProvider) AutoCompleteFields() []price.AutoCompleteField {
 	return []price.AutoCompleteField{
 		{

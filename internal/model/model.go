@@ -164,6 +164,47 @@ type commodityBatchFetchJob struct {
 	commodities  []config.Commodity
 }
 
+type providerRateLimiter struct {
+	mu          sync.Mutex
+	nextAllowed time.Time
+	minInterval time.Duration
+}
+
+func newProviderRateLimiter(minInterval time.Duration) *providerRateLimiter {
+	return &providerRateLimiter{minInterval: minInterval}
+}
+
+func (l *providerRateLimiter) WaitTurn() {
+	if l == nil || l.minInterval <= 0 {
+		return
+	}
+
+	for {
+		l.mu.Lock()
+		now := time.Now()
+		wait := l.nextAllowed.Sub(now)
+		if wait <= 0 {
+			l.nextAllowed = now.Add(l.minInterval)
+			l.mu.Unlock()
+			return
+		}
+		l.mu.Unlock()
+		time.Sleep(wait)
+	}
+}
+
+func normalizeProviderRateLimit(limit price.ProviderRateLimit, workers int) price.ProviderRateLimit {
+	maxConcurrency := limit.MaxConcurrentRequests
+	if maxConcurrency <= 0 {
+		maxConcurrency = 1
+	}
+	if workers > 0 && maxConcurrency > workers {
+		maxConcurrency = workers
+	}
+	limit.MaxConcurrentRequests = maxConcurrency
+	return limit
+}
+
 func SyncCommodities(db *gorm.DB, forcePrices bool, progressFn func(completed, total int)) (SyncCommoditiesResult, error) {
 	log.WithFields(log.Fields{"stage": "commodities"}).Info("Fetching commodities price history")
 	return syncCommodities(db, lo.Shuffle(commodity.All()), scraper.GetProviderByCode, commodityFetchWorkers, forcePrices, progressFn)
@@ -194,69 +235,98 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 	var result SyncCommoditiesResult
 	var errs []error
 	batchJobs := groupCommodityBatchJobs(commodities)
-	if workers > len(batchJobs) && len(batchJobs) > 0 {
-		workers = len(batchJobs)
-	}
-
-	jobs := make(chan commodityBatchFetchJob)
 	results := make(chan commodityPriceFetchResult, len(commodities))
 	var wg sync.WaitGroup
+	jobsByProvider := make(map[string][]commodityBatchFetchJob, len(batchJobs))
+	for _, job := range batchJobs {
+		jobsByProvider[job.providerCode] = append(jobsByProvider[job.providerCode], job)
+	}
 
-	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for job := range jobs {
-				provider := getProviderByCode(job.providerCode)
-				if len(job.commodities) == 1 {
-					commodity := job.commodities[0]
-					name := commodity.Name
-					// Keep the single-commodity path on GetPrices so providers that
-					// already support incremental since filtering retain that
-					// optimisation when batching offers no benefit.
-					log.WithFields(log.Fields{"stage": "commodities", "commodity": name}).Info("Fetching commodity")
-					prices, err := provider.GetPrices(commodity.Price.Code, name, since)
-					results <- commodityPriceFetchResult{
-						commodity: commodity,
-						prices:    prices,
-						err:       err,
+	for providerCode, providerJobs := range jobsByProvider {
+		provider := getProviderByCode(providerCode)
+		limit := normalizeProviderRateLimit(provider.RateLimit(), workers)
+		limiter := newProviderRateLimiter(limit.MinIntervalBetweenRequests)
+
+		jobs := make(chan commodityBatchFetchJob)
+		providerWorkers := limit.MaxConcurrentRequests
+		if providerWorkers > len(providerJobs) {
+			providerWorkers = len(providerJobs)
+		}
+
+		for i := 0; i < providerWorkers; i++ {
+			wg.Add(1)
+			go func(providerCode string, provider price.PriceProvider, limiter *providerRateLimiter, limit price.ProviderRateLimit) {
+				defer wg.Done()
+				for job := range jobs {
+					// For providers with strict pacing, fetch per commodity so the
+					// throttle applies to every outbound request instead of one large
+					// provider-local loop inside GetPricesBatchSequentially.
+					if limit.MinIntervalBetweenRequests > 0 && len(job.commodities) > 1 {
+						for _, commodity := range job.commodities {
+							limiter.WaitTurn()
+							name := commodity.Name
+							log.WithFields(log.Fields{"stage": "commodities", "commodity": name, "provider": providerCode}).
+								Info("Fetching commodity (throttled)")
+							prices, err := provider.GetPrices(commodity.Price.Code, name, since)
+							results <- commodityPriceFetchResult{
+								commodity: commodity,
+								prices:    prices,
+								err:       err,
+							}
+						}
+						continue
 					}
-					continue
-				}
 
-				codes := make([]string, len(job.commodities))
-				names := make([]string, len(job.commodities))
-				for i, commodity := range job.commodities {
-					codes[i] = commodity.Price.Code
-					names[i] = commodity.Name
-				}
+					if len(job.commodities) == 1 {
+						commodity := job.commodities[0]
+						name := commodity.Name
+						limiter.WaitTurn()
+						log.WithFields(log.Fields{"stage": "commodities", "commodity": name, "provider": providerCode}).
+							Info("Fetching commodity")
+						prices, err := provider.GetPrices(commodity.Price.Code, name, since)
+						results <- commodityPriceFetchResult{
+							commodity: commodity,
+							prices:    prices,
+							err:       err,
+						}
+						continue
+					}
 
-				log.WithFields(log.Fields{"stage": "commodities", "provider": job.providerCode, "count": len(job.commodities)}).
-					Info("Fetching commodity batch")
-				pricesByCode, err := provider.GetPricesBatch(codes, names)
-				if err != nil {
+					codes := make([]string, len(job.commodities))
+					names := make([]string, len(job.commodities))
+					for i, commodity := range job.commodities {
+						codes[i] = commodity.Price.Code
+						names[i] = commodity.Name
+					}
+
+					limiter.WaitTurn()
+					log.WithFields(log.Fields{"stage": "commodities", "provider": providerCode, "count": len(job.commodities)}).
+						Info("Fetching commodity batch")
+					pricesByCode, err := provider.GetPricesBatch(codes, names)
+					if err != nil {
+						for _, commodity := range job.commodities {
+							results <- commodityPriceFetchResult{
+								commodity: commodity,
+								err:       err,
+							}
+						}
+						continue
+					}
 					for _, commodity := range job.commodities {
 						results <- commodityPriceFetchResult{
 							commodity: commodity,
-							err:       err,
+							prices:    price.FilterSince(pricesByCode[commodity.Price.Code], since),
 						}
 					}
-					continue
 				}
-				for _, commodity := range job.commodities {
-					results <- commodityPriceFetchResult{
-						commodity: commodity,
-						prices:    price.FilterSince(pricesByCode[commodity.Price.Code], since),
-					}
-				}
-			}
-		}()
-	}
+			}(providerCode, provider, limiter, limit)
+		}
 
-	for _, job := range batchJobs {
-		jobs <- job
+		for _, providerJob := range providerJobs {
+			jobs <- providerJob
+		}
+		close(jobs)
 	}
-	close(jobs)
 
 	go func() {
 		wg.Wait()

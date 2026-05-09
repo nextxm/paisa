@@ -35,6 +35,10 @@
 
 #### Performance
 
+- **Provider-aware price sync throttling** — `SyncCommodities` now applies per-provider rate-limit metadata to schedule provider fetches independently, so strict sources (like Alpha Vantage) are paced without slowing faster providers.
+  - `PriceProvider` now exposes `RateLimit()` metadata (`max concurrent requests` + `min interval between requests`).
+  - Commodity sync uses provider-specific worker lanes and per-provider throttling gates; throttled providers fetch per-commodity with enforced spacing while non-throttled providers continue using batch fetches.
+
 - **Provider-level batch price sync orchestration** — `syncCommodities` now groups configured commodities by price provider and dispatches grouped fetches through a new `PriceProvider.GetPricesBatch(...)` contract before processing per-commodity results.
   - Existing single-code providers preserve behaviour through a shared sequential fallback helper, while provider implementations can now override batching without changing sync orchestration.
   - Single-commodity provider groups still use `GetPrices(..., since)` so incremental price syncs continue to pass the stored `last_price_sync` timestamp unchanged.

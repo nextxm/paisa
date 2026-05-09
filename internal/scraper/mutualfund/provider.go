@@ -27,6 +27,10 @@ func (p *PriceProvider) Description() string {
 	return "Supports all mutual funds in India."
 }
 
+func (p *PriceProvider) RateLimit() price.ProviderRateLimit {
+	return price.ProviderRateLimit{MaxConcurrentRequests: 1}
+}
+
 func (p *PriceProvider) AutoCompleteFields() []price.AutoCompleteField {
 	return []price.AutoCompleteField{
 		{Label: "AMC", ID: "amc", Help: "Asset Management Company"},

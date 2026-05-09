@@ -7,6 +7,17 @@ import (
 	"gorm.io/gorm"
 )
 
+// ProviderRateLimit describes a provider's preferred request concurrency and
+// pacing so sync orchestration can avoid overloading strict APIs.
+type ProviderRateLimit struct {
+	// MaxConcurrentRequests is the maximum number of in-flight requests that
+	// should be made to this provider. Values <= 0 are treated as 1.
+	MaxConcurrentRequests int
+	// MinIntervalBetweenRequests is the minimum gap between request starts for a
+	// single provider. A zero value means no enforced delay.
+	MinIntervalBetweenRequests time.Duration
+}
+
 // AutoCompleteItem is a single suggestion returned by a provider's AutoComplete method.
 type AutoCompleteItem struct {
 	Label string `json:"label"`
@@ -53,6 +64,9 @@ type PriceProvider interface {
 	// Description returns a longer human-readable description of what this
 	// provider supports, shown as help text in the UI.
 	Description() string
+
+	// RateLimit describes how requests to this provider should be paced.
+	RateLimit() ProviderRateLimit
 
 	// AutoCompleteFields describes the configuration fields that the UI should
 	// render when the user selects this provider.  The returned slice must not

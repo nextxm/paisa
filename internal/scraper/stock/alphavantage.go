@@ -193,6 +193,14 @@ func (p *AlphaVantagePriceProvider) Description() string {
 	return "Supports 100,000+ stocks, ETFs, mutual funds. The stock price will be automatically converted to your default currency using the exchange rate."
 }
 
+func (p *AlphaVantagePriceProvider) RateLimit() price.ProviderRateLimit {
+	// Free tier limits are strict; pace requests conservatively.
+	return price.ProviderRateLimit{
+		MaxConcurrentRequests:      1,
+		MinIntervalBetweenRequests: 15 * time.Second,
+	}
+}
+
 func (p *AlphaVantagePriceProvider) AutoCompleteFields() []price.AutoCompleteField {
 	return []price.AutoCompleteField{
 		{Label: "Api Key", ID: "apikey", Help: "Alpha Vantage provides <a href='https://www.alphavantage.co/support/#api-key' target='_blank'>free api key</a> with 25 requests per day limit.", InputType: "text"},
