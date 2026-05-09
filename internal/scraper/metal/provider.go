@@ -52,7 +52,7 @@ func (p *PriceProvider) AutoComplete(db *gorm.DB, field string, filter map[strin
 func (p *PriceProvider) ClearCache(db *gorm.DB) {
 }
 
-func (p *PriceProvider) GetPrices(code string, commodityName string) ([]*price.Price, error) {
+func (p *PriceProvider) GetPrices(code string, commodityName string, since time.Time) ([]*price.Price, error) {
 	log.Info("Fetching Metal price history from Purified Bytes")
 	url := fmt.Sprintf("https://india.finbodhi.com/api/metal/%s/price.json", code)
 	resp, err := httpclient.Get(url)
@@ -91,5 +91,5 @@ func (p *PriceProvider) GetPrices(code string, commodityName string) ([]*price.P
 		price := price.Price{Date: date, CommodityType: config.Metal, CommodityID: code, CommodityName: commodityName, Value: data.Close.Div(decimal.NewFromInt(10)), QuoteCommodity: "INR"}
 		prices = append(prices, &price)
 	}
-	return prices, nil
+	return price.FilterSince(prices, since), nil
 }

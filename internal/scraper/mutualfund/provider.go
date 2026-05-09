@@ -1,6 +1,8 @@
 package mutualfund
 
 import (
+	"time"
+
 	"github.com/ananthakumaran/paisa/internal/model/mutualfund/scheme"
 	"github.com/ananthakumaran/paisa/internal/model/price"
 	log "github.com/sirupsen/logrus"
@@ -58,6 +60,10 @@ func (p *PriceProvider) ClearCache(db *gorm.DB) {
 	db.Exec("DELETE FROM schemes")
 }
 
-func (p *PriceProvider) GetPrices(code string, commodityName string) ([]*price.Price, error) {
-	return GetNav(code, commodityName)
+func (p *PriceProvider) GetPrices(code string, commodityName string, since time.Time) ([]*price.Price, error) {
+	prices, err := GetNav(code, commodityName)
+	if err != nil {
+		return nil, err
+	}
+	return price.FilterSince(prices, since), nil
 }
