@@ -6,6 +6,12 @@
 
 - **Year-over-Year "Until year" selector** — The Year-over-Year analysis page now includes an "Until year" dropdown alongside "Years to compare". Users can select an end year (e.g. 2025) so the comparison covers the N years up to and including that year (e.g. last 3 years until 2025 = 2023, 2024, 2025). Defaults to the current year, preserving existing behaviour. The `/api/expense` and `/api/income` endpoints now accept an optional `until_year` query parameter.
 
+- **Incremental price sync (delta updates)** — `SyncCommodities` now performs incremental syncs instead of fetching and replacing the full price history on every run.
+  - `PriceProvider.GetPrices` accepts a new `since time.Time` parameter. Providers use it to filter returned prices to those on or after the start-of-day of `since`; a zero value means fetch the full history (first run).
+  - `syncCommodities` reads the `last_price_sync` metadata timestamp and forwards it to every provider as `since`, enabling incremental fetches after the first sync.
+  - `UpsertAllByTypeNameAndID` now uses a pure UPSERT (INSERT … ON CONFLICT DO UPDATE) without first deleting existing rows. Historical prices are preserved across syncs; the same date's value is updated in place if the provider returns a corrected figure.
+  - New `price.FilterSince(prices, since)` helper: filters a `[]*Price` slice to entries on or after the start-of-day of `since` (UTC). Zero `since` returns the slice unmodified.
+
 #### Documentation
 
 - **Reference documentation updated** — All new features from this release cycle are now documented in the reference section:

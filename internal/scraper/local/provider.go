@@ -76,9 +76,10 @@ func (p *PriceProvider) AutoComplete(_ *gorm.DB, _ string, _ map[string]string) 
 func (p *PriceProvider) ClearCache(_ *gorm.DB) {}
 
 // GetPrices reads the JSON file identified by code (a file path) and returns
-// all price entries found in it.  commodityName is used as a fallback when
-// the file itself does not specify a commodity name.
-func (p *PriceProvider) GetPrices(code string, commodityName string) ([]*price.Price, error) {
+// price entries found in it, filtered to those on or after since (start-of-day
+// UTC).  When since is zero all entries are returned.  commodityName is used
+// as a fallback when the file itself does not specify a commodity name.
+func (p *PriceProvider) GetPrices(code string, commodityName string, since time.Time) ([]*price.Price, error) {
 	path := resolveFilePath(code)
 	log.Infof("Loading local JSON prices from %s", path)
 
@@ -87,7 +88,11 @@ func (p *PriceProvider) GetPrices(code string, commodityName string) ([]*price.P
 		return nil, fmt.Errorf("local-json: cannot read file %q: %w", path, err)
 	}
 
-	return parseLocalPrices(data, commodityName)
+	prices, err := parseLocalPrices(data, commodityName)
+	if err != nil {
+		return nil, err
+	}
+	return price.FilterSince(prices, since), nil
 }
 
 // resolveFilePath makes path absolute relative to the config directory when it

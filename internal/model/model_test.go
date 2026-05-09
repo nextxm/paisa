@@ -273,14 +273,14 @@ func TestUpsertAllByTypeNameAndID_BackfillsEmptyQuote(t *testing.T) {
 	assert.Equal(t, "INR", stored.QuoteCommodity, "empty QuoteCommodity must be backfilled to default")
 }
 
-// TestUpsertAllByTypeNameAndID_CleansUpCompanionRows verifies that when a
-// provider returns companion entries (e.g., exchange-rate rows) alongside main
-// commodity prices, a subsequent upsert correctly removes stale companion rows
-// rather than allowing them to accumulate.
-func TestUpsertAllByTypeNameAndID_CleansUpCompanionRows(t *testing.T) {
+// TestUpsertAllByTypeNameAndID_PreservesHistoryAcrossSyncs verifies that
+// UpsertAllByTypeNameAndID uses a true UPSERT (no DELETE), so that prices from
+// a previous sync are preserved when a subsequent incremental sync adds new rows
+// for different dates.  This is the expected behavior for incremental price sync.
+func TestUpsertAllByTypeNameAndID_PreservesHistoryAcrossSyncs(t *testing.T) {
 	db := openTestDB(t)
 
-	// Simulate a first Yahoo sync for AAPL: stock prices in USD plus USD→INR exchange rates.
+	// Simulate a first sync for AAPL: one stock price and one exchange-rate entry.
 	firstSync := []*price.Price{
 		{
 			Date:           mustParseDate("2024-01-02"),
@@ -306,7 +306,8 @@ func TestUpsertAllByTypeNameAndID_CleansUpCompanionRows(t *testing.T) {
 	db.Model(&price.Price{}).Count(&count)
 	assert.Equal(t, int64(2), count, "first sync should insert 2 rows")
 
-	// Simulate a second sync; companion rows from the first sync must be replaced, not doubled.
+	// Simulate a second incremental sync returning prices for a newer date.
+	// History from the first sync (2024-01-02) must be preserved.
 	secondSync := []*price.Price{
 		{
 			Date:           mustParseDate("2024-01-03"),
@@ -328,18 +329,62 @@ func TestUpsertAllByTypeNameAndID_CleansUpCompanionRows(t *testing.T) {
 	}
 	require.NoError(t, price.UpsertAllByTypeNameAndID(db, config.Stock, "Apple", "AAPL", secondSync))
 
+	// With UPSERT-only semantics, both sync rows are preserved (4 total).
 	db.Model(&price.Price{}).Count(&count)
-	assert.Equal(t, int64(2), count, "second sync must replace first sync rows, not accumulate")
+	assert.Equal(t, int64(4), count, "incremental sync must preserve history – 4 rows across 2 dates")
 
-	// The exchange rate stored is the one from the second sync.
-	var exRate price.Price
-	require.NoError(t, db.Where("commodity_name = ? AND quote_commodity = ?", "USD", "INR").First(&exRate).Error)
-	assert.True(t, exRate.Value.Equal(decimal.NewFromFloat(83.5)), "exchange rate must reflect the latest sync")
-
-	// Confirm exactly one USD→INR row exists (cleanup worked, no accumulation).
+	// Both exchange-rate rows must be present (one per date).
 	var exRateCount int64
 	db.Model(&price.Price{}).Where("commodity_name = ? AND quote_commodity = ?", "USD", "INR").Count(&exRateCount)
-	assert.Equal(t, int64(1), exRateCount, "must be exactly one exchange-rate row after resync")
+	assert.Equal(t, int64(2), exRateCount, "one exchange-rate row per sync date must be preserved")
+
+	// Verify the newer exchange rate is present.
+	var exRate price.Price
+	require.NoError(t, db.Where("commodity_name = ? AND quote_commodity = ? AND date = ?", "USD", "INR", mustParseDate("2024-01-03")).First(&exRate).Error)
+	assert.True(t, exRate.Value.Equal(decimal.NewFromFloat(83.5)), "exchange rate for 2024-01-03 must match the second sync value")
+}
+
+// TestUpsertAllByTypeNameAndID_UpdatesSameDateRow verifies that when a sync
+// provides a price for a date that already exists in the DB, the existing row
+// is updated in place (UPSERT ON CONFLICT DO UPDATE) rather than duplicated.
+func TestUpsertAllByTypeNameAndID_UpdatesSameDateRow(t *testing.T) {
+	db := openTestDB(t)
+
+	initial := []*price.Price{
+		{
+			Date:           mustParseDate("2024-01-02"),
+			CommodityType:  config.Stock,
+			CommodityID:    "AAPL",
+			CommodityName:  "Apple",
+			Value:          decimal.NewFromFloat(185.0),
+			QuoteCommodity: "USD",
+		},
+	}
+	require.NoError(t, price.UpsertAllByTypeNameAndID(db, config.Stock, "Apple", "AAPL", initial))
+
+	var count int64
+	db.Model(&price.Price{}).Count(&count)
+	assert.Equal(t, int64(1), count)
+
+	// Re-sync the same date with a corrected value.
+	corrected := []*price.Price{
+		{
+			Date:           mustParseDate("2024-01-02"),
+			CommodityType:  config.Stock,
+			CommodityID:    "AAPL",
+			CommodityName:  "Apple",
+			Value:          decimal.NewFromFloat(185.5),
+			QuoteCommodity: "USD",
+		},
+	}
+	require.NoError(t, price.UpsertAllByTypeNameAndID(db, config.Stock, "Apple", "AAPL", corrected))
+
+	db.Model(&price.Price{}).Count(&count)
+	assert.Equal(t, int64(1), count, "re-syncing the same date must update in place, not duplicate")
+
+	var stored price.Price
+	require.NoError(t, db.Where("commodity_name = ?", "Apple").First(&stored).Error)
+	assert.True(t, stored.Value.Equal(decimal.NewFromFloat(185.5)), "value must reflect the corrected price")
 }
 
 // TestSyncResult_DefaultValues verifies that a zero-value SyncResult
@@ -488,4 +533,29 @@ func TestSyncJournal_AccountBalancesRefreshed(t *testing.T) {
 	balancesAfterRollback, err := accountbalance.All(db)
 	require.NoError(t, err)
 	assert.Len(t, balancesAfterRollback, 2, "account_balances must be unchanged after rollback")
+}
+
+// TestFilterSince verifies that price.FilterSince returns only prices on or
+// after the start-of-day of since, and returns all prices when since is zero.
+func TestFilterSince(t *testing.T) {
+	prices := []*price.Price{
+		{Date: mustParseDate("2024-01-01"), CommodityName: "A"},
+		{Date: mustParseDate("2024-01-10"), CommodityName: "B"},
+		{Date: mustParseDate("2024-01-20"), CommodityName: "C"},
+	}
+
+	// Zero since → all prices returned.
+	result := price.FilterSince(prices, time.Time{})
+	assert.Len(t, result, 3, "zero since must return all prices")
+
+	// since = 2024-01-10 at mid-day → prices on or after 2024-01-10.
+	since := time.Date(2024, 1, 10, 14, 30, 0, 0, time.UTC)
+	result = price.FilterSince(prices, since)
+	assert.Len(t, result, 2, "since 2024-01-10 must include prices on and after that date")
+	assert.Equal(t, "B", result[0].CommodityName)
+	assert.Equal(t, "C", result[1].CommodityName)
+
+	// since after all prices → empty slice.
+	result = price.FilterSince(prices, time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
+	assert.Empty(t, result, "since after all prices must return empty slice")
 }

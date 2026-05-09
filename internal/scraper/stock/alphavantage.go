@@ -225,6 +225,10 @@ func (p *AlphaVantagePriceProvider) AutoComplete(db *gorm.DB, field string, filt
 func (p *AlphaVantagePriceProvider) ClearCache(db *gorm.DB) {
 }
 
-func (p *AlphaVantagePriceProvider) GetPrices(code string, commodityName string) ([]*price.Price, error) {
-	return getHistory(code, commodityName)
+func (p *AlphaVantagePriceProvider) GetPrices(code string, commodityName string, since time.Time) ([]*price.Price, error) {
+	prices, err := getHistory(code, commodityName)
+	if err != nil {
+		return nil, err
+	}
+	return price.FilterSince(prices, since), nil
 }

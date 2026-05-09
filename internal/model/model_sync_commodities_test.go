@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/ananthakumaran/paisa/internal/model/price"
 	"github.com/glebarez/sqlite"
@@ -56,7 +57,7 @@ func (p *trackingPriceProvider) AutoComplete(*gorm.DB, string, map[string]string
 func (p *trackingPriceProvider) ClearCache(*gorm.DB) {
 }
 
-func (p *trackingPriceProvider) GetPrices(code string, commodityName string) ([]*price.Price, error) {
+func (p *trackingPriceProvider) GetPrices(code string, commodityName string, since time.Time) ([]*price.Price, error) {
 	current := p.current.Add(1)
 	for {
 		maxSeen := p.max.Load()
@@ -108,4 +109,135 @@ func TestSyncCommodities_UsesBoundedConcurrentFetching(t *testing.T) {
 	var count int64
 	require.NoError(t, db.Model(&price.Price{}).Count(&count).Error)
 	assert.Equal(t, int64(len(commodities)), count)
+}
+
+// sincePriceProvider is a stub PriceProvider that records the since argument
+// received during GetPrices so tests can assert its value.
+type sincePriceProvider struct {
+	receivedSince time.Time
+	prices        []*price.Price
+}
+
+func (p *sincePriceProvider) Code() string        { return "since-stub" }
+func (p *sincePriceProvider) Label() string       { return "Since Stub" }
+func (p *sincePriceProvider) Description() string { return "" }
+func (p *sincePriceProvider) AutoCompleteFields() []price.AutoCompleteField {
+	return []price.AutoCompleteField{}
+}
+func (p *sincePriceProvider) AutoComplete(_ *gorm.DB, _ string, _ map[string]string) []price.AutoCompleteItem {
+	return []price.AutoCompleteItem{}
+}
+func (p *sincePriceProvider) ClearCache(_ *gorm.DB) {}
+func (p *sincePriceProvider) GetPrices(_ string, _ string, since time.Time) ([]*price.Price, error) {
+	p.receivedSince = since
+	return p.prices, nil
+}
+
+// TestSyncCommodities_PassesSinceToProvider verifies that syncCommodities reads
+// the last_price_sync metadata value and forwards it as the since argument to
+// GetPrices.  When no metadata exists the zero time is passed (full sync).
+func TestSyncCommodities_PassesSinceToProvider(t *testing.T) {
+	db := openSyncCommoditiesTestDB(t)
+
+	stub := &sincePriceProvider{
+		prices: []*price.Price{
+			{
+				Date:           time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC),
+				CommodityType:  config.MutualFund,
+				CommodityID:    "FUND1",
+				CommodityName:  "TestFund",
+				Value:          decimal.NewFromFloat(100.0),
+				QuoteCommodity: "INR",
+			},
+		},
+	}
+
+	commodities := []config.Commodity{
+		{
+			Name: "TestFund",
+			Type: config.MutualFund,
+			Price: config.Price{
+				Provider: "since-stub",
+				Code:     "FUND1",
+			},
+		},
+	}
+	getProvider := func(_ string) price.PriceProvider { return stub }
+
+	// First call: no metadata → since must be zero (full history fetch).
+	_, err := syncCommodities(db, commodities, getProvider, 1)
+	require.NoError(t, err)
+	assert.True(t, stub.receivedSince.IsZero(), "since must be zero when no last_price_sync metadata exists")
+
+	// Store a last_price_sync timestamp.
+	lastSync := time.Date(2024, 5, 15, 10, 0, 0, 0, time.UTC)
+	require.NoError(t, metadata.Set(db, LastPriceSyncKey, lastSync.Format(time.RFC3339)))
+
+	// Second call: since must match the stored timestamp.
+	stub.receivedSince = time.Time{} // reset
+	_, err = syncCommodities(db, commodities, getProvider, 1)
+	require.NoError(t, err)
+	assert.Equal(t, lastSync.UTC().Truncate(time.Second), stub.receivedSince.UTC().Truncate(time.Second),
+		"since must match the last_price_sync metadata value")
+}
+
+// TestSyncCommodities_IncrementalUpsertPreservesHistory verifies that on an
+// incremental sync (where the provider returns only new prices), previously
+// stored prices are not deleted – they remain in the DB alongside the new rows.
+func TestSyncCommodities_IncrementalUpsertPreservesHistory(t *testing.T) {
+	db := openSyncCommoditiesTestDB(t)
+
+	// First full sync: provider returns two historical prices.
+	firstSyncPrices := []*price.Price{
+		{
+			Date:           time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			CommodityType:  config.Stock,
+			CommodityID:    "AAPL",
+			CommodityName:  "Apple",
+			Value:          decimal.NewFromFloat(180.0),
+			QuoteCommodity: "USD",
+		},
+		{
+			Date:           time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
+			CommodityType:  config.Stock,
+			CommodityID:    "AAPL",
+			CommodityName:  "Apple",
+			Value:          decimal.NewFromFloat(181.0),
+			QuoteCommodity: "USD",
+		},
+	}
+	stub := &sincePriceProvider{prices: firstSyncPrices}
+	commodities := []config.Commodity{
+		{
+			Name:  "Apple",
+			Type:  config.Stock,
+			Price: config.Price{Provider: "since-stub", Code: "AAPL"},
+		},
+	}
+	getProvider := func(_ string) price.PriceProvider { return stub }
+
+	_, err := syncCommodities(db, commodities, getProvider, 1)
+	require.NoError(t, err)
+
+	var count int64
+	db.Model(&price.Price{}).Count(&count)
+	assert.Equal(t, int64(2), count, "first full sync should persist 2 rows")
+
+	// Second incremental sync: provider returns only the newest price.
+	// The existing 2 rows must not be deleted.
+	stub.prices = []*price.Price{
+		{
+			Date:           time.Date(2024, 1, 3, 0, 0, 0, 0, time.UTC),
+			CommodityType:  config.Stock,
+			CommodityID:    "AAPL",
+			CommodityName:  "Apple",
+			Value:          decimal.NewFromFloat(182.0),
+			QuoteCommodity: "USD",
+		},
+	}
+	_, err = syncCommodities(db, commodities, getProvider, 1)
+	require.NoError(t, err)
+
+	db.Model(&price.Price{}).Count(&count)
+	assert.Equal(t, int64(3), count, "incremental sync must add new prices without removing historical rows")
 }

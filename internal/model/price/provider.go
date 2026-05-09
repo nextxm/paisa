@@ -1,6 +1,10 @@
 package price
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 // AutoCompleteItem is a single suggestion returned by a provider's AutoComplete method.
 type AutoCompleteItem struct {
@@ -63,9 +67,12 @@ type PriceProvider interface {
 	// every full sync so stale data is not reused across runs.
 	ClearCache(db *gorm.DB)
 
-	// GetPrices fetches the full price history for the commodity identified by
-	// code (provider-specific format) with the display name commodityName.
-	// Return (nil, err) on failure; return (empty-or-nil slice, nil) when
-	// there is no data available without an underlying error.
-	GetPrices(code string, commodityName string) ([]*Price, error)
+	// GetPrices fetches price history for the commodity identified by code
+	// (provider-specific format) with the display name commodityName.
+	// When since is non-zero, implementations should return only prices on or
+	// after since's start-of-day (UTC); a zero since means fetch the full
+	// history.  Return (nil, err) on failure; return (empty-or-nil slice, nil)
+	// when the provider is reachable but has no data for the requested code –
+	// this is not an error.  Implementations must never call log.Fatal.
+	GetPrices(code string, commodityName string, since time.Time) ([]*Price, error)
 }
