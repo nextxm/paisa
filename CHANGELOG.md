@@ -20,6 +20,8 @@
 
 #### Performance
 
+- **Parallel commodity price fetching in sync** — `SyncCommodities` now fetches price histories using a bounded worker pool (5 concurrent fetches) with goroutines and `sync.WaitGroup`, reducing end-to-end sync time when many commodities are configured while avoiding unbounded provider request fan-out.
+
 - **Materialized account balance summary table** — Introduces `account_balances` table (migration v7) that stores pre-computed per-`(account, commodity)` balance totals updated atomically on every journal sync.
   - `account_balance.RefreshFromPostings(tx, postings)` — computes sums in-memory from the already-loaded postings slice and atomically replaces the entire `account_balances` table within the sync transaction. Forecast postings are excluded.
   - `account_balance.ByAccount(db, account)` — O(1) index lookup for a single account's balance rows, replacing the previous O(N) full `postings` table scan.
