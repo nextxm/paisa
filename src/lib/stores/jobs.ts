@@ -15,6 +15,7 @@ export function createJobsStore() {
      * Use this when the API returns a complete Job object.
      */
     upsert(job: Job): void {
+      if (!job || !job.id) return;
       update((current) => ({ ...current, [job.id]: job }));
     },
 

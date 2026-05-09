@@ -1,11 +1,13 @@
 <script lang="ts">
   import ValueChange from "$lib/components/ValueChange.svelte";
+  import { sync, startPolling } from "$lib/sync";
   import { ajax, formatCurrency, type Price, type PriceFilters } from "$lib/utils";
   import { toast } from "bulma-toast";
   import _ from "lodash";
   import { onMount } from "svelte";
   import VirtualList from "svelte-tiny-virtual-list";
   import PriceExportModal from "$lib/components/PriceExportModal.svelte";
+  import { refresh } from "../../../../store";
 
   type HistoryMode = "latest" | "all";
 
@@ -83,6 +85,15 @@
       });
     }
     await Promise.all([fetchPrice(), loadFilterOptions()]);
+  }
+
+  async function forceRefreshPrices() {
+    const jobId = await sync({ prices: true, force_prices: true });
+    if (!jobId) return;
+
+    startPolling(jobId, async () => {
+      await Promise.all([refresh(), loadFilterOptions(), fetchPrice()]);
+    });
   }
 
   async function fetchPrice() {
@@ -170,6 +181,17 @@
                   <i class="fas fa-trash-can"></i>
                 </span>
                 <span>Clear Price Cache</span>
+              </button>
+            </p>
+            <p class="control">
+              <button
+                class="button is-small is-link invertable is-light"
+                onclick={(_e) => forceRefreshPrices()}
+              >
+                <span class="icon is-small">
+                  <i class="fas fa-rotate"></i>
+                </span>
+                <span>Force Refresh</span>
               </button>
             </p>
             <p class="control">

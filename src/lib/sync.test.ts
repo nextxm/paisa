@@ -264,6 +264,28 @@ describe("startPolling — error handling and retry", () => {
 
     expect(callCount).toBe(5);
   });
+
+  test("stops polling and marks job as failed on 404 error", async () => {
+    const fetchJob = mock(async (_id: string): Promise<Job> => {
+      const err = new Error("Not found") as any;
+      err.status = 404;
+      throw err;
+    });
+
+    // Seed the store with a running job so we can see it change to failed
+    jobs.upsert(makeJob({ id: "test-job-1", status: "running" }));
+
+    startPolling("test-job-1", undefined, { ...fastOptions, fetchJob });
+
+    await Bun.sleep(50);
+
+    const snap = jobs.snapshot();
+    expect(snap["test-job-1"].status).toBe("failed");
+    expect(snap["test-job-1"].error).toContain("Job not found on server");
+
+    // Should stop polling immediately (only 1 call)
+    expect(fetchJob).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("startPolling — failure toast deduplication", () => {

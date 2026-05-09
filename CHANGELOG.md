@@ -17,6 +17,7 @@
 - **Incremental price sync (delta updates)** — `SyncCommodities` now performs incremental syncs instead of fetching and replacing the full price history on every run.
   - `PriceProvider.GetPrices` accepts a new `since time.Time` parameter. Providers use it to filter returned prices to those on or after the start-of-day of `since`; a zero value means fetch the full history (first run).
   - `syncCommodities` reads the `last_price_sync` metadata timestamp and forwards it to every provider as `since`, enabling incremental fetches after the first sync.
+  - The sync API now accepts `force_prices: true` to bypass `last_price_sync` and fetch the full commodity price history on demand. The Prices page exposes this via a new **Force Refresh** action.
   - `UpsertAllByTypeNameAndID` now uses a pure UPSERT (INSERT … ON CONFLICT DO UPDATE) without first deleting existing rows. Historical prices are preserved across syncs; the same date's value is updated in place if the provider returns a corrected figure.
   - New `price.FilterSince(prices, since)` helper: filters a `[]*Price` slice to entries on or after the start-of-day of `since` (UTC). Zero `since` returns the slice unmodified.
 
