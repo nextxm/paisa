@@ -211,6 +211,9 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 				if len(job.commodities) == 1 {
 					commodity := job.commodities[0]
 					name := commodity.Name
+					// Keep the single-commodity path on GetPrices so providers that
+					// already support incremental since filtering retain that
+					// optimisation when batching offers no benefit.
 					log.WithFields(log.Fields{"stage": "commodities", "commodity": name}).Info("Fetching commodity")
 					prices, err := provider.GetPrices(commodity.Price.Code, name, since)
 					results <- commodityPriceFetchResult{
@@ -231,11 +234,19 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 				log.WithFields(log.Fields{"stage": "commodities", "provider": job.providerCode, "count": len(job.commodities)}).
 					Info("Fetching commodity batch")
 				pricesByCode, err := provider.GetPricesBatch(codes, names)
+				if err != nil {
+					for _, commodity := range job.commodities {
+						results <- commodityPriceFetchResult{
+							commodity: commodity,
+							err:       err,
+						}
+					}
+					continue
+				}
 				for _, commodity := range job.commodities {
 					results <- commodityPriceFetchResult{
 						commodity: commodity,
 						prices:    price.FilterSince(pricesByCode[commodity.Price.Code], since),
-						err:       err,
 					}
 				}
 			}

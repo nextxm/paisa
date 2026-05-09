@@ -127,6 +127,8 @@ func TestSyncCommodities_UsesBoundedConcurrentFetching(t *testing.T) {
 
 	commodities := make([]config.Commodity, 0, 12)
 	for i := 0; i < 12; i++ {
+		// Pair commodities by provider so syncCommodities has 6 provider-level
+		// batch jobs to schedule across the 5-worker pool.
 		commodities = append(commodities, config.Commodity{
 			Name: fmt.Sprintf("Commodity-%d", i),
 			Type: config.Stock,
