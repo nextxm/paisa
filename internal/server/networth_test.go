@@ -44,8 +44,8 @@ func TestComputeNetworthTimeline_WindowFunctionRunningTotals(t *testing.T) {
 			Payee:         "Broker",
 			Account:       "Income:CapitalGains:Checking",
 			Commodity:     "INR",
-			Amount:        decimal.NewFromInt(-200),
-			Quantity:      decimal.NewFromInt(-200),
+			Amount:        decimal.RequireFromString("-200.10"),
+			Quantity:      decimal.RequireFromString("-200.10"),
 		},
 		{
 			TransactionID: "tx-3",
@@ -53,8 +53,8 @@ func TestComputeNetworthTimeline_WindowFunctionRunningTotals(t *testing.T) {
 			Payee:         "Withdrawal",
 			Account:       "Assets:Checking",
 			Commodity:     "INR",
-			Amount:        decimal.NewFromInt(-100),
-			Quantity:      decimal.NewFromInt(-100),
+			Amount:        decimal.RequireFromString("-100.10"),
+			Quantity:      decimal.RequireFromString("-100.10"),
 		},
 		{
 			TransactionID: "tx-4",
@@ -88,10 +88,11 @@ func TestComputeNetworthTimeline_WindowFunctionRunningTotals(t *testing.T) {
 	// Day 5 should include interest as balance only (no investment increase).
 	day5 := timeline[4]
 	assert.True(t, decimal.NewFromInt(1000).Equal(day5.InvestmentAmount))
-	assert.True(t, decimal.NewFromInt(300).Equal(day5.WithdrawalAmount))
-	assert.True(t, decimal.NewFromInt(950).Equal(day5.BalanceAmount))
-	assert.True(t, decimal.NewFromInt(250).Equal(day5.GainAmount))
-	assert.True(t, decimal.NewFromInt(700).Equal(day5.NetInvestmentAmount))
+	assert.True(t, decimal.RequireFromString("300.20").Equal(day5.WithdrawalAmount))
+	assert.True(t, decimal.RequireFromString("949.90").Equal(day5.BalanceAmount))
+	assert.True(t, decimal.RequireFromString("250.10").Equal(day5.GainAmount))
+	assert.True(t, decimal.RequireFromString("699.80").Equal(day5.NetInvestmentAmount))
+	assert.Equal(t, "250.1", day5.GainAmount.String())
 
 	// Day 6 has no postings; running totals should carry forward.
 	day6 := timeline[5]

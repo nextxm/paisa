@@ -23,6 +23,14 @@ type Networth struct {
 	NetInvestmentAmount decimal.Decimal `json:"netInvestmentAmount"`
 }
 
+func normalizeWindowDecimal(value decimal.Decimal) decimal.Decimal {
+	rounded := value.Round(10)
+	if value.Sub(rounded).Abs().LessThan(decimal.NewFromFloat(1e-12)) {
+		return rounded
+	}
+	return value
+}
+
 func GetNetworth(db *gorm.DB, reportCurrency string) gin.H {
 	postings := query.Init(db).Like("Assets:%", "Income:CapitalGains:%", "Liabilities:%").UntilToday().All()
 
@@ -268,6 +276,12 @@ ORDER BY day, commodity
 `, ids, defaultCurrency, defaultCurrency, defaultCurrency, defaultCurrency).Scan(&rows)
 	if result.Error != nil {
 		return []Networth{}
+	}
+	for i := range rows {
+		rows[i].Investment = normalizeWindowDecimal(rows[i].Investment)
+		rows[i].Withdrawal = normalizeWindowDecimal(rows[i].Withdrawal)
+		rows[i].Balance = normalizeWindowDecimal(rows[i].Balance)
+		rows[i].BalanceUnits = normalizeWindowDecimal(rows[i].BalanceUnits)
 	}
 
 	accumulator := make(map[string]RunningSum)
