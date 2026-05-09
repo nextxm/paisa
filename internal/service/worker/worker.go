@@ -66,6 +66,12 @@ type Job struct {
 	// are each recorded as a separate entry rather than collapsed into a single
 	// top-level error string.  Present on both successful and failed jobs.
 	Details []string `json:"details,omitempty"`
+	// ItemsCompleted is the number of items processed so far.  Zero until the
+	// job reports its first progress update.
+	ItemsCompleted int `json:"items_completed,omitempty"`
+	// TotalItems is the total number of items to process.  Zero until the job
+	// reports its first progress update.
+	TotalItems int `json:"total_items,omitempty"`
 	// CreatedAt is the wall-clock time at which the job was submitted.
 	CreatedAt time.Time `json:"created_at"`
 	// StartedAt is the wall-clock time at which the job began executing; zero if still pending.
@@ -178,7 +184,12 @@ func (r *Registry) List() []Job {
 // addition to the top-level error so that fine-grained failures (e.g. a price
 // provider failing for one commodity out of many) are observable via the job
 // status API even when the overall job succeeded.
-type DetailedJobFn func(ctx context.Context) (details []string, err error)
+//
+// The progress argument is a thread-safe callback the function may call to
+// report incremental progress.  Each call sets ItemsCompleted and TotalItems
+// on the Job so pollers can display a "X of Y" indicator.  Callers that do
+// not report progress may ignore the argument.
+type DetailedJobFn func(ctx context.Context, progress func(completed, total int)) (details []string, err error)
 
 // SubmitDetailed enqueues fn as a new background job and returns the job ID.
 // It behaves identically to [Registry.Submit] except that fn returns a
@@ -221,7 +232,19 @@ func (r *Registry) runDetailed(ctx context.Context, job *Job, fn DetailedJobFn) 
 
 	log.WithField("job_id", job.ID).Info("worker: job started")
 
-	details, runErr := fn(ctx)
+	// progress is a thread-safe reporter that callers invoke to update the
+	// job's ItemsCompleted and TotalItems fields while the job is running.
+	// Updates are dropped once the job reaches a terminal state.
+	progress := func(completed, total int) {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		if !job.Status.IsTerminal() {
+			job.ItemsCompleted = completed
+			job.TotalItems = total
+		}
+	}
+
+	details, runErr := fn(ctx, progress)
 
 	finished := time.Now().UTC()
 

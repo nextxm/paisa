@@ -1,6 +1,6 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { isJobRunning } from "$lib/stores/jobs";
+  import { isJobRunning, runningJob } from "$lib/stores/jobs";
 </script>
 
 {#if $isJobRunning}
@@ -14,7 +14,13 @@
     <span class="icon is-small">
       <i class="fas fa-rotate fa-spin" aria-hidden="true"></i>
     </span>
-    <span class="syncing-label is-hidden-mobile">Syncing…</span>
+    {#if $runningJob?.total_items && $runningJob.total_items > 0}
+      <span class="syncing-label is-hidden-mobile">
+        {$runningJob.items_completed ?? 0}&nbsp;/&nbsp;{$runningJob.total_items}
+      </span>
+    {:else}
+      <span class="syncing-label is-hidden-mobile">Syncing…</span>
+    {/if}
   </span>
 {/if}
 

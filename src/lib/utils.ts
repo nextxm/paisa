@@ -549,6 +549,8 @@ export interface Job {
   status: JobStatus;
   error?: string;
   details?: string[];
+  items_completed?: number;
+  total_items?: number;
   created_at: string;
   started_at?: string;
   finished_at?: string;

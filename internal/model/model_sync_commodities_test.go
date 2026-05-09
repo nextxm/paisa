@@ -99,7 +99,7 @@ func TestSyncCommodities_UsesBoundedConcurrentFetching(t *testing.T) {
 
 	result, err := syncCommodities(db, commodities, func(string) price.PriceProvider {
 		return provider
-	}, 5)
+	}, 5, nil)
 	require.NoError(t, err)
 	assert.Empty(t, result.Failures)
 
@@ -165,7 +165,7 @@ func TestSyncCommodities_PassesSinceToProvider(t *testing.T) {
 	getProvider := func(_ string) price.PriceProvider { return stub }
 
 	// First call: no metadata → since must be zero (full history fetch).
-	_, err := syncCommodities(db, commodities, getProvider, 1)
+	_, err := syncCommodities(db, commodities, getProvider, 1, nil)
 	require.NoError(t, err)
 	assert.True(t, stub.receivedSince.IsZero(), "since must be zero when no last_price_sync metadata exists")
 
@@ -175,7 +175,7 @@ func TestSyncCommodities_PassesSinceToProvider(t *testing.T) {
 
 	// Second call: since must match the stored timestamp.
 	stub.receivedSince = time.Time{} // reset
-	_, err = syncCommodities(db, commodities, getProvider, 1)
+	_, err = syncCommodities(db, commodities, getProvider, 1, nil)
 	require.NoError(t, err)
 	assert.Equal(t, lastSync.UTC().Truncate(time.Second), stub.receivedSince.UTC().Truncate(time.Second),
 		"since must match the last_price_sync metadata value")
@@ -216,7 +216,7 @@ func TestSyncCommodities_IncrementalUpsertPreservesHistory(t *testing.T) {
 	}
 	getProvider := func(_ string) price.PriceProvider { return stub }
 
-	_, err := syncCommodities(db, commodities, getProvider, 1)
+	_, err := syncCommodities(db, commodities, getProvider, 1, nil)
 	require.NoError(t, err)
 
 	var count int64
@@ -235,9 +235,53 @@ func TestSyncCommodities_IncrementalUpsertPreservesHistory(t *testing.T) {
 			QuoteCommodity: "USD",
 		},
 	}
-	_, err = syncCommodities(db, commodities, getProvider, 1)
+	_, err = syncCommodities(db, commodities, getProvider, 1, nil)
 	require.NoError(t, err)
 
 	db.Model(&price.Price{}).Count(&count)
 	assert.Equal(t, int64(3), count, "incremental sync must add new prices without removing historical rows")
+}
+
+// TestSyncCommodities_ReportsProgress verifies that syncCommodities invokes
+// the progressFn callback once per commodity and that the final call reports
+// completed == total.
+func TestSyncCommodities_ReportsProgress(t *testing.T) {
+	db := openSyncCommoditiesTestDB(t)
+
+	stub := &sincePriceProvider{
+		prices: []*price.Price{
+			{
+				Date:           time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC),
+				CommodityType:  config.Stock,
+				CommodityID:    "X",
+				CommodityName:  "CommodityX",
+				Value:          decimal.NewFromInt(1),
+				QuoteCommodity: "USD",
+			},
+		},
+	}
+
+	commodities := []config.Commodity{
+		{Name: "CommodityX", Type: config.Stock, Price: config.Price{Provider: "since-stub", Code: "X"}},
+		{Name: "CommodityY", Type: config.Stock, Price: config.Price{Provider: "since-stub", Code: "Y"}},
+		{Name: "CommodityZ", Type: config.Stock, Price: config.Price{Provider: "since-stub", Code: "Z"}},
+	}
+	getProvider := func(_ string) price.PriceProvider { return stub }
+
+	var calls []struct{ completed, total int }
+	progressFn := func(completed, total int) {
+		calls = append(calls, struct{ completed, total int }{completed, total})
+	}
+
+	_, err := syncCommodities(db, commodities, getProvider, 1, progressFn)
+	require.NoError(t, err)
+
+	assert.Len(t, calls, len(commodities), "progressFn must be called once per commodity")
+	last := calls[len(calls)-1]
+	assert.Equal(t, len(commodities), last.completed, "final call must have completed == len(commodities)")
+	assert.Equal(t, len(commodities), last.total, "total must equal len(commodities) on every call")
+	for _, c := range calls {
+		assert.Equal(t, len(commodities), c.total, "total must be constant across all progress calls")
+		assert.Greater(t, c.completed, 0, "completed must always be positive")
+	}
 }

@@ -37,7 +37,7 @@ func TestSync_SuccessResponseShape(t *testing.T) {
 	db := openTestDB(t)
 
 	// No sync flags set – all stages are skipped; function must return success.
-	result, details := Sync(db, SyncRequest{})
+	result, details := Sync(db, SyncRequest{}, nil)
 
 	raw, err := json.Marshal(result)
 	require.NoError(t, err)
@@ -82,7 +82,7 @@ func TestSync_JournalFailureResponseShape(t *testing.T) {
 	// branch of Sync without needing a real ledger binary.
 	configWithBrokenJournalPath(t)
 
-	result, _ := Sync(db, SyncRequest{Journal: true})
+	result, _ := Sync(db, SyncRequest{Journal: true}, nil)
 
 	raw, err := json.Marshal(result)
 	require.NoError(t, err)
@@ -219,7 +219,7 @@ func TestIntegration_SyncAsync_FailureStillReturns202(t *testing.T) {
 func TestSync_DetailsReturnedOnSuccess(t *testing.T) {
 	db := openTestDB(t)
 
-	_, details := Sync(db, SyncRequest{})
+	_, details := Sync(db, SyncRequest{}, nil)
 
 	// When no sync stages are requested and there are no investment postings,
 	// WarmXIRRCache is not called, so details is nil (same as empty).

@@ -159,12 +159,12 @@ type commodityPriceFetchResult struct {
 	err       error
 }
 
-func SyncCommodities(db *gorm.DB) (SyncCommoditiesResult, error) {
+func SyncCommodities(db *gorm.DB, progressFn func(completed, total int)) (SyncCommoditiesResult, error) {
 	log.WithFields(log.Fields{"stage": "commodities"}).Info("Fetching commodities price history")
-	return syncCommodities(db, lo.Shuffle(commodity.All()), scraper.GetProviderByCode, commodityFetchWorkers)
+	return syncCommodities(db, lo.Shuffle(commodity.All()), scraper.GetProviderByCode, commodityFetchWorkers, progressFn)
 }
 
-func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByCode func(string) price.PriceProvider, workers int) (SyncCommoditiesResult, error) {
+func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByCode func(string) price.PriceProvider, workers int, progressFn func(completed, total int)) (SyncCommoditiesResult, error) {
 	if workers <= 0 {
 		workers = 1
 	}
@@ -191,7 +191,7 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 
 	var result SyncCommoditiesResult
 	var errs []error
-	jobs := make(chan config.Commodity)
+	jobsCh := make(chan config.Commodity)
 	results := make(chan commodityPriceFetchResult, len(commodities))
 	var wg sync.WaitGroup
 
@@ -199,7 +199,7 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for commodity := range jobs {
+			for commodity := range jobsCh {
 				name := commodity.Name
 				log.WithFields(log.Fields{"stage": "commodities", "commodity": name}).Info("Fetching commodity")
 				provider := getProviderByCode(commodity.Price.Provider)
@@ -214,16 +214,22 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 	}
 
 	for _, commodity := range commodities {
-		jobs <- commodity
+		jobsCh <- commodity
 	}
-	close(jobs)
+	close(jobsCh)
 
 	go func() {
 		wg.Wait()
 		close(results)
 	}()
 
+	total := len(commodities)
+	completed := 0
 	for fetched := range results {
+		completed++
+		if progressFn != nil {
+			progressFn(completed, total)
+		}
 		commodity := fetched.commodity
 		name := commodity.Name
 		prices := fetched.prices
