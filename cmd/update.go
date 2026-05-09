@@ -35,7 +35,7 @@ var updateCmd = &cobra.Command{
 		}
 
 		if syncAll || updateCommodities {
-			model.SyncCommodities(db)
+			model.SyncCommodities(db, nil)
 		}
 
 		if syncAll || updatePortfolios {

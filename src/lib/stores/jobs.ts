@@ -65,3 +65,14 @@ export const jobsList = derived(jobs, ($jobs) =>
 export const isJobRunning = derived(jobs, ($jobs) =>
   Object.values($jobs).some((j) => j.status === "pending" || j.status === "running")
 );
+
+/**
+ * The first tracked job that is currently in a non-terminal state
+ * (pending or running), or null when no such job exists.
+ * Useful for displaying per-job progress in the navbar.
+ */
+export const runningJob = derived(
+  jobs,
+  ($jobs) =>
+    Object.values($jobs).find((j) => j.status === "pending" || j.status === "running") ?? null
+);

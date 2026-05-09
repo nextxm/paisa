@@ -187,7 +187,7 @@ func appendTransactionAndSync(db *gorm.DB, req AddTransactionRequest) (string, e
 	}
 
 	// Trigger sync
-	Sync(db, SyncRequest{Journal: true})
+	Sync(db, SyncRequest{Journal: true}, nil)
 
 	return entryText, nil
 }

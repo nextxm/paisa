@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { get } from "svelte/store";
-import { jobs, jobsList, isJobRunning } from "./jobs";
+import { jobs, jobsList, isJobRunning, runningJob } from "./jobs";
 import type { Job } from "$lib/utils";
 
 function makeJob(overrides: Partial<Job> = {}): Job {
@@ -139,5 +139,48 @@ describe("isJobRunning derived store", () => {
     expect(get(isJobRunning)).toBe(true);
     jobs.updateById("test-id-1", { status: "completed" });
     expect(get(isJobRunning)).toBe(false);
+  });
+});
+
+describe("runningJob derived store", () => {
+  beforeEach(() => {
+    jobs.reset();
+  });
+
+  test("null when store is empty", () => {
+    expect(get(runningJob)).toBeNull();
+  });
+
+  test("returns the pending job", () => {
+    const job = makeJob({ status: "pending" });
+    jobs.upsert(job);
+    expect(get(runningJob)).toEqual(job);
+  });
+
+  test("returns the running job", () => {
+    const job = makeJob({ status: "running" });
+    jobs.upsert(job);
+    expect(get(runningJob)).toEqual(job);
+  });
+
+  test("null when all jobs are terminal", () => {
+    jobs.upsert(makeJob({ id: "a", status: "completed" }));
+    jobs.upsert(makeJob({ id: "b", status: "failed" }));
+    expect(get(runningJob)).toBeNull();
+  });
+
+  test("exposes items_completed and total_items from running job", () => {
+    const job = makeJob({ status: "running", items_completed: 3, total_items: 10 });
+    jobs.upsert(job);
+    const running = get(runningJob);
+    expect(running?.items_completed).toBe(3);
+    expect(running?.total_items).toBe(10);
+  });
+
+  test("updates to null after job moves to completed", () => {
+    jobs.upsert(makeJob({ status: "running" }));
+    expect(get(runningJob)).not.toBeNull();
+    jobs.updateById("test-id-1", { status: "completed" });
+    expect(get(runningJob)).toBeNull();
   });
 });
