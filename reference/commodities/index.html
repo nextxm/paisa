@@ -578,6 +578,8 @@
       
         
       
+        
+      
     
     
       
@@ -900,6 +902,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#price-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      Price Export
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1009,6 +1020,28 @@
   
   <span class="md-ellipsis">
     Assets
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboard/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboard
     
   </span>
   
@@ -1210,7 +1243,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_19" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_20" >
         
           
           
@@ -1227,14 +1260,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_19" id="__nav_3_19_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_20" id="__nav_3_20_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_19_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_19">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_20_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_20">
             <span class="md-nav__icon md-icon"></span>
             Goals
           </label>
@@ -1457,7 +1490,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_26" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_27" >
         
           
           
@@ -1474,14 +1507,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_26" id="__nav_3_26_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_27" id="__nav_3_27_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_26_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_26">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_27_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_27">
             <span class="md-nav__icon md-icon"></span>
             Tax
           </label>
@@ -2135,6 +2168,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#price-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      Price Export
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2486,6 +2528,34 @@ the commodity for that sync run.  Common mistakes:</p>
 the top right hand side corner or via <code>paisa update</code> command. Make
 sure to update the prices after you make any changes to your journal
 file or you want to fetch the latest value of the commodities.</p>
+<h2 id="price-export">Price Export<a class="headerlink" href="#price-export" title="Permanent link">&para;</a></h2>
+<p>You can export your commodity price history from the <strong>Ledger → Price</strong>
+page.  The export is available in three formats:</p>
+<table>
+<thead>
+<tr>
+<th>Format</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Ledger</strong></td>
+<td><code>P YYYY/MM/DD HH:MM:SS SYMBOL AMOUNT CURRENCY</code> directives</td>
+</tr>
+<tr>
+<td><strong>hLedger</strong></td>
+<td><code>P YYYY-MM-DD SYMBOL AMOUNT CURRENCY</code> directives</td>
+</tr>
+<tr>
+<td><strong>Beancount</strong></td>
+<td><code>YYYY-MM-DD price SYMBOL AMOUNT CURRENCY</code> directives</td>
+</tr>
+</tbody>
+</table>
+<p>You can optionally filter the export to a specific commodity before
+downloading.  When more than one commodity is selected, Paisa offers a
+<strong>multi-file ZIP</strong> option in addition to the single-file download.</p>
 
 
 

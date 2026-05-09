@@ -578,6 +578,8 @@
       
         
       
+        
+      
     
     
       
@@ -862,6 +864,28 @@
   
   
     <li class="md-nav__item">
+      <a href="../dashboard/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboard
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../bulk-edit/" class="md-nav__link">
         
   
@@ -1046,7 +1070,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_19" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_20" >
         
           
           
@@ -1063,14 +1087,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_19" id="__nav_3_19_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_20" id="__nav_3_20_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_19_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_19">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_20_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_20">
             <span class="md-nav__icon md-icon"></span>
             Goals
           </label>
@@ -1293,7 +1317,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_26" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_27" >
         
           
           
@@ -1310,14 +1334,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_26" id="__nav_3_26_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_27" id="__nav_3_27_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_26_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_26">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_27_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_27">
             <span class="md-nav__icon md-icon"></span>
             Tax
           </label>
@@ -1462,6 +1486,33 @@
   
     <nav class="md-nav" aria-label="Unreleased — Future changes">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Documentation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#new-features" class="md-nav__link">
@@ -2236,6 +2287,33 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Documentation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#new-features" class="md-nav__link">
     <span class="md-ellipsis">
       New features
@@ -2582,8 +2660,95 @@
 
 <h1 id="release-changelog">Release Changelog<a class="headerlink" href="#release-changelog" title="Permanent link">&para;</a></h1>
 <h3 id="unreleased-future-changes">Unreleased — Future changes<a class="headerlink" href="#unreleased-future-changes" title="Permanent link">&para;</a></h3>
+<h4 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Year-over-Year "Until year" selector</strong> — The Year-over-Year analysis page now includes an "Until year" dropdown alongside "Years to compare". Users can select an end year (e.g. 2025) so the comparison covers the N years up to and including that year (e.g. last 3 years until 2025 = 2023, 2024, 2025). Defaults to the current year, preserving existing behaviour. The <code>/api/expense</code> and <code>/api/income</code> endpoints now accept an optional <code>until_year</code> query parameter.</li>
+</ul>
+<h4 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Reference documentation updated</strong> — All new features from this release cycle are now documented in the reference section:</li>
+<li><a href="docs/reference/dashboard.md">Dashboard</a> — new page covering the recent-transactions widget, monthly cashflow widget, reconciliation widget, and account drill-down.</li>
+<li><a href="docs/reference/accounts.md">Accounts</a> — account notes, account reconciliation (badges, dashboard widget, API), and account-level transaction history.</li>
+<li><a href="docs/reference/analysis.md">Analysis</a> — Year-over-Year comparison charts (<code>/analysis/yoy</code>).</li>
+<li><a href="docs/reference/cash-flow.md">Cash Flow</a> — 30-day spending trends with sparklines and the monthly cashflow widget.</li>
+<li><a href="docs/reference/commodities.md">Commodities</a> — price export feature (Ledger / hLedger / Beancount formats, single-file and ZIP).</li>
+<li><a href="docs/reference/import.md">Import</a> — import preview (dry-run), import presets (save / load / delete), and built-in presets.</li>
+<li><a href="docs/reference/sync.md">Sync</a> — async sync with job polling, sync history overlay, price &amp; journal freshness indicators, Firefly III webhook integration, and Firefly III reconciliation (Labs).</li>
+<li><a href="docs/reference/config.md">Configuration</a> — <code>add_journal_path</code>, <code>enable_reconciliation</code>, <code>firefly</code> block, and <code>labs</code> block.</li>
+</ul>
+<h4 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Materialized account balance summary table</strong> — Introduces <code>account_balances</code> table (migration v7) that stores pre-computed per-<code>(account, commodity)</code> balance totals updated atomically on every journal sync.</li>
+<li><code>account_balance.RefreshFromPostings(tx, postings)</code> — computes sums in-memory from the already-loaded postings slice and atomically replaces the entire <code>account_balances</code> table within the sync transaction. Forecast postings are excluded.</li>
+<li><code>account_balance.ByAccount(db, account)</code> — O(1) index lookup for a single account's balance rows, replacing the previous O(N) full <code>postings</code> table scan.</li>
+<li><code>account_balance.All(db)</code> — returns all materialized balance rows ordered by account and commodity.</li>
+<li><code>SyncJournal</code> now calls <code>RefreshFromPostings</code> inside the same DB transaction as <code>posting.UpsertAll</code>, guaranteeing the summary table is always consistent with the postings table.</li>
+<li>
+<p>Unit tests added for <code>RefreshFromPostings</code>, <code>All</code>, and <code>ByAccount</code> covering aggregation, forecast exclusion, idempotent replacement, and empty-slice clearing.</p>
+</li>
+<li>
+<p><strong>SQL-level aggregation for balance queries</strong> — Introduces <code>query.GroupSum()</code> as a reusable SQL aggregation primitive and improves the <code>ComputeBreakdowns</code> algorithm.</p>
+</li>
+<li><code>query.GroupSum()</code> — new method on <code>Query</code> that returns per <code>(account, commodity)</code> aggregated <code>SUM(amount)</code> and <code>SUM(quantity)</code> rows directly from the database, as a lightweight alternative to <code>All()</code> when only totals are needed.</li>
+<li><code>ComputeBreakdowns</code> — internal O(A × N) loop replaced with a two-phase O(N + A × C) approach: postings are first grouped by effective account in O(N), then each breakdown group collects from the pre-built index (O(A × C) where C is the number of distinct leaf accounts).</li>
+<li>Unit tests added for <code>GroupSum</code> and <code>ComputeBreakdowns</code>.</li>
+</ul>
 <h4 id="new-features">New features<a class="headerlink" href="#new-features" title="Permanent link">&para;</a></h4>
 <ul>
+<li><strong>Epic 12: Account Reconciliation Status Tracker</strong> — Added account reconciliation metadata storage, reconciliation status badges, and a dashboard reconciliation summary widget.</li>
+<li><strong>Subtask 12.1 (Backend – Account Reconciliation Metadata)</strong> — Added schema migration v6 with new <code>account_reconciliation</code> table (<code>account</code>, <code>last_reconciled_date</code>, <code>frequency_days</code>) and new APIs: <code>GET /api/accounts/reconciliation</code>, <code>GET /api/accounts/:account/reconciliation</code>, and <code>PATCH /api/accounts/:account/reconciliation</code>. Responses include computed <code>days_since</code> and <code>is_overdue</code>.</li>
+<li><strong>Subtask 12.2 (Frontend – Reconciliation Status Badge)</strong> — Assets balance rows and account detail pages now show color-coded reconciliation badges ("Last reconciled: ..."). Clicking a badge opens reconciliation actions on the account detail page.</li>
+<li><strong>Subtask 12.3 (Frontend – Reconciliation Dashboard Widget)</strong> — Dashboard now includes an "Account Reconciliation" widget with up-to-date/overdue counts and quick links to reconcile overdue accounts.</li>
+<li><strong>Subtask 12.4 (Frontend &amp; Backend – Optional Feature Toggle)</strong> — Reconciliation is now disabled by default and can be enabled via <code>enable_reconciliation</code> in the configuration. All reconciliation-related UI components and API fetches are gated by this flag.</li>
+<li>
+<p><strong>Subtask 12.5 (Frontend – Navigation-free Reconciliation)</strong> — Reconciliation badges now open a global modal in-place rather than navigating away, preserving page state across Dashboard, Assets, and Account detail pages.</p>
+</li>
+<li>
+<p><strong>Epic: Import feature improvements (Subtask 1)</strong> — Added <code>POST /api/import/preview</code> to parse CSV content in dry-run mode and return row-by-row preview data with validation status/error messages before committing anything to journal files.</p>
+</li>
+<li><strong>Subtask 2 (Frontend preview table)</strong> — Added reusable <code>ImportPreviewTable.svelte</code> with per-row valid/invalid badges, error messages, and include/exclude checkboxes (plus select-all) for import previews.</li>
+<li><strong>Subtask 3 (Confirm-and-write flow)</strong> — Import page now saves only selected preview rows via <code>POST /api/editor/save</code> and shows loading state while confirming/writing.</li>
+<li><strong>Subtask 4 (Import preset CRUD API)</strong> — Added <code>GET/POST/DELETE /api/import/presets</code> backed by a new SQLite model + migration for reusable import presets (name, column mappings, date format, default accounts, delimiter).</li>
+<li><strong>Subtask 5 (Preset selector UI)</strong> — Added <code>PresetSelector.svelte</code> on the import page with preset dropdown and “Save Current” action.</li>
+<li>
+<p><strong>Subtask 6 (Built-in presets)</strong> — Added built-in import presets for common formats: Generic Bank CSV, Chase Credit Card CSV, SBI Account Statement CSV, and ICICI Credit Card CSV.</p>
+</li>
+<li>
+<p><strong>Epic 11: Year-over-Year Comparison Charts</strong> — Added backend multi-year series support and a new YoY analysis experience for comparing spending and income trends across calendar years.</p>
+</li>
+<li><strong>Subtask 11.1 (Backend – Multi-Year Expense/Income Data)</strong> — <code>GET /api/expense</code> and <code>GET /api/income</code> now accept an optional <code>years</code> query parameter (default <code>1</code>, max <code>10</code>) and return <code>multi_year</code> data shaped as <code>{ "&lt;year&gt;": { month: { "YYYY-MM": amount }, total } }</code>. Leap-day transactions are naturally included in February aggregates.</li>
+<li><strong>Subtask 11.2 (Frontend – YoY Comparison Chart)</strong> — Added reusable <code>YoYChart.svelte</code> component supporting line and grouped-bar modes with Jan–Dec alignment, year legends, and month-level hover tooltips across all selected years.</li>
+<li>
+<p><strong>Subtask 11.3 (Frontend – YoY Analysis Page)</strong> — Added <code>/analysis/yoy</code> page with configurable year range (2–5 years), spending + income YoY charts, category YoY chart (line/bar toggle), computed YoY insights, and CSV export.</p>
+</li>
+<li>
+<p><strong>Epic 4: Month-over-Month Spending Trends</strong> — Added rolling 30-day spending trend comparison to the Monthly Expenses page. Each expense category now shows its current 30-day total alongside the previous 30-day total, a variance amount, a colour-coded percentage change (↑ red / ↓ green), and a 6-month sparkline bar chart.</p>
+</li>
+<li><strong>Subtask 4.1 (Backend – Monthly Expense Trends)</strong> — <code>GetExpense()</code> in <code>internal/server/expense.go</code> now computes and returns a <code>trends</code> array. Each entry contains <code>category</code>, <code>current_month</code>, <code>previous_month</code>, <code>variance</code>, and <code>variance_pct</code> (null when there are no previous-period expenses). Rolling windows: today−30 to today (current) and today−60 to today−30 (previous). <code>Expenses:Tax</code> postings are excluded. Six unit tests added in <code>internal/server/expense_test.go</code>.</li>
+<li><strong>Subtask 4.2 (Frontend – Trend Indicators)</strong> — New <code>ExpenseTrendCard.svelte</code> component renders the category name, current amount, previous amount, and a coloured arrow + percentage badge. The Monthly Expenses page now displays a "30-Day Spending Trends" grid below the calendar using this component.</li>
+<li>
+<p><strong>Subtask 4.3 (Frontend – Monthly Trend Sparkline)</strong> — New <code>SparklineChart.svelte</code> component renders a compact SVG bar chart for up to 6 months of per-category spending history. The last bar (current month) is highlighted in the category colour; a dashed red average line is overlaid. Sparklines are embedded inside each <code>ExpenseTrendCard</code> when more than one month of history is available.</p>
+</li>
+<li>
+<p><strong>Epic 3: Simple Account Notes / Metadata</strong> — Users can now attach free-text notes to any account (e.g. "Emergency fund", "Company 401k") without editing the ledger file.</p>
+</li>
+<li><strong>Subtask 3.1 (Backend – DB)</strong> — New <code>account_notes</code> SQLite table with a unique index on <code>account</code> name. Added as schema migration v4 via <code>internal/model/account_note</code> package.</li>
+<li><strong>Subtask 3.2 (Backend – API)</strong> — Four new REST endpoints: <code>GET /api/account_notes</code> (list all notes), <code>GET /api/account_notes/:account</code> (fetch one note), <code>POST /api/account_notes/upsert</code> (create/update), <code>POST /api/account_notes/delete</code> (remove). All write endpoints require the <code>ReadonlyMiddleware</code> guard.</li>
+<li><strong>Subtask 3.3 (Frontend – Detail Page)</strong> — New <code>/accounts/[name]/</code> overview page with a textarea for composing and saving a note, plus a delete button. Notes are persisted immediately via the new API.</li>
+<li>
+<p><strong>Subtask 3.4 (Frontend – List Widget)</strong> — The <code>/accounts/[name]/transactions</code> page now fetches and displays an existing note inline in the page header as a highlighted tag, and includes a "Notes" button to navigate to the notes editor.</p>
+</li>
+<li>
+<p><strong>Epic 2: Recent Transactions Widget on Dashboard</strong> — Added a feed of the 15 most recent transactions to the main dashboard for at-a-glance activity overview.</p>
+</li>
+<li><strong>Subtask 2.1 (Backend)</strong> — <code>GET /api/transaction</code> now accepts optional <code>limit</code> and <code>offset</code> query parameters for server-friendly pagination. Both parameters are applied at the transaction level (after grouping postings) so every returned transaction includes all of its postings.</li>
+<li><strong>Subtask 2.2 (Frontend)</strong> — New <code>RecentTransactionsWidget.svelte</code> component encapsulates the recent-transactions feed. It accepts a <code>transactions</code> prop and an optional <code>limit</code> prop (default 15) and renders each entry via <code>TransactionCard</code>.</li>
+<li>
+<p><strong>Subtask 2.3 (Frontend)</strong> — Dashboard (<code>+page.svelte</code>) now uses <code>RecentTransactionsWidget</code> instead of inline transaction rendering, keeping the layout clean and the widget reusable.</p>
+</li>
+<li>
+<p><strong>Account-Level Transaction Drill-Down</strong> — Users can now click on any account balance widget on the dashboard to view a filtered transaction history for that specific account. A new route <code>/accounts/[name]/transactions</code> displays all transactions touching the selected account. The <code>GET /api/transaction</code> endpoint now accepts an optional <code>account</code> query parameter to return only transactions for the given account prefix.</p>
+</li>
 <li>
 <p><strong>Price &amp; Journal Freshness Tracking</strong> — Added visual indicators to the navigation bar to track the freshness of your financial data. The "Update Prices" icon turns amber after 24 hours and red after 48 hours. The "Sync Journal" icon turns amber if any journal files have been modified since the last sync.</p>
 </li>
@@ -2617,9 +2782,7 @@
 <li>
 <p><strong>Epic 2: Architectural Alignment &amp; Cleanup</strong> — Finalized structural patterns and removed legacy Svelte 4 compatibility:</p>
 </li>
-<li>
-<p><strong>Snippet Transition (2.1)</strong> — <code>Modal.svelte</code> migrated from named <code>&lt;slot&gt;</code> elements to typed snippet props (<code>head</code>, <code>body</code>, <code>foot</code>). All consumers updated to use <code>{#snippet head(close)}...{/snippet}</code> blocks: <code>FileModal</code>, <code>PriceCodeSearchModal</code>, <code>DiffViewModal</code>, <code>SyncHistoryOverlay</code>, and the import page inline modal.</p>
-</li>
+<li><strong>Snippet Transition (2.1)</strong> — <code>Modal.svelte</code> migrated from named <code>&lt;slot&gt;</code> elements to typed snippet props (<code>head</code>, <code>body</code>, <code>foot</code>). All consumers updated to use <code>{#snippet head(close)}...{/snippet}</code> blocks: <code>FileModal</code>, <code>PriceCodeSearchModal</code>, <code>DiffViewModal</code>, <code>SyncHistoryOverlay</code>, and the import page inline modal.</li>
 <li><strong>Callback Prop Migration (2.2)</strong> — <code>createEventDispatcher</code> removed from <code>FileModal.svelte</code> (replaced with <code>onsave</code> callback) and <code>PriceCodeSearchModal.svelte</code> (replaced with <code>onselect</code> callback). All four <code>FileModal</code> call-sites and <code>JsonSchemaForm</code>'s <code>PriceCodeSearchModal</code> usage updated to pass callback props directly.</li>
 <li><strong>Global Store Evolution (2.3)</strong> — New <code>src/lib/state/ui.svelte.ts</code> (<code>UIState</code>) and <code>src/lib/state/persisted.svelte.ts</code> (<code>PersistedState</code>) class-based wrappers created using <code>fromStore</code>. Components can now access stores via <code>uiState.&lt;prop&gt;.current</code> or continue using the existing <code>$store</code> syntax.</li>
 <li><strong>Lifecycle &amp; Context Update (2.4)</strong> — <code>Navbar.svelte</code> <code>onMount</code>/<code>onDestroy</code> lifecycle hooks replaced with <code>$effect</code> (cleanup via returned function). Root <code>+layout.svelte</code> and <code>(app)/+layout.svelte</code> updated from <code>&lt;slot /&gt;</code> to <code>{@render children()}</code> with typed <code>Snippet</code> prop.</li>
@@ -2631,9 +2794,7 @@
 <li>
 <p><strong>Epic 1: Component Modernization (Runes &amp; Event Syntax)</strong> — Systematically migrated all Svelte components and route pages from Svelte 4 syntax to Svelte 5 runes:</p>
 </li>
-<li>
-<p>All <code>export let</code> props converted to <code>$props()</code> / <code>$bindable()</code></p>
-</li>
+<li>All <code>export let</code> props converted to <code>$props()</code> / <code>$bindable()</code></li>
 <li>All <code>$:</code> reactive statements converted to <code>$derived()</code> or <code>$effect()</code></li>
 <li>All mutable local state annotated with <code>$state()</code></li>
 <li>All DOM event attributes (<code>on:click</code>, <code>on:change</code>, <code>on:keydown</code>, etc.) replaced with lowercase equivalents (<code>onclick</code>, <code>onchange</code>, <code>onkeydown</code>, etc.)</li>
@@ -2648,9 +2809,7 @@
 <li>
 <p><strong>Svelte 5 upgrade &amp; UI modernization (P2.2)</strong> — Upgrades the frontend framework to Svelte 5 and begins the incremental migration to rune-based reactivity:</p>
 </li>
-<li>
-<p><strong>Svelte 5</strong> (<code>^5.0.0</code>), <strong>svelte-check</strong> (<code>^4.0.0</code>), <strong>@sveltejs/vite-plugin-svelte</strong> (<code>^4.0.0</code>), and <strong>eslint-plugin-svelte</strong> (<code>^3.0.0</code>) bumped in <code>package.json</code> (#226).</p>
-</li>
+<li><strong>Svelte 5</strong> (<code>^5.0.0</code>), <strong>svelte-check</strong> (<code>^4.0.0</code>), <strong>@sveltejs/vite-plugin-svelte</strong> (<code>^4.0.0</code>), and <strong>eslint-plugin-svelte</strong> (<code>^3.0.0</code>) bumped in <code>package.json</code> (#226).</li>
 <li><strong>Svelte 4 compatibility layer</strong> enabled in <code>svelte.config.js</code> via <code>compilerOptions.compatibility.componentApi: 4</code>, allowing all existing components to keep working while new ones adopt runes (#227).</li>
 <li><strong>Modal.svelte migrated to Svelte 5 runes</strong> — props use <code>$props()</code> / <code>$bindable()</code>; internal state uses <code>$state()</code>; <code>on:click</code> replaced with <code>onclick</code>. Bulma structural classes (<code>modal</code>, <code>modal-background</code>, <code>modal-card</code>, <code>modal-card-head/body/foot</code>, <code>is-active</code>) replaced with DaisyUI equivalents (<code>du-modal</code>, <code>du-modal-box</code>, <code>du-modal-backdrop</code>, <code>du-modal-open</code>) and Tailwind flex utilities (#228 #229).</li>
 <li><strong>BoxedTabs.svelte migrated to Svelte 5 runes</strong> — <code>export let</code> replaced with <code>$props()</code> / <code>$bindable()</code>; <code>$:</code> block replaced with <code>$effect()</code>; <code>on:click</code> replaced with <code>onclick</code> (#229).</li>
@@ -2665,6 +2824,11 @@
 </ul>
 <h4 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h4>
 <ul>
+<li>
+<p><strong>Journal sync posting writes optimized</strong> — <code>posting.UpsertAll</code> now performs replacement
+  inserts using GORM <code>CreateInBatches</code> instead of one-row-at-a-time inserts, reducing sync
+  time on large journals while preserving atomic replace behavior.</p>
+</li>
 <li>
 <p><strong>Error toast close button fixed</strong> — Removed an unbound inline <code>delete</code> button from the global runtime error toast markup in <code>src/hooks.client.ts</code> and now rely on Bulma Toast's built-in dismiss control (<code>dismissible: true</code>). The visible close X now dismisses error boxes correctly.</p>
 </li>
@@ -2764,9 +2928,7 @@
 <li>
 <p><strong>Typed API via Protobuf/Connect (P3.1)</strong> — Eliminates hand-maintained TypeScript interfaces and <code>ajax</code> fetch wrappers for selected endpoints by driving the API contract from a <code>.proto</code> schema, giving compile-time type safety on both sides.</p>
 </li>
-<li>
-<p><code>proto/api.proto</code> — defines <code>Transaction</code>, <code>Posting</code>, <code>AccountBalance</code>, <code>AccountNode</code>, and the <code>PaisaService</code> service with a <code>GetAccountTree</code> RPC. Package name <code>paisa.v1</code>; Go package <code>github.com/ananthakumaran/paisa/internal/gen/paisa/v1;paisav1</code> (#234).</p>
-</li>
+<li><code>proto/api.proto</code> — defines <code>Transaction</code>, <code>Posting</code>, <code>AccountBalance</code>, <code>AccountNode</code>, and the <code>PaisaService</code> service with a <code>GetAccountTree</code> RPC. Package name <code>paisa.v1</code>; Go package <code>github.com/ananthakumaran/paisa/internal/gen/paisa/v1;paisav1</code> (#234).</li>
 <li><code>internal/gen/</code> — committed generated Go stubs (<code>api.pb.go</code>, <code>paisav1connect/api.connect.go</code>) produced by <code>protoc-gen-go</code> + <code>protoc-gen-connect-go</code> (#235).</li>
 <li><strong>Connect-Go integrated into Gin</strong> — <code>connectrpc.com/connect</code> is added as a dependency; <code>PaisaService</code> endpoints are mounted at <code>/connect/paisa.v1.PaisaService/…</code> alongside the existing REST routes. <code>TokenAuthMiddleware</code> now protects <code>/connect/</code> paths with the same session-token logic as <code>/api/</code> paths (#235).</li>
 <li><strong><code>GetAccountTree</code> endpoint</strong> — <code>internal/server/connect_service.go</code> implements <code>PaisaServiceHandler.GetAccountTree</code>, which converts the flat <code>[]string</code> from <code>accounting.AllAccounts</code> into a hierarchical <code>AccountNode</code> tree sorted alphabetically at each level. Intermediate-only nodes (not direct leaf accounts) have <code>is_leaf: false</code> (#236).</li>
