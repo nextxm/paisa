@@ -65,7 +65,7 @@ func (p *trackingPriceProvider) GetPrices(code string, commodityName string) ([]
 		}
 	}
 
-	time.Sleep(25 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	p.current.Add(-1)
 
 	return []*price.Price{
