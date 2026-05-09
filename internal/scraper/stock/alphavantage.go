@@ -232,3 +232,7 @@ func (p *AlphaVantagePriceProvider) GetPrices(code string, commodityName string,
 	}
 	return price.FilterSince(prices, since), nil
 }
+
+func (p *AlphaVantagePriceProvider) GetPricesBatch(codes []string, commodityNames []string) (map[string][]*price.Price, error) {
+	return price.GetPricesBatchSequentially(p, codes, commodityNames)
+}

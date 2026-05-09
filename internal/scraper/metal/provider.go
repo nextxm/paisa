@@ -93,3 +93,7 @@ func (p *PriceProvider) GetPrices(code string, commodityName string, since time.
 	}
 	return price.FilterSince(prices, since), nil
 }
+
+func (p *PriceProvider) GetPricesBatch(codes []string, commodityNames []string) (map[string][]*price.Price, error) {
+	return price.GetPricesBatchSequentially(p, codes, commodityNames)
+}

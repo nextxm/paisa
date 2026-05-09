@@ -1,6 +1,7 @@
 package price
 
 import (
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -75,4 +76,36 @@ type PriceProvider interface {
 	// when the provider is reachable but has no data for the requested code –
 	// this is not an error.  Implementations must never call log.Fatal.
 	GetPrices(code string, commodityName string, since time.Time) ([]*Price, error)
+
+	// GetPricesBatch fetches full price histories for multiple commodities from
+	// the same provider in a single call when the provider supports batching.
+	// The returned map is keyed by the commodity code supplied in codes.
+	// Callers may apply additional filtering (for example incremental since
+	// filtering) after the batch fetch completes.
+	GetPricesBatch(codes []string, commodityNames []string) (map[string][]*Price, error)
 }
+
+// GetPricesBatchSequentially adapts single-code GetPrices implementations to
+// the batched PriceProvider contract. Providers that do not support a true
+// batch API can use this helper to preserve behaviour while sync orchestration
+// groups commodities by provider.
+func GetPricesBatchSequentially(provider interface {
+	GetPrices(code string, commodityName string, since time.Time) ([]*Price, error)
+}, codes []string, commodityNames []string) (map[string][]*Price, error) {
+	if len(codes) != len(commodityNames) {
+		return nil, ErrMismatchedBatchInputs
+	}
+
+	pricesByCode := make(map[string][]*Price, len(codes))
+	for i, code := range codes {
+		prices, err := provider.GetPrices(code, commodityNames[i], time.Time{})
+		if err != nil {
+			return nil, err
+		}
+		pricesByCode[code] = prices
+	}
+
+	return pricesByCode, nil
+}
+
+var ErrMismatchedBatchInputs = errors.New("price provider batch inputs must have matching lengths")
