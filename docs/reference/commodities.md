@@ -303,6 +303,10 @@ the top right hand side corner or via `paisa update` command. Make
 sure to update the prices after you make any changes to your journal
 file or you want to fetch the latest value of the commodities.
 
+If you need to discard incremental sync state and rebuild the entire
+commodity price history, use the **Force Refresh** button on the
+**Ledger → Price** page. It triggers a full price sync from the UI.
+
 ## Price Export
 
 You can export your commodity price history from the **Ledger → Price**

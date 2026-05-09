@@ -9,9 +9,10 @@ import (
 )
 
 type SyncRequest struct {
-	Journal    bool `json:"journal"`
-	Prices     bool `json:"prices"`
-	Portfolios bool `json:"portfolios"`
+	Journal     bool `json:"journal"`
+	Prices      bool `json:"prices"`
+	ForcePrices bool `json:"force_prices"`
+	Portfolios  bool `json:"portfolios"`
 }
 
 // Sync executes the requested sync stages synchronously and returns the
@@ -42,7 +43,7 @@ func Sync(db *gorm.DB, request SyncRequest, progressFn func(completed, total int
 	}
 
 	if request.Prices {
-		commoditiesResult, err := model.SyncCommodities(db, progressFn)
+		commoditiesResult, err := model.SyncCommodities(db, request.ForcePrices, progressFn)
 		// Accumulate per-commodity failures into details regardless of whether
 		// the overall sync succeeded or failed.
 		details = append(details, commoditiesResult.Failures...)
