@@ -124,8 +124,6 @@ func computeNetworth(db *gorm.DB, postings []posting.Posting) Networth {
 func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBalanceUnits bool) []Networth {
 	var networths []Networth
 
-	var p posting.Posting
-
 	if len(postings) == 0 {
 		return []Networth{}
 	}
@@ -137,38 +135,156 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 		balanceUnits decimal.Decimal
 	}
 
+	type runningNetworthRow struct {
+		Day          string
+		Commodity    string
+		Investment   decimal.Decimal
+		Withdrawal   decimal.Decimal
+		Balance      decimal.Decimal
+		BalanceUnits decimal.Decimal
+	}
+
+	ids := make([]uint, 0, len(postings))
+	for _, p := range postings {
+		ids = append(ids, p.ID)
+	}
+
+	defaultCurrency := config.DefaultCurrency()
+	var rows []runningNetworthRow
+	result := db.Raw(`
+WITH filtered AS (
+	SELECT
+		DATE(date) AS day,
+		commodity,
+		amount,
+		quantity,
+		account,
+		transaction_id,
+		payee
+	FROM postings
+	WHERE id IN ?
+),
+classified AS (
+	SELECT
+		f.day,
+		f.commodity,
+		f.amount,
+		f.quantity,
+		CASE WHEN f.commodity = ? AND EXISTS (
+			SELECT 1
+			FROM postings ip
+			WHERE DATE(ip.date) = f.day
+				AND ip.account LIKE 'Income:Interest:%'
+				AND ip.amount = -f.amount
+				AND ip.payee = f.payee
+			LIMIT 1
+		) THEN 1 ELSE 0 END AS is_interest,
+		CASE WHEN f.commodity = ? AND (
+			f.account LIKE 'Expenses:Interest:%'
+			OR EXISTS (
+				SELECT 1
+				FROM postings ip
+				WHERE DATE(ip.date) = f.day
+					AND ip.account LIKE 'Expenses:Interest:%'
+					AND ip.amount = -f.amount
+					AND ip.payee = f.payee
+				LIMIT 1
+			)
+		) THEN 1 ELSE 0 END AS is_interest_repayment,
+		CASE WHEN f.account LIKE 'Income:CapitalGains:%' THEN 1 ELSE 0 END AS is_capital_gains,
+		CASE WHEN f.commodity <> ? AND NOT EXISTS (
+			SELECT 1
+			FROM postings tp
+			WHERE tp.transaction_id = f.transaction_id
+				AND (tp.commodity = ? OR tp.account != f.account)
+			LIMIT 1
+		) THEN 1 ELSE 0 END AS is_stock_split
+	FROM filtered f
+),
+deltas AS (
+	SELECT
+		day,
+		commodity,
+		CASE WHEN is_interest = 1 OR is_interest_repayment = 1 THEN amount ELSE 0 END AS balance_interest_delta,
+		CASE WHEN is_capital_gains = 1 THEN -amount ELSE 0 END AS capital_withdrawal_delta,
+		CASE
+			WHEN is_interest = 0 AND is_interest_repayment = 0 AND is_capital_gains = 0 AND amount > 0 AND is_stock_split = 0
+			THEN amount ELSE 0
+		END AS investment_delta,
+		CASE
+			WHEN is_interest = 0 AND is_interest_repayment = 0 AND is_capital_gains = 0 AND amount < 0 AND is_stock_split = 0
+			THEN -amount ELSE 0
+		END AS withdrawal_delta,
+		CASE
+			WHEN is_interest = 0 AND is_interest_repayment = 0 AND is_capital_gains = 0
+			THEN amount ELSE 0
+		END AS balance_delta,
+		CASE
+			WHEN is_interest = 0 AND is_interest_repayment = 0 AND is_capital_gains = 0
+			THEN quantity ELSE 0
+		END AS balance_units_delta
+	FROM classified
+),
+daily AS (
+	SELECT
+		day,
+		commodity,
+		SUM(investment_delta) AS investment_delta,
+		SUM(capital_withdrawal_delta + withdrawal_delta) AS withdrawal_delta,
+		SUM(balance_interest_delta + balance_delta) AS balance_delta,
+		SUM(balance_units_delta) AS balance_units_delta
+	FROM deltas
+	GROUP BY day, commodity
+),
+running AS (
+	SELECT
+		day,
+		commodity,
+		SUM(investment_delta) OVER (
+			PARTITION BY commodity
+			ORDER BY day
+			ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+		) AS investment,
+		SUM(withdrawal_delta) OVER (
+			PARTITION BY commodity
+			ORDER BY day
+			ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+		) AS withdrawal,
+		SUM(balance_delta) OVER (
+			PARTITION BY commodity
+			ORDER BY day
+			ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+		) AS balance,
+		SUM(balance_units_delta) OVER (
+			PARTITION BY commodity
+			ORDER BY day
+			ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+		) AS balance_units
+	FROM daily
+)
+SELECT day, commodity, investment, withdrawal, balance, balance_units
+FROM running
+ORDER BY day, commodity
+`, ids, defaultCurrency, defaultCurrency, defaultCurrency, defaultCurrency).Scan(&rows)
+	if result.Error != nil {
+		return []Networth{}
+	}
+
 	accumulator := make(map[string]RunningSum)
+	rowIndex := 0
 
 	end := utils.EndOfToday()
 	for start := postings[0].Date; start.Before(end); start = start.AddDate(0, 0, 1) {
 		dayEnd := utils.EndOfDay(start)
-		for len(postings) > 0 && !postings[0].Date.After(dayEnd) {
-			p, postings = postings[0], postings[1:]
-			rs := accumulator[p.Commodity]
-			isInterest := service.IsInterest(db, p)
-			isInterestRepayment := service.IsInterestRepayment(db, p)
-			isStockSplit := service.IsStockSplit(db, p)
-			isCapitalGains := service.IsCapitalGains(p)
-
-			if isInterest || isInterestRepayment {
-				rs.balance = rs.balance.Add(p.Amount)
-			} else if isCapitalGains {
-				rs.withdrawal = rs.withdrawal.Add(p.Amount.Neg())
-			} else {
-				if p.Amount.GreaterThan(decimal.Zero) && !isStockSplit {
-					rs.investment = rs.investment.Add(service.GetMarketPrice(db, p, p.Date))
-				}
-
-				if p.Amount.LessThan(decimal.Zero) && !isStockSplit {
-					rs.withdrawal = rs.withdrawal.Add(service.GetMarketPrice(db, p, p.Date).Neg())
-				}
-
-				rs.balance = rs.balance.Add(service.GetMarketPrice(db, p, dayEnd))
-				rs.balanceUnits = rs.balanceUnits.Add(p.Quantity)
+		day := start.Format("2006-01-02")
+		for rowIndex < len(rows) && rows[rowIndex].Day == day {
+			accumulator[rows[rowIndex].Commodity] = RunningSum{
+				investment:   rows[rowIndex].Investment,
+				withdrawal:   rows[rowIndex].Withdrawal,
+				balance:      rows[rowIndex].Balance,
+				balanceUnits: rows[rowIndex].BalanceUnits,
 			}
-
-			accumulator[p.Commodity] = rs
-
+			rowIndex++
 		}
 
 		var investment decimal.Decimal = decimal.Zero
@@ -208,7 +324,7 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 			NetInvestmentAmount: netInvestment,
 		})
 
-		if len(postings) == 0 && balance.Abs().LessThan(decimal.NewFromFloat(0.01)) {
+		if rowIndex == len(rows) && balance.Abs().LessThan(decimal.NewFromFloat(0.01)) {
 			break
 		}
 	}

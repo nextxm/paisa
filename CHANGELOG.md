@@ -35,6 +35,10 @@
 
 #### Performance
 
+- **SQL window-function running totals for timelines** — Historical running-balance calculations now compute cumulative totals in SQLite (`SUM(...) OVER (...)`) before daily chart assembly.
+  - `internal/server/networth.go` now builds per-commodity running investment/withdrawal/balance state via SQL window functions instead of iterating postings in Go day by day.
+  - `internal/accounting/accounting.go` now computes per-commodity running quantity using SQL window functions for savings/retirement historical balance timelines.
+
 - **Lazy commodity price-cache warming after sync** — Market price cache warming no longer rebuilds default-currency B-Trees for every commodity immediately after each sync.
   - `WarmCache` now initializes the price cache container and pre-warms only FX rate trees.
   - Commodity price trees are loaded and synthesized into default-currency values lazily on first lookup (`GetUnitPrice`), reducing post-sync CPU work while keeping cache invalidation semantics unchanged.

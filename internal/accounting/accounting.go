@@ -158,14 +158,52 @@ func RunningBalance(db *gorm.DB, postings []posting.Posting) []Point {
 		return series
 	}
 
-	var p posting.Posting
+	type runningQuantityRow struct {
+		Day       string
+		Commodity string
+		Quantity  decimal.Decimal
+	}
+
+	ids := make([]uint, 0, len(postings))
+	for _, p := range postings {
+		ids = append(ids, p.ID)
+	}
+
+	var rows []runningQuantityRow
+	if err := db.Raw(`
+WITH daily AS (
+	SELECT DATE(date) AS day, commodity, SUM(quantity) AS delta
+	FROM postings
+	WHERE id IN ?
+	GROUP BY DATE(date), commodity
+),
+running AS (
+	SELECT
+		day,
+		commodity,
+		SUM(delta) OVER (
+			PARTITION BY commodity
+			ORDER BY day
+			ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+		) AS quantity
+	FROM daily
+)
+SELECT day, commodity, quantity
+FROM running
+ORDER BY day, commodity
+`, ids).Scan(&rows).Error; err != nil {
+		log.Fatal(err)
+	}
+
 	accumulator := make(map[string]decimal.Decimal)
+	rowIndex := 0
 
 	end := utils.EndOfToday()
 	for start := postings[0].Date; start.Before(end); start = start.AddDate(0, 0, 1) {
-		for len(postings) > 0 && (postings[0].Date.Before(start) || postings[0].Date.Equal(start)) {
-			p, postings = postings[0], postings[1:]
-			accumulator[p.Commodity] = accumulator[p.Commodity].Add(p.Quantity)
+		day := start.Format("2006-01-02")
+		for rowIndex < len(rows) && rows[rowIndex].Day == day {
+			accumulator[rows[rowIndex].Commodity] = rows[rowIndex].Quantity
+			rowIndex++
 		}
 
 		balance := decimal.Zero
