@@ -399,6 +399,58 @@ func TestGetUnitPrice_SynthesizesJournalPriceFromNativeCurrency(t *testing.T) {
 		"synthesized journal price must equal native price × exchange rate, got %s want %s", pc.Value, expected)
 }
 
+func TestLoadPriceCache_UpdatesOnlyRequestedCommodity(t *testing.T) {
+	loadMarketTestConfig(t, false)
+	db := openTestDB(t)
+	ClearPriceCache()
+	ClearRateCache()
+
+	seedPrice(t, db, "AAPL", "USD", "provider", "2024-01-01", 150.0, config.Stock)
+	seedPrice(t, db, "NIFTY", "INR", "provider", "2024-01-01", 21500.0, config.Stock)
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0, config.Unknown)
+
+	loadPriceCache(db)
+
+	require.NoError(t, db.Model(&price.Price{}).
+		Where("commodity_name = ?", "AAPL").
+		Update("value", decimal.NewFromFloat(160.0)).Error)
+	require.NoError(t, db.Model(&price.Price{}).
+		Where("commodity_name = ?", "NIFTY").
+		Update("value", decimal.NewFromFloat(22000.0)).Error)
+
+	loadPriceCache(db, "AAPL")
+
+	aapl := GetUnitPrice(db, "AAPL", mustParseDate("2024-06-01"))
+	assert.True(t, decimal.NewFromFloat(160.0*83.0).Equal(aapl.Value), "requested commodity must refresh")
+
+	nifty := GetUnitPrice(db, "NIFTY", mustParseDate("2024-06-01"))
+	assert.True(t, decimal.NewFromFloat(21500.0).Equal(nifty.Value), "non-requested commodity must keep previous cache entry")
+}
+
+func TestGetUnitPrice_LazyLoadsCommodityAfterWarmCache(t *testing.T) {
+	loadMarketTestConfig(t, false)
+	db := openTestDB(t)
+	ClearPriceCache()
+	ClearRateCache()
+
+	seedPrice(t, db, "AAPL", "USD", "provider", "2024-01-01", 150.0, config.Stock)
+	seedPrice(t, db, "USD", "INR", "journal", "2024-01-01", 83.0, config.Unknown)
+
+	WarmCache(db)
+	require.Eventually(t, func() bool {
+		pcacheMu.RLock()
+		defer pcacheMu.RUnlock()
+		return pcache.dcPricesTree != nil && len(pcache.dcPricesTree) == 0
+	}, time.Second, 10*time.Millisecond)
+
+	pc := GetUnitPrice(db, "AAPL", mustParseDate("2024-06-01"))
+	assert.True(t, decimal.NewFromFloat(150.0*83.0).Equal(pc.Value))
+
+	pcacheMu.RLock()
+	defer pcacheMu.RUnlock()
+	assert.Len(t, pcache.dcPricesTree, 1, "commodity cache should be populated lazily on first lookup")
+}
+
 // TestGetAllPrices_MultiCurrency verifies that GetAllPrices returns all prices
 // for a commodity, including those in different quote currencies.
 func TestGetAllPrices_MultiCurrency(t *testing.T) {

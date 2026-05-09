@@ -50,13 +50,28 @@ var (
 	pcacheMu sync.RWMutex
 )
 
-func loadPriceCache(db *gorm.DB) {
+func initPriceCache() {
+	pcacheMu.Lock()
+	defer pcacheMu.Unlock()
+	pcache.pricesTree = make(map[string]*btree.BTree)
+	pcache.postingPricesTree = make(map[string]*btree.BTree)
+	pcache.dcPricesTree = make(map[string]*btree.BTree)
+}
+
+func loadPriceCache(db *gorm.DB, commodities ...string) {
+	pcache.Do(initPriceCache)
+
 	pricesTree := make(map[string]*btree.BTree)
 	postingPricesTree := make(map[string]*btree.BTree)
 
 	dc := config.DefaultCurrency()
 	var prices []price.Price
-	if err := db.Find(&prices).Error; err != nil {
+
+	query := db
+	if len(commodities) > 0 {
+		query = query.Where("commodity_name IN ?", commodities)
+	}
+	if err := query.Find(&prices).Error; err != nil {
 		log.Fatal(err)
 	}
 
@@ -88,9 +103,45 @@ func loadPriceCache(db *gorm.DB) {
 
 	pcacheMu.Lock()
 	defer pcacheMu.Unlock()
-	pcache.pricesTree = pricesTree
-	pcache.postingPricesTree = postingPricesTree
-	pcache.dcPricesTree = dcPricesTree
+	if len(commodities) == 0 {
+		pcache.pricesTree = pricesTree
+		pcache.postingPricesTree = postingPricesTree
+		pcache.dcPricesTree = dcPricesTree
+		return
+	}
+
+	for _, commodity := range commodities {
+		if tree, ok := pricesTree[commodity]; ok {
+			pcache.pricesTree[commodity] = tree
+		} else {
+			pcache.pricesTree[commodity] = btree.New(2)
+		}
+
+		if postingTree, ok := postingPricesTree[commodity]; ok {
+			pcache.postingPricesTree[commodity] = postingTree
+		} else {
+			pcache.postingPricesTree[commodity] = btree.New(2)
+		}
+
+		if dcTree, ok := dcPricesTree[commodity]; ok {
+			pcache.dcPricesTree[commodity] = dcTree
+		} else {
+			pcache.dcPricesTree[commodity] = btree.New(2)
+		}
+	}
+}
+
+func ensurePriceCacheCommodityLoaded(db *gorm.DB, commodity string) {
+	pcache.Do(initPriceCache)
+
+	pcacheMu.RLock()
+	_, loaded := pcache.dcPricesTree[commodity]
+	pcacheMu.RUnlock()
+	if loaded {
+		return
+	}
+
+	loadPriceCache(db, commodity)
 }
 
 // isDefaultCurrency reports whether quote matches the configured default
@@ -176,13 +227,13 @@ func ClearPriceCache() {
 
 func WarmCache(db *gorm.DB) {
 	go func() {
-		pcache.Do(func() { loadPriceCache(db) })
+		pcache.Do(initPriceCache)
 		rcache.Do(func() { loadRateCache(db) })
 	}()
 }
 
 func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
-	pcache.Do(func() { loadPriceCache(db) })
+	ensurePriceCacheCommodityLoaded(db, commodity)
 
 	pcacheMu.RLock()
 	defer pcacheMu.RUnlock()
