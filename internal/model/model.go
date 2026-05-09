@@ -159,12 +159,12 @@ type commodityPriceFetchResult struct {
 	err       error
 }
 
-func SyncCommodities(db *gorm.DB, progressFn func(completed, total int)) (SyncCommoditiesResult, error) {
+func SyncCommodities(db *gorm.DB, forcePrices bool, progressFn func(completed, total int)) (SyncCommoditiesResult, error) {
 	log.WithFields(log.Fields{"stage": "commodities"}).Info("Fetching commodities price history")
-	return syncCommodities(db, lo.Shuffle(commodity.All()), scraper.GetProviderByCode, commodityFetchWorkers, progressFn)
+	return syncCommodities(db, lo.Shuffle(commodity.All()), scraper.GetProviderByCode, commodityFetchWorkers, forcePrices, progressFn)
 }
 
-func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByCode func(string) price.PriceProvider, workers int, progressFn func(completed, total int)) (SyncCommoditiesResult, error) {
+func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByCode func(string) price.PriceProvider, workers int, forcePrices bool, progressFn func(completed, total int)) (SyncCommoditiesResult, error) {
 	if workers <= 0 {
 		workers = 1
 	}
@@ -175,15 +175,19 @@ func syncCommodities(db *gorm.DB, commodities []config.Commodity, getProviderByC
 	// Determine the since timestamp from the last successful price sync.
 	// A zero value means fetch the full history (first run or metadata missing).
 	var since time.Time
-	if lastSyncStr, err := metadata.GetOrDefault(db, LastPriceSyncKey, ""); err == nil && lastSyncStr != "" {
-		if t, parseErr := time.Parse(time.RFC3339, lastSyncStr); parseErr == nil {
-			since = t
-		} else {
-			log.WithFields(log.Fields{"stage": "commodities", "value": lastSyncStr, "error": parseErr}).
-				Warn("Failed to parse last_price_sync metadata; falling back to full price history fetch")
+	if !forcePrices {
+		if lastSyncStr, err := metadata.GetOrDefault(db, LastPriceSyncKey, ""); err == nil && lastSyncStr != "" {
+			if t, parseErr := time.Parse(time.RFC3339, lastSyncStr); parseErr == nil {
+				since = t
+			} else {
+				log.WithFields(log.Fields{"stage": "commodities", "value": lastSyncStr, "error": parseErr}).
+					Warn("Failed to parse last_price_sync metadata; falling back to full price history fetch")
+			}
 		}
 	}
-	if since.IsZero() {
+	if forcePrices {
+		log.WithFields(log.Fields{"stage": "commodities"}).Info("Force refresh requested; fetching full price history")
+	} else if since.IsZero() {
 		log.WithFields(log.Fields{"stage": "commodities"}).Info("No previous price sync found; fetching full price history")
 	} else {
 		log.WithFields(log.Fields{"stage": "commodities", "since": since.Format(time.RFC3339)}).Info("Performing incremental price sync")

@@ -136,6 +136,42 @@ func TestIntegration_SyncAsync_Returns202WithJobID(t *testing.T) {
 	assert.NotEmpty(t, jobID, "job_id must be non-empty")
 }
 
+// TestIntegration_SyncAsync_ForcePricesMetadata verifies that the optional
+// force_prices request flag is accepted by POST /api/sync and preserved in the
+// submitted job metadata for later inspection by the UI.
+func TestIntegration_SyncAsync_ForcePricesMetadata(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+	router := Build(db, false)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/sync",
+		strings.NewReader(`{"prices":true,"force_prices":true}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusAccepted, rec.Code)
+
+	var syncBody map[string]json.RawMessage
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&syncBody))
+	var jobID string
+	require.NoError(t, json.Unmarshal(syncBody["job_id"], &jobID))
+	require.NotEmpty(t, jobID)
+
+	jobReq := httptest.NewRequest(http.MethodGet, "/api/jobs/"+jobID, nil)
+	jobRec := httptest.NewRecorder()
+	router.ServeHTTP(jobRec, jobReq)
+
+	require.Equal(t, http.StatusOK, jobRec.Code)
+
+	var job struct {
+		Metadata map[string]any `json:"metadata"`
+	}
+	require.NoError(t, json.NewDecoder(jobRec.Body).Decode(&job))
+	require.NotNil(t, job.Metadata)
+	assert.Equal(t, true, job.Metadata["force_prices"])
+}
+
 // TestIntegration_GetJob_ReturnsJobStatus verifies that GET /api/jobs/:id
 // returns the job status for a job submitted via POST /api/sync.
 func TestIntegration_GetJob_ReturnsJobStatus(t *testing.T) {
