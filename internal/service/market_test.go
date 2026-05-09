@@ -421,10 +421,10 @@ func TestLoadPriceCache_UpdatesOnlyRequestedCommodity(t *testing.T) {
 	loadPriceCache(db, "AAPL")
 
 	aapl := GetUnitPrice(db, "AAPL", mustParseDate("2024-06-01"))
-	assert.True(t, decimal.NewFromFloat(160.0*83.0).Equal(aapl.Value), "requested commodity must refresh")
+	assert.True(t, decimal.NewFromFloat(160.0*83.0).Equal(aapl.Value), "AAPL should be updated to reflect refreshed cache value (160.0 * 83.0)")
 
 	nifty := GetUnitPrice(db, "NIFTY", mustParseDate("2024-06-01"))
-	assert.True(t, decimal.NewFromFloat(21500.0).Equal(nifty.Value), "non-requested commodity must keep previous cache entry")
+	assert.True(t, decimal.NewFromFloat(21500.0).Equal(nifty.Value), "NIFTY should retain original cached value (21500.0) because it was not requested for refresh")
 }
 
 func TestGetUnitPrice_LazyLoadsCommodityAfterWarmCache(t *testing.T) {

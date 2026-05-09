@@ -46,8 +46,9 @@ type priceCache struct {
 }
 
 var (
-	pcache   priceCache
-	pcacheMu sync.RWMutex
+	pcache             priceCache
+	pcacheMu           sync.RWMutex
+	priceLoadCommodity sync.Map
 )
 
 func initPriceCache() {
@@ -136,6 +137,18 @@ func ensurePriceCacheCommodityLoaded(db *gorm.DB, commodity string) {
 
 	pcacheMu.RLock()
 	_, loaded := pcache.dcPricesTree[commodity]
+	pcacheMu.RUnlock()
+	if loaded {
+		return
+	}
+
+	commodityMuValue, _ := priceLoadCommodity.LoadOrStore(commodity, &sync.Mutex{})
+	commodityMu := commodityMuValue.(*sync.Mutex)
+	commodityMu.Lock()
+	defer commodityMu.Unlock()
+
+	pcacheMu.RLock()
+	_, loaded = pcache.dcPricesTree[commodity]
 	pcacheMu.RUnlock()
 	if loaded {
 		return
