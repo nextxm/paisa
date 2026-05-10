@@ -4,6 +4,26 @@
 
 #### Features
 
+- **Natural Language Transaction Parser (Phase 1)** — New `internal/parser` package enables parsing natural language text input into structured transactions with confidence scoring and interactive suggestions.
+  - **Core Parser** — 8-step extraction pipeline: normalize → date → amount → payee → hints → account matching → direction → confidence. Handles 10+ transaction scenarios (expenses, income, transfers, refunds, etc.).
+  - **Regex-based Extraction** — High-performance pattern matching for dates (ISO 8601, month names, relative), amounts (currency symbols, codes, word forms), account hints (from/to/via), and payment methods. <1ms per parse operation.
+  - **TF-IDF Account Matching** — Cosine similarity-based account disambiguation against known accounts in ledger, providing top 3 suggestions for low-confidence matches.
+  - **Confidence Scoring** — Per-field scoring (date, amount, payee, from/to accounts, direction) with weighted average (amount 30%, from/to 25% each, payee 15%, date 5%). Auto-create threshold: 0.85 (configurable).
+  - **Configurable Keywords** — Expense/income/transfer markers and payment method hints loaded from `paisa.yaml` for user customization without code changes.
+  - **Unit Tests** — 18+ test cases covering all 10 transaction scenarios plus edge cases (empty input, long input, missing fields, special characters). All tests passing.
+  - **Phase 2 backend APIs** — Added `POST /api/parser/parse` for parser preview and `POST /api/parser/create-transaction` for parse + append + sync flow with optional user overrides.
+  - **Training log persistence** — Added schema migration v8 to create `parser_training_log` and log parser predictions plus user-confirmed values for future model training.
+  - **Phase 2 frontend quick-add polish** — Added explicit “Clear Parsed State” action in Quick Add modal and extracted parser submit/suggestion helpers for focused parser-assisted quick-add tests (parse mapping, suggestion selection, create payload path).  - **Parser Enhancements for Compact Formats** — Improved parsing of compact transaction descriptions (e.g., "20 cad groceries bmo cc at no frills") with:
+    - **Category hint extraction** — Detects expense/income markers in text and uses them as "to" account hints for better category matching (e.g., "groceries" → "Expenses:Groceries").
+    - **Payment method expansion** — Enhances payment method hints by extracting bank/card names (e.g., "bmo cc" → "bmo credit card") for improved TF-IDF account matching (+0.5 similarity boost for matching bank names).
+    - **Robust amount extraction** — Fixed regex patterns for both prefix ($15) and suffix (15$, 15 CAD) amount formats, with case-insensitive currency matching (cad, CAD, etc.).
+    - **Improved account matching** — Enhanced similarity scoring with substring matching (+0.4 boost) and explicit bank/card keyword matching for better identification of financial accounts.
+    - **Cleaner payee extraction** — Payee field now excludes currencies, categories, payment methods, bank names, dates, and prepositions, returning only the merchant name (e.g., "no frills" instead of "cad no frills, bmo credit card").
+- **QuickAdd Modal Enhancements** — Improved the QuickAdd modal with the following updates:
+  - Added a "Clear Parsed State" button to reset the parser-assisted flow.
+  - Extracted parser submit and suggestion helpers for better modularity and testing.
+  - Added focused UI tests for parser-assisted quick-add behavior, including parse mapping, suggestion selection, and create payload path.
+
 - **Epic 6: Account balance snapshots as-of date** — Assets balance and account detail flows now support historical as-of views for reconciliation.
   - **Subtask 6.1 (Backend – Date filter on balance endpoints)** — Added `as_of_date` (`YYYY-MM-DD`) support to `GET /api/assets/balance`, `GET /api/gain/:account`, and new `GET /api/account/:account/balance`. Date defaults to today, rejects invalid format/future dates with `400 INVALID_REQUEST`, and excludes postings after the selected date.
   - **Subtask 6.2 (Frontend – Date picker on balance pages)** — Added "View as of" date pickers on Assets → Balance and account detail pages; changing the date reloads balance data without page reload and displays the selected as-of date.
@@ -29,6 +49,9 @@
 #### Documentation
 
 - **Reference documentation updated** — All new features from this release cycle are now documented in the reference section:
+  - [Parser API](docs/reference/parser.md) — natural-language parse/create endpoints, override fields, confidence handling, readonly behavior, and error envelope.
+  - [Journal](docs/reference/journal.md) — added Natural Language Quick Add section with parser workflow and link to parser API reference.
+  - MkDocs navigation now includes parser docs under Reference.
   - [Dashboard](docs/reference/dashboard.md) — new page covering the recent-transactions widget, monthly cashflow widget, reconciliation widget, and account drill-down.
   - [Accounts](docs/reference/accounts.md) — account notes, account reconciliation (badges, dashboard widget, API), and account-level transaction history.
   - [Analysis](docs/reference/analysis.md) — Year-over-Year comparison charts (`/analysis/yoy`).

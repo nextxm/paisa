@@ -3,6 +3,12 @@
   import * as toast from "bulma-toast";
   import dayjs from "dayjs";
   import { refresh } from "../../store";
+  import {
+    applySuggestionSelection,
+    buildQuickAddSubmitRequest,
+    clearedParserState,
+    parserFormOverrides
+  } from "./quick_add_parser_utils";
 
   let { open = $bindable(false), accounts = [] }: { open: boolean; accounts: string[] } = $props();
 
@@ -14,6 +20,106 @@
   let amount = $state("");
   let commodity = $state(USER_CONFIG.default_currency || "INR");
   let isLoading = $state(false);
+  let isParsing = $state(false);
+  let parserText = $state("");
+  let parserResult = $state<any>(null);
+  let parserWarnings = $state<string[]>([]);
+  let requiresConfirmation = $state(false);
+  let selectedSuggestionIndex = $state<Record<string, number>>({});
+  let parseStartedAt = $state<number | null>(null);
+
+  function applyParsedResult(result: any) {
+    const parsedDate = dayjs(result.date);
+    if (parsedDate.isValid()) {
+      date = parsedDate.format("YYYY-MM-DD");
+    }
+
+    const overrides = parserFormOverrides(result, commodity);
+    payee = overrides.payee || "";
+    fromAccount = overrides.fromAccount || "";
+    toAccount = overrides.toAccount || "";
+    amount = overrides.amount || "";
+    commodity = overrides.commodity || commodity;
+  }
+
+  function clearParsedState() {
+    const cleared = clearedParserState();
+    parserText = cleared.parserText;
+    parserResult = cleared.parserResult;
+    parserWarnings = cleared.parserWarnings;
+    requiresConfirmation = cleared.requiresConfirmation;
+    selectedSuggestionIndex = cleared.selectedSuggestionIndex;
+    parseStartedAt = cleared.parseStartedAt;
+  }
+
+  async function parseNaturalLanguage() {
+    if (!parserText.trim()) {
+      toast.toast({ message: "Enter transaction text to parse", type: "is-warning" });
+      return;
+    }
+
+    isParsing = true;
+    parserWarnings = [];
+    parseStartedAt = Date.now();
+
+    try {
+      const response = await ajax("/api/parser/parse", {
+        method: "POST",
+        body: JSON.stringify({ text: parserText }),
+        background: true
+      });
+
+      parserResult = response?.result || null;
+      requiresConfirmation = !!response?.requires_confirmation;
+      parserWarnings = parserResult?.warnings || [];
+      selectedSuggestionIndex = {};
+
+      if (!parserResult) {
+        toast.toast({ message: "Parser did not return a result", type: "is-danger" });
+        return;
+      }
+
+      applyParsedResult(parserResult);
+    } catch (e: any) {
+      toast.toast({ message: e.message || "Failed to parse transaction text", type: "is-danger" });
+      parserResult = null;
+      parserWarnings = [];
+      requiresConfirmation = false;
+    } finally {
+      isParsing = false;
+    }
+  }
+
+  function applySuggestion(field: string, account: string, index: number) {
+    const selection = applySuggestionSelection(
+      field,
+      account,
+      index,
+      {
+        date,
+        payee,
+        narration,
+        fromAccount,
+        toAccount,
+        amount,
+        commodity
+      },
+      selectedSuggestionIndex
+    );
+
+    fromAccount = selection.values.fromAccount;
+    toAccount = selection.values.toAccount;
+    selectedSuggestionIndex = selection.selectedSuggestionIndex;
+  }
+
+  function resetFormState() {
+    payee = "";
+    narration = "";
+    fromAccount = "";
+    toAccount = "";
+    amount = "";
+    clearParsedState();
+  }
 
   async function submit() {
     if (!date || !fromAccount || !toAccount || !amount || !commodity) {
@@ -23,26 +129,31 @@
 
     isLoading = true;
     try {
-      const response = await ajax("/api/transaction/add", {
-        method: "POST",
-        body: JSON.stringify({
+      const request = buildQuickAddSubmitRequest({
+        parserText,
+        values: {
           date,
           payee,
           narration,
-          from_account: fromAccount,
-          to_account: toAccount,
+          fromAccount,
+          toAccount,
           amount,
           commodity
-        })
+        },
+        selectedSuggestionIndex,
+        parseStartedAt,
+        nowMs: Date.now()
+      });
+
+      const response = await ajax(request.endpoint, {
+        method: "POST",
+        body: JSON.stringify(request.payload)
       });
 
       if (response.success) {
         toast.toast({ message: "Transaction added successfully", type: "is-success" });
         open = false;
-        // Reset form
-        payee = "";
-        narration = "";
-        amount = "";
+        resetFormState();
         refresh();
       } else {
         toast.toast({
@@ -59,7 +170,13 @@
 </script>
 
 <div class="modal" class:is-active={open}>
-  <div class="modal-background" onclick={() => (open = false)}></div>
+  <div
+    class="modal-background"
+    role="button"
+    tabindex="0"
+    onclick={() => (open = false)}
+    onkeydown={(e) => e.key === "Escape" && (open = false)}
+  ></div>
   <div class="modal-card">
     <header class="modal-card-head">
       <p class="modal-card-title">Quick Add Transaction</p>
@@ -75,23 +192,102 @@
       {/if}
 
       <div class="field">
-        <label class="label is-small">Date</label>
+        <label class="label is-small" for="parser-text">Natural Language Input</label>
         <div class="control">
-          <input class="input is-small" type="date" bind:value={date} required />
+          <textarea
+            id="parser-text"
+            class="textarea is-small"
+            rows="2"
+            bind:value={parserText}
+            placeholder="e.g. 20 Apr, bought 15$ groceries using bmo cc from no frills"
+          ></textarea>
+        </div>
+        <div class="control mt-2 is-flex" style="gap: 0.5rem;">
+          <button
+            class="button is-small is-info is-light {isParsing ? 'is-loading' : ''}"
+            onclick={parseNaturalLanguage}
+            disabled={!parserText.trim() || !USER_CONFIG.add_journal_path}
+          >
+            Parse Text
+          </button>
+          <button
+            class="button is-small is-light"
+            type="button"
+            onclick={clearParsedState}
+            disabled={!parserText && !parserResult}
+          >
+            Clear Parsed State
+          </button>
+        </div>
+      </div>
+
+      {#if parserResult}
+        <article class="message is-small {requiresConfirmation ? 'is-warning' : 'is-success'}">
+          <div class="message-body">
+            Parser confidence: {(parserResult.confidence?.overall || 0).toFixed(2)}
+            {#if requiresConfirmation}
+              - review fields before creating.
+            {/if}
+          </div>
+        </article>
+      {/if}
+
+      {#if parserWarnings.length > 0}
+        <article class="message is-warning is-small">
+          <div class="message-body">
+            {#each parserWarnings as warning}
+              <div>{warning}</div>
+            {/each}
+          </div>
+        </article>
+      {/if}
+
+      {#if parserResult?.suggestions?.length > 0}
+        {#each parserResult.suggestions as suggestionSet}
+          <div class="field">
+            <span class="label is-small">Suggestions for {suggestionSet.field}</span>
+            <div class="buttons are-small">
+              {#each suggestionSet.suggestions as suggestion, index}
+                <button
+                  class="button is-light {selectedSuggestionIndex[suggestionSet.field] === index
+                    ? 'is-link'
+                    : ''}"
+                  onclick={() => applySuggestion(suggestionSet.field, suggestion.account, index)}
+                  type="button"
+                >
+                  {suggestion.account} ({suggestion.score.toFixed(2)})
+                </button>
+              {/each}
+            </div>
+          </div>
+        {/each}
+      {/if}
+
+      <div class="field">
+        <label class="label is-small" for="date-input">Date</label>
+        <div class="control">
+          <input id="date-input" class="input is-small" type="date" bind:value={date} required />
         </div>
       </div>
 
       <div class="field">
-        <label class="label is-small">Payee</label>
-        <div class="control">
-          <input class="input is-small" type="text" bind:value={payee} placeholder="e.g. Amazon" />
-        </div>
-      </div>
-
-      <div class="field">
-        <label class="label is-small">Narration</label>
+        <label class="label is-small" for="payee-input">Payee</label>
         <div class="control">
           <input
+            id="payee-input"
+            class="input is-small"
+            type="text"
+            bind:value={payee}
+            placeholder="e.g. Amazon"
+          />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label is-small" for="narration-input">Narration</label>
+        <div class="control">
+          <input
+            id="narration-input"
             class="input is-small"
             type="text"
             bind:value={narration}
@@ -103,9 +299,10 @@
       <div class="columns is-mobile mb-0">
         <div class="column">
           <div class="field">
-            <label class="label is-small">From Account</label>
+            <label class="label is-small" for="from-account-input">From Account</label>
             <div class="control">
               <input
+                id="from-account-input"
                 class="input is-small"
                 list="accounts-list"
                 bind:value={fromAccount}
@@ -117,9 +314,10 @@
         </div>
         <div class="column">
           <div class="field">
-            <label class="label is-small">To Account</label>
+            <label class="label is-small" for="to-account-input">To Account</label>
             <div class="control">
               <input
+                id="to-account-input"
                 class="input is-small"
                 list="accounts-list"
                 bind:value={toAccount}
@@ -134,9 +332,10 @@
       <div class="columns is-mobile">
         <div class="column">
           <div class="field">
-            <label class="label is-small">Amount</label>
+            <label class="label is-small" for="amount-input">Amount</label>
             <div class="control">
               <input
+                id="amount-input"
                 class="input is-small"
                 type="text"
                 bind:value={amount}
@@ -148,9 +347,15 @@
         </div>
         <div class="column">
           <div class="field">
-            <label class="label is-small">Currency</label>
+            <label class="label is-small" for="currency-input">Currency</label>
             <div class="control">
-              <input class="input is-small" type="text" bind:value={commodity} required />
+              <input
+                id="currency-input"
+                class="input is-small"
+                type="text"
+                bind:value={commodity}
+                required
+              />
             </div>
           </div>
         </div>
@@ -177,6 +382,6 @@
 
 <style lang="scss">
   .modal-card {
-    max-width: 450px;
+    max-width: 620px;
   }
 </style>

@@ -106,3 +106,19 @@ include expenses/*.ledger
 
 Include directive can be used to include other journal files. It
 supports wildcards `*`.
+
+## Natural Language Quick Add
+
+Paisa can also create journal entries from free-form transaction text
+through parser APIs. This is useful for quick capture workflows where
+you type text such as:
+
+```text
+20 Apr, bought 15$ groceries using bmo cc from no frills
+```
+
+The parser extracts date, amount, payee, and account candidates, then
+creates a normal journal entry through the same add-transaction flow.
+
+See the full API contract, request/response formats, and confidence
+handling in [Natural Language Parser API](./parser.md).

@@ -75,6 +75,7 @@
   <QuickAddModal bind:open={showQuickAdd} {accounts} />
 
   <button
+    type="button"
     class="navbar-action-button"
     data-tippy-content="<p>Quick Add Transaction</p>"
     aria-label="Quick Add Transaction"
@@ -85,6 +86,7 @@
     </span>
   </button>
   <button
+    type="button"
     class="navbar-action-button sync-history-btn"
     data-tippy-content="<p>Sync History</p>"
     aria-label="Sync History"
@@ -99,6 +101,7 @@
   </button>
 
   <button
+    type="button"
     class="navbar-action-button"
     data-tippy-content="<p>Sync Journal</p>"
     aria-label="Sync Journal"
@@ -110,6 +113,7 @@
   </button>
 
   <button
+    type="button"
     class="navbar-action-button"
     data-tippy-content="<p>Update Prices</p>"
     aria-label="Update Prices"

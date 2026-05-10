@@ -32,7 +32,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 7, version)
+	assert.Equal(t, 8, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -42,7 +42,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 7, version)
+	assert.Equal(t, 8, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -60,12 +60,12 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	db := openMemoryDB(t)
 
 	// Simulate an existing install that has tables but no schema_versions table.
-	// RunMigrations should create the table and record v7 without error.
+	// RunMigrations should create the table and record v8 without error.
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	// Schema version should be 7 after migration.
-	assert.Equal(t, 7, migration.CurrentVersion(db))
+	// Schema version should be 8 after migration.
+	assert.Equal(t, 8, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -101,9 +101,9 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&migration.SchemaVersion{}))
 	require.NoError(t, db.Create(&migration.SchemaVersion{Version: 1, AppliedAt: time.Now()}).Error)
 
-	// Run migrations – v2, v3, v4, v5, v6, and v7 should execute.
+	// Run migrations – v2, v3, v4, v5, v6, v7, and v8 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 7, migration.CurrentVersion(db))
+	assert.Equal(t, 8, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -259,4 +259,24 @@ func TestV7Migration_AccountBalancesTableExists(t *testing.T) {
 	assert.Equal(t, "Assets:Checking", all[0].Account)
 	assert.Equal(t, "INR", all[0].Commodity)
 	assert.True(t, decimal.NewFromFloat(1000).Equal(all[0].Amount))
+}
+
+// TestV8Migration_ParserTrainingLogTableExists verifies that after v8 the
+// parser_training_log table exists and accepts writes.
+func TestV8Migration_ParserTrainingLogTableExists(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	require.NoError(t, db.Exec(
+		`INSERT INTO parser_training_log (
+			input_text, predicted_amount, predicted_currency, predicted_from_account,
+			predicted_to_account, predicted_direction, confidence_overall, suggestion_used
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		"paid $25 for groceries", decimal.NewFromInt(25).String(), "USD", "Assets:Checking",
+		"Expenses:Groceries", "expense", 0.76, -1,
+	).Error)
+
+	var count int64
+	require.NoError(t, db.Raw("SELECT COUNT(*) FROM parser_training_log").Scan(&count).Error)
+	assert.Equal(t, int64(1), count)
 }

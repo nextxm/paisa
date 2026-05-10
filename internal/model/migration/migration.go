@@ -44,6 +44,7 @@ var steps = []step{
 	{Version: 5, Apply: v5AddImportPresets},
 	{Version: 6, Apply: v6AddAccountReconciliation},
 	{Version: 7, Apply: v7AddAccountBalances},
+	{Version: 8, Apply: v8AddParserTrainingLog},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -145,6 +146,52 @@ func v6AddAccountReconciliation(db *gorm.DB) error {
 func v7AddAccountBalances(db *gorm.DB) error {
 	if err := db.AutoMigrate(&account_balance.AccountBalance{}); err != nil {
 		return fmt.Errorf("v7: AutoMigrate account_balances failed: %w", err)
+	}
+	return nil
+}
+
+// v8AddParserTrainingLog creates parser_training_log table for NL parser learning data.
+func v8AddParserTrainingLog(db *gorm.DB) error {
+	if err := db.Exec(`CREATE TABLE IF NOT EXISTS parser_training_log (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		created_at DATETIME,
+		input_text TEXT,
+		predicted_date DATETIME,
+		predicted_amount TEXT,
+		predicted_currency TEXT,
+		predicted_payee TEXT,
+		predicted_from_account TEXT,
+		predicted_to_account TEXT,
+		predicted_direction TEXT,
+		confidence_date REAL,
+		confidence_amount REAL,
+		confidence_currency REAL,
+		confidence_payee REAL,
+		confidence_from_account REAL,
+		confidence_to_account REAL,
+		confidence_direction REAL,
+		confidence_overall REAL,
+		actual_date DATETIME,
+		actual_amount TEXT,
+		actual_currency TEXT,
+		actual_payee TEXT,
+		actual_from_account TEXT,
+		actual_to_account TEXT,
+		actual_direction TEXT,
+		user_corrected NUMERIC,
+		correction_notes TEXT,
+		suggestions_shown INTEGER,
+		suggestion_used INTEGER,
+		time_to_confirm INTEGER
+	)`).Error; err != nil {
+		return fmt.Errorf("v8: create parser_training_log table failed: %w", err)
+	}
+
+	if err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_parser_training_log_created_at ON parser_training_log(created_at)`).Error; err != nil {
+		return fmt.Errorf("v8: create idx_parser_training_log_created_at failed: %w", err)
+	}
+	if err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_parser_training_log_user_corrected ON parser_training_log(user_corrected)`).Error; err != nil {
+		return fmt.Errorf("v8: create idx_parser_training_log_user_corrected failed: %w", err)
 	}
 	return nil
 }
