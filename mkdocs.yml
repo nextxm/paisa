@@ -17,6 +17,7 @@ nav:
     - reference/accounts.md
     - reference/commodities.md
     - reference/journal.md
+    - reference/parser.md
     - reference/allocation-targets.md
     - reference/budget.md
     - reference/cash-flow.md
