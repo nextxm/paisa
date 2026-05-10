@@ -18,7 +18,7 @@
   let open = $state(false);
   let query = $state("");
   let selectedIndex = $state(0);
-  let inputEl: HTMLInputElement = $state(null);
+  let inputEl: HTMLInputElement | null = $state(null);
   let showQuickAdd = $state(false);
   let accounts: string[] = $state([]);
 
@@ -344,7 +344,8 @@
   });
 
   $effect(() => {
-    // Reset selection when filter changes
+    // Reset selection when filtered results change
+    void filteredCommands;
     selectedIndex = 0;
   });
 
@@ -443,14 +444,8 @@
 
 {#if open}
   <!-- Backdrop -->
-  <div
-    class="command-palette-backdrop"
-    role="button"
-    tabindex="-1"
-    aria-label="Close command palette"
-    onclick={closePalette}
-    onkeydown={(e) => e.key === "Escape" && closePalette()}
-  ></div>
+  <button class="command-palette-backdrop" aria-label="Close command palette" onclick={closePalette}
+  ></button>
 
   <!-- Palette -->
   <div class="command-palette" role="dialog" aria-label="Command palette" aria-modal="true">
@@ -484,26 +479,25 @@
         aria-label="Commands"
       >
         {#each filteredCommands as cmd, i}
-          <li
-            id="cp-item-{cmd.id}"
-            class="command-palette-item"
-            class:is-selected={i === selectedIndex}
-            role="option"
-            aria-selected={i === selectedIndex}
-            onclick={() => runCommand(cmd)}
-            onkeydown={(e) => e.key === "Enter" && runCommand(cmd)}
-            onmouseenter={() => (selectedIndex = i)}
-          >
-            <span class="command-palette-item-icon">
-              <i class="fas {cmd.icon}"></i>
-            </span>
-            <span class="command-palette-item-body">
-              <span class="command-palette-item-label">{cmd.label}</span>
-              {#if cmd.description}
-                <span class="command-palette-item-desc">{cmd.description}</span>
-              {/if}
-            </span>
-            <span class="command-palette-item-category">{cmd.category}</span>
+          <li id="cp-item-{cmd.id}" role="option" aria-selected={i === selectedIndex}>
+            <button
+              type="button"
+              class="command-palette-item"
+              class:is-selected={i === selectedIndex}
+              onclick={() => runCommand(cmd)}
+              onmouseenter={() => (selectedIndex = i)}
+            >
+              <span class="command-palette-item-icon">
+                <i class="fas {cmd.icon}"></i>
+              </span>
+              <span class="command-palette-item-body">
+                <span class="command-palette-item-label">{cmd.label}</span>
+                {#if cmd.description}
+                  <span class="command-palette-item-desc">{cmd.description}</span>
+                {/if}
+              </span>
+              <span class="command-palette-item-category">{cmd.category}</span>
+            </button>
           </li>
         {/each}
       </ul>
@@ -527,6 +521,8 @@
     background: rgba(0, 0, 0, 0.45);
     z-index: 9000;
     cursor: default;
+    border: none;
+    padding: 0;
   }
 
   .command-palette {
@@ -593,6 +589,10 @@
     list-style: none;
     margin: 0;
     padding: 0.375rem;
+
+    li {
+      display: block;
+    }
   }
 
   .command-palette-item {
@@ -604,6 +604,12 @@
     cursor: pointer;
     transition: background 80ms ease;
     user-select: none;
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    font-family: inherit;
+    font-size: inherit;
 
     &.is-selected {
       background: var(--bulma-primary-10, rgba(72, 95, 199, 0.1));
