@@ -382,10 +382,8 @@
     showQuickAdd = true;
 
     if (accounts.length === 0) {
-      const response = (await ajax("/api/config", { background: true })) as {
-        accounts?: string[];
-      };
-      accounts = response.accounts || [];
+      const response = await ajax("/api/config", { background: true });
+      accounts = response.accounts;
     }
   }
 
