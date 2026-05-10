@@ -65,6 +65,13 @@
   const trendSvgWidth = 900;
   const trendSvgHeight = 260;
 
+  function applyTrendPreset(months: number) {
+    trendMonths = months;
+    const range = trendRangeFromMonths(asOfDate, months);
+    trendStart = range.start;
+    trendEnd = range.end;
+  }
+
   async function fetchAccountGain() {
     const gainResult = await ajax(
       `/api/gain/${encodeURIComponent(data.name)}?as_of_date=${encodeURIComponent(asOfDate)}`
@@ -255,9 +262,7 @@
                 type="date"
                 bind:value={asOfDate}
                 onchange={async () => {
-                  const range = trendRangeFromMonths(asOfDate, trendMonths);
-                  trendStart = range.start;
-                  trendEnd = range.end;
+                  applyTrendPreset(trendMonths);
                   await fetchAccountGain();
                 }}
               />
@@ -276,12 +281,7 @@
               <div class="control">
                 <button
                   class="button is-small {trendMonths === 6 ? 'is-link' : 'is-light'}"
-                  onclick={() => {
-                    trendMonths = 6;
-                    const range = trendRangeFromMonths(asOfDate, trendMonths);
-                    trendStart = range.start;
-                    trendEnd = range.end;
-                  }}
+                  onclick={() => applyTrendPreset(6)}
                 >
                   6M
                 </button>
@@ -289,12 +289,7 @@
               <div class="control">
                 <button
                   class="button is-small {trendMonths === 12 ? 'is-link' : 'is-light'}"
-                  onclick={() => {
-                    trendMonths = 12;
-                    const range = trendRangeFromMonths(asOfDate, trendMonths);
-                    trendStart = range.start;
-                    trendEnd = range.end;
-                  }}
+                  onclick={() => applyTrendPreset(12)}
                 >
                   12M
                 </button>
