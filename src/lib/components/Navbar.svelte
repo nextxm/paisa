@@ -178,6 +178,7 @@
   let selectedLink: Link | null = $state(null);
   let selectedSubLink: Link | null = $state(null);
   let selectedSubSubLink: Link | null = $state(null);
+  let isSmallViewport = $state(false);
   let navMenuEl: HTMLDivElement;
   let burgerButtonEl: HTMLButtonElement;
   let previousFocusEl: HTMLElement | null = null;
@@ -306,6 +307,19 @@
       }
     };
   });
+
+  $effect(() => {
+    if (typeof window === "undefined") return;
+
+    const updateViewport = () => {
+      isSmallViewport = window.innerWidth <= 1023;
+    };
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+
+    return () => window.removeEventListener("resize", updateViewport);
+  });
 </script>
 
 <nav class="navbar px-2 is-transparent" aria-label="main navigation">
@@ -339,11 +353,13 @@
       {/if}
     </a>
 
-    <div class="navbar-item navbar-actions-row mobile-top-actions">
-      <SyncingIndicator />
-      <ThemeSwitcher />
-      <Actions />
-    </div>
+    {#if isSmallViewport}
+      <div class="navbar-item navbar-actions-row mobile-top-actions">
+        <SyncingIndicator />
+        <ThemeSwitcher />
+        <Actions />
+      </div>
+    {/if}
   </div>
 
   <div
@@ -668,6 +684,11 @@
       flex-wrap: nowrap;
       justify-content: flex-start;
       width: 100%;
+      min-width: 0;
+    }
+
+    .navbar-brand > .navbar-item {
+      min-width: 0;
     }
 
     .navbar-brand .navbar-burger.mobile-drawer-toggle {
@@ -745,6 +766,7 @@
   @media screen and (max-width: 640px) {
     .navbar-brand {
       flex-wrap: wrap;
+      row-gap: 0.2rem;
     }
 
     .navbar-actions-row {
@@ -757,9 +779,16 @@
       flex: 1 1 100%;
       width: 100%;
       margin-left: 0;
-      overflow: visible;
-      padding: 0.15rem 0 0.1rem 0.15rem;
+      min-width: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0.15rem 0 0.1rem 0;
       justify-content: flex-start;
+    }
+
+    .mobile-top-actions :global(.navbar-actions-strip) {
+      min-width: max-content;
+      padding-right: 0.15rem;
     }
 
     .navbar-actions-row :global(.theme-toggle) {

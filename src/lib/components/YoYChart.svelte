@@ -24,6 +24,8 @@
   } = $props();
 
   let legends: Legend[] = $state([]);
+  let chartContainer: HTMLDivElement = $state();
+  let compactMode = $state(false);
 
   function render() {
     if (typeof document === "undefined") return;
@@ -35,19 +37,25 @@
     svg.selectAll("*").remove();
     if (_.isEmpty(years)) return;
 
-    const margin = { top: 20, right: 30, bottom: 45, left: 50 };
-    const width =
-      document.getElementById(id)?.parentElement?.clientWidth || 800 - margin.left - margin.right;
-    const height = 320 - margin.top - margin.bottom;
+    const containerWidth =
+      chartContainer?.clientWidth || document.getElementById(id)?.parentElement?.clientWidth || 800;
+    compactMode = containerWidth < 480;
+
+    const margin = compactMode
+      ? { top: 16, right: 12, bottom: 36, left: 38 }
+      : { top: 20, right: 30, bottom: 45, left: 50 };
+    const chartHeight = compactMode ? 260 : 320;
+    const width = Math.max(containerWidth - margin.left - margin.right, 120);
+    const height = chartHeight - margin.top - margin.bottom;
     const root = svg
-      .attr("height", 320)
+      .attr("height", chartHeight)
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
     const x = d3
       .scaleBand<string>()
       .domain(points.map((point) => point.month as string))
-      .range([0, width - margin.left - margin.right])
+      .range([0, width])
       .padding(0.2);
 
     const y = d3
@@ -66,12 +74,25 @@
       shape: chartType === "line" ? "line" : "square"
     }));
 
-    root
+    const xAxis = root
       .append("g")
       .attr("class", "axis x")
       .attr("transform", `translate(0,${height})`)
       .call(d3.axisBottom(x));
-    root.append("g").attr("class", "axis y").call(d3.axisLeft(y).tickFormat(formatCurrencyCrude));
+    const yAxis = root
+      .append("g")
+      .attr("class", "axis y")
+      .call(
+        d3
+          .axisLeft(y)
+          .ticks(compactMode ? 4 : 6)
+          .tickFormat(formatCurrencyCrude)
+      );
+
+    if (compactMode) {
+      xAxis.selectAll("text").style("font-size", "10px");
+      yAxis.selectAll("text").style("font-size", "10px");
+    }
 
     if (chartType === "line") {
       for (const year of years) {
@@ -85,7 +106,7 @@
           .datum(points)
           .attr("fill", "none")
           .attr("stroke", color(year))
-          .attr("stroke-width", 2)
+          .attr("stroke-width", compactMode ? 1.5 : 2)
           .attr("d", line);
 
         root
@@ -95,7 +116,7 @@
           .attr("class", `point-${year}`)
           .attr("cx", (point) => (x(point.month as string) || 0) + x.bandwidth() / 2)
           .attr("cy", (point) => y(Number(point[year] || 0)))
-          .attr("r", 3)
+          .attr("r", compactMode ? 2 : 3)
           .attr("fill", color(year));
       }
     } else {
@@ -149,5 +170,17 @@
   });
 </script>
 
-<LegendCard {legends} clazz="ml-4 mb-3" />
-<svg {id} width="100%" />
+<div class="yoy-chart" bind:this={chartContainer}>
+  <LegendCard {legends} clazz={compactMode ? "mb-2" : "ml-4 mb-3"} />
+  <svg {id} width="100%" />
+</div>
+
+<style lang="scss">
+  .yoy-chart {
+    min-width: 0;
+  }
+
+  .yoy-chart :global(svg) {
+    display: block;
+  }
+</style>

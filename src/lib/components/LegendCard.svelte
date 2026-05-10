@@ -40,7 +40,7 @@
   }
 </script>
 
-<div class="flex flex-wrap items-start justify-center gap-x-4 gap-y-3 {clazz}">
+<div class="legend-list flex flex-wrap items-start justify-center gap-x-4 gap-y-3 {clazz}">
   {#each legends as legend}
     <button
       type="button"
@@ -49,7 +49,7 @@
       class:selected={selectedLegend == legend}
       disabled={!legend.onClick}
       aria-label={legend.label}
-      style="min-width: 90px; flex: 0 0 auto;"
+      style="flex: 0 0 auto;"
     >
       {#if legend.texture}
         <svg
@@ -76,7 +76,12 @@
 </div>
 
 <style lang="scss">
+  .legend-list {
+    min-width: 0;
+  }
+
   .legend-box {
+    min-width: 90px;
     border: 1px solid transparent;
     border-radius: 6px;
     background: transparent;
@@ -104,6 +109,31 @@
 
     &:disabled {
       cursor: default;
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+    .legend-list {
+      justify-content: flex-start;
+      gap: 0.5rem;
+      margin-left: 0 !important;
+    }
+
+    .legend-box {
+      min-width: 72px;
+      padding: 0.35rem;
+      gap: 0.3rem;
+    }
+
+    .legend-label {
+      max-width: 88px !important;
+      font-size: 0.68rem !important;
+      line-height: 1.15;
+    }
+
+    .legend-list:global(.ml-4),
+    .legend-list:global(.ml-5) {
+      margin-left: 0 !important;
     }
   }
 </style>

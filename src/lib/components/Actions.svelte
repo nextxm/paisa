@@ -178,7 +178,8 @@
 
 <style lang="scss">
   .navbar-actions-strip {
-    min-width: max-content;
+    max-width: 100%;
+    flex-wrap: wrap;
   }
 
   .navbar-action-button {
@@ -207,6 +208,10 @@
   }
 
   @media screen and (max-width: 1023px) {
+    .navbar-actions-strip {
+      flex-wrap: nowrap;
+    }
+
     .navbar-action-button {
       width: 2rem;
       height: 2rem;

@@ -30,6 +30,7 @@
   let containerEl: HTMLDivElement = $state();
   let resizeObserver: ResizeObserver;
   let containerWidth = $state(0);
+  let compactMode = $state(false);
 
   // Color mapping by account kind
   const kindColors: Record<string, string> = {
@@ -54,7 +55,11 @@
 
     if (_.isEmpty(nodes) || _.isEmpty(links)) return;
 
-    const margin = { top: rem(10), right: rem(120), bottom: rem(10), left: rem(120) };
+    compactMode = containerWidth < 640;
+
+    const margin = compactMode
+      ? { top: rem(10), right: rem(54), bottom: rem(10), left: rem(54) }
+      : { top: rem(10), right: rem(120), bottom: rem(10), left: rem(120) };
     const w = containerWidth - margin.left - margin.right;
     const h = height - margin.top - margin.bottom;
 
@@ -71,7 +76,7 @@
     };
 
     const sankey = sankeyCircular()
-      .nodeWidth(rem(15))
+      .nodeWidth(compactMode ? rem(11) : rem(15))
       .nodePaddingRatio(0.6)
       .size([w, h])
       .nodeId((d: any) => d.id)
@@ -207,7 +212,7 @@
       .on("blur", () => highlightNeighbors(null));
 
     // ── Labels ───────────────────────────────────────────────────────────────
-    const LABEL_MAX_CHARS = 20;
+    const LABEL_MAX_CHARS = compactMode ? 12 : 20;
 
     function truncateLabel(name: string) {
       const parts = name.split(":");
@@ -230,7 +235,7 @@
         return "middle";
       })
       .classed("svg-text-grey-dark", true)
-      .style("font-size", "0.75rem")
+      .style("font-size", compactMode ? "0.65rem" : "0.75rem")
       .style("pointer-events", "none")
       .attr("data-tippy-content", (d: any) =>
         d.name.length > LABEL_MAX_CHARS ? tooltip([["Account", iconify(d.name)]]) : null

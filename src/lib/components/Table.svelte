@@ -43,6 +43,9 @@
       return;
     }
 
+    const layout =
+      typeof window !== "undefined" && window.innerWidth <= 768 ? "fitColumns" : "fitDataTable";
+
     tabulator = new Tabulator(el, {
       dataTree: props.tree,
       dataTreeStartExpanded: [true, true, false],
@@ -54,7 +57,7 @@
         "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-down'></i></span>",
       data: props.data || [],
       columns: props.columns,
-      layout: "fitDataTable"
+      layout
     });
 
     tabulator.on("tableBuilt", () => {
@@ -82,4 +85,25 @@
   });
 </script>
 
-<div class="overflow-x-auto box py-0" style="max-width: 100%;" bind:this={tableComponent}></div>
+<div class="responsive-table box py-0" bind:this={tableComponent}></div>
+
+<style lang="scss">
+  .responsive-table {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .responsive-table :global(.tabulator) {
+    min-width: 100%;
+  }
+
+  @media screen and (max-width: 768px) {
+    .responsive-table {
+      padding-bottom: 0.35rem;
+    }
+  }
+</style>
