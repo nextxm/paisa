@@ -19,6 +19,7 @@
   let query = $state("");
   let selectedIndex = $state(0);
   let inputEl: HTMLInputElement | null = $state(null);
+  let listEl: HTMLUListElement | null = $state(null);
   let showQuickAdd = $state(false);
   let accounts: string[] = $state([]);
 
@@ -279,6 +280,7 @@
   ];
 
   const currencyCommands: Command[] = $derived.by(() => {
+    // USER_CONFIG is a TypeScript global declared in src/app.d.ts, injected at runtime.
     const currencies: string[] = USER_CONFIG.currencies || [];
     if (currencies.length === 0) return [];
     return currencies.map((c) => ({
@@ -344,8 +346,8 @@
   });
 
   $effect(() => {
-    // Reset selection when filtered results change
-    void filteredCommands;
+    // Reset selection to top whenever the filtered result set changes
+    const _ = filteredCommands.length;
     selectedIndex = 0;
   });
 
@@ -432,8 +434,7 @@
   }
 
   function scrollToSelected() {
-    const listEl = document.querySelector(".command-palette-list");
-    const itemEl = listEl?.children[selectedIndex] as HTMLElement;
+    const itemEl = listEl?.children[selectedIndex] as HTMLElement | undefined;
     itemEl?.scrollIntoView({ block: "nearest" });
   }
 </script>
@@ -473,6 +474,7 @@
 
     {#if filteredCommands.length > 0}
       <ul
+        bind:this={listEl}
         id="command-palette-list"
         class="command-palette-list"
         role="listbox"
