@@ -4,6 +4,8 @@
 
 #### Features
 
+- **Frontend typing fix for `/api/config` quick-add fetch** — Fixed `ajax("/api/config", { background: true })` typing so GET calls with options retain the config response shape (including `accounts`), resolving `svelte-check` failures in quick-add launch paths.
+
 - **Global Command Palette (Ctrl+K)** — Added a global command palette accessible via `Ctrl+K` (or `Cmd+K` on Mac) that allows quick navigation between all pages, launching the Quick Add Transaction modal, and searching currency-related views. The palette features fuzzy search, keyboard navigation (arrow keys, Enter to select, Escape to close), and a search button in the navbar for mouse users.
 
 - **Natural Language Transaction Parser (Phase 1)** — New `internal/parser` package enables parsing natural language text input into structured transactions with confidence scoring and interactive suggestions.

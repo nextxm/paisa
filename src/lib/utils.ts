@@ -665,14 +665,19 @@ type RequestOptions = RequestInit & {
   background?: boolean;
 };
 
-export function ajax(route: "/api/config"): Promise<{
+type ConfigResponse = {
   config: UserConfig;
   schema: JSONSchema7;
   now: dayjs.Dayjs;
   accounts: string[];
   last_price_update: string;
   is_journal_dirty: boolean;
-}>;
+};
+
+export function ajax(
+  route: "/api/config",
+  options?: RequestOptions & { method?: "GET" | undefined }
+): Promise<ConfigResponse>;
 export function ajax(
   route: "/api/config/provider-debug-http",
   options?: RequestOptions
@@ -940,7 +945,7 @@ export function ajax(route: "/api/init", options?: RequestOptions): Promise<any>
 
 export function ajax(
   route: "/api/config",
-  options?: RequestOptions
+  options: RequestOptions & { method: "POST" }
 ): Promise<{ success: boolean; error?: string }>;
 
 export function ajax(route: "/api/ping"): Promise<{ success: boolean; error?: string }>;
