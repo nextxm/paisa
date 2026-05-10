@@ -4,6 +4,11 @@
 
 #### Features
 
+- **Epic 6: Account balance snapshots as-of date** — Assets balance and account detail flows now support historical as-of views for reconciliation.
+  - **Subtask 6.1 (Backend – Date filter on balance endpoints)** — Added `as_of_date` (`YYYY-MM-DD`) support to `GET /api/assets/balance`, `GET /api/gain/:account`, and new `GET /api/account/:account/balance`. Date defaults to today, rejects invalid format/future dates with `400 INVALID_REQUEST`, and excludes postings after the selected date.
+  - **Subtask 6.2 (Frontend – Date picker on balance pages)** — Added "View as of" date pickers on Assets → Balance and account detail pages; changing the date reloads balance data without page reload and displays the selected as-of date.
+  - **Subtask 6.3 (Frontend – Historical balance trend view)** — Added account-level "View Trend" with 6M/12M presets, custom start/end date filters, responsive SVG trend line, and current-balance marker.
+
 - **Granular progress reporting for sync jobs** — Users can now see per-commodity progress during long price sync operations instead of a static "Syncing…" spinner.
   - `Job` (worker package) gains `items_completed` and `total_items` integer fields, serialised as JSON and exposed via `GET /api/jobs/:id`.
   - `DetailedJobFn` now receives a thread-safe `progress func(completed, total int)` callback. `runDetailed` creates the callback and updates the job fields under the registry lock, eliminating any data race.

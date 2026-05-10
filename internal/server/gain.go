@@ -2,6 +2,7 @@ package server
 
 import (
 	"strings"
+	"time"
 
 	"github.com/ananthakumaran/paisa/internal/accounting"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
@@ -47,11 +48,11 @@ func GetGain(db *gorm.DB) gin.H {
 	return gin.H{"gain_breakdown": gains}
 }
 
-func GetAccountGain(db *gorm.DB, account string) gin.H {
+func GetAccountGain(db *gorm.DB, account string, asOfDate time.Time) gin.H {
 	capitalGainsAccount := strings.Replace(account, "Assets", "Income:CapitalGains", 1)
-	postings := query.Init(db).AccountPrefix(account, capitalGainsAccount).All()
-	postings = service.PopulateMarketPrice(db, postings)
-	gain := AccountGain{Account: account, XIRR: service.XIRR(db, postings), NetworthTimeline: computeNetworthTimeline(db, postings, accounting.IsLeafAccount(db, account)), Postings: postings}
+	postings := query.Init(db).UntilDate(asOfDate).AccountPrefix(account, capitalGainsAccount).All()
+	postings = service.PopulateMarketPriceAt(db, postings, asOfDate)
+	gain := AccountGain{Account: account, XIRR: service.XIRR(db, postings), NetworthTimeline: computeNetworthTimeline(db, postings, accounting.IsLeafAccount(db, account), asOfDate), Postings: postings}
 
 	commodities := lo.Uniq(lo.Map(postings, func(p posting.Posting, _ int) string { return p.Commodity }))
 	var portfolio_groups PortfolioAllocationGroups
@@ -60,7 +61,7 @@ func GetAccountGain(db *gorm.DB, account string) gin.H {
 		portfolio_groups = PortfolioAllocationGroups{Commomdities: []string{}, NameAndSecurityType: []PortfolioAggregate{}, SecurityType: []PortfolioAggregate{}, Rating: []PortfolioAggregate{}, Industry: []PortfolioAggregate{}}
 	}
 
-	assetBreakdown := assets.ComputeBreakdown(db, postings, false, account)
+	assetBreakdown := assets.ComputeBreakdownAt(db, postings, false, account, asOfDate)
 
 	return gin.H{"gain_timeline_breakdown": gain, "portfolio_allocation": portfolio_groups, "asset_breakdown": assetBreakdown}
 }

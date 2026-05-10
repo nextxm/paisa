@@ -1,7 +1,8 @@
 <script lang="ts">
   import AssetsBalance from "$lib/components/AssetsBalance.svelte";
   import { downloadAssetBalanceCSV, downloadAssetBalanceExcel } from "$lib/export";
-  import { ajax, type AssetBreakdown } from "$lib/utils";
+  import { ajax, now, type AssetBreakdown } from "$lib/utils";
+  import dayjs from "dayjs";
   import { onMount } from "svelte";
 
   let breakdowns: Record<string, AssetBreakdown> = $state({});
@@ -10,10 +11,12 @@
   let flatAccounts = $state(false);
   let filterInactive = $state(true);
   let filterZero = $state(true);
+  let asOfDate = $state(now().format("YYYY-MM-DD"));
 
   async function fetchBreakdowns() {
     const params = new URLSearchParams();
     if (reportCurrency) params.set("report_currency", reportCurrency);
+    params.set("as_of_date", asOfDate);
     const query = params.toString();
     ({ asset_breakdowns: breakdowns } = await ajax(
       query ? `/api/assets/balance?${query}` : "/api/assets/balance"
@@ -65,6 +68,16 @@
                 </p>
               {/if}
             {/if}
+            <div class="control">
+              <label class="label is-size-7 mb-1" for="assets-balance-as-of">View as of</label>
+              <input
+                id="assets-balance-as-of"
+                class="input is-small"
+                type="date"
+                bind:value={asOfDate}
+                onchange={() => fetchBreakdowns()}
+              />
+            </div>
             <div class="control">
               <div class="field mb-0">
                 <input
@@ -126,6 +139,11 @@
             </p>
           </div>
         </div>
+      </div>
+      <div class="column is-12 pb-0">
+        <p class="is-size-7 has-text-grey">
+          Balances as of {dayjs(asOfDate).format("MMM D, YYYY")}
+        </p>
       </div>
       <div class="column is-12 pb-0">
         <AssetsBalance {breakdowns} {filterInactive} {filterZero} indent={!flatAccounts} />

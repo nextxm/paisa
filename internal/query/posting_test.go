@@ -266,6 +266,30 @@ func TestGroupSum_NegativeAmounts(t *testing.T) {
 		"net balance should be 700 after deposit and withdrawal; got %s", sums[0].Amount)
 }
 
+func TestGroupSum_UntilDate(t *testing.T) {
+	db := openTestDB(t)
+	require.NoError(t, db.Create(&posting.Posting{
+		TransactionID: "t1",
+		Date:          time.Date(2024, 1, 10, 0, 0, 0, 0, time.UTC),
+		Account:       "Assets:Checking",
+		Commodity:     "INR",
+		Amount:        decimal.NewFromFloat(1000),
+		Quantity:      decimal.NewFromFloat(1000),
+	}).Error)
+	require.NoError(t, db.Create(&posting.Posting{
+		TransactionID: "t2",
+		Date:          time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+		Account:       "Assets:Checking",
+		Commodity:     "INR",
+		Amount:        decimal.NewFromFloat(-300),
+		Quantity:      decimal.NewFromFloat(-300),
+	}).Error)
+
+	sums := Init(db).AccountPrefix("Assets:Checking").UntilDate(time.Date(2024, 1, 10, 0, 0, 0, 0, time.UTC)).GroupSum()
+	require.Len(t, sums, 1)
+	assert.True(t, decimal.NewFromFloat(1000).Equal(sums[0].Amount))
+}
+
 // TestNotAccountPrefix verifies that NotAccountPrefix excludes matching accounts.
 func TestNotAccountPrefix(t *testing.T) {
 	db := openTestDB(t)
