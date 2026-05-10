@@ -379,11 +379,12 @@
 
   async function openQuickAdd() {
     closePalette();
+    showQuickAdd = true;
+
     if (accounts.length === 0) {
-      const response = await ajax("/api/config");
+      const response = await ajax("/api/config", { background: true });
       accounts = response.accounts || [];
     }
-    showQuickAdd = true;
   }
 
   async function runCommand(cmd: Command) {
@@ -517,10 +518,30 @@
 {/if}
 
 <style lang="scss">
+  .command-palette {
+    --cp-surface: var(--bulma-scheme-main, #ffffff);
+    --cp-surface-alt: var(--bulma-background, #f5f5f5);
+    --cp-border: var(--bulma-border, #dbdbdb);
+    --cp-text: var(--bulma-text, #363636);
+    --cp-text-muted: var(--bulma-text-weak, #7a7a7a);
+    --cp-backdrop: rgba(0, 0, 0, 0.45);
+    --cp-primary-soft: var(--bulma-primary-10, rgba(72, 95, 199, 0.1));
+  }
+
+  :global(html[data-theme="dark"]) .command-palette {
+    --cp-surface: hsl(215, 18%, 14%);
+    --cp-surface-alt: hsl(215, 18%, 20%);
+    --cp-border: hsl(215, 18%, 26%);
+    --cp-text: hsl(0, 0%, 90%);
+    --cp-text-muted: hsl(0, 0%, 70%);
+    --cp-backdrop: rgba(0, 0, 0, 0.62);
+    --cp-primary-soft: rgba(114, 141, 255, 0.22);
+  }
+
   .command-palette-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: var(--cp-backdrop);
     z-index: 9000;
     cursor: default;
     border: none;
@@ -534,7 +555,7 @@
     transform: translateX(-50%);
     width: min(640px, calc(100vw - 2rem));
     max-height: 70vh;
-    background: var(--bulma-scheme-main, #fff);
+    background: var(--cp-surface);
     border-radius: 0.75rem;
     box-shadow:
       0 24px 60px rgba(0, 0, 0, 0.25),
@@ -543,19 +564,19 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid var(--bulma-border, #dbdbdb);
+    border: 1px solid var(--cp-border);
   }
 
   .command-palette-search {
     display: flex;
     align-items: center;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--bulma-border, #dbdbdb);
+    border-bottom: 1px solid var(--cp-border);
     gap: 0.5rem;
   }
 
   .command-palette-search-icon {
-    color: var(--bulma-text-weak, #7a7a7a);
+    color: var(--cp-text-muted);
     flex-shrink: 0;
     font-size: 0.9rem;
   }
@@ -566,11 +587,11 @@
     outline: none;
     background: transparent;
     font-size: 1rem;
-    color: var(--bulma-text, #363636);
+    color: var(--cp-text);
     min-width: 0;
 
     &::placeholder {
-      color: var(--bulma-text-weak, #b5b5b5);
+      color: var(--cp-text-muted);
     }
   }
 
@@ -578,10 +599,10 @@
     flex-shrink: 0;
     padding: 0.15rem 0.35rem;
     border-radius: 0.3rem;
-    background: var(--bulma-background, #f5f5f5);
-    border: 1px solid var(--bulma-border, #dbdbdb);
+    background: var(--cp-surface-alt);
+    border: 1px solid var(--cp-border);
     font-size: 0.7rem;
-    color: var(--bulma-text-weak, #7a7a7a);
+    color: var(--cp-text-muted);
     font-family: inherit;
   }
 
@@ -614,15 +635,15 @@
     font-size: inherit;
 
     &.is-selected {
-      background: var(--bulma-primary-10, rgba(72, 95, 199, 0.1));
+      background: var(--cp-primary-soft);
     }
 
     &:hover {
-      background: var(--bulma-background, #f5f5f5);
+      background: var(--cp-surface-alt);
     }
 
     &.is-selected:hover {
-      background: var(--bulma-primary-10, rgba(72, 95, 199, 0.1));
+      background: var(--cp-primary-soft);
     }
   }
 
@@ -633,7 +654,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 0.35rem;
-    background: var(--bulma-background, #f5f5f5);
+    background: var(--cp-surface-alt);
     flex-shrink: 0;
     font-size: 0.75rem;
     color: var(--bulma-primary, #485fc7);
@@ -649,7 +670,7 @@
   .command-palette-item-label {
     font-size: 0.9rem;
     font-weight: 500;
-    color: var(--bulma-text, #363636);
+    color: var(--cp-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -657,7 +678,7 @@
 
   .command-palette-item-desc {
     font-size: 0.75rem;
-    color: var(--bulma-text-weak, #7a7a7a);
+    color: var(--cp-text-muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -665,7 +686,7 @@
 
   .command-palette-item-category {
     font-size: 0.7rem;
-    color: var(--bulma-text-weak, #b5b5b5);
+    color: var(--cp-text-muted);
     flex-shrink: 0;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -674,7 +695,7 @@
   .command-palette-empty {
     padding: 2rem 1rem;
     text-align: center;
-    color: var(--bulma-text-weak, #7a7a7a);
+    color: var(--cp-text-muted);
     font-size: 0.9rem;
   }
 
@@ -683,9 +704,9 @@
     align-items: center;
     gap: 1rem;
     padding: 0.5rem 1rem;
-    border-top: 1px solid var(--bulma-border, #dbdbdb);
+    border-top: 1px solid var(--cp-border);
     font-size: 0.7rem;
-    color: var(--bulma-text-weak, #7a7a7a);
+    color: var(--cp-text-muted);
 
     kbd {
       display: inline-flex;
@@ -693,8 +714,8 @@
       justify-content: center;
       padding: 0.1rem 0.3rem;
       border-radius: 0.25rem;
-      background: var(--bulma-background, #f5f5f5);
-      border: 1px solid var(--bulma-border, #dbdbdb);
+      background: var(--cp-surface-alt);
+      border: 1px solid var(--cp-border);
       font-size: 0.65rem;
       font-family: inherit;
       margin-right: 0.15rem;

@@ -17,11 +17,14 @@
   let accounts: string[] = $state([]);
 
   async function openQuickAdd() {
+    showQuickAdd = true;
+
     if (accounts.length === 0) {
-      const response = await ajax("/api/config");
+      const response = (await ajax("/api/config", { background: true })) as {
+        accounts?: string[];
+      };
       accounts = response.accounts || [];
     }
-    showQuickAdd = true;
   }
 
   async function syncWithLoader(request: Record<string, any>) {
@@ -70,7 +73,7 @@
   });
 </script>
 
-<div class="is-flex is-align-items-center" style="gap: 0.25rem;">
+<div class="is-flex is-align-items-center navbar-actions-strip" style="gap: 0.25rem;">
   <SyncHistoryOverlay bind:open={showHistory} />
   <QuickAddModal bind:open={showQuickAdd} {accounts} />
 
@@ -176,6 +179,10 @@
 </div>
 
 <style lang="scss">
+  .navbar-actions-strip {
+    min-width: max-content;
+  }
+
   .navbar-action-button {
     border: none;
     background: transparent;
@@ -215,13 +222,13 @@
 
   @media screen and (max-width: 640px) {
     .navbar-action-button {
-      width: 2.2rem;
-      height: 2.2rem;
-      border-radius: 0.5rem;
+      width: 1.9rem;
+      height: 1.9rem;
+      border-radius: 0.45rem;
     }
 
     .navbar-action-button :global(.icon) {
-      font-size: 1.1rem;
+      font-size: 0.95rem;
     }
   }
 

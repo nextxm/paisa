@@ -679,11 +679,26 @@
 
     .mobile-top-actions {
       display: inline-flex !important;
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
       margin-left: auto;
       padding-right: 0.1rem;
       align-items: center;
       gap: 0.2rem;
       flex-wrap: nowrap;
+    }
+
+    .mobile-top-actions::-webkit-scrollbar {
+      display: none;
+    }
+
+    .mobile-top-actions :global(.navbar-actions-strip) {
+      flex-wrap: nowrap;
+      min-width: max-content;
     }
 
     .menu-actions-row {
