@@ -37,7 +37,7 @@
     <div class="columns is-flex-wrap-wrap">
       <div class="column is-12 pb-0">
         <div class="box p-3">
-          <div class="field is-grouped is-grouped-multiline mb-0">
+          <div class="field is-grouped is-grouped-multiline mb-0 controls-row">
             {#if availableCurrencies.length > 1}
               <p class="control">
                 <span class="select is-small">
@@ -157,3 +157,22 @@
     </div>
   </div>
 </section>
+
+<style>
+  .controls-row {
+    align-items: center;
+    row-gap: 0.5rem;
+    column-gap: 0.5rem;
+  }
+
+  .controls-row :global(.control) {
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  @media screen and (max-width: 768px) {
+    .controls-row :global(input.input) {
+      max-width: 9rem;
+    }
+  }
+</style>

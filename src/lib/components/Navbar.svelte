@@ -631,7 +631,7 @@
   }
 
   .mobile-top-actions {
-    display: none !important;
+    display: none;
   }
 
   .menu-actions-row {
@@ -678,7 +678,7 @@
     }
 
     .mobile-top-actions {
-      display: inline-flex;
+      display: inline-flex !important;
       margin-left: auto;
       padding-right: 0.1rem;
       align-items: center;
