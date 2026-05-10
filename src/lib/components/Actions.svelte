@@ -9,8 +9,20 @@
   import dayjs from "dayjs";
   import { refresh, now, willRefresh } from "../../store";
   import SyncHistoryOverlay from "./SyncHistoryOverlay.svelte";
+  import QuickAddModal from "./QuickAddModal.svelte";
+  import { ajax } from "$lib/utils";
 
   let showHistory = $state(false);
+  let showQuickAdd = $state(false);
+  let accounts: string[] = $state([]);
+
+  async function openQuickAdd() {
+    if (accounts.length === 0) {
+      const response = await ajax("/api/config");
+      accounts = response.accounts || [];
+    }
+    showQuickAdd = true;
+  }
 
   async function syncWithLoader(request: Record<string, any>) {
     const jobId = await sync(request);
@@ -60,7 +72,18 @@
 
 <div class="is-flex is-align-items-center" style="gap: 0.25rem;">
   <SyncHistoryOverlay bind:open={showHistory} />
+  <QuickAddModal bind:open={showQuickAdd} {accounts} />
 
+  <button
+    class="navbar-action-button"
+    data-tippy-content="<p>Quick Add Transaction</p>"
+    aria-label="Quick Add Transaction"
+    onclick={openQuickAdd}
+  >
+    <span class="icon">
+      <i class="fa-solid fa-circle-plus"></i>
+    </span>
+  </button>
   <button
     class="navbar-action-button sync-history-btn"
     data-tippy-content="<p>Sync History</p>"

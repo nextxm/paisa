@@ -69,14 +69,20 @@
               {/if}
             {/if}
             <div class="control">
-              <label class="label is-size-7 mb-1" for="assets-balance-as-of">View as of</label>
-              <input
-                id="assets-balance-as-of"
-                class="input is-small"
-                type="date"
-                bind:value={asOfDate}
-                onchange={() => fetchBreakdowns()}
-              />
+              <div class="field mb-0 is-flex is-align-items-center">
+                <label
+                  class="label is-size-7 mb-0 mr-2"
+                  for="assets-balance-as-of"
+                  style="min-width: fit-content;">View as of</label
+                >
+                <input
+                  id="assets-balance-as-of"
+                  class="input is-small"
+                  type="date"
+                  bind:value={asOfDate}
+                  onchange={() => fetchBreakdowns()}
+                />
+              </div>
             </div>
             <div class="control">
               <div class="field mb-0">

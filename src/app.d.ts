@@ -60,6 +60,7 @@ interface UserConfig {
   provider_debug_http: boolean;
   locale: string;
   journal_path: string;
+  add_journal_path: string;
   display_precision: number;
   db_path: string;
   financial_year_starting_month: number;

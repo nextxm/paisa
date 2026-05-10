@@ -19,7 +19,13 @@ export const CONFIG_GROUPS: ConfigGroup[] = [
         id: "core-setup",
         label: "Core Setup",
         icon: "fa-gear",
-        schemaKeys: ["journal_path", "db_path", "sheets_directory", "ledger_cli"],
+        schemaKeys: [
+          "journal_path",
+          "add_journal_path",
+          "db_path",
+          "sheets_directory",
+          "ledger_cli"
+        ],
         description: "Journal paths, ledger engine, and fundamental options"
       },
       {
