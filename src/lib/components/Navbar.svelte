@@ -743,10 +743,23 @@
   }
 
   @media screen and (max-width: 640px) {
+    .navbar-brand {
+      flex-wrap: wrap;
+    }
+
     .navbar-actions-row {
       gap: 0.2rem;
       width: 100%;
-      justify-content: flex-end;
+      justify-content: flex-start;
+    }
+
+    .mobile-top-actions {
+      flex: 1 1 100%;
+      width: 100%;
+      margin-left: 0;
+      overflow: visible;
+      padding: 0.15rem 0 0.1rem 0.15rem;
+      justify-content: flex-start;
     }
 
     .navbar-actions-row :global(.theme-toggle) {
