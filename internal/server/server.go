@@ -187,7 +187,11 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.GET("/api/assets/balance", func(c *gin.Context) {
-		c.JSON(200, assets.GetBalanceByMode(db, c.Query("report_currency"), c.Query("flat") == "true"))
+		asOfDate, ok := parseAsOfDate(c)
+		if !ok {
+			return
+		}
+		c.JSON(200, assets.GetBalanceByModeAsOf(db, c.Query("report_currency"), c.Query("flat") == "true", asOfDate))
 	})
 
 	router.GET("/api/investment", func(c *gin.Context) {
@@ -198,7 +202,19 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 	router.GET("/api/gain/:account", func(c *gin.Context) {
 		account := c.Param("account")
-		c.JSON(200, GetAccountGain(db, account))
+		asOfDate, ok := parseAsOfDate(c)
+		if !ok {
+			return
+		}
+		c.JSON(200, GetAccountGain(db, account, asOfDate))
+	})
+	router.GET("/api/account/:account/balance", func(c *gin.Context) {
+		account := c.Param("account")
+		asOfDate, ok := parseAsOfDate(c)
+		if !ok {
+			return
+		}
+		c.JSON(200, assets.GetAccountBalanceAsOf(db, account, c.Query("report_currency"), asOfDate))
 	})
 	router.GET("/api/income", func(c *gin.Context) {
 		c.JSON(200, GetIncome(db, parseYearsParam(c.Query("years")), parseUntilYearParam(c.Query("until_year"))))

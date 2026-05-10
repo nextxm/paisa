@@ -3,6 +3,7 @@ package assets
 import (
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
@@ -41,7 +42,11 @@ type AssetBreakdown struct {
 // GetCheckingBalance returns a breakdown of the current balance for all
 // configured checking accounts.
 func GetCheckingBalance(db *gorm.DB, reportCurrency string) gin.H {
-	result := doGetBalance(db, config.GetConfig().CheckingAccounts, false, reportCurrency)
+	return GetCheckingBalanceAsOf(db, reportCurrency, utils.ToDate(utils.Now()))
+}
+
+func GetCheckingBalanceAsOf(db *gorm.DB, reportCurrency string, asOfDate time.Time) gin.H {
+	result := doGetBalance(db, config.GetConfig().CheckingAccounts, false, reportCurrency, asOfDate)
 	if breakdowns, ok := result["asset_breakdowns"].(map[string]AssetBreakdown); ok {
 		filtered := make(map[string]AssetBreakdown)
 		for k, v := range breakdowns {
@@ -55,17 +60,32 @@ func GetCheckingBalance(db *gorm.DB, reportCurrency string) gin.H {
 }
 
 func GetBalance(db *gorm.DB, reportCurrency string) gin.H {
-	return GetBalanceByMode(db, reportCurrency, false)
+	return GetBalanceByModeAsOf(db, reportCurrency, false, utils.ToDate(utils.Now()))
 }
 
 func GetBalanceByMode(db *gorm.DB, reportCurrency string, flat bool) gin.H {
-	if flat {
-		return doGetBalance(db, []string{"regex:^Assets(:|$)"}, false, reportCurrency)
-	}
-	return doGetBalance(db, []string{"Assets"}, !flat, reportCurrency)
+	return GetBalanceByModeAsOf(db, reportCurrency, flat, utils.ToDate(utils.Now()))
 }
 
-func doGetBalance(db *gorm.DB, patterns []string, rollup bool, reportCurrency string) gin.H {
+func GetBalanceByModeAsOf(db *gorm.DB, reportCurrency string, flat bool, asOfDate time.Time) gin.H {
+	if flat {
+		return doGetBalance(db, []string{"regex:^Assets(:|$)"}, false, reportCurrency, asOfDate)
+	}
+	return doGetBalance(db, []string{"Assets"}, !flat, reportCurrency, asOfDate)
+}
+
+func GetAccountBalanceAsOf(db *gorm.DB, account string, reportCurrency string, asOfDate time.Time) gin.H {
+	postings := query.Init(db).UntilDate(asOfDate).AccountPrefix(account, service.CapitalGainsAccount(account)).All()
+	postings = service.PopulateMarketPriceAt(db, postings, asOfDate)
+	breakdown := ComputeBreakdownAt(db, postings, false, account, asOfDate)
+	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
+		breakdowns := convertBreakdownsToReportCurrency(db, map[string]AssetBreakdown{account: breakdown}, reportCurrency, asOfDate)
+		breakdown = breakdowns[account]
+	}
+	return gin.H{"asset_breakdown": breakdown}
+}
+
+func doGetBalance(db *gorm.DB, patterns []string, rollup bool, reportCurrency string, asOfDate time.Time) gin.H {
 	var dbPatterns []string
 	for _, p := range patterns {
 		if strings.HasPrefix(p, "regex:") {
@@ -75,8 +95,8 @@ func doGetBalance(db *gorm.DB, patterns []string, rollup bool, reportCurrency st
 		}
 	}
 	dbPatterns = append(dbPatterns, "Income:CapitalGains")
-	postings := query.Init(db).AccountPrefix(dbPatterns...).All()
-	postings = service.PopulateMarketPrice(db, postings)
+	postings := query.Init(db).UntilDate(asOfDate).AccountPrefix(dbPatterns...).All()
+	postings = service.PopulateMarketPriceAt(db, postings, asOfDate)
 
 	var breakdowns map[string]AssetBreakdown
 	if !rollup {
@@ -101,7 +121,7 @@ func doGetBalance(db *gorm.DB, patterns []string, rollup bool, reportCurrency st
 						}
 						return acc == account
 					})
-					breakdowns[account] = ComputeBreakdown(db, ps, true, account)
+					breakdowns[account] = ComputeBreakdownAt(db, ps, true, account, asOfDate)
 				}
 			} else {
 				group := strings.TrimSuffix(p, ":%")
@@ -113,12 +133,12 @@ func doGetBalance(db *gorm.DB, patterns []string, rollup bool, reportCurrency st
 					return utils.MatchAccount(account, p)
 				})
 				if len(ps) > 0 {
-					breakdowns[group] = ComputeBreakdown(db, ps, true, group)
+					breakdowns[group] = ComputeBreakdownAt(db, ps, true, group, asOfDate)
 				}
 			}
 		}
 	} else {
-		breakdowns = ComputeBreakdowns(db, postings, rollup)
+		breakdowns = ComputeBreakdownsAt(db, postings, rollup, asOfDate)
 
 		// Filter breakdowns to only include those that match the requested patterns.
 		// This prevents internal query accounts like Income:CapitalGains from
@@ -136,7 +156,7 @@ func doGetBalance(db *gorm.DB, patterns []string, rollup bool, reportCurrency st
 	}
 
 	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
-		breakdowns = convertBreakdownsToReportCurrency(db, breakdowns, reportCurrency)
+		breakdowns = convertBreakdownsToReportCurrency(db, breakdowns, reportCurrency, asOfDate)
 	}
 	return gin.H{"asset_breakdowns": breakdowns}
 }
@@ -145,9 +165,8 @@ func doGetBalance(db *gorm.DB, patterns []string, rollup bool, reportCurrency st
 // AssetBreakdown by the current exchange rate from the default currency to
 // reportCurrency.  Rate-insensitive fields (XIRR, AbsoluteReturn, BalanceUnits)
 // are left unchanged.  When no rate is available, breakdowns are returned as-is.
-func convertBreakdownsToReportCurrency(db *gorm.DB, breakdowns map[string]AssetBreakdown, reportCurrency string) map[string]AssetBreakdown {
-	today := utils.EndOfToday()
-	rate, ok := service.GetRate(db, config.DefaultCurrency(), reportCurrency, today)
+func convertBreakdownsToReportCurrency(db *gorm.DB, breakdowns map[string]AssetBreakdown, reportCurrency string, asOfDate time.Time) map[string]AssetBreakdown {
+	rate, ok := service.GetRate(db, config.DefaultCurrency(), reportCurrency, utils.EndOfDay(asOfDate))
 	if !ok {
 		return breakdowns
 	}
@@ -179,6 +198,10 @@ func convertBreakdownsToReportCurrency(db *gorm.DB, breakdowns map[string]AssetB
 // accounts.  This is substantially better than the naïve O(A×N) approach of
 // filtering the full postings slice once per group.
 func ComputeBreakdowns(db *gorm.DB, postings []posting.Posting, rollup bool) map[string]AssetBreakdown {
+	return ComputeBreakdownsAt(db, postings, rollup, utils.ToDate(utils.Now()))
+}
+
+func ComputeBreakdownsAt(db *gorm.DB, postings []posting.Posting, rollup bool, asOfDate time.Time) map[string]AssetBreakdown {
 	// Phase 1: identify all breakdown groups and classify leaf vs. parent.
 	accounts := make(map[string]bool)
 	for _, p := range postings {
@@ -218,13 +241,17 @@ func ComputeBreakdowns(db *gorm.DB, postings []posting.Posting, rollup bool) map
 				ps = append(ps, accPostings...)
 			}
 		}
-		result[group] = ComputeBreakdown(db, ps, leaf, group)
+		result[group] = ComputeBreakdownAt(db, ps, leaf, group, asOfDate)
 	}
 
 	return result
 }
 
 func ComputeBreakdown(db *gorm.DB, ps []posting.Posting, leaf bool, group string) AssetBreakdown {
+	return ComputeBreakdownAt(db, ps, leaf, group, utils.ToDate(utils.Now()))
+}
+
+func ComputeBreakdownAt(db *gorm.DB, ps []posting.Posting, leaf bool, group string, asOfDate time.Time) AssetBreakdown {
 	investmentAmount := lo.Reduce(ps, func(acc decimal.Decimal, p posting.Posting, _ int) decimal.Decimal {
 		if utils.IsCheckingAccount(p.Account) || p.Amount.LessThan(decimal.Zero) || service.IsInterest(db, p) || service.IsStockSplit(db, p) || service.IsCapitalGains(p) {
 			return acc
@@ -260,7 +287,7 @@ func ComputeBreakdown(db *gorm.DB, ps []posting.Posting, leaf bool, group string
 	if !investmentAmount.IsZero() {
 		absoluteReturn = marketAmount.Sub(netInvestment).Div(investmentAmount)
 	}
-	originalBalances := computeOriginalBalances(db, psWithoutCapitalGains)
+	originalBalances := computeOriginalBalances(db, psWithoutCapitalGains, asOfDate)
 	return AssetBreakdown{
 		InvestmentAmount: investmentAmount,
 		WithdrawalAmount: withdrawalAmount,
@@ -284,9 +311,9 @@ func ComputeBreakdown(db *gorm.DB, ps []posting.Posting, leaf bool, group string
 //     commodity-name bucket, without any conversion.
 //   - Security postings contribute Quantity × native-unit-price to the price's
 //     quote currency bucket.
-func computeOriginalBalances(db *gorm.DB, ps []posting.Posting) []OriginalCurrencyBalance {
+func computeOriginalBalances(db *gorm.DB, ps []posting.Posting, asOfDate time.Time) []OriginalCurrencyBalance {
 	dc := config.DefaultCurrency()
-	date := utils.EndOfToday()
+	date := utils.EndOfDay(asOfDate)
 
 	// Map commodity → net quantity for securities (priced assets).
 	securityQty := make(map[string]decimal.Decimal)

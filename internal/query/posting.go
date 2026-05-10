@@ -2,6 +2,7 @@ package query
 
 import (
 	"errors"
+	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
@@ -65,6 +66,11 @@ func (q *Query) BeforeNMonths(n int) *Query {
 
 func (q *Query) UntilToday() *Query {
 	q.context = q.context.Where("date < ?", utils.EndOfToday())
+	return q
+}
+
+func (q *Query) UntilDate(date time.Time) *Query {
+	q.context = q.context.Where("date <= ?", utils.EndOfDay(date))
 	return q
 }
 

@@ -256,9 +256,13 @@ func GetPrice(db *gorm.DB, commodity string, quantity decimal.Decimal, date time
 }
 
 func PopulateMarketPrice(db *gorm.DB, ps []posting.Posting) []posting.Posting {
-	date := utils.EndOfToday()
+	return PopulateMarketPriceAt(db, ps, utils.ToDate(utils.Now()))
+}
+
+func PopulateMarketPriceAt(db *gorm.DB, ps []posting.Posting, date time.Time) []posting.Posting {
+	asOf := utils.EndOfDay(date)
 	return lo.Map(ps, func(p posting.Posting, _ int) posting.Posting {
-		p.MarketAmount = GetMarketPrice(db, p, date)
+		p.MarketAmount = GetMarketPrice(db, p, asOf)
 		return p
 	})
 }

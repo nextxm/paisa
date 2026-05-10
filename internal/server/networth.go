@@ -27,7 +27,7 @@ func GetNetworth(db *gorm.DB, reportCurrency string) gin.H {
 	postings := query.Init(db).Like("Assets:%", "Income:CapitalGains:%", "Liabilities:%").UntilToday().All()
 
 	postings = service.PopulateMarketPrice(db, postings)
-	networthTimeline := computeNetworthTimeline(db, postings, false)
+	networthTimeline := computeNetworthTimeline(db, postings, false, utils.ToDate(utils.Now()))
 	xirr := service.XIRR(db, postings)
 	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
 		networthTimeline = convertNetworthTimelineToReportCurrency(db, networthTimeline, reportCurrency)
@@ -63,7 +63,7 @@ func convertNetworthTimelineToReportCurrency(db *gorm.DB, timeline []Networth, r
 func GetCurrentNetworth(db *gorm.DB) gin.H {
 	postings := query.Init(db).Like("Assets:%", "Income:CapitalGains:%", "Liabilities:%").UntilToday().All()
 	postings = service.PopulateMarketPrice(db, postings)
-	networthTimeline := computeNetworthTimeline(db, postings, false)
+	networthTimeline := computeNetworthTimeline(db, postings, false, utils.ToDate(utils.Now()))
 	networth := Networth{}
 	if len(networthTimeline) > 0 {
 		networth = networthTimeline[len(networthTimeline)-1]
@@ -121,7 +121,7 @@ func computeNetworth(db *gorm.DB, postings []posting.Posting) Networth {
 	return networth
 }
 
-func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBalanceUnits bool) []Networth {
+func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBalanceUnits bool, asOfDate time.Time) []Networth {
 	var networths []Networth
 
 	var p posting.Posting
@@ -139,7 +139,7 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 
 	accumulator := make(map[string]RunningSum)
 
-	end := utils.EndOfToday()
+	end := utils.EndOfDay(asOfDate)
 	for start := postings[0].Date; start.Before(end); start = start.AddDate(0, 0, 1) {
 		dayEnd := utils.EndOfDay(start)
 		for len(postings) > 0 && !postings[0].Date.After(dayEnd) {
