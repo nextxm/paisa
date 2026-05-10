@@ -6,6 +6,7 @@
   import Spinner from "$lib/components/Spinner.svelte";
   import Navbar from "$lib/components/Navbar.svelte";
   import ReloadPrompt from "$lib/components/ReloadPrompt.svelte";
+  import CommandPalette from "$lib/components/CommandPalette.svelte";
   import { willClearTippy, willRefresh } from "../../store";
   import { onMount } from "svelte";
 
@@ -69,4 +70,5 @@
   </Spinner>
 {/key}
 
+<CommandPalette />
 <ReloadPrompt />

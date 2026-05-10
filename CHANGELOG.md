@@ -4,6 +4,8 @@
 
 #### Features
 
+- **Global Command Palette (Ctrl+K)** — Added a global command palette accessible via `Ctrl+K` (or `Cmd+K` on Mac) that allows quick navigation between all pages, launching the Quick Add Transaction modal, and searching currency-related views. The palette features fuzzy search, keyboard navigation (arrow keys, Enter to select, Escape to close), and a search button in the navbar for mouse users.
+
 - **Natural Language Transaction Parser (Phase 1)** — New `internal/parser` package enables parsing natural language text input into structured transactions with confidence scoring and interactive suggestions.
   - **Core Parser** — 8-step extraction pipeline: normalize → date → amount → payee → hints → account matching → direction → confidence. Handles 10+ transaction scenarios (expenses, income, transfers, refunds, etc.).
   - **Regex-based Extraction** — High-performance pattern matching for dates (ISO 8601, month names, relative), amounts (currency symbols, codes, word forms), account hints (from/to/via), and payment methods. <1ms per parse operation.

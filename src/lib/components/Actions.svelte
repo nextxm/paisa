@@ -7,7 +7,7 @@
   import { get } from "svelte/store";
   import { onDestroy } from "svelte";
   import dayjs from "dayjs";
-  import { refresh, now, willRefresh } from "../../store";
+  import { refresh, now, willRefresh, commandPaletteOpen } from "../../store";
   import SyncHistoryOverlay from "./SyncHistoryOverlay.svelte";
   import QuickAddModal from "./QuickAddModal.svelte";
   import { ajax } from "$lib/utils";
@@ -73,6 +73,18 @@
 <div class="is-flex is-align-items-center" style="gap: 0.25rem;">
   <SyncHistoryOverlay bind:open={showHistory} />
   <QuickAddModal bind:open={showQuickAdd} {accounts} />
+
+  <button
+    type="button"
+    class="navbar-action-button"
+    data-tippy-content="<p>Command Palette <kbd>Ctrl+K</kbd></p>"
+    aria-label="Open command palette (Ctrl+K)"
+    onclick={() => commandPaletteOpen.set(true)}
+  >
+    <span class="icon">
+      <i class="fa-solid fa-magnifying-glass"></i>
+    </span>
+  </button>
 
   <button
     type="button"
