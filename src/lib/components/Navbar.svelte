@@ -169,18 +169,18 @@
   };
 
   if (USER_CONFIG.default_currency == "INR") {
-    _.last(links).children.push(tax);
+    _.last(links)?.children?.push(tax);
   }
 
   const about = { label: "About", href: "/about" };
-  _.last(links).children.push(about);
+  _.last(links)?.children?.push(about);
 
-  let selectedLink: Link = $state(null);
-  let selectedSubLink: Link = $state(null);
-  let selectedSubSubLink: Link = $state(null);
+  let selectedLink: Link | null = $state(null);
+  let selectedSubLink: Link | null = $state(null);
+  let selectedSubSubLink: Link | null = $state(null);
   let navMenuEl: HTMLDivElement;
   let burgerButtonEl: HTMLButtonElement;
-  let previousFocusEl: HTMLElement = null;
+  let previousFocusEl: HTMLElement | null = null;
 
   const focusableSelector =
     'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])';
@@ -342,6 +342,7 @@
     <div class="navbar-item navbar-actions-row mobile-top-actions">
       <SyncingIndicator />
       <ThemeSwitcher />
+      <Actions />
     </div>
   </div>
 
@@ -375,12 +376,12 @@
               class:is-active={normalizedPath.startsWith(link.href)}
               onclick={(e) => {
                 e.preventDefault();
-                isMobile() && e.currentTarget.parentElement.classList.toggle("is-active");
+                isMobile() && e.currentTarget.parentElement?.classList.toggle("is-active");
               }}
               onkeydown={(e) =>
                 e.key === "Enter" &&
                 isMobile() &&
-                e.currentTarget.parentElement.classList.toggle("is-active")}>{link.label}</a
+                e.currentTarget.parentElement?.classList.toggle("is-active")}>{link.label}</a
             >
             <div class="navbar-dropdown {!isMobile() && 'is-boxed'}">
               {#each link.children as sublink}
@@ -401,12 +402,12 @@
                       class:is-active={normalizedPath.startsWith(href)}
                       onclick={(e) => {
                         e.preventDefault();
-                        isMobile() && e.currentTarget.parentElement.classList.toggle("is-active");
+                        isMobile() && e.currentTarget.parentElement?.classList.toggle("is-active");
                       }}
                       onkeydown={(e) =>
                         e.key === "Enter" &&
                         isMobile() &&
-                        e.currentTarget.parentElement.classList.toggle("is-active")}
+                        e.currentTarget.parentElement?.classList.toggle("is-active")}
                     >
                       <span>{sublink.label}</span>
                       <span class="icon is-small">
@@ -524,7 +525,7 @@
           {:else if selectedLink.href + selectedSubLink.href != normalizedPath}
             <li>
               <span class="is-inactive"
-                >{decodeURIComponent(_.last(normalizedPath.split("/")))}</span
+                >{decodeURIComponent(_.last(normalizedPath.split("/")) ?? "")}</span
               >
             </li>
           {/if}
@@ -686,10 +687,7 @@
     }
 
     .menu-actions-row {
-      display: flex;
-      width: 100%;
-      justify-content: flex-start;
-      padding: 0.35rem 0.75rem;
+      display: none !important;
     }
 
     .mobile-nav-backdrop {
