@@ -47,7 +47,7 @@
       <div class="column is-12">
         <div class="box has-text-centered px-3 mx-auto" style="max-width: 400px;">
           <div><Logo size={128} /></div>
-          <div class="is-size-3 is-primary-color">Paisa</div>
+          <div class="is-size-3 is-primary-color">Paisa<sup>+</sup></div>
           <div>
             Version: <b>{buildInfo.version}</b>
           </div>
