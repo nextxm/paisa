@@ -9,6 +9,7 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/accounting"
 	"github.com/ananthakumaran/paisa/internal/config"
+	"github.com/ananthakumaran/paisa/internal/ledger"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -150,10 +151,10 @@ func formatTransaction(req AddTransactionRequest) string {
 	return sb.String()
 }
 
-func appendTransactionAndSync(db *gorm.DB, req AddTransactionRequest) (string, error) {
+func appendTransactionAndValidate(db *gorm.DB, req AddTransactionRequest) (string, []ledger.LedgerFileError, error) {
 	addPath := config.GetAddJournalPath()
 	if addPath == "" {
-		return "", fmt.Errorf("add_journal_path is not configured")
+		return "", nil, fmt.Errorf("add_journal_path is not configured")
 	}
 
 	// Resolve accounts
@@ -170,26 +171,26 @@ func appendTransactionAndSync(db *gorm.DB, req AddTransactionRequest) (string, e
 	err := os.MkdirAll(filepath.Dir(addPath), 0750)
 	if err != nil {
 		log.Warn("Failed to create add journal directory: ", err)
-		return "", fmt.Errorf("failed to create directory")
+		return "", nil, fmt.Errorf("failed to create directory")
 	}
 
 	// Append to file
 	f, err := os.OpenFile(addPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Warn("Failed to open add journal file: ", err)
-		return "", fmt.Errorf("failed to open file")
+		return "", nil, fmt.Errorf("failed to open file")
 	}
 	defer f.Close()
 
 	if _, err := f.WriteString(entryText); err != nil {
 		log.Warn("Failed to write to add journal file: ", err)
-		return "", fmt.Errorf("failed to write file")
+		return "", nil, fmt.Errorf("failed to write file")
 	}
 
-	// Trigger sync
-	Sync(db, SyncRequest{Journal: true}, nil)
+	// Validate the whole journal
+	errors, _, _ := ledger.Cli().ValidateFile(config.GetJournalPath())
 
-	return entryText, nil
+	return entryText, errors, nil
 }
 
 func AddTransactionHandler(db *gorm.DB) gin.HandlerFunc {
@@ -199,7 +200,7 @@ func AddTransactionHandler(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		entryText, err := appendTransactionAndSync(db, req)
+		entryText, errors, err := appendTransactionAndValidate(db, req)
 		if err != nil {
 			if err.Error() == "add_journal_path is not configured" {
 				RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, err.Error())
@@ -209,6 +210,6 @@ func AddTransactionHandler(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"success": true, "entry": entryText})
+		c.JSON(http.StatusOK, gin.H{"success": true, "entry": entryText, "errors": errors})
 	}
 }

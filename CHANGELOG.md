@@ -4,6 +4,8 @@
 
 #### Features
 
+- **Avoid app refresh after Quick Add and Editor save** — Saving via Quick Add transaction creation or Ledger Editor no longer triggers a global app refresh/remount. This prevents the perceived page refresh right after writes while keeping the existing explicit sync workflow (`Please sync to see changes`).
+
 - **Frontend typing fix for `/api/config` quick-add fetch** — Fixed `ajax("/api/config", { background: true })` typing so GET calls with options retain the config response shape (including `accounts`), resolving `svelte-check` failures in quick-add launch paths.
 
 - **Global Command Palette (Ctrl+K)** — Added a global command palette accessible via `Ctrl+K` (or `Cmd+K` on Mac) that allows quick navigation between all pages, launching the Quick Add Transaction modal, and searching currency-related views. The palette features fuzzy search, keyboard navigation (arrow keys, Enter to select, Escape to close), and a search button in the navbar for mouse users.

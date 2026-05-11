@@ -198,7 +198,7 @@
       }
     } else {
       toast.toast({
-        message: `Saved ${selectedFile.name}`,
+        message: `Saved ${selectedFile.name}. Please sync to see changes.`,
         type: "is-success"
       });
       filesMap[file.name] = file;

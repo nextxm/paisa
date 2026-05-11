@@ -83,7 +83,7 @@ func CreateParsedTransactionHandler(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		entryText, err := appendTransactionAndSync(db, finalReq)
+		entryText, errors, err := appendTransactionAndValidate(db, finalReq)
 		if err != nil {
 			if err.Error() == "add_journal_path is not configured" {
 				RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, err.Error())
@@ -98,6 +98,7 @@ func CreateParsedTransactionHandler(db *gorm.DB) gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{
 			"success":            true,
 			"entry":              entryText,
+			"errors":             errors,
 			"final_transaction":  finalReq,
 			"parser_confidence":  parseResult.Confidence,
 			"parser_suggestions": parseResult.Suggestions,
