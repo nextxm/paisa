@@ -18,16 +18,23 @@ export interface ParserSubmitContext {
   nowMs: number;
 }
 
+function ensureString(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  return String(value);
+}
+
 export function parserFormOverrides(
   parsed: any,
   currentCommodity: string
 ): Partial<QuickAddFormValues> {
   return {
-    payee: parsed?.payee || "",
-    fromAccount: parsed?.from_account || "",
-    toAccount: parsed?.to_account || "",
-    amount: parsed?.amount || "",
-    commodity: parsed?.currency || currentCommodity
+    payee: ensureString(parsed?.payee),
+    fromAccount: ensureString(parsed?.from_account),
+    toAccount: ensureString(parsed?.to_account),
+    amount: ensureString(parsed?.amount),
+    commodity: ensureString(parsed?.currency) || currentCommodity
   };
 }
 
@@ -72,13 +79,13 @@ export function buildQuickAddSubmitRequest(ctx: ParserSubmitContext): {
     return {
       endpoint: "/api/transaction/add",
       payload: {
-        date: ctx.values.date,
-        payee: ctx.values.payee,
-        narration: ctx.values.narration,
-        from_account: ctx.values.fromAccount,
-        to_account: ctx.values.toAccount,
-        amount: ctx.values.amount,
-        commodity: ctx.values.commodity
+        date: ensureString(ctx.values.date),
+        payee: ensureString(ctx.values.payee),
+        narration: ensureString(ctx.values.narration),
+        from_account: ensureString(ctx.values.fromAccount),
+        to_account: ensureString(ctx.values.toAccount),
+        amount: ensureString(ctx.values.amount),
+        commodity: ensureString(ctx.values.commodity)
       }
     };
   }
@@ -86,14 +93,14 @@ export function buildQuickAddSubmitRequest(ctx: ParserSubmitContext): {
   return {
     endpoint: "/api/parser/create-transaction",
     payload: {
-      text: ctx.parserText,
-      date: ctx.values.date,
-      payee: ctx.values.payee,
-      narration: ctx.values.narration,
-      from_account: ctx.values.fromAccount,
-      to_account: ctx.values.toAccount,
-      amount: ctx.values.amount,
-      commodity: ctx.values.commodity,
+      text: ensureString(ctx.parserText),
+      date: ensureString(ctx.values.date),
+      payee: ensureString(ctx.values.payee),
+      narration: ensureString(ctx.values.narration),
+      from_account: ensureString(ctx.values.fromAccount),
+      to_account: ensureString(ctx.values.toAccount),
+      amount: ensureString(ctx.values.amount),
+      commodity: ensureString(ctx.values.commodity),
       suggestion_used: selectedSuggestionUsed(ctx.selectedSuggestionIndex),
       time_to_confirm_ms: ctx.parseStartedAt ? ctx.nowMs - ctx.parseStartedAt : 0
     }

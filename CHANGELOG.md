@@ -59,6 +59,10 @@
   - Added explicit `from <account> to <account>` hint extraction.
   - Direction detection now considers full text context (not only extracted hints), improving transfer classification.
 
+- **Quick Add parser create payload type fix** — Fixed parser-assisted Quick Add submission to coerce form values to strings before POSTing to `/api/parser/create-transaction`.
+  - Prevents `400 Bad Request` errors like `cannot unmarshal number into go struct CreateParsedTransactionRequest` when parser-returned numeric amounts were sent back as JSON numbers.
+  - Added frontend regression tests for numeric parser amount coercion in quick add parser utilities.
+
 - **Epic 6: Account balance snapshots as-of date** — Assets balance and account detail flows now support historical as-of views for reconciliation.
   - **Subtask 6.1 (Backend – Date filter on balance endpoints)** — Added `as_of_date` (`YYYY-MM-DD`) support to `GET /api/assets/balance`, `GET /api/gain/:account`, and new `GET /api/account/:account/balance`. Date defaults to today, rejects invalid format/future dates with `400 INVALID_REQUEST`, and excludes postings after the selected date.
   - **Subtask 6.2 (Frontend – Date picker on balance pages)** — Added "View as of" date pickers on Assets → Balance and account detail pages; changing the date reloads balance data without page reload and displays the selected as-of date.
