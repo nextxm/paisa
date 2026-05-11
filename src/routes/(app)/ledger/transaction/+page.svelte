@@ -14,6 +14,7 @@
   import { editorState } from "$lib/search_query_editor";
   import { get } from "svelte/store";
   import { download } from "$lib/export";
+  import { sync, startPolling } from "$lib/sync";
 
   let buldEditOpen = $state(false);
   let transactions: T[] = $state(null);
@@ -97,6 +98,15 @@
   onMount(async () => {
     await loadTransactions();
   });
+
+  async function forceFullSync() {
+    const jobId = await sync({ journal: true, force_journal: true });
+    if (!jobId) return;
+
+    startPolling(jobId, async () => {
+      await loadTransactions();
+    });
+  }
 </script>
 
 <DiffViewModal
@@ -146,6 +156,19 @@
             <div class="level-right">
               <div class="level-item">
                 <p class="is-6"><b>{filtered.length}</b> transaction(s)</p>
+              </div>
+              <div class="level-item">
+                <button
+                  type="button"
+                  class="button is-small is-link invertable is-light"
+                  title="Re-parse the journal and replace all postings in the database, bypassing the incremental-sync cache."
+                  onclick={(_e) => forceFullSync()}
+                >
+                  <span class="icon is-small">
+                    <i class="fas fa-rotate"></i>
+                  </span>
+                  Force Full Sync
+                </button>
               </div>
               <div class="level-item">
                 <button

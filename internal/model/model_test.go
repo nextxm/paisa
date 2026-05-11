@@ -409,6 +409,45 @@ func configWithJournalPath(t *testing.T, journalPath string) {
 	require.NoError(t, err, "failed to load test config")
 }
 
+// TestSyncJournal_ForceJournal_BypassesHashCheck verifies that when
+// forceJournal=true the hash check is skipped even when the cached hash
+// matches the current file hash, and the stored hash is cleared so the next
+// ordinary sync will not accidentally skip.
+func TestSyncJournal_ForceJournal_BypassesHashCheck(t *testing.T) {
+	db := openTestDB(t)
+
+	// Write a minimal journal file.
+	f, err := os.CreateTemp(t.TempDir(), "journal-*.ledger")
+	require.NoError(t, err)
+	_, err = fmt.Fprintln(f, "; journal for force-journal test")
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+	journalPath := f.Name()
+
+	configWithJournalPath(t, journalPath)
+
+	// Pre-seed the correct hash so a normal sync would skip.
+	hash, err := utils.SHA256File(journalPath)
+	require.NoError(t, err)
+	require.NoError(t, metadata.Set(db, "journal_hash", hash))
+
+	// With forceJournal=true the sync must NOT return Skipped:true.
+	result, err := model.SyncJournal(db, true)
+	assert.False(t, result.Skipped, "SyncJournal with forceJournal=true must never skip, even when hash matches")
+	// In a test environment the ledger CLI is absent, so the sync is expected to
+	// fail at the validate stage — but it must have tried.
+	if err != nil {
+		assert.NotEmpty(t, result.FailedStage, "force-journal failure must set FailedStage")
+	}
+
+	// The cached journal hash must have been cleared so the next ordinary sync
+	// will not be silently skipped.
+	storedHash, err2 := metadata.GetOrDefault(db, "journal_hash", "sentinel")
+	require.NoError(t, err2)
+	assert.Equal(t, "", storedHash,
+		"force_journal must clear the stored journal hash before attempting the sync")
+}
+
 // TestSyncJournal_SkipsOnUnchangedHash verifies that when the journal file hash
 // stored in metadata matches the current file hash, SyncJournal returns
 // SyncResult{Skipped:true} without invoking any ledger CLI commands.
@@ -432,7 +471,7 @@ func TestSyncJournal_SkipsOnUnchangedHash(t *testing.T) {
 	require.NoError(t, metadata.Set(db, "journal_hash", hash))
 
 	// SyncJournal must return Skipped:true without attempting any ledger CLI calls.
-	result, err := model.SyncJournal(db)
+	result, err := model.SyncJournal(db, false)
 	require.NoError(t, err)
 	assert.True(t, result.Skipped, "SyncJournal must set Skipped=true when hash matches")
 	assert.Equal(t, 0, result.PostingCount, "PostingCount must be zero for a skipped sync")
@@ -463,7 +502,7 @@ func TestSyncJournal_ProceedsOnChangedHash(t *testing.T) {
 
 	// SyncJournal must NOT return Skipped:true; it proceeds to the ledger CLI
 	// validate step which will fail in a test environment without ledger installed.
-	result, err := model.SyncJournal(db)
+	result, err := model.SyncJournal(db, false)
 	assert.False(t, result.Skipped, "SyncJournal must not skip when cached hash differs from file hash")
 	// The function is expected to fail at the validate stage (no ledger CLI),
 	// but must not be a hash-skip result.
