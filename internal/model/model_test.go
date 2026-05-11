@@ -411,8 +411,13 @@ func configWithJournalPath(t *testing.T, journalPath string) {
 
 // TestSyncJournal_ForceJournal_BypassesHashCheck verifies that when
 // forceJournal=true the hash check is skipped even when the cached hash
-// matches the current file hash, and the stored hash is cleared so the next
-// ordinary sync will not accidentally skip.
+// matches the current file hash.  It also checks the final state of the
+// stored hash for both the success and failure paths:
+//   - Success: the stored hash is updated to the current file hash (so the
+//     next ordinary sync can use it for file-level skipping).
+//   - Failure: the stored hash is left as "" (cleared during the force path
+//     and not re-written because the sync never completed), ensuring the
+//     next ordinary sync does a full re-parse rather than silently skipping.
 func TestSyncJournal_ForceJournal_BypassesHashCheck(t *testing.T) {
 	db := openTestDB(t)
 
@@ -432,20 +437,26 @@ func TestSyncJournal_ForceJournal_BypassesHashCheck(t *testing.T) {
 	require.NoError(t, metadata.Set(db, "journal_hash", hash))
 
 	// With forceJournal=true the sync must NOT return Skipped:true.
-	result, err := model.SyncJournal(db, true)
+	result, syncErr := model.SyncJournal(db, true)
 	assert.False(t, result.Skipped, "SyncJournal with forceJournal=true must never skip, even when hash matches")
-	// In a test environment the ledger CLI is absent, so the sync is expected to
-	// fail at the validate stage — but it must have tried.
-	if err != nil {
+	if syncErr != nil {
 		assert.NotEmpty(t, result.FailedStage, "force-journal failure must set FailedStage")
 	}
 
-	// The cached journal hash must have been cleared so the next ordinary sync
-	// will not be silently skipped.
 	storedHash, hashErr := metadata.GetOrDefault(db, "journal_hash", "sentinel")
 	require.NoError(t, hashErr)
-	assert.Equal(t, "", storedHash,
-		"force_journal must clear the stored journal hash before attempting the sync")
+
+	if syncErr == nil {
+		// Successful sync: the hash must be updated to the current file hash so
+		// that the next ordinary sync can use it for file-level skipping.
+		assert.Equal(t, hash, storedHash,
+			"after a successful force sync, the journal hash must be the current file hash")
+	} else {
+		// Failed sync: the hash must remain cleared ("") so the next ordinary
+		// sync does not silently skip.
+		assert.Equal(t, "", storedHash,
+			"after a failed force sync, the journal hash must be cleared so the next sync proceeds")
+	}
 }
 
 // TestSyncJournal_SkipsOnUnchangedHash verifies that when the journal file hash

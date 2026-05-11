@@ -233,21 +233,35 @@ func DeltaUpsert(db *gorm.DB, newPostings []*Posting) (added, updated, removed, 
 	}
 
 	// Classify each incoming transaction.
-	var postingsToInsert []*Posting
+	// We use a separate "to-insert" set here so that we can then collect
+	// postings in the original journal order (iterating newPostings rather
+	// than the newGroups map), ensuring consistent SQLite rowid assignment
+	// and deterministic ordering for all downstream queries.
+	txIDsToInsert := make(map[string]bool)
 	for txID, group := range newGroups {
 		existingHash, inDB := existing[txID]
 		switch {
 		case !inDB:
 			// Brand new transaction.
 			added++
-			postingsToInsert = append(postingsToInsert, group...)
+			txIDsToInsert[txID] = true
 		case group[0].TransactionHash != existingHash:
 			// Transaction content changed — delete old rows, insert new ones.
 			updated++
 			txIDsToDelete = append(txIDsToDelete, txID)
-			postingsToInsert = append(postingsToInsert, group...)
+			txIDsToInsert[txID] = true
 		default:
 			unchanged++
+		}
+	}
+
+	// Collect postings to insert in their original journal order.  Walking
+	// the input slice (not the map) guarantees a repeatable insertion
+	// sequence that matches what UpsertAll produces for the same input.
+	var postingsToInsert []*Posting
+	for _, p := range newPostings {
+		if txIDsToInsert[p.TransactionID] {
+			postingsToInsert = append(postingsToInsert, p)
 		}
 	}
 
