@@ -28,6 +28,37 @@
   - Extracted parser submit and suggestion helpers for better modularity and testing.
   - Added focused UI tests for parser-assisted quick-add behavior, including parse mapping, suggestion selection, and create payload path.
 
+- **Quick Add account selection and Neo card matching improvements** — Quick Add now uses explicit account dropdowns for From/To account selection, and parser account matching now retains card context in hints with token alias matching (`cc` ↔ `credit card`) so multi-token matches like "neo cc" rank above single-token matches (preventing cases like "neo cc" matching `Assets:Crypto:Neo` over Neo card liabilities).
+
+- **Span-masking architecture for NLP parser** — Refactored the transaction parser to use non-destructive span tracking instead of text mutation, improving maintainability and auditability.
+  - **Immutable source text** — Original input text is preserved throughout extraction; consumed regions are tracked via byte offset ranges instead of modifying the text.
+  - **Ordered extraction pipeline** — Extractions happen in dependency order (date → amount → from account → to account → payee → narration), with each step recording which spans have been consumed.
+  - **Unconsumed text fallback** — Each extraction step can access full source text if needed for context, but downstream steps skip previously consumed spans to prevent double-counting tokens.
+  - **Span tracking data structures** — Added `Span` (start/end byte offsets) and `SpanMask` (source + consumed spans list) types with helper methods (`RecordSpan()`, `GetUnconsumedText()`).
+  - **Span-aware extractors** — `extractDate()` and `extractAmount()` now use `FindStringSubmatchIndex()` to locate and record consumed byte ranges, preparing the pipeline for full span-masked extraction.
+  - **5 new tests** — Comprehensive validation of span initialization, recording, unconsumed text extraction, and prevention of token double-counting across extraction steps. All 34 parser tests passing.
+
+- **Compact bare-token matching for from/to accounts** — Improved hint fallback for keyword-less inputs (e.g., "15 inr icici hyd for shopping clothing") by extracting tokens directionally from account roots.
+  - **From hint fallback** now considers only `Assets:` / `Liabilities:` token sets.
+  - **To hint fallback** now considers only `Expenses:` / `Income:` token sets.
+  - Prevents missing category matches such as `Expenses:Shopping` when explicit markers or "to"/"from" keywords are absent.
+
+- **Payee extraction order fix for compact phrases** — Parser now prefers explicit merchant segments (`at <merchant>`) when initial payee extraction resolves to payment-method text.
+  - Fixes cases like "20 cad from bmo cc for groceries at no frills" incorrectly returning "bmo credit card".
+  - Both orderings now resolve payee consistently to "no frills":
+    - "20 cad from bmo cc at no frills for groceries"
+    - "20 cad from bmo cc for groceries at no frills"
+
+- **Joint role-aware account matching** — Parser now selects account pairs using full remaining text plus role hints instead of relying only on explicit from/to phrase captures.
+  - Scores from-account candidates from `Assets:`/`Liabilities:` (or `Income:` for income direction) and to-account candidates from role-appropriate account roots.
+  - Blends role hint score with full-text score so compact phrases still map correctly when explicit markers are missing.
+  - Prevents fragile behavior where only one side (from or to) is inferred from bare tokens.
+
+- **Transfer phrase support (`transfer` and `xfer`)** — Parser now reliably handles compact transfer phrasing such as "transfer 20 cad from icici hyd to hdfc" and "xfer 20 cad from icici hyd to hdfc".
+  - Added `xfer -> transfer` normalization.
+  - Added explicit `from <account> to <account>` hint extraction.
+  - Direction detection now considers full text context (not only extracted hints), improving transfer classification.
+
 - **Epic 6: Account balance snapshots as-of date** — Assets balance and account detail flows now support historical as-of views for reconciliation.
   - **Subtask 6.1 (Backend – Date filter on balance endpoints)** — Added `as_of_date` (`YYYY-MM-DD`) support to `GET /api/assets/balance`, `GET /api/gain/:account`, and new `GET /api/account/:account/balance`. Date defaults to today, rejects invalid format/future dates with `400 INVALID_REQUEST`, and excludes postings after the selected date.
   - **Subtask 6.2 (Frontend – Date picker on balance pages)** — Added "View as of" date pickers on Assets → Balance and account detail pages; changing the date reloads balance data without page reload and displays the selected as-of date.

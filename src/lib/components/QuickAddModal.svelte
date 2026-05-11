@@ -300,30 +300,26 @@
         <div class="column">
           <div class="field">
             <label class="label is-small" for="from-account-input">From Account</label>
-            <div class="control">
-              <input
-                id="from-account-input"
-                class="input is-small"
-                list="accounts-list"
-                bind:value={fromAccount}
-                placeholder="Search account..."
-                required
-              />
+            <div class="control select is-small is-fullwidth">
+              <select id="from-account-input" bind:value={fromAccount} required>
+                <option value="" disabled>Select account...</option>
+                {#each accounts as account}
+                  <option value={account}>{account}</option>
+                {/each}
+              </select>
             </div>
           </div>
         </div>
         <div class="column">
           <div class="field">
             <label class="label is-small" for="to-account-input">To Account</label>
-            <div class="control">
-              <input
-                id="to-account-input"
-                class="input is-small"
-                list="accounts-list"
-                bind:value={toAccount}
-                placeholder="Search account..."
-                required
-              />
+            <div class="control select is-small is-fullwidth">
+              <select id="to-account-input" bind:value={toAccount} required>
+                <option value="" disabled>Select account...</option>
+                {#each accounts as account}
+                  <option value={account}>{account}</option>
+                {/each}
+              </select>
             </div>
           </div>
         </div>
@@ -360,12 +356,6 @@
           </div>
         </div>
       </div>
-
-      <datalist id="accounts-list">
-        {#each accounts as account}
-          <option value={account}></option>
-        {/each}
-      </datalist>
     </section>
     <footer class="modal-card-foot is-justify-content-flex-end">
       <button class="button is-small" onclick={() => (open = false)}>Cancel</button>

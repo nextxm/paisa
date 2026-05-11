@@ -49,6 +49,60 @@ type SuggestionSet struct {
 	Suggestions []Suggestion `json:"suggestions"`
 }
 
+// Span represents a consumed region of text by byte offset (start and end indices).
+// Used for span-masking to track which parts of the input have been processed.
+type Span struct {
+	Start int // Inclusive start byte offset
+	End   int // Exclusive end byte offset
+}
+
+// SpanMask tracks consumed spans in the original text to prevent double-counting tokens.
+// Immutable source text + mask prevents destructive manipulation.
+type SpanMask struct {
+	Source        string // Immutable original input text
+	ConsumedSpans []Span // Ordered list of non-overlapping spans that have been consumed
+}
+
+// NewSpanMask creates a new span mask for tracking consumed regions during extraction.
+func NewSpanMask(source string) *SpanMask {
+	return &SpanMask{
+		Source:        source,
+		ConsumedSpans: []Span{},
+	}
+}
+
+// RecordSpan adds a consumed span to the mask. Spans should not overlap.
+func (m *SpanMask) RecordSpan(start, end int) {
+	if start >= 0 && end > start && end <= len(m.Source) {
+		m.ConsumedSpans = append(m.ConsumedSpans, Span{Start: start, End: end})
+	}
+}
+
+// GetUnconsumedText returns the portions of source text that haven't been consumed yet.
+// Returns the concatenation of all gaps between consumed spans.
+func (m *SpanMask) GetUnconsumedText() string {
+	if len(m.ConsumedSpans) == 0 {
+		return m.Source
+	}
+
+	var result strings.Builder
+	lastEnd := 0
+
+	for _, span := range m.ConsumedSpans {
+		if span.Start > lastEnd {
+			result.WriteString(m.Source[lastEnd:span.Start])
+			result.WriteString(" ")
+		}
+		lastEnd = span.End
+	}
+
+	if lastEnd < len(m.Source) {
+		result.WriteString(m.Source[lastEnd:])
+	}
+
+	return strings.TrimSpace(result.String())
+}
+
 // KeywordMatcher holds loaded keyword configurations.
 type KeywordMatcher struct {
 	ExpenseMarkers      []string
@@ -62,34 +116,101 @@ type KeywordMatcher struct {
 
 // Parser holds state needed for parsing transactions.
 type Parser struct {
-	keywords KeywordMatcher
-	db       *gorm.DB
-	patterns *RegexPatterns
-	accounts []string // List of known accounts for matching
+	keywords         KeywordMatcher
+	db               *gorm.DB
+	patterns         *RegexPatterns
+	accounts         []string            // List of known accounts for matching
+	accountTokens    map[string][]string // Pre-cached tokens for each account (for fast matching)
+	historicalPayees map[string]int      // Set of payees from past transactions with frequency
+	genericTokens    map[string]bool     // Cache of generic/structural tokens to filter
+	spanMask         *SpanMask           // Current span mask for tracking consumed regions during parsing
 }
 
 // NewParser creates a new parser instance with loaded keywords from config.
 func NewParser(keywords KeywordMatcher, db *gorm.DB, accounts []string) *Parser {
-	return &Parser{
-		keywords: keywords,
-		db:       db,
-		patterns: CompilePatterns(),
-		accounts: accounts,
+	p := &Parser{
+		keywords:         keywords,
+		db:               db,
+		patterns:         CompilePatterns(),
+		accounts:         accounts,
+		accountTokens:    make(map[string][]string),
+		historicalPayees: make(map[string]int),
+		genericTokens: map[string]bool{
+			"liabilities": true, "assets": true, "expenses": true, "income": true,
+			"creditcard": true, "credit": true, "card": true, "cc": true,
+			"checking": true, "chequing": true, "savings": true, "account": true,
+			"bank": true, "cad": true, "usd": true, "eur": true, "gbp": true,
+			"aud": true, "jpy": true, "cny": true, "inr": true,
+		},
 	}
+
+	// Pre-compute token cache for all accounts
+	p.cacheAccountTokens()
+
+	// Load historical payees from database if available
+	if db != nil {
+		p.loadHistoricalPayees()
+	}
+
+	return p
+}
+
+// cacheAccountTokens pre-extracts meaningful tokens from all accounts for fast matching.
+// Stores tokens in p.accountTokens map to avoid re-tokenization on every match call.
+func (p *Parser) cacheAccountTokens() {
+	for _, account := range p.accounts {
+		tokens := p.extractMeaningfulTokens(account)
+		p.accountTokens[account] = tokens
+	}
+}
+
+// extractMeaningfulTokens extracts non-generic tokens from a string (account name or hint).
+// Filters out structural tokens like "Liabilities", "creditcard", currency codes, etc.
+func (p *Parser) extractMeaningfulTokens(s string) []string {
+	words := strings.FieldsFunc(strings.ToLower(s), func(r rune) bool {
+		return r == ' ' || r == '-' || r == ':' || r == '(' || r == ')'
+	})
+
+	var meaningful []string
+	for _, token := range words {
+		if len(token) > 2 && !p.genericTokens[token] {
+			meaningful = append(meaningful, token)
+		}
+	}
+	return meaningful
+}
+
+// loadHistoricalPayees loads payee names from past transactions in the database.
+// Builds a frequency map of payees for suggestions and deduplication.
+func (p *Parser) loadHistoricalPayees() {
+	// TODO: Query database for distinct payees from past transactions
+	// Example: SELECT DISTINCT payee FROM postings WHERE payee IS NOT NULL
+	// Store in p.historicalPayees with frequency count
+	// This helps identify common merchants for future transactions
+	if p.db == nil {
+		return
+	}
+
+	// Placeholder: database query would go here
+	// For now, initialize as empty map
 }
 
 // ParseTransaction is the main entry point. It parses a natural language transaction description
 // and returns a structured ParseResult with confidence scores and optional suggestions.
 //
-// The parsing pipeline (8 steps):
+// The parsing pipeline uses ordered extraction with span-masking to prevent double-counting:
 // 1. normalizeText() - lowercase, trim whitespace, expand abbreviations
-// 2. extractDate() - find and parse date (e.g., "20 Apr", "2026-05-10")
-// 3. extractAmount() - find and parse amount (e.g., "15$", "$15.50")
-// 4. extractPayee() - identify merchant/payee
-// 5. extractHints() - extract account hints from text (e.g., "using amex", "from checking")
-// 6. matchAccounts() - use TF-IDF to find best matching accounts
+// 2. extractDate() - find and parse date, record consumed span
+// 3. extractAmount() - find and parse amount, record consumed span
+// 4. extractHints() - extract from/to account hints from unconsumed text
+// 5. matchAccounts() - use TF-IDF to find best matching accounts
+// 6. extractPayee() - identify merchant from remaining text
 // 7. determineDirection() - classify as expense, income, or transfer
 // 8. computeConfidence() - score overall confidence
+//
+// Span-masking preserves the original text and tracks consumed regions,
+// allowing downstream steps to access full text if needed for context.
+// This reduces bugs from destructive text manipulation.
 //
 // Returns ParseResult with all extracted fields and confidence scores.
 // If confidence is low (<0.75), suggestions array is populated for interactive UI.
@@ -101,7 +222,10 @@ func (p *Parser) ParseTransaction(text string) (*ParseResult, error) {
 	// Step 1: Normalize
 	normalized := normalizeText(text)
 
-	// Step 2: Extract date
+	// Initialize span mask to track consumed regions during extraction
+	p.spanMask = NewSpanMask(normalized)
+
+	// Step 2: Extract date (with span tracking)
 	date, dateConf, dateErr := p.extractDate(normalized)
 	if dateErr != nil {
 		// Default to today if date extraction fails
@@ -109,24 +233,28 @@ func (p *Parser) ParseTransaction(text string) (*ParseResult, error) {
 		dateConf = 0.3 // Low confidence
 	}
 
-	// Step 3: Extract amount
+	// Step 3: Extract amount (with span tracking)
 	amount, currency, amountConf, amountErr := p.extractAmount(normalized)
 	if amountErr != nil {
 		return nil, fmt.Errorf("failed to extract amount: %w", amountErr)
 	}
 
-	// Step 4: Extract payee
-	payee, payeeConf := p.extractPayee(normalized)
+	// Get unconsumed text for next steps
+	unconsumedText := p.spanMask.GetUnconsumedText()
 
-	// Step 5: Extract hints
-	fromHint, toHint := p.extractHints(normalized)
+	// Step 4: Extract hints from unconsumed text
+	fromHint, toHint := p.extractHints(unconsumedText)
 
-	// Step 6: Match accounts using TF-IDF
-	fromAccount, fromScore := p.matchAccounts(fromHint, "from")
-	toAccount, toScore := p.matchAccounts(toHint, "to")
+	// Step 5: Determine direction (expense/income/transfer)
+	direction, directionConf := p.determineDirection(unconsumedText, fromHint, toHint)
 
-	// Step 7: Determine direction (expense/income/transfer)
-	direction, directionConf := p.determineDirection(fromHint, toHint)
+	// Step 6: Match accounts using joint role-aware scoring
+	fromAccount, toAccount, fromScore, toScore := p.matchAccountPair(fromHint, toHint, unconsumedText, direction)
+
+	// Step 7: Extract payee from unconsumed text
+	payee, payeeConf := p.extractPayee(unconsumedText)
+
+	// Step 8: Compute overall confidence
 
 	// Step 8: Compute overall confidence
 	confScores := ConfidenceScores{
@@ -168,6 +296,7 @@ func normalizeText(text string) string {
 		"cc":    "credit card",
 		"debit": "debit card",
 		"atm":   "cash withdrawal",
+		"xfer":  "transfer",
 		"amt":   "amount",
 		"usd":   "USD",
 		"inr":   "INR",
@@ -184,40 +313,58 @@ func normalizeText(text string) string {
 }
 
 // extractDate finds and parses a date from the text.
+// Records the consumed span in the span mask for tracking.
 // Returns the parsed date, confidence (0-1), and error.
 func (p *Parser) extractDate(text string) (time.Time, float64, error) {
 	now := time.Now()
 
 	// Try ISO format first (2026-05-10, 2026/05/10)
-	if match := p.patterns.DateYYYYMMDD.FindStringSubmatch(text); len(match) > 1 {
-		dateStr := strings.ReplaceAll(match[1], "/", "-")
+	if indices := p.patterns.DateYYYYMMDD.FindStringSubmatchIndex(text); len(indices) >= 4 {
+		match := text[indices[2]:indices[3]]
+		dateStr := strings.ReplaceAll(match, "/", "-")
 		if date, err := time.Parse("2006-01-02", dateStr); err == nil {
+			// Record consumed span (full match is indices[0]:indices[1])
+			if p.spanMask != nil {
+				p.spanMask.RecordSpan(indices[0], indices[1])
+			}
 			return date, 0.95, nil // Very high confidence for ISO format
 		}
 	}
 
 	// Try month+day+year format (10 May 2026, 10-May-2026)
-	if match := p.patterns.DateDDMonthYYYY.FindStringSubmatch(text); len(match) > 1 {
-		if date, err := parseMonthNameDate(match[1]); err == nil {
+	if indices := p.patterns.DateDDMonthYYYY.FindStringSubmatchIndex(text); len(indices) >= 4 {
+		match := text[indices[2]:indices[3]]
+		if date, err := parseMonthNameDate(match); err == nil {
+			if p.spanMask != nil {
+				p.spanMask.RecordSpan(indices[0], indices[1])
+			}
 			return date, 0.90, nil // High confidence for explicit year
 		}
 	}
 
 	// Try month+day format (10 May, May 10, 10th May)
-	if match := p.patterns.DateDDMonth.FindStringSubmatch(text); len(match) > 1 {
-		if date, err := parseMonthNameDate(match[1] + " " + strconv.Itoa(now.Year())); err == nil {
+	if indices := p.patterns.DateDDMonth.FindStringSubmatchIndex(text); len(indices) >= 4 {
+		match := text[indices[2]:indices[3]]
+		if date, err := parseMonthNameDate(match + " " + strconv.Itoa(now.Year())); err == nil {
+			if p.spanMask != nil {
+				p.spanMask.RecordSpan(indices[0], indices[1])
+			}
 			return date, 0.80, nil // Medium-high confidence (year assumed)
 		}
 	}
 
 	// Try relative dates (today, yesterday, last friday)
-	if match := p.patterns.DateRelative.FindStringSubmatch(text); len(match) > 1 {
-		if date, err := parseRelativeDate(match[1]); err == nil {
+	if indices := p.patterns.DateRelative.FindStringSubmatchIndex(text); len(indices) >= 4 {
+		match := text[indices[2]:indices[3]]
+		if date, err := parseRelativeDate(match); err == nil {
+			if p.spanMask != nil {
+				p.spanMask.RecordSpan(indices[0], indices[1])
+			}
 			return date, 0.85, nil
 		}
 	}
 
-	// No date found - return today with low confidence
+	// No date found - return today with low confidence (no span recorded)
 	return now, 0.30, nil
 }
 
@@ -300,22 +447,28 @@ func parseRelativeDate(relStr string) (time.Time, error) {
 }
 
 // extractAmount finds and parses an amount from the text.
+// Records the consumed span in the span mask for tracking.
 // Returns amount, currency, confidence, and error.
 func (p *Parser) extractAmount(text string) (decimal.Decimal, string, float64, error) {
 	// Try dollar prefix first ($15.50)
-	if match := p.patterns.AmountDollarPrefix.FindStringSubmatch(text); len(match) > 1 {
-		amount, err := decimal.NewFromString(match[1])
+	if indices := p.patterns.AmountDollarPrefix.FindStringSubmatchIndex(text); len(indices) >= 4 {
+		amountStr := text[indices[2]:indices[3]]
+		amount, err := decimal.NewFromString(amountStr)
 		if err == nil {
+			if p.spanMask != nil {
+				p.spanMask.RecordSpan(indices[0], indices[1])
+			}
 			return amount, "USD", 0.95, nil // High confidence
 		}
 	}
 
 	// Try amount + currency suffix (15 USD, 15 INR, 15 CAD, 20 cad)
-	if match := p.patterns.AmountSuffix.FindStringSubmatch(text); len(match) > 1 {
-		amount, err := decimal.NewFromString(match[1])
+	if indices := p.patterns.AmountSuffix.FindStringSubmatchIndex(text); len(indices) >= 4 {
+		amountStr := text[indices[2]:indices[3]]
+		amount, err := decimal.NewFromString(amountStr)
 		if err == nil {
 			// Extract currency from the full match
-			fullMatch := match[0]
+			fullMatch := text[indices[0]:indices[1]]
 			fullMatchLower := strings.ToLower(fullMatch)
 			currency := "USD" // Default
 
@@ -326,17 +479,25 @@ func (p *Parser) extractAmount(text string) (decimal.Decimal, string, float64, e
 					break
 				}
 			}
+			if p.spanMask != nil {
+				p.spanMask.RecordSpan(indices[0], indices[1])
+			}
 			return amount, currency, 0.90, nil // High confidence
 		}
 	}
 
 	// Try word form (fifteen dollars, twenty rupees)
-	if match := p.patterns.AmountWords.FindStringSubmatch(text); len(match) > 1 {
-		if val, ok := WordToNumber[strings.ToLower(match[1])]; ok {
+	if indices := p.patterns.AmountWords.FindStringSubmatchIndex(text); len(indices) >= 4 {
+		amountStr := text[indices[2]:indices[3]]
+		if val, ok := WordToNumber[strings.ToLower(amountStr)]; ok {
 			amount := decimal.NewFromFloat(val)
 			currency := "USD"
-			if strings.Contains(match[0], "rupees") || strings.Contains(match[0], "inr") {
+			fullMatch := text[indices[0]:indices[1]]
+			if strings.Contains(fullMatch, "rupees") || strings.Contains(fullMatch, "inr") {
 				currency = "INR"
+			}
+			if p.spanMask != nil {
+				p.spanMask.RecordSpan(indices[0], indices[1])
 			}
 			return amount, currency, 0.60, nil // Lower confidence for word form
 		}
@@ -348,27 +509,36 @@ func (p *Parser) extractAmount(text string) (decimal.Decimal, string, float64, e
 
 // extractPayee identifies the merchant or payee name from the text.
 func (p *Parser) extractPayee(text string) (string, float64) {
+	var payee string
+	var confidence float64
+
 	// Try explicit payee markers (at, from, purchased at)
 	if match := p.patterns.PayeeMarker.FindStringSubmatch(text); len(match) > 1 {
-		payee := strings.TrimSpace(match[1])
+		payee = strings.TrimSpace(match[1])
+		confidence = 0.80 // Good confidence for explicit marker
+
 		// Check against custom payees first
 		for customPayee := range p.keywords.CustomPayees {
 			if strings.Contains(strings.ToLower(payee), strings.ToLower(customPayee)) {
 				return customPayee, 0.95 // High confidence for custom match
 			}
 		}
-		return payee, 0.80 // Good confidence for explicit marker
-	}
 
-	// Try custom payee matching
-	for customPayee := range p.keywords.CustomPayees {
-		if strings.Contains(strings.ToLower(text), strings.ToLower(customPayee)) {
-			return customPayee, 0.85 // High confidence
+		// Continue to filter the extracted payee (don't return immediately)
+	} else {
+		// Try custom payee matching if no explicit marker
+		for customPayee := range p.keywords.CustomPayees {
+			if strings.Contains(strings.ToLower(text), strings.ToLower(customPayee)) {
+				return customPayee, 0.85 // High confidence
+			}
 		}
+
+		payee = text
+		confidence = 0.50 // Lower confidence for inferred payee
 	}
 
-	// Extract remaining text after removing known keywords and amounts
-	cleanedText := text
+	// Clean the payee by removing amounts, currency, and payment methods
+	cleanedPayee := payee
 
 	// Remove amounts (including currency that follows)
 	// Matches: "20", "20.50", "$20", "20$", "20 usd", "20usd", etc.
@@ -378,78 +548,129 @@ func (p *Parser) extractPayee(text string) (string, float64) {
 		regexp.MustCompile(`\d+(?:\.\d{2})?\s*(?:USD|INR|EUR|GBP|CAD|AUD|JPY|CNY)`), // 20 USD (case-insensitive)
 	}
 	for _, pattern := range amountPatterns {
-		cleanedText = pattern.ReplaceAllString(cleanedText, "")
+		cleanedPayee = pattern.ReplaceAllString(cleanedPayee, "")
 	}
 
 	// Remove currency codes (even without amounts)
 	currencyPattern := regexp.MustCompile(`(?i)\b(?:usd|inr|eur|gbp|cad|aud|jpy|cny)\b`)
-	cleanedText = currencyPattern.ReplaceAllString(cleanedText, "")
+	cleanedPayee = currencyPattern.ReplaceAllString(cleanedPayee, "")
 
 	// Remove expense markers (categories like "groceries", "gas", etc.)
 	for _, marker := range p.keywords.ExpenseMarkers {
 		pattern := regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(marker) + `\b`)
-		cleanedText = pattern.ReplaceAllString(cleanedText, "")
+		cleanedPayee = pattern.ReplaceAllString(cleanedPayee, "")
 	}
 
 	// Remove income markers
 	for _, marker := range p.keywords.IncomeMarkers {
 		pattern := regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(marker) + `\b`)
-		cleanedText = pattern.ReplaceAllString(cleanedText, "")
+		cleanedPayee = pattern.ReplaceAllString(cleanedPayee, "")
 	}
-
-	// Remove payment method hints (cc, credit card, debit, etc.)
 	for _, method := range p.keywords.CCPaymentMethods {
 		pattern := regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(method) + `\b`)
-		cleanedText = pattern.ReplaceAllString(cleanedText, "")
+		cleanedPayee = pattern.ReplaceAllString(cleanedPayee, "")
 	}
 	for _, method := range p.keywords.DebitPaymentMethods {
 		pattern := regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(method) + `\b`)
-		cleanedText = pattern.ReplaceAllString(cleanedText, "")
+		cleanedPayee = pattern.ReplaceAllString(cleanedPayee, "")
 	}
 	for _, method := range p.keywords.CashMethods {
 		pattern := regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(method) + `\b`)
-		cleanedText = pattern.ReplaceAllString(cleanedText, "")
+		cleanedPayee = pattern.ReplaceAllString(cleanedPayee, "")
 	}
 
-	// Remove common bank/card names (bmo, visa, amex, etc.) - be very aggressive
-	bankKeywords := []string{"bmo", "rbc", "td", "cibc", "scotiabank", "visa", "amex", "american express", "mastercard", "discover", "diners", "jcb"}
+	// Remove common bank/card names - extracted dynamically from accounts for better coverage
+	bankKeywords := []string{
+		"bmo", "rbc", "td", "cibc", "scotiabank",
+		"visa", "amex", "american express", "mastercard", "discover", "diners", "jcb",
+		"neo", "tangerine", "wealthsimple", "questrade", "interactive brokers",
+	}
+
+	// Dynamically add any meaningful account name tokens to filter from payee
+	seenKeywords := make(map[string]bool)
+	for _, kw := range bankKeywords {
+		seenKeywords[strings.ToLower(kw)] = true
+	}
+	for _, account := range p.accounts {
+		tokens := p.extractMeaningfulTokens(account)
+		for _, token := range tokens {
+			if len(token) > 2 && !seenKeywords[token] {
+				bankKeywords = append(bankKeywords, token)
+				seenKeywords[token] = true
+			}
+		}
+	}
+
 	for _, bankName := range bankKeywords {
 		pattern := regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(bankName) + `\b`)
-		cleanedText = pattern.ReplaceAllString(cleanedText, "")
+		cleanedPayee = pattern.ReplaceAllString(cleanedPayee, "")
 	}
-
-	// Remove dates (month names, day numbers, relative dates)
-	datePattern := regexp.MustCompile(`(?i)\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\b\d{1,2}(?:st|nd|rd|th)?\b|\b(?:today|tomorrow|yesterday)\b`)
-	cleanedText = datePattern.ReplaceAllString(cleanedText, "")
 
 	// Remove prepositions and connecting words
-	cleanedText = regexp.MustCompile(`(?i)\b(?:from|to|at|using|via|with|for|in|on)\b`).ReplaceAllString(cleanedText, "")
+	cleanedPayee = regexp.MustCompile(`(?i)\b(?:from|to|at|using|via|with|for|in|on)\b`).ReplaceAllString(cleanedPayee, "")
 
 	// Clean up multiple spaces, punctuation, and trim
-	cleanedText = regexp.MustCompile(`\s+`).ReplaceAllString(cleanedText, " ")
-	cleanedText = regexp.MustCompile(`[,;:-]+`).ReplaceAllString(cleanedText, " ") // Remove common punctuation
-	payee := strings.TrimSpace(cleanedText)
+	cleanedPayee = regexp.MustCompile(`\s+`).ReplaceAllString(cleanedPayee, " ")
+	cleanedPayee = regexp.MustCompile(`[,;:-]+`).ReplaceAllString(cleanedPayee, " ") // Remove common punctuation
+	cleanedPayee = strings.TrimSpace(cleanedPayee)
 
-	if payee != "" {
-		return payee, 0.50 // Lower confidence for inferred payee
+	if cleanedPayee != "" {
+		return cleanedPayee, confidence
 	}
 
-	return "", 0.20 // Very low confidence if nothing found
+	// If initial extraction collapses to empty (e.g., "from bmo credit card for ... at no frills"),
+	// prefer a merchant that appears in an explicit "at <payee>" segment.
+	if atMatch := regexp.MustCompile(`(?i)\bat\s+([A-Za-z\s&]+?)(?:\s+(?:for|with|using|via|on|from)|[,\.]|$)`).FindStringSubmatch(text); len(atMatch) > 1 {
+		merchant := strings.TrimSpace(atMatch[1])
+		if merchant != "" {
+			return merchant, 0.70
+		}
+	}
+
+	// If cleaning removed everything, return the original payee trimmed
+	return strings.TrimSpace(payee), 0.30 // Very low confidence if cleaning removed everything
 }
 
 // extractHints extracts account hints (e.g., "credit card", "checking", "from amex").
 func (p *Parser) extractHints(text string) (fromHint, toHint string) {
+	// Prefer explicit transfer form first: "from <account> to <account>"
+	transferPattern := regexp.MustCompile(`(?i)\bfrom\s+([A-Za-z0-9\s:-]+?)\s+to\s+([A-Za-z0-9\s:-]+?)(?:[,\.]|$)`)
+	if match := transferPattern.FindStringSubmatch(text); len(match) > 2 {
+		fromHint = strings.TrimSpace(match[1])
+		toHint = strings.TrimSpace(match[2])
+	}
+
 	// Find all account hints using the pattern
 	if match := p.patterns.AccountHint.FindAllStringSubmatch(text, -1); len(match) > 0 {
 		for _, m := range match {
 			if len(m) > 1 {
 				hint := strings.TrimSpace(m[1])
+				if hint == "" {
+					continue
+				}
+
+				if strings.HasPrefix(strings.ToLower(m[0]), "from ") || strings.HasPrefix(strings.ToLower(m[0]), "using ") ||
+					strings.HasPrefix(strings.ToLower(m[0]), "with ") || strings.HasPrefix(strings.ToLower(m[0]), "on ") {
+					if fromHint == "" {
+						fromHint = hint
+					}
+					continue
+				}
+				if strings.HasPrefix(strings.ToLower(m[0]), "to ") || strings.HasPrefix(strings.ToLower(m[0]), "into ") {
+					if toHint == "" {
+						toHint = hint
+					}
+					continue
+				}
+
 				// Check if this is a "from" hint or "to" hint based on preceding word
 				if idx := strings.Index(text, m[0]); idx >= 0 {
 					prefix := text[maxInt(0, idx-10):idx]
-					if strings.Contains(strings.ToLower(prefix), "from") || strings.Contains(strings.ToLower(prefix), "using") {
+					prefixLower := strings.ToLower(prefix)
+					if fromHint == "" && (strings.Contains(prefixLower, "from") || strings.Contains(prefixLower, "using") ||
+						strings.Contains(prefixLower, "on") || strings.Contains(prefixLower, "with")) {
 						fromHint = hint
-					} else if strings.Contains(strings.ToLower(prefix), "to") || strings.Contains(strings.ToLower(prefix), "into") {
+					} else if toHint == "" && (strings.Contains(prefixLower, "to") || strings.Contains(prefixLower, "into")) {
 						toHint = hint
 					}
 				}
@@ -460,9 +681,12 @@ func (p *Parser) extractHints(text string) (fromHint, toHint string) {
 	// Try payment hint extraction
 	if match := p.patterns.PaymentHint.FindStringSubmatch(text); len(match) > 1 {
 		method := strings.TrimSpace(match[1])
-		// Payment methods typically indicate "from" account
+		// Payment methods typically indicate "from" account.
+		// If provider hint already exists (e.g., "neo"), keep both tokens ("neo credit card").
 		if fromHint == "" {
 			fromHint = method
+		} else if !strings.Contains(strings.ToLower(fromHint), strings.ToLower(method)) {
+			fromHint = strings.TrimSpace(fromHint + " " + method)
 		}
 	}
 
@@ -478,16 +702,42 @@ func (p *Parser) extractHints(text string) (fromHint, toHint string) {
 		}
 	}
 
+	// Fallback: Extract bare account-name tokens (without explicit keywords)
+	// This handles cases like "15 inr icici hyd for shopping clothing"
+	// where "icici hyd" appears without "from" keyword.
+	// Strategy: find tokens from Assets/Liabilities accounts for the "from" hint.
+	if fromHint == "" {
+		bareAccountTokens := p.findBareAccountTokensByPrefix(text, "Assets:", "Liabilities:")
+		if len(bareAccountTokens) > 0 {
+			fromHint = strings.Join(bareAccountTokens, " ")
+		}
+	}
+
+	// Secondary fallback: infer category/account tokens for "to" from Expenses/Income accounts.
+	// This captures compact phrases like "... for shopping clothing" even without explicit "to".
+	if toHint == "" {
+		bareCategoryTokens := p.findBareAccountTokensByPrefix(text, "Expenses:", "Income:")
+		if len(bareCategoryTokens) > 0 {
+			toHint = strings.Join(bareCategoryTokens, " ")
+		}
+	}
+
 	// Enhance payment method hint with bank/card name for better matching
-	// e.g., "bmo cc" → fromHint becomes "bmo credit card" to improve matching
-	if fromHint != "" && strings.Contains(strings.ToLower(fromHint), "cc") {
-		// Extract any bank/provider name before "cc"
-		bankPattern := regexp.MustCompile(`(\b\w+)\s+(?:cc|credit\s+card|credit\s+card)\b`)
-		if match := bankPattern.FindStringSubmatch(text); len(match) > 1 {
-			bankName := strings.TrimSpace(match[1])
-			// Expand "bmo" to "bmo credit card" for better TF-IDF matching
-			if bankName != "" && bankName != "cc" {
-				fromHint = bankName + " credit card"
+	// e.g., "bmo cc" → becomes "bmo credit card" after normalization
+	// We need to extract the bank name from hints like "bmo credit card"
+	if fromHint != "" {
+		fromHintLower := strings.ToLower(fromHint)
+		// Check if this is a credit card hint (contains "credit", "card", or "cc")
+		if strings.Contains(fromHintLower, "credit") || strings.Contains(fromHintLower, "card") || strings.Contains(fromHintLower, "cc") {
+			// Extract bank/provider name (usually the first meaningful token before "credit card")
+			// e.g., "bmo credit card" → "bmo"
+			bankPattern := regexp.MustCompile(`(\b\w+)\s+(?:credit\s+card|cc)\b`)
+			if match := bankPattern.FindStringSubmatch(text); len(match) > 1 {
+				bankName := strings.TrimSpace(match[1])
+				// Keep "cc" token in hint so accounts matching both bank token and cc token rank higher.
+				if bankName != "" && bankName != "credit" && bankName != "card" && bankName != "cc" {
+					fromHint = bankName + " cc"
+				}
 			}
 		}
 	}
@@ -495,11 +745,205 @@ func (p *Parser) extractHints(text string) (fromHint, toHint string) {
 	return
 }
 
+// findBareAccountTokensByPrefix extracts tokens that appear in known account names
+// from the input text, without requiring explicit keywords like "from" or "using".
+// It only considers accounts whose name starts with one of the provided prefixes.
+// Returns tokens in order of appearance that match account names.
+func (p *Parser) findBareAccountTokensByPrefix(text string, prefixes ...string) []string {
+	// Build a set of meaningful tokens from matching account roots only.
+	accountTokenMap := make(map[string]bool)
+	for _, account := range p.accounts {
+		if len(prefixes) > 0 {
+			matchedPrefix := false
+			for _, prefix := range prefixes {
+				if strings.HasPrefix(account, prefix) {
+					matchedPrefix = true
+					break
+				}
+			}
+			if !matchedPrefix {
+				continue
+			}
+		}
+
+		tokens := p.extractMeaningfulTokens(account)
+		for _, token := range tokens {
+			accountTokenMap[token] = true
+		}
+	}
+
+	// Tokenize the input text
+	words := strings.FieldsFunc(strings.ToLower(text), func(r rune) bool {
+		return r == ' ' || r == ',' || r == ';' || r == '.' || r == ':' || r == '-'
+	})
+
+	// Collect tokens that appear in both input and account names, preserving order
+	var result []string
+	seen := make(map[string]bool)
+	for _, word := range words {
+		if len(word) > 2 && accountTokenMap[word] && !seen[word] {
+			result = append(result, word)
+			seen[word] = true
+		}
+	}
+
+	return result
+}
+
 func maxInt(a, b int) int {
 	if a > b {
 		return a
 	}
 	return b
+}
+
+// candidateAccountsForRole returns account candidates for from/to role based on direction.
+func (p *Parser) candidateAccountsForRole(role, direction string) []string {
+	var candidates []string
+
+	switch role {
+	case "from":
+		if direction == "income" {
+			for _, acc := range p.accounts {
+				if strings.HasPrefix(acc, "Income:") {
+					candidates = append(candidates, acc)
+				}
+			}
+		} else {
+			for _, acc := range p.accounts {
+				if strings.HasPrefix(acc, "Assets:") || strings.HasPrefix(acc, "Liabilities:") {
+					candidates = append(candidates, acc)
+				}
+			}
+		}
+	case "to":
+		switch direction {
+		case "transfer":
+			for _, acc := range p.accounts {
+				if strings.HasPrefix(acc, "Assets:") || strings.HasPrefix(acc, "Liabilities:") {
+					candidates = append(candidates, acc)
+				}
+			}
+		case "income":
+			for _, acc := range p.accounts {
+				if strings.HasPrefix(acc, "Assets:") || strings.HasPrefix(acc, "Liabilities:") {
+					candidates = append(candidates, acc)
+				}
+			}
+		default:
+			for _, acc := range p.accounts {
+				if strings.HasPrefix(acc, "Expenses:") || strings.HasPrefix(acc, "Income:") {
+					candidates = append(candidates, acc)
+				}
+			}
+		}
+	}
+
+	if len(candidates) == 0 {
+		return p.accounts
+	}
+
+	return candidates
+}
+
+// scoreAccountAgainstHint computes a similarity score using token overlap + TF-IDF style cosine.
+func (p *Parser) scoreAccountAgainstHint(hint, account string) float64 {
+	if hint == "" || account == "" {
+		return 0.0
+	}
+
+	hintTokens := normalizeTokensForMatching(tokenizeHint(hint))
+	accountTokens := normalizeTokensForMatching(tokenizeHint(account))
+	meaningfulHintTokens := p.extractMeaningfulTokens(hint)
+	meaningfulAccountTokens := p.accountTokens[account]
+
+	similarity := cosineSimilarity(hintTokens, accountTokens)
+
+	sharedTokens := 0.0
+	for token := range hintTokens {
+		if _, ok := accountTokens[token]; ok {
+			sharedTokens++
+		}
+	}
+	similarity += 0.2 * sharedTokens
+
+	for _, hintToken := range meaningfulHintTokens {
+		for _, accountToken := range meaningfulAccountTokens {
+			if hintToken == accountToken {
+				similarity += 0.6
+			} else if strings.Contains(accountToken, hintToken) || strings.Contains(hintToken, accountToken) {
+				similarity += 0.3
+			}
+		}
+	}
+
+	return similarity
+}
+
+// pickBestAccount selects the highest-scoring account for a hint from candidate accounts.
+func (p *Parser) pickBestAccount(hint string, candidates []string, excluded string) (string, float64) {
+	bestScore := 0.0
+	bestAccount := ""
+
+	for _, account := range candidates {
+		if excluded != "" && account == excluded {
+			continue
+		}
+
+		score := p.scoreAccountAgainstHint(hint, account)
+		if score > bestScore {
+			bestScore = score
+			bestAccount = account
+		}
+	}
+
+	return bestAccount, bestScore
+}
+
+// matchAccountPair scores from/to accounts jointly using full text plus role-specific hints.
+// This supports compact phrases where explicit "from/to" markers may be missing.
+func (p *Parser) matchAccountPair(fromHint, toHint, fullText, direction string) (string, string, float64, float64) {
+	combinedHint := strings.TrimSpace(fullText)
+
+	fromCandidates := p.candidateAccountsForRole("from", direction)
+	toCandidates := p.candidateAccountsForRole("to", direction)
+
+	fromPrimaryHint := fromHint
+	if fromPrimaryHint == "" {
+		fromPrimaryHint = combinedHint
+	}
+
+	toPrimaryHint := toHint
+	if toPrimaryHint == "" {
+		toPrimaryHint = combinedHint
+	}
+
+	fromAccount, fromPrimaryScore := p.pickBestAccount(fromPrimaryHint, fromCandidates, "")
+	toAccount, toPrimaryScore := p.pickBestAccount(toPrimaryHint, toCandidates, "")
+
+	fromScore := fromPrimaryScore
+	toScore := toPrimaryScore
+
+	if fromAccount != "" && combinedHint != "" && fromPrimaryHint != combinedHint {
+		fullTextScore := p.scoreAccountAgainstHint(combinedHint, fromAccount)
+		fromScore = (0.7 * fromPrimaryScore) + (0.3 * fullTextScore)
+	}
+
+	if toAccount != "" && combinedHint != "" && toPrimaryHint != combinedHint {
+		fullTextScore := p.scoreAccountAgainstHint(combinedHint, toAccount)
+		toScore = (0.7 * toPrimaryScore) + (0.3 * fullTextScore)
+	}
+
+	// For transfer-like flows where candidate pools overlap, avoid selecting same account on both sides.
+	if fromAccount != "" && toAccount == fromAccount {
+		altToAccount, altToScore := p.pickBestAccount(toPrimaryHint, toCandidates, fromAccount)
+		if altToAccount != "" {
+			toAccount = altToAccount
+			toScore = altToScore
+		}
+	}
+
+	return fromAccount, toAccount, fromScore, toScore
 }
 
 // matchAccounts uses TF-IDF to find the best matching account(s) for a hint.
@@ -559,46 +1003,37 @@ func (p *Parser) matchAccounts(hint string, direction string) (string, float64) 
 	// Compute similarity scores with enhanced matching
 	bestScore := 0.0
 	bestAccount := ""
-	hintTokens := tokenizeHint(hint)
-	hintLower := strings.ToLower(hint)
+	meaningfulHintTokens := p.extractMeaningfulTokens(hint)
+	hintTokens := normalizeTokensForMatching(tokenizeHint(hint))
 
 	for _, account := range candidates {
-		accountTokens := tokenizeHint(account)
-		accountLower := strings.ToLower(account)
+		accountTokens := normalizeTokensForMatching(tokenizeHint(account))
 
-		// Base TF-IDF similarity
+		// Base TF-IDF similarity using tokenized forms
 		similarity := cosineSimilarity(hintTokens, accountTokens)
 
-		// Check for exact substring matches in the account (very high boost)
-		// e.g., "bmo credit card" contains "bmo" which appears in account name
-		hintWords := strings.FieldsFunc(hintLower, func(r rune) bool {
-			return r == ' ' || r == '-'
-		})
-		for _, word := range hintWords {
-			if len(word) > 2 && strings.Contains(accountLower, word) {
-				// Strong boost for substring match
-				similarity += 0.4
-				break
+		// Prefer accounts that match more hint tokens (e.g., "neo cc" should beat "neo" only).
+		sharedTokens := 0.0
+		for token := range hintTokens {
+			if _, ok := accountTokens[token]; ok {
+				sharedTokens++
 			}
 		}
+		similarity += 0.2 * sharedTokens
 
-		// Boost score for payment method matching
-		// Check for bank/card name matches (e.g., "bmo credit card" with "Liabilities:CreditCard:BMO")
-		if direction == "from" || direction == "transfer" || (direction == "" && (strings.HasPrefix(account, "Liabilities:") || strings.HasPrefix(account, "Assets:"))) {
-			// Look for known bank/card keywords that appear in both hint and account
-			for _, keyword := range []string{"bmo", "visa", "amex", "mastercard", "discover", "rbc", "td", "chase", "cibc", "scotiabank"} {
-				hintHasKeyword := strings.Contains(hintLower, keyword)
-				accountHasKeyword := strings.Contains(accountLower, keyword)
-				if hintHasKeyword && accountHasKeyword {
-					// Significant boost for matching bank/card names
-					similarity += 0.5
-					break
+		// Use cached meaningful tokens for account
+		meaningfulAccountTokens := p.accountTokens[account]
+
+		// Check if any meaningful hint token matches any account token
+		for _, hintToken := range meaningfulHintTokens {
+			for _, accountToken := range meaningfulAccountTokens {
+				if hintToken == accountToken {
+					// Exact token match - strong boost
+					similarity += 0.6
+				} else if strings.Contains(accountToken, hintToken) || strings.Contains(hintToken, accountToken) {
+					// Substring match - moderate boost
+					similarity += 0.3
 				}
-			}
-
-			// Also check for "credit" + "card" or "cc" patterns
-			if strings.Contains(hintLower, "credit") && (strings.Contains(accountLower, "creditcard") || strings.Contains(accountLower, "credit card") || strings.Contains(accountLower, "cc")) {
-				similarity += 0.3
 			}
 		}
 
@@ -624,6 +1059,22 @@ func tokenizeHint(s string) map[string]float64 {
 		}
 	}
 	return tokenFreq
+}
+
+// normalizeTokensForMatching adds alias tokens so equivalent terms match naturally.
+// Example: "credit card" and "creditcard" both add an implicit "cc" token.
+func normalizeTokensForMatching(tokens map[string]float64) map[string]float64 {
+	normalized := make(map[string]float64, len(tokens)+2)
+	for k, v := range tokens {
+		normalized[k] = v
+	}
+
+	if normalized["creditcard"] > 0 || normalized["creditc"] > 0 ||
+		normalized["cc"] > 0 || (normalized["credit"] > 0 && normalized["card"] > 0) {
+		normalized["cc"] += 1
+	}
+
+	return normalized
 }
 
 // cosineSimilarity computes cosine similarity between two token vectors.
@@ -662,32 +1113,41 @@ func cosineSimilarity(a, b map[string]float64) float64 {
 }
 
 // determineDirection classifies the transaction as "expense", "income", or "transfer".
-func (p *Parser) determineDirection(fromHint, toHint string) (string, float64) {
+func (p *Parser) determineDirection(text, fromHint, toHint string) (string, float64) {
 	// Lowercase the text for matching
+	lowerText := strings.ToLower(text)
 	lowerFrom := strings.ToLower(fromHint)
 	lowerTo := strings.ToLower(toHint)
-	combinedHints := lowerFrom + " " + lowerTo
+	combinedHints := strings.TrimSpace(lowerFrom + " " + lowerTo)
 
 	// Get keyword matcher
 	keywords := p.keywords
 
 	// Check for transfer keywords (move between accounts)
 	for _, keyword := range keywords.TransferMarkers {
-		if strings.Contains(combinedHints, strings.ToLower(keyword)) {
+		lowerKeyword := strings.ToLower(keyword)
+		if strings.Contains(lowerText, lowerKeyword) || strings.Contains(combinedHints, lowerKeyword) {
 			return "transfer", 0.85
 		}
 	}
 
+	// Strong transfer cue: explicit from ... to ... structure with both hints present.
+	if fromHint != "" && toHint != "" && (strings.Contains(lowerText, " from ") && strings.Contains(lowerText, " to ")) {
+		return "transfer", 0.8
+	}
+
 	// Check for income keywords
 	for _, keyword := range keywords.IncomeMarkers {
-		if strings.Contains(combinedHints, strings.ToLower(keyword)) {
+		lowerKeyword := strings.ToLower(keyword)
+		if strings.Contains(lowerText, lowerKeyword) || strings.Contains(combinedHints, lowerKeyword) {
 			return "income", 0.85
 		}
 	}
 
 	// Check for expense keywords
 	for _, keyword := range keywords.ExpenseMarkers {
-		if strings.Contains(combinedHints, strings.ToLower(keyword)) {
+		lowerKeyword := strings.ToLower(keyword)
+		if strings.Contains(lowerText, lowerKeyword) || strings.Contains(combinedHints, lowerKeyword) {
 			return "expense", 0.85
 		}
 	}
