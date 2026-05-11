@@ -13,13 +13,19 @@ func mockAccounts() []string {
 		"Assets:Checking",
 		"Assets:Savings",
 		"Assets:CAD:Checking",
+		"Assets:Crypto:Neo",
 		"Liabilities:CreditCard:BMO",
 		"Liabilities:CAD:CC:BMO:CreditC",
+		"Liabilities:CAD:CC:Neo",
+		"Liabilities:CreditCard:Neo",
 		"Liabilities:CreditCard:Visa",
 		"Expenses:Groceries",
 		"Expenses:Dining",
 		"Expenses:Transport",
 		"Expenses:Entertainment",
+		"Expenses:Shopping",
+		"Assets:INR:Bank:ICICI-Hyd",
+		"Assets:INR:Bank:HDFC",
 		"Income:Salary",
 		"Income:Freelance",
 		"Income:Investment",
@@ -78,6 +84,34 @@ func TestParseTransaction_Transfer(t *testing.T) {
 	// assert.Equal(t, "INR", result.Currency)
 	// assert.Equal(t, "transfer", result.Direction)
 	// assert.Greater(t, result.Confidence.Overall, 0.85)
+}
+
+func TestTransferPhraseMatching(t *testing.T) {
+	parser := newTestParser(DefaultKeywords())
+	result, err := parser.ParseTransaction("transfer 20 cad from icici hyd to hdfc")
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	assert.Equal(t, "20", result.Amount.String())
+	assert.Equal(t, "CAD", result.Currency)
+	assert.Equal(t, "transfer", result.Direction)
+
+	assert.True(t, strings.Contains(strings.ToLower(result.FromAccount), "icici"), "from account should match icici")
+	assert.True(t, strings.Contains(strings.ToLower(result.ToAccount), "hdfc"), "to account should match hdfc")
+	assert.NotEqual(t, result.FromAccount, result.ToAccount, "from and to should not be same account")
+}
+
+func TestXferPhraseMatching(t *testing.T) {
+	parser := newTestParser(DefaultKeywords())
+	result, err := parser.ParseTransaction("xfer 20 cad from icici hyd to hdfc")
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	assert.Equal(t, "20", result.Amount.String())
+	assert.Equal(t, "CAD", result.Currency)
+	assert.Equal(t, "transfer", result.Direction)
+	assert.True(t, strings.Contains(strings.ToLower(result.FromAccount), "icici"), "from account should match icici")
+	assert.True(t, strings.Contains(strings.ToLower(result.ToAccount), "hdfc"), "to account should match hdfc")
 }
 
 // TestParseTransaction_AmbiguousAmount tests parsing with ambiguous amount.
@@ -397,6 +431,11 @@ func TestPayeeExtraction(t *testing.T) {
 			[]string{"cad", "bmo", "groceries"},
 		},
 		{
+			"20 cad from bmo cc for groceries at no frills",
+			"frills",
+			[]string{"cad", "bmo", "groceries", "credit", "card"},
+		},
+		{
 			"100 usd coffee at starbucks",
 			"starbucks",
 			[]string{"usd", "coffee"},
@@ -421,4 +460,212 @@ func TestPayeeExtraction(t *testing.T) {
 				"Payee should NOT contain '%s' for input: %s, got: %s", notExp, tt.input, result.Payee)
 		}
 	}
+}
+
+// TestTokenExtraction verifies that meaningful tokens are properly extracted from account names
+func TestTokenExtraction(t *testing.T) {
+	parser := newTestParser(DefaultKeywords())
+
+	// Test that meaningful tokens are extracted and generic ones are filtered
+	tests := []struct {
+		account     string
+		expected    []string // Should contain these tokens
+		notExpected []string // Should NOT contain these tokens
+	}{
+		{
+			"Liabilities:CreditCard:Neo",
+			[]string{"neo"},
+			[]string{"liabilities", "creditcard", "credit", "card"},
+		},
+		{
+			"Liabilities:CAD:CC:BMO:CreditC",
+			[]string{"bmo"},
+			[]string{"liabilities", "creditcard", "credit", "card", "cad"},
+		},
+		{
+			"Expenses:Groceries",
+			[]string{"groceries"},
+			[]string{"expenses"},
+		},
+	}
+
+	for _, tt := range tests {
+		tokens := parser.extractMeaningfulTokens(tt.account)
+		tokenSet := make(map[string]bool)
+		for _, t := range tokens {
+			tokenSet[t] = true
+		}
+
+		for _, exp := range tt.expected {
+			assert.True(t, tokenSet[exp],
+				"Account %s should contain token '%s', got tokens: %v", tt.account, exp, tokens)
+		}
+
+		for _, notExp := range tt.notExpected {
+			assert.False(t, tokenSet[notExp],
+				"Account %s should NOT contain token '%s', got tokens: %v", tt.account, notExp, tokens)
+		}
+	}
+}
+
+// TestNeoCreditCardMatching tests that Neo credit card accounts are properly matched
+// using dynamic token matching (not hardcoded bank names)
+func TestNeoCreditCardMatching(t *testing.T) {
+	parser := newTestParser(DefaultKeywords())
+	result, err := parser.ParseTransaction("20 cad groceries at walmart on neo cc")
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	// Verify amount and currency
+	assert.Equal(t, "20", result.Amount.String())
+	assert.Equal(t, "CAD", result.Currency)
+
+	// Verify from account matches Neo (should be matched dynamically, not from hardcoded list)
+	assert.NotEqual(t, "", result.FromAccount, "FromAccount should not be empty - should match Neo account")
+	assert.True(t, strings.Contains(strings.ToLower(result.FromAccount), "neo"),
+		"FromAccount should contain Neo: "+result.FromAccount)
+	assert.True(t, strings.HasPrefix(result.FromAccount, "Liabilities:"),
+		"FromAccount should prefer liability card account over assets: "+result.FromAccount)
+
+	// Verify to account is Expenses:Groceries
+	assert.Equal(t, "Expenses:Groceries", result.ToAccount, "ToAccount should be Expenses:Groceries")
+
+	// Verify payee is "walmart", not including currency/category/payment method
+	payeeLower := strings.ToLower(result.Payee)
+	assert.True(t, strings.Contains(payeeLower, "walmart"), "Payee should contain 'walmart'")
+	assert.False(t, strings.Contains(payeeLower, "cad"), "Payee should not contain currency 'cad'")
+	assert.False(t, strings.Contains(payeeLower, "neo"), "Payee should not contain payment method 'neo'")
+	assert.False(t, strings.Contains(payeeLower, "groceries"), "Payee should not contain category 'groceries'")
+}
+
+func TestExtractHintsRetainsProviderAndCardTokens(t *testing.T) {
+	parser := newTestParser(DefaultKeywords())
+	fromHint, toHint := parser.extractHints(normalizeText("20 cad groceries at walmart on neo cc"))
+
+	assert.True(t, strings.Contains(strings.ToLower(fromHint), "neo"), "fromHint should include provider token")
+	assert.True(t, strings.Contains(strings.ToLower(fromHint), "cc"), "fromHint should include cc token")
+	assert.NotEqual(t, "", toHint)
+}
+
+func TestTokenMatchingPrefersNeoCCLiability(t *testing.T) {
+	parser := newTestParser(DefaultKeywords())
+	account, _ := parser.matchAccounts("neo cc", "from")
+
+	assert.True(t, strings.HasPrefix(account, "Liabilities:"), "neo cc should prefer liability account, got: "+account)
+	assert.True(t, strings.Contains(strings.ToLower(account), "neo"), "matched account should contain neo")
+}
+
+// TestSpanMaskInitialization tests that span mask is properly initialized
+func TestSpanMaskInitialization(t *testing.T) {
+	mask := NewSpanMask("hello world 2026-05-10 $50")
+	assert.NotNil(t, mask)
+	assert.Equal(t, "hello world 2026-05-10 $50", mask.Source)
+	assert.Equal(t, 0, len(mask.ConsumedSpans))
+}
+
+// TestSpanMaskRecordSpan tests recording consumed spans
+func TestSpanMaskRecordSpan(t *testing.T) {
+	mask := NewSpanMask("hello world 2026-05-10 $50")
+
+	// Record first span (date)
+	mask.RecordSpan(12, 22) // "2026-05-10"
+	assert.Equal(t, 1, len(mask.ConsumedSpans))
+	assert.Equal(t, 12, mask.ConsumedSpans[0].Start)
+	assert.Equal(t, 22, mask.ConsumedSpans[0].End)
+
+	// Record second span (amount)
+	mask.RecordSpan(23, 26) // "$50"
+	assert.Equal(t, 2, len(mask.ConsumedSpans))
+}
+
+// TestSpanMaskGetUnconsumedText tests extraction of unconsumed text
+func TestSpanMaskGetUnconsumedText(t *testing.T) {
+	source := "hello world 2026-05-10 $50"
+	mask := NewSpanMask(source)
+
+	// No spans consumed yet
+	assert.Equal(t, source, mask.GetUnconsumedText())
+
+	// Consume date
+	mask.RecordSpan(12, 22)
+	unconsumed := mask.GetUnconsumedText()
+	assert.NotContains(t, unconsumed, "2026-05-10")
+	assert.Contains(t, unconsumed, "hello")
+	assert.Contains(t, unconsumed, "world")
+	assert.Contains(t, unconsumed, "$50")
+
+	// Consume amount
+	mask.RecordSpan(23, 26)
+	unconsumed = mask.GetUnconsumedText()
+	assert.NotContains(t, unconsumed, "2026-05-10")
+	assert.NotContains(t, unconsumed, "$50")
+	assert.Contains(t, unconsumed, "hello")
+	assert.Contains(t, unconsumed, "world")
+}
+
+// TestSpanMaskingPreventesDoubleCountingTokens verifies that span masking
+// prevents the same tokens from being used in multiple extraction steps
+func TestSpanMaskingPreventesDoubleCountingTokens(t *testing.T) {
+	parser := newTestParser(DefaultKeywords())
+	input := "2026-05-10 spent $50 at walmart using amex"
+
+	result, err := parser.ParseTransaction(input)
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	// Date and amount should be extracted and recorded in spans
+	assert.NotNil(t, parser.spanMask)
+
+	// The unconsumed text should not contain the date or amount
+	unconsumedText := parser.spanMask.GetUnconsumedText()
+	assert.NotContains(t, unconsumedText, "2026-05-10")
+	assert.NotContains(t, unconsumedText, "50") // Amount should be masked
+
+	// But should contain the remainder
+	assert.True(t, strings.Contains(strings.ToLower(unconsumedText), "walmart") ||
+		strings.Contains(strings.ToLower(unconsumedText), "amex"),
+		"Unconsumed text should contain payee/account hints")
+}
+
+// TestSpanMaskingWithComplexInput tests span masking on a realistic complex transaction
+func TestSpanMaskingWithComplexInput(t *testing.T) {
+	parser := newTestParser(DefaultKeywords())
+	input := "May 15 transferred 1500 INR from savings to checking"
+
+	result, err := parser.ParseTransaction(input)
+	// Should parse successfully with the amount present
+	assert.NoError(t, err, "should parse transaction with explicit amount")
+	assert.NotNil(t, result)
+	assert.Equal(t, "1500", result.Amount.String())
+
+	// Span mask should have recorded consumed regions
+	assert.NotNil(t, parser.spanMask)
+	assert.Greater(t, len(parser.spanMask.ConsumedSpans), 0, "should have recorded at least one consumed span")
+}
+
+// TestBareAccountTokenExtraction tests extraction of account names without explicit keywords
+func TestBareAccountTokenExtraction(t *testing.T) {
+	parser := newTestParser(DefaultKeywords())
+	input := "15 inr icici hyd for shopping clothing"
+
+	result, err := parser.ParseTransaction(input)
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	// Verify amount extraction
+	assert.Equal(t, "15", result.Amount.String())
+	assert.Equal(t, "INR", result.Currency)
+
+	// Verify account matching - should find ICICI-Hyd account from bare tokens "icici hyd"
+	assert.NotEqual(t, "", result.FromAccount, "FromAccount should be matched from bare tokens 'icici hyd'")
+	assert.True(t, strings.Contains(strings.ToUpper(result.FromAccount), "ICICI"),
+		"FromAccount should contain ICICI: "+result.FromAccount)
+	assert.True(t, strings.Contains(strings.ToUpper(result.FromAccount), "HYD"),
+		"FromAccount should contain HYD: "+result.FromAccount)
+
+	// Verify expense category matching - should find Expenses:Shopping from "shopping"
+	assert.Equal(t, "Expenses:Shopping", result.ToAccount, "ToAccount should be Expenses:Shopping")
+
+	// Verify direction
+	assert.Equal(t, "expense", result.Direction)
 }

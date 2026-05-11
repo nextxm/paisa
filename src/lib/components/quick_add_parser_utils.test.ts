@@ -40,6 +40,20 @@ describe("quick_add_parser_utils", () => {
     expect(overrides.commodity).toBe("CAD");
   });
 
+  test("parserFormOverrides coerces numeric parser amount to string", () => {
+    const overrides = parserFormOverrides(
+      {
+        amount: 20,
+        currency: "CAD"
+      },
+      "INR"
+    );
+
+    expect(overrides.amount).toBe("20");
+    expect(typeof overrides.amount).toBe("string");
+    expect(overrides.commodity).toBe("CAD");
+  });
+
   test("applySuggestionSelection updates account and records selected index", () => {
     const selection = applySuggestionSelection(
       "from_account",
@@ -75,6 +89,29 @@ describe("quick_add_parser_utils", () => {
     expect(request.payload.text).toBe("paid $20 for lunch using debit");
     expect(request.payload.suggestion_used).toBe(2);
     expect(request.payload.time_to_confirm_ms).toBe(1300);
+    expect(typeof request.payload.amount).toBe("string");
+  });
+
+  test("buildQuickAddSubmitRequest coerces numeric amount to string in parser flow", () => {
+    const values = {
+      ...baseValues(),
+      fromAccount: "Assets:Checking",
+      toAccount: "Expenses:Dining",
+      amount: 20 as unknown as string,
+      commodity: "USD"
+    };
+
+    const request = buildQuickAddSubmitRequest({
+      parserText: "paid $20 for lunch using debit",
+      values,
+      selectedSuggestionIndex: {},
+      parseStartedAt: 1000,
+      nowMs: 1200
+    });
+
+    expect(request.endpoint).toBe("/api/parser/create-transaction");
+    expect(request.payload.amount).toBe("20");
+    expect(typeof request.payload.amount).toBe("string");
   });
 
   test("buildQuickAddSubmitRequest uses manual endpoint without parser text", () => {
