@@ -131,6 +131,10 @@ func SyncJournal(db *gorm.DB, forceJournal bool) (SyncResult, error) {
 			// Full replace: DELETE all + INSERT all, mirroring the pre-delta behaviour.
 			// This is the safe path for cases where the transaction-hash index may be
 			// stale (e.g. after a migration, data import, or manual DB edits).
+			// Note: when forceJournal is true, only PostingsAdded is meaningful in the
+			// returned SyncResult (set to len(postings)); PostingsUpdated, PostingsRemoved,
+			// and PostingsUnchanged are always zero because no per-transaction diff is
+			// computed.
 			if err := posting.UpsertAll(tx, postings); err != nil {
 				return err
 			}

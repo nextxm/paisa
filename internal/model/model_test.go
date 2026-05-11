@@ -442,8 +442,8 @@ func TestSyncJournal_ForceJournal_BypassesHashCheck(t *testing.T) {
 
 	// The cached journal hash must have been cleared so the next ordinary sync
 	// will not be silently skipped.
-	storedHash, err2 := metadata.GetOrDefault(db, "journal_hash", "sentinel")
-	require.NoError(t, err2)
+	storedHash, hashErr := metadata.GetOrDefault(db, "journal_hash", "sentinel")
+	require.NoError(t, hashErr)
 	assert.Equal(t, "", storedHash,
 		"force_journal must clear the stored journal hash before attempting the sync")
 }
