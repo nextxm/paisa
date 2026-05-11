@@ -28,6 +28,7 @@
     editorRightCollapsed
   } from "../../../../../persisted_store";
   import { get } from "svelte/store";
+  import { refresh } from "../../../../../store";
 
   let { data }: { data: PageData } = $props();
   let editorDom: Element = $state();
@@ -198,13 +199,14 @@
       }
     } else {
       toast.toast({
-        message: `Saved ${selectedFile.name}`,
+        message: `Saved ${selectedFile.name}. Please sync to see changes.`,
         type: "is-success"
       });
       filesMap[file.name] = file;
       selectedFile = file;
       selectedVersion = null;
       $editorState = _.assign({}, $editorState, { hasUnsavedChanges: false });
+      refresh();
     }
   }
 

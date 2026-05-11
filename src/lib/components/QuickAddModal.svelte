@@ -151,7 +151,18 @@
       });
 
       if (response.success) {
-        toast.toast({ message: "Transaction added successfully", type: "is-success" });
+        if (response.errors && response.errors.length > 0) {
+          toast.toast({
+            message: "Transaction added, but journal has validation errors. Please sync and check the Editor.",
+            type: "is-warning",
+            duration: 10000
+          });
+        } else {
+          toast.toast({
+            message: "Transaction added. Please sync to see changes.",
+            type: "is-success"
+          });
+        }
         open = false;
         resetFormState();
         refresh();
