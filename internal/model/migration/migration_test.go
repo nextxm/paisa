@@ -32,7 +32,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 8, version)
+	assert.Equal(t, 9, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -42,7 +42,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 8, version)
+	assert.Equal(t, 9, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -60,12 +60,12 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	db := openMemoryDB(t)
 
 	// Simulate an existing install that has tables but no schema_versions table.
-	// RunMigrations should create the table and record v8 without error.
+	// RunMigrations should create the table and record v9 without error.
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	// Schema version should be 8 after migration.
-	assert.Equal(t, 8, migration.CurrentVersion(db))
+	// Schema version should be 9 after migration.
+	assert.Equal(t, 9, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -101,9 +101,9 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&migration.SchemaVersion{}))
 	require.NoError(t, db.Create(&migration.SchemaVersion{Version: 1, AppliedAt: time.Now()}).Error)
 
-	// Run migrations – v2, v3, v4, v5, v6, v7, and v8 should execute.
+	// Run migrations – v2, v3, v4, v5, v6, v7, v8, and v9 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 8, migration.CurrentVersion(db))
+	assert.Equal(t, 9, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -261,7 +261,33 @@ func TestV7Migration_AccountBalancesTableExists(t *testing.T) {
 	assert.True(t, decimal.NewFromFloat(1000).Equal(all[0].Amount))
 }
 
-// TestV8Migration_ParserTrainingLogTableExists verifies that after v8 the
+// TestV9Migration_PostingTransactionHashColumnExists verifies that after v9 the
+// postings table has a transaction_hash column and the covering index exists.
+func TestV9Migration_PostingTransactionHashColumnExists(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	// Insert a row with a transaction_hash value to confirm the column exists.
+	require.NoError(t, db.Exec(
+		`INSERT INTO postings (transaction_id, date, account, commodity, quantity, amount, transaction_hash)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		"txn-1", "2024-01-01 00:00:00", "Assets:Checking", "INR", "100", "100", "abc123hash",
+	).Error)
+
+	var hash string
+	require.NoError(t, db.Raw(
+		"SELECT transaction_hash FROM postings WHERE transaction_id = ?", "txn-1",
+	).Scan(&hash).Error)
+	assert.Equal(t, "abc123hash", hash, "transaction_hash column must be readable after v9 migration")
+
+	// Verify the covering index was created.
+	var count int64
+	require.NoError(t, db.Raw(
+		"SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_postings_txn_hash'",
+	).Scan(&count).Error)
+	assert.Equal(t, int64(1), count, "idx_postings_txn_hash index must exist after v9 migration")
+}
+
 // parser_training_log table exists and accepts writes.
 func TestV8Migration_ParserTrainingLogTableExists(t *testing.T) {
 	db := openMemoryDB(t)

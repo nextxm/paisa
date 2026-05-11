@@ -559,3 +559,218 @@ func TestFilterSince(t *testing.T) {
 	result = price.FilterSince(prices, time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
 	assert.Empty(t, result, "since after all prices must return empty slice")
 }
+
+// --- DeltaUpsert tests ---
+
+// TestDeltaUpsert_FirstSync verifies that on an empty postings table
+// DeltaUpsert inserts all supplied postings and reports every transaction as added.
+func TestDeltaUpsert_FirstSync(t *testing.T) {
+	db := openTestDB(t)
+
+	postings := []*posting.Posting{
+		{TransactionID: "t1", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(100)},
+		{TransactionID: "t1", Account: "Income:Salary", Commodity: "USD", Amount: decimal.NewFromFloat(-100)},
+		{TransactionID: "t2", Account: "Expenses:Food", Commodity: "USD", Amount: decimal.NewFromFloat(30)},
+		{TransactionID: "t2", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(-30)},
+	}
+
+	added, updated, removed, unchanged, err := posting.DeltaUpsert(db, postings)
+	require.NoError(t, err)
+
+	assert.Equal(t, 2, added, "both transactions must be reported as added on first sync")
+	assert.Equal(t, 0, updated)
+	assert.Equal(t, 0, removed)
+	assert.Equal(t, 0, unchanged)
+
+	var count int64
+	db.Model(&posting.Posting{}).Count(&count)
+	assert.Equal(t, int64(4), count, "all 4 posting rows must be present after first sync")
+}
+
+// TestDeltaUpsert_NoChanges verifies that a second sync with identical postings
+// performs no DB writes (all transactions reported as unchanged).
+func TestDeltaUpsert_NoChanges(t *testing.T) {
+	db := openTestDB(t)
+
+	postings := []*posting.Posting{
+		{TransactionID: "t1", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(100)},
+		{TransactionID: "t1", Account: "Income:Salary", Commodity: "USD", Amount: decimal.NewFromFloat(-100)},
+	}
+
+	// First sync.
+	_, _, _, _, err := posting.DeltaUpsert(db, postings)
+	require.NoError(t, err)
+
+	// Second sync with the same data.
+	added, updated, removed, unchanged, err := posting.DeltaUpsert(db, postings)
+	require.NoError(t, err)
+
+	assert.Equal(t, 0, added)
+	assert.Equal(t, 0, updated)
+	assert.Equal(t, 0, removed)
+	assert.Equal(t, 1, unchanged, "unchanged transaction must be skipped on second sync")
+
+	var count int64
+	db.Model(&posting.Posting{}).Count(&count)
+	assert.Equal(t, int64(2), count, "row count must not change when nothing is modified")
+}
+
+// TestDeltaUpsert_AddNewTransaction verifies that adding one new transaction
+// to an already-synced journal only inserts the new rows without touching
+// the existing ones.
+func TestDeltaUpsert_AddNewTransaction(t *testing.T) {
+	db := openTestDB(t)
+
+	initial := []*posting.Posting{
+		{TransactionID: "t1", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(100)},
+		{TransactionID: "t1", Account: "Income:Salary", Commodity: "USD", Amount: decimal.NewFromFloat(-100)},
+	}
+	_, _, _, _, err := posting.DeltaUpsert(db, initial)
+	require.NoError(t, err)
+
+	// Second sync adds t2 while t1 is unchanged.
+	withNew := append(initial,
+		&posting.Posting{TransactionID: "t2", Account: "Expenses:Food", Commodity: "USD", Amount: decimal.NewFromFloat(30)},
+		&posting.Posting{TransactionID: "t2", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(-30)},
+	)
+	added, updated, removed, unchanged, err := posting.DeltaUpsert(db, withNew)
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, added, "only the new transaction must be reported as added")
+	assert.Equal(t, 0, updated)
+	assert.Equal(t, 0, removed)
+	assert.Equal(t, 1, unchanged, "t1 must be reported as unchanged")
+
+	var count int64
+	db.Model(&posting.Posting{}).Count(&count)
+	assert.Equal(t, int64(4), count, "total posting count must grow by 2 new rows")
+}
+
+// TestDeltaUpsert_ModifyTransaction verifies that changing a posting inside an
+// existing transaction causes only that transaction's rows to be replaced.
+func TestDeltaUpsert_ModifyTransaction(t *testing.T) {
+	db := openTestDB(t)
+
+	initial := []*posting.Posting{
+		{TransactionID: "t1", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(100)},
+		{TransactionID: "t1", Account: "Income:Salary", Commodity: "USD", Amount: decimal.NewFromFloat(-100)},
+		{TransactionID: "t2", Account: "Expenses:Food", Commodity: "USD", Amount: decimal.NewFromFloat(30)},
+		{TransactionID: "t2", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(-30)},
+	}
+	_, _, _, _, err := posting.DeltaUpsert(db, initial)
+	require.NoError(t, err)
+
+	// Modify t2's amount – simulates editing a transaction in the journal.
+	modified := []*posting.Posting{
+		{TransactionID: "t1", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(100)},
+		{TransactionID: "t1", Account: "Income:Salary", Commodity: "USD", Amount: decimal.NewFromFloat(-100)},
+		{TransactionID: "t2", Account: "Expenses:Food", Commodity: "USD", Amount: decimal.NewFromFloat(35)}, // changed
+		{TransactionID: "t2", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(-35)},  // changed
+	}
+	added, updated, removed, unchanged, err := posting.DeltaUpsert(db, modified)
+	require.NoError(t, err)
+
+	assert.Equal(t, 0, added)
+	assert.Equal(t, 1, updated, "t2 must be reported as updated")
+	assert.Equal(t, 0, removed)
+	assert.Equal(t, 1, unchanged, "t1 must be unchanged")
+
+	var count int64
+	db.Model(&posting.Posting{}).Count(&count)
+	assert.Equal(t, int64(4), count, "total posting count must stay the same after an in-place edit")
+
+	// Verify the updated amount is present.
+	var p posting.Posting
+	db.Where("transaction_id = ? AND account = ?", "t2", "Expenses:Food").First(&p)
+	assert.True(t, decimal.NewFromFloat(35).Equal(p.Amount), "modified amount must be reflected in the DB")
+}
+
+// TestDeltaUpsert_RemoveTransaction verifies that removing a transaction from
+// the journal deletes only its rows from the postings table.
+func TestDeltaUpsert_RemoveTransaction(t *testing.T) {
+	db := openTestDB(t)
+
+	initial := []*posting.Posting{
+		{TransactionID: "t1", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(100)},
+		{TransactionID: "t1", Account: "Income:Salary", Commodity: "USD", Amount: decimal.NewFromFloat(-100)},
+		{TransactionID: "t2", Account: "Expenses:Food", Commodity: "USD", Amount: decimal.NewFromFloat(30)},
+		{TransactionID: "t2", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(-30)},
+	}
+	_, _, _, _, err := posting.DeltaUpsert(db, initial)
+	require.NoError(t, err)
+
+	// Second sync without t2.
+	withoutT2 := initial[:2]
+	added, updated, removed, unchanged, err := posting.DeltaUpsert(db, withoutT2)
+	require.NoError(t, err)
+
+	assert.Equal(t, 0, added)
+	assert.Equal(t, 0, updated)
+	assert.Equal(t, 1, removed, "t2 must be reported as removed")
+	assert.Equal(t, 1, unchanged, "t1 must be reported as unchanged")
+
+	var count int64
+	db.Model(&posting.Posting{}).Count(&count)
+	assert.Equal(t, int64(2), count, "only t1 rows must remain after t2 is removed")
+}
+
+// TestDeltaUpsert_EmptyInput verifies that syncing an empty posting slice
+// deletes all existing rows and reports them as removed.
+func TestDeltaUpsert_EmptyInput(t *testing.T) {
+	db := openTestDB(t)
+
+	initial := []*posting.Posting{
+		{TransactionID: "t1", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(100)},
+	}
+	_, _, _, _, err := posting.DeltaUpsert(db, initial)
+	require.NoError(t, err)
+
+	added, updated, removed, unchanged, err := posting.DeltaUpsert(db, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 0, added)
+	assert.Equal(t, 0, updated)
+	assert.Equal(t, 1, removed, "t1 must be removed when syncing an empty set")
+	assert.Equal(t, 0, unchanged)
+
+	var count int64
+	db.Model(&posting.Posting{}).Count(&count)
+	assert.Equal(t, int64(0), count, "postings table must be empty after syncing nil")
+}
+
+// TestComputeTransactionHash_Deterministic verifies that the same set of
+// postings always produces the same hash regardless of slice order.
+func TestComputeTransactionHash_Deterministic(t *testing.T) {
+	p1 := &posting.Posting{TransactionID: "t1", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(100)}
+	p2 := &posting.Posting{TransactionID: "t1", Account: "Income:Salary", Commodity: "USD", Amount: decimal.NewFromFloat(-100)}
+
+	hash1 := posting.ComputeTransactionHash([]*posting.Posting{p1, p2})
+	hash2 := posting.ComputeTransactionHash([]*posting.Posting{p2, p1})
+	assert.Equal(t, hash1, hash2, "ComputeTransactionHash must be order-independent")
+}
+
+// TestComputeTransactionHash_DifferentContent verifies that changing any field
+// in a posting produces a different transaction hash.
+func TestComputeTransactionHash_DifferentContent(t *testing.T) {
+	base := []*posting.Posting{
+		{TransactionID: "t1", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(100)},
+	}
+	modified := []*posting.Posting{
+		{TransactionID: "t1", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(101)},
+	}
+	assert.NotEqual(t, posting.ComputeTransactionHash(base), posting.ComputeTransactionHash(modified),
+		"differing amounts must yield different hashes")
+}
+
+// TestStampTransactionHash verifies that StampTransactionHash sets the same
+// TransactionHash on every posting that belongs to the same transaction.
+func TestStampTransactionHash(t *testing.T) {
+	p1 := &posting.Posting{TransactionID: "t1", Account: "Assets:Bank", Commodity: "USD", Amount: decimal.NewFromFloat(100)}
+	p2 := &posting.Posting{TransactionID: "t1", Account: "Income:Salary", Commodity: "USD", Amount: decimal.NewFromFloat(-100)}
+	p3 := &posting.Posting{TransactionID: "t2", Account: "Expenses:Food", Commodity: "USD", Amount: decimal.NewFromFloat(50)}
+
+	posting.StampTransactionHash([]*posting.Posting{p1, p2, p3})
+
+	assert.NotEmpty(t, p1.TransactionHash)
+	assert.Equal(t, p1.TransactionHash, p2.TransactionHash, "all postings in t1 must share the same hash")
+	assert.NotEqual(t, p1.TransactionHash, p3.TransactionHash, "different transactions must have different hashes")
+}

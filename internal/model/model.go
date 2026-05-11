@@ -41,6 +41,12 @@ type SyncResult struct {
 	// Skipped is true when the journal file hash matches the last-synced hash,
 	// meaning no CLI parse or validation work was performed.
 	Skipped bool `json:"skipped,omitempty"`
+	// Delta counts for the posting table update.  All four are zero on a
+	// Skipped sync or when a non-delta (full-replace) write path is used.
+	PostingsAdded     int `json:"postings_added,omitempty"`
+	PostingsUpdated   int `json:"postings_updated,omitempty"`
+	PostingsRemoved   int `json:"postings_removed,omitempty"`
+	PostingsUnchanged int `json:"postings_unchanged,omitempty"`
 }
 
 func SyncJournal(db *gorm.DB) (SyncResult, error) {
@@ -107,12 +113,15 @@ func SyncJournal(db *gorm.DB) (SyncResult, error) {
 		return SyncResult{FailedStage: "journal.parse", Message: err.Error()}, err
 	}
 
+	var deltaAdded, deltaUpdated, deltaRemoved, deltaUnchanged int
 	err = db.Transaction(func(tx *gorm.DB) error {
 		if err := price.UpsertAllByType(tx, config.Unknown, prices); err != nil {
 			return err
 		}
-		if err := posting.UpsertAll(tx, postings); err != nil {
-			return err
+		var deltaErr error
+		deltaAdded, deltaUpdated, deltaRemoved, deltaUnchanged, deltaErr = posting.DeltaUpsert(tx, postings)
+		if deltaErr != nil {
+			return deltaErr
 		}
 		return account_balance.RefreshFromPostings(tx, postings)
 	})
@@ -122,13 +131,21 @@ func SyncJournal(db *gorm.DB) (SyncResult, error) {
 	}
 
 	result := SyncResult{
-		PostingCount: len(postings),
-		PriceCount:   len(prices),
+		PostingCount:      len(postings),
+		PriceCount:        len(prices),
+		PostingsAdded:     deltaAdded,
+		PostingsUpdated:   deltaUpdated,
+		PostingsRemoved:   deltaRemoved,
+		PostingsUnchanged: deltaUnchanged,
 	}
 	log.WithFields(log.Fields{
-		"stage":         "journal",
-		"posting_count": result.PostingCount,
-		"price_count":   result.PriceCount,
+		"stage":              "journal",
+		"posting_count":      result.PostingCount,
+		"price_count":        result.PriceCount,
+		"postings_added":     result.PostingsAdded,
+		"postings_updated":   result.PostingsUpdated,
+		"postings_removed":   result.PostingsRemoved,
+		"postings_unchanged": result.PostingsUnchanged,
 	}).Info("Journal sync completed")
 
 	// Persist the journal hash only after a fully successful sync so that a
