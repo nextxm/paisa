@@ -138,7 +138,6 @@ func SaveFile(db *gorm.DB, file LedgerFile) gin.H {
 		return gin.H{"errors": errors, "saved": false, "message": "Failed to write file"}
 	}
 
-
 	savedFile, err := readLedgerFileWithVersions(dir, filePath)
 	if err != nil {
 		log.Warn(err)
