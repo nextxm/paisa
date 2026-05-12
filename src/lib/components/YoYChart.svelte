@@ -71,7 +71,10 @@
       .attr("class", "axis x")
       .attr("transform", `translate(0,${height})`)
       .call(d3.axisBottom(x));
-    root.append("g").attr("class", "axis y").call(d3.axisLeft(y).tickFormat(formatCurrencyCrude));
+    root
+      .append("g")
+      .attr("class", "axis y")
+      .call(d3.axisLeft(y).tickFormat((d: any) => formatCurrencyCrude(d)));
 
     if (chartType === "line") {
       for (const year of years) {

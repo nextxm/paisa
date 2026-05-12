@@ -276,7 +276,7 @@
               </div>
 
               <div class="column is-6">
-                <div class="card-section">
+                <div class="card-section flow-column">
                   <div class="level is-mobile mb-4">
                     <div class="level-left">
                       <h3 class="subtitle is-5 has-text-weight-bold mb-0">Inflows</h3>
@@ -288,12 +288,14 @@
                       Income
                     </h4>
                     {#if aggregatedIncomes.length > 0}
-                      <table class="table is-fullwidth is-narrow is-hoverable is-borderless">
+                      <table
+                        class="table is-fullwidth is-narrow is-hoverable is-borderless cashflow-breakdown-table"
+                      >
                         <tbody>
                           {#each aggregatedIncomes as item}
                             <tr>
-                              <td class="pl-0">{restName(item.account)}</td>
-                              <td class="has-text-right tabular-nums pr-0">
+                              <td class="cashflow-row-label">{restName(item.account)}</td>
+                              <td class="cashflow-row-value has-text-right tabular-nums">
                                 <span class="has-text-weight-medium">
                                   {formatCurrency(item.amount)}
                                 </span>
@@ -313,12 +315,14 @@
                       <h4 class="is-size-7 has-text-grey has-text-weight-bold mb-2 is-uppercase">
                         Liabilities Inflow
                       </h4>
-                      <table class="table is-fullwidth is-narrow is-hoverable is-borderless">
+                      <table
+                        class="table is-fullwidth is-narrow is-hoverable is-borderless cashflow-breakdown-table"
+                      >
                         <tbody>
                           {#each aggregatedLiabilities as item}
                             <tr>
-                              <td class="pl-0">{restName(item.account)}</td>
-                              <td class="has-text-right tabular-nums pr-0">
+                              <td class="cashflow-row-label">{restName(item.account)}</td>
+                              <td class="cashflow-row-value has-text-right tabular-nums">
                                 <span class="has-text-weight-medium">
                                   {formatCurrency(item.amount)}
                                 </span>
@@ -334,7 +338,7 @@
               </div>
 
               <div class="column is-6">
-                <div class="card-section border-left-desktop">
+                <div class="card-section flow-column border-left-desktop">
                   <div class="level is-mobile mb-4">
                     <div class="level-left">
                       <h3 class="subtitle is-5 has-text-weight-bold mb-0">Outflows</h3>
@@ -346,12 +350,14 @@
                       Expenses
                     </h4>
                     {#if aggregatedExpenses.length > 0}
-                      <table class="table is-fullwidth is-narrow is-hoverable is-borderless">
+                      <table
+                        class="table is-fullwidth is-narrow is-hoverable is-borderless cashflow-breakdown-table"
+                      >
                         <tbody>
                           {#each aggregatedExpenses as item}
                             <tr>
-                              <td class="pl-0">{restName(item.account)}</td>
-                              <td class="has-text-right tabular-nums pr-0">
+                              <td class="cashflow-row-label">{restName(item.account)}</td>
+                              <td class="cashflow-row-value has-text-right tabular-nums">
                                 <span class="has-text-weight-medium">
                                   {formatCurrency(item.amount)}
                                 </span>
@@ -371,12 +377,14 @@
                       <h4 class="is-size-7 has-text-grey has-text-weight-bold mb-2 is-uppercase">
                         Taxes
                       </h4>
-                      <table class="table is-fullwidth is-narrow is-hoverable is-borderless">
+                      <table
+                        class="table is-fullwidth is-narrow is-hoverable is-borderless cashflow-breakdown-table"
+                      >
                         <tbody>
                           {#each aggregatedTaxes as item}
                             <tr>
-                              <td class="pl-0">{restName(item.account)}</td>
-                              <td class="has-text-right tabular-nums pr-0">
+                              <td class="cashflow-row-label">{restName(item.account)}</td>
+                              <td class="cashflow-row-value has-text-right tabular-nums">
                                 <span class="has-text-weight-medium">
                                   {formatCurrency(item.amount)}
                                 </span>
@@ -435,6 +443,7 @@
   @media screen and (min-width: 1024px) {
     .border-left-desktop {
       border-left: 1px solid var(--bulma-border, #dbdbdb);
+      margin-left: 1rem;
       padding-left: 2rem;
     }
   }
@@ -509,7 +518,14 @@
   }
 
   .card-section {
-    padding: 1rem 0;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .flow-column {
+    .subtitle {
+      letter-spacing: 0.01em;
+    }
   }
 
   .net-surplus-footer {
@@ -533,6 +549,34 @@
     }
     tr {
       border: none !important;
+    }
+  }
+
+  .cashflow-breakdown-table {
+    table-layout: fixed;
+
+    tbody tr {
+      border-radius: 6px;
+      transition: background-color 0.15s ease;
+    }
+
+    tbody tr:hover {
+      background-color: var(--bulma-scheme-main-ter, rgba(0, 0, 0, 0.03));
+    }
+  }
+
+  .cashflow-row-label {
+    width: 66%;
+    padding-right: 1.25rem;
+    word-break: break-word;
+  }
+
+  .cashflow-row-value {
+    width: 34%;
+    white-space: nowrap;
+
+    .is-size-7 {
+      margin-left: 0.35rem;
     }
   }
 

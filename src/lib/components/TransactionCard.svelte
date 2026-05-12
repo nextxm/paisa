@@ -33,12 +33,11 @@
   </div>
   <hr class="my-1" />
   {#each t.postings as posting}
+    {@const account = posting.account ?? ""}
     <div class="my-1 is-flex is-justify-content-space-between">
-      <div class="has-text-grey truncate custom-icon" title={posting.account}>
-        <span style={accountColorStyle(firstName(posting.account))}
-          >{iconText(posting.account)}</span
-        >
-        {restName(posting.account)}
+      <div class="has-text-grey truncate custom-icon" title={account}>
+        <span style={accountColorStyle(firstName(account))}>{iconText(account)}</span>
+        {restName(account)}
       </div>
       <div class="has-text-weight-bold is-size-6 has-text-right whitespace-nowrap">
         {#if posting.commodity !== USER_CONFIG.default_currency}

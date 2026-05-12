@@ -35,6 +35,7 @@ type Posting struct {
 	Commodity            string          `json:"commodity"`
 	Quantity             decimal.Decimal `json:"quantity"`
 	Amount               decimal.Decimal `json:"amount"`
+	OriginalAmount       decimal.Decimal `json:"original_amount"`
 	Status               string          `json:"status"`
 	TagRecurring         string          `json:"tag_recurring"`
 	TagPeriod            string          `json:"tag_period"`
@@ -53,6 +54,16 @@ type Posting struct {
 	Balance      decimal.Decimal `gorm:"-:all" json:"balance"`
 
 	behaviours []string `gorm:"-:all"`
+}
+
+// PreserveOriginalAmount sets the OriginalAmount field to match Amount if it
+// is currently zero. This should be called on postings loaded from the
+// database or parsed from ledger files to ensure the field is always
+// populated for the frontend.
+func (p *Posting) PreserveOriginalAmount() {
+	if p.OriginalAmount.IsZero() {
+		p.OriginalAmount = p.Amount
+	}
 }
 
 func (p Posting) GroupDate() time.Time {

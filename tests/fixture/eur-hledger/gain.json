@@ -22,6 +22,7 @@
           "commodity": "AAPL",
           "quantity": 1,
           "amount": 10005.05,
+          "original_amount": 1,
           "status": "unmarked",
           "tag_recurring": "",
           "tag_period": "",

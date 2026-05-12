@@ -138,7 +138,7 @@ const config = {
         ]
       },
       devOptions: {
-        enabled: true
+        enabled: false
       }
     })
   ],
@@ -163,6 +163,9 @@ const config = {
       "@egjs/svelte-grid",
       "svelte-floating-ui"
     ]
+  },
+  ssr: {
+    noExternal: ["path-browserify"]
   }
 };
 

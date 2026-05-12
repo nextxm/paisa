@@ -6,7 +6,7 @@
   <div class="container is-fluid">
     <div class="columns">
       <div class="column is-4 is-offset-4 mt-5">
-        {#if $page.error.status === 404}
+        {#if $page.error?.status === 404}
           <article class="message invertable is-danger">
             <div class="message-header">Page not found</div>
             <div class="message-body">
@@ -17,7 +17,7 @@
               </p>
             </div>
           </article>
-        {:else}
+        {:else if $page.error}
           <article class="message invertable is-danger">
             <div class="message-header">Something Went Wrong</div>
             <div class="message-body">
