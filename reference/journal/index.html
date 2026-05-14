@@ -18,7 +18,7 @@
         <link rel="prev" href="../commodities/">
       
       
-        <link rel="next" href="../allocation-targets/">
+        <link rel="next" href="../parser/">
       
       
       <link rel="icon" href="../../images/favicon.png">
@@ -580,6 +580,8 @@
       
         
       
+        
+      
     
     
       
@@ -879,10 +881,41 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#natural-language-quick-add" class="md-nav__link">
+    <span class="md-ellipsis">
+      Natural Language Quick Add
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parser/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Natural Language Parser API
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -1189,7 +1222,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_20" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_21" >
         
           
           
@@ -1206,14 +1239,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_20" id="__nav_3_20_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_21" id="__nav_3_21_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_20">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_21">
             <span class="md-nav__icon md-icon"></span>
             Goals
           </label>
@@ -1436,7 +1469,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_27" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_28" >
         
           
           
@@ -1453,14 +1486,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_27" id="__nav_3_27_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_28" id="__nav_3_28_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_27_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_27">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_28_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_28">
             <span class="md-nav__icon md-icon"></span>
             Tax
           </label>
@@ -2069,6 +2102,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#natural-language-quick-add" class="md-nav__link">
+    <span class="md-ellipsis">
+      Natural Language Quick Add
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2161,6 +2203,16 @@ the name and <code>Rent</code> is the value. Tag should be inside comment.</p>
 </span></code></pre></div>
 <p>Include directive can be used to include other journal files. It
 supports wildcards <code>*</code>.</p>
+<h2 id="natural-language-quick-add">Natural Language Quick Add<a class="headerlink" href="#natural-language-quick-add" title="Permanent link">&para;</a></h2>
+<p>Paisa can also create journal entries from free-form transaction text
+through parser APIs. This is useful for quick capture workflows where
+you type text such as:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>20 Apr, bought 15$ groceries using bmo cc from no frills
+</span></code></pre></div>
+<p>The parser extracts date, amount, payee, and account candidates, then
+creates a normal journal entry through the same add-transaction flow.</p>
+<p>See the full API contract, request/response formats, and confidence
+handling in <a href="../parser/">Natural Language Parser API</a>.</p>
 
 
 
@@ -2260,13 +2312,13 @@ supports wildcards <code>*</code>.</p>
         
         
           
-          <a href="../allocation-targets/" class="md-footer__link md-footer__link--next" aria-label="Next: Allocation Targets">
+          <a href="../parser/" class="md-footer__link md-footer__link--next" aria-label="Next: Natural Language Parser API">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Allocation Targets
+                Natural Language Parser API
               </div>
             </div>
             <div class="md-footer__button md-icon">

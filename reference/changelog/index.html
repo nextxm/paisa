@@ -580,6 +580,8 @@
       
         
       
+        
+      
     
     
       
@@ -759,6 +761,28 @@
   
   <span class="md-ellipsis">
     Journal
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parser/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Natural Language Parser API
     
   </span>
   
@@ -1070,7 +1094,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_20" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_21" >
         
           
           
@@ -1087,14 +1111,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_20" id="__nav_3_20_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_21" id="__nav_3_21_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_20">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_21">
             <span class="md-nav__icon md-icon"></span>
             Goals
           </label>
@@ -1317,7 +1341,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_27" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_28" >
         
           
           
@@ -1334,14 +1358,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_27" id="__nav_3_27_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_28" id="__nav_3_28_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_27_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_27">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_28_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_28">
             <span class="md-nav__icon md-icon"></span>
             Tax
           </label>
@@ -2662,11 +2686,123 @@
 <h3 id="unreleased-future-changes">Unreleased — Future changes<a class="headerlink" href="#unreleased-future-changes" title="Permanent link">&para;</a></h3>
 <h4 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h4>
 <ul>
-<li><strong>Year-over-Year "Until year" selector</strong> — The Year-over-Year analysis page now includes an "Until year" dropdown alongside "Years to compare". Users can select an end year (e.g. 2025) so the comparison covers the N years up to and including that year (e.g. last 3 years until 2025 = 2023, 2024, 2025). Defaults to the current year, preserving existing behaviour. The <code>/api/expense</code> and <code>/api/income</code> endpoints now accept an optional <code>until_year</code> query parameter.</li>
+<li>
+<p><strong>Frontend typing fix for <code>/api/config</code> quick-add fetch</strong> — Fixed <code>ajax("/api/config", { background: true })</code> typing so GET calls with options retain the config response shape (including <code>accounts</code>), resolving <code>svelte-check</code> failures in quick-add launch paths.</p>
+</li>
+<li>
+<p><strong>Global Command Palette (Ctrl+K)</strong> — Added a global command palette accessible via <code>Ctrl+K</code> (or <code>Cmd+K</code> on Mac) that allows quick navigation between all pages, launching the Quick Add Transaction modal, and searching currency-related views. The palette features fuzzy search, keyboard navigation (arrow keys, Enter to select, Escape to close), and a search button in the navbar for mouse users.</p>
+</li>
+<li>
+<p><strong>Natural Language Transaction Parser (Phase 1)</strong> — New <code>internal/parser</code> package enables parsing natural language text input into structured transactions with confidence scoring and interactive suggestions.</p>
+</li>
+<li><strong>Core Parser</strong> — 8-step extraction pipeline: normalize → date → amount → payee → hints → account matching → direction → confidence. Handles 10+ transaction scenarios (expenses, income, transfers, refunds, etc.).</li>
+<li><strong>Regex-based Extraction</strong> — High-performance pattern matching for dates (ISO 8601, month names, relative), amounts (currency symbols, codes, word forms), account hints (from/to/via), and payment methods. &lt;1ms per parse operation.</li>
+<li><strong>TF-IDF Account Matching</strong> — Cosine similarity-based account disambiguation against known accounts in ledger, providing top 3 suggestions for low-confidence matches.</li>
+<li><strong>Confidence Scoring</strong> — Per-field scoring (date, amount, payee, from/to accounts, direction) with weighted average (amount 30%, from/to 25% each, payee 15%, date 5%). Auto-create threshold: 0.85 (configurable).</li>
+<li><strong>Configurable Keywords</strong> — Expense/income/transfer markers and payment method hints loaded from <code>paisa.yaml</code> for user customization without code changes.</li>
+<li><strong>Unit Tests</strong> — 18+ test cases covering all 10 transaction scenarios plus edge cases (empty input, long input, missing fields, special characters). All tests passing.</li>
+<li><strong>Phase 2 backend APIs</strong> — Added <code>POST /api/parser/parse</code> for parser preview and <code>POST /api/parser/create-transaction</code> for parse + append + sync flow with optional user overrides.</li>
+<li><strong>Training log persistence</strong> — Added schema migration v8 to create <code>parser_training_log</code> and log parser predictions plus user-confirmed values for future model training.</li>
+<li><strong>Phase 2 frontend quick-add polish</strong> — Added explicit “Clear Parsed State” action in Quick Add modal and extracted parser submit/suggestion helpers for focused parser-assisted quick-add tests (parse mapping, suggestion selection, create payload path).  - <strong>Parser Enhancements for Compact Formats</strong> — Improved parsing of compact transaction descriptions (e.g., "20 cad groceries bmo cc at no frills") with:<ul>
+<li><strong>Category hint extraction</strong> — Detects expense/income markers in text and uses them as "to" account hints for better category matching (e.g., "groceries" → "Expenses:Groceries").</li>
+<li><strong>Payment method expansion</strong> — Enhances payment method hints by extracting bank/card names (e.g., "bmo cc" → "bmo credit card") for improved TF-IDF account matching (+0.5 similarity boost for matching bank names).</li>
+<li><strong>Robust amount extraction</strong> — Fixed regex patterns for both prefix ($15) and suffix (15$, 15 CAD) amount formats, with case-insensitive currency matching (cad, CAD, etc.).</li>
+<li><strong>Improved account matching</strong> — Enhanced similarity scoring with substring matching (+0.4 boost) and explicit bank/card keyword matching for better identification of financial accounts.</li>
+<li><strong>Cleaner payee extraction</strong> — Payee field now excludes currencies, categories, payment methods, bank names, dates, and prepositions, returning only the merchant name (e.g., "no frills" instead of "cad no frills, bmo credit card").</li>
+</ul>
+</li>
+<li><strong>QuickAdd Modal Enhancements</strong> — Improved the QuickAdd modal with the following updates:</li>
+<li>Added a "Clear Parsed State" button to reset the parser-assisted flow.</li>
+<li>Extracted parser submit and suggestion helpers for better modularity and testing.</li>
+<li>
+<p>Added focused UI tests for parser-assisted quick-add behavior, including parse mapping, suggestion selection, and create payload path.</p>
+</li>
+<li>
+<p><strong>Quick Add account selection and Neo card matching improvements</strong> — Quick Add now uses explicit account dropdowns for From/To account selection, and parser account matching now retains card context in hints with token alias matching (<code>cc</code> ↔ <code>credit card</code>) so multi-token matches like "neo cc" rank above single-token matches (preventing cases like "neo cc" matching <code>Assets:Crypto:Neo</code> over Neo card liabilities).</p>
+</li>
+<li>
+<p><strong>Span-masking architecture for NLP parser</strong> — Refactored the transaction parser to use non-destructive span tracking instead of text mutation, improving maintainability and auditability.</p>
+</li>
+<li><strong>Immutable source text</strong> — Original input text is preserved throughout extraction; consumed regions are tracked via byte offset ranges instead of modifying the text.</li>
+<li><strong>Ordered extraction pipeline</strong> — Extractions happen in dependency order (date → amount → from account → to account → payee → narration), with each step recording which spans have been consumed.</li>
+<li><strong>Unconsumed text fallback</strong> — Each extraction step can access full source text if needed for context, but downstream steps skip previously consumed spans to prevent double-counting tokens.</li>
+<li><strong>Span tracking data structures</strong> — Added <code>Span</code> (start/end byte offsets) and <code>SpanMask</code> (source + consumed spans list) types with helper methods (<code>RecordSpan()</code>, <code>GetUnconsumedText()</code>).</li>
+<li><strong>Span-aware extractors</strong> — <code>extractDate()</code> and <code>extractAmount()</code> now use <code>FindStringSubmatchIndex()</code> to locate and record consumed byte ranges, preparing the pipeline for full span-masked extraction.</li>
+<li>
+<p><strong>5 new tests</strong> — Comprehensive validation of span initialization, recording, unconsumed text extraction, and prevention of token double-counting across extraction steps. All 34 parser tests passing.</p>
+</li>
+<li>
+<p><strong>Compact bare-token matching for from/to accounts</strong> — Improved hint fallback for keyword-less inputs (e.g., "15 inr icici hyd for shopping clothing") by extracting tokens directionally from account roots.</p>
+</li>
+<li><strong>From hint fallback</strong> now considers only <code>Assets:</code> / <code>Liabilities:</code> token sets.</li>
+<li><strong>To hint fallback</strong> now considers only <code>Expenses:</code> / <code>Income:</code> token sets.</li>
+<li>
+<p>Prevents missing category matches such as <code>Expenses:Shopping</code> when explicit markers or "to"/"from" keywords are absent.</p>
+</li>
+<li>
+<p><strong>Payee extraction order fix for compact phrases</strong> — Parser now prefers explicit merchant segments (<code>at &lt;merchant&gt;</code>) when initial payee extraction resolves to payment-method text.</p>
+</li>
+<li>Fixes cases like "20 cad from bmo cc for groceries at no frills" incorrectly returning "bmo credit card".</li>
+<li>
+<p>Both orderings now resolve payee consistently to "no frills":</p>
+<ul>
+<li>"20 cad from bmo cc at no frills for groceries"</li>
+<li>"20 cad from bmo cc for groceries at no frills"</li>
+</ul>
+</li>
+<li>
+<p><strong>Joint role-aware account matching</strong> — Parser now selects account pairs using full remaining text plus role hints instead of relying only on explicit from/to phrase captures.</p>
+</li>
+<li>Scores from-account candidates from <code>Assets:</code>/<code>Liabilities:</code> (or <code>Income:</code> for income direction) and to-account candidates from role-appropriate account roots.</li>
+<li>Blends role hint score with full-text score so compact phrases still map correctly when explicit markers are missing.</li>
+<li>
+<p>Prevents fragile behavior where only one side (from or to) is inferred from bare tokens.</p>
+</li>
+<li>
+<p><strong>Transfer phrase support (<code>transfer</code> and <code>xfer</code>)</strong> — Parser now reliably handles compact transfer phrasing such as "transfer 20 cad from icici hyd to hdfc" and "xfer 20 cad from icici hyd to hdfc".</p>
+</li>
+<li>Added <code>xfer -&gt; transfer</code> normalization.</li>
+<li>Added explicit <code>from &lt;account&gt; to &lt;account&gt;</code> hint extraction.</li>
+<li>
+<p>Direction detection now considers full text context (not only extracted hints), improving transfer classification.</p>
+</li>
+<li>
+<p><strong>Epic 6: Account balance snapshots as-of date</strong> — Assets balance and account detail flows now support historical as-of views for reconciliation.</p>
+</li>
+<li><strong>Subtask 6.1 (Backend – Date filter on balance endpoints)</strong> — Added <code>as_of_date</code> (<code>YYYY-MM-DD</code>) support to <code>GET /api/assets/balance</code>, <code>GET /api/gain/:account</code>, and new <code>GET /api/account/:account/balance</code>. Date defaults to today, rejects invalid format/future dates with <code>400 INVALID_REQUEST</code>, and excludes postings after the selected date.</li>
+<li><strong>Subtask 6.2 (Frontend – Date picker on balance pages)</strong> — Added "View as of" date pickers on Assets → Balance and account detail pages; changing the date reloads balance data without page reload and displays the selected as-of date.</li>
+<li>
+<p><strong>Subtask 6.3 (Frontend – Historical balance trend view)</strong> — Added account-level "View Trend" with 6M/12M presets, custom start/end date filters, responsive SVG trend line, and current-balance marker.</p>
+</li>
+<li>
+<p><strong>Granular progress reporting for sync jobs</strong> — Users can now see per-commodity progress during long price sync operations instead of a static "Syncing…" spinner.</p>
+</li>
+<li><code>Job</code> (worker package) gains <code>items_completed</code> and <code>total_items</code> integer fields, serialised as JSON and exposed via <code>GET /api/jobs/:id</code>.</li>
+<li><code>DetailedJobFn</code> now receives a thread-safe <code>progress func(completed, total int)</code> callback. <code>runDetailed</code> creates the callback and updates the job fields under the registry lock, eliminating any data race.</li>
+<li><code>syncCommodities</code> accepts a <code>progressFn func(completed, total int)</code> parameter and calls it after each commodity result is processed (the results loop is sequential, so the counter is exact).</li>
+<li>The navbar <code>SyncingIndicator</code> switches from "Syncing…" to an "X / Y" label while the price-scraper stage is active.</li>
+<li>The Sync History overlay shows a Bulma <code>&lt;progress&gt;</code> bar labelled "X of Y commodities" for any running job that has reported <code>total_items &gt; 0</code>.</li>
+<li>
+<p>The TypeScript <code>Job</code> interface in <code>utils.ts</code> mirrors the new <code>items_completed</code> and <code>total_items</code> fields. The <code>runningJob</code> derived store (in <code>src/lib/stores/jobs.ts</code>) exposes the active non-terminal job for consumption by <code>SyncingIndicator</code>.</p>
+</li>
+<li>
+<p><strong>Year-over-Year "Until year" selector</strong> — The Year-over-Year analysis page now includes an "Until year" dropdown alongside "Years to compare". Users can select an end year (e.g. 2025) so the comparison covers the N years up to and including that year (e.g. last 3 years until 2025 = 2023, 2024, 2025). Defaults to the current year, preserving existing behaviour. The <code>/api/expense</code> and <code>/api/income</code> endpoints now accept an optional <code>until_year</code> query parameter.</p>
+</li>
+<li>
+<p><strong>Incremental price sync (delta updates)</strong> — <code>SyncCommodities</code> now performs incremental syncs instead of fetching and replacing the full price history on every run.</p>
+</li>
+<li><code>PriceProvider.GetPrices</code> accepts a new <code>since time.Time</code> parameter. Providers use it to filter returned prices to those on or after the start-of-day of <code>since</code>; a zero value means fetch the full history (first run).</li>
+<li><code>syncCommodities</code> reads the <code>last_price_sync</code> metadata timestamp and forwards it to every provider as <code>since</code>, enabling incremental fetches after the first sync.</li>
+<li>The sync API now accepts <code>force_prices: true</code> to bypass <code>last_price_sync</code> and fetch the full commodity price history on demand. The Prices page exposes this via a new <strong>Force Refresh</strong> action.</li>
+<li><code>UpsertAllByTypeNameAndID</code> now uses a pure UPSERT (INSERT … ON CONFLICT DO UPDATE) without first deleting existing rows. Historical prices are preserved across syncs; the same date's value is updated in place if the provider returns a corrected figure.</li>
+<li>New <code>price.FilterSince(prices, since)</code> helper: filters a <code>[]*Price</code> slice to entries on or after the start-of-day of <code>since</code> (UTC). Zero <code>since</code> returns the slice unmodified.</li>
 </ul>
 <h4 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h4>
 <ul>
 <li><strong>Reference documentation updated</strong> — All new features from this release cycle are now documented in the reference section:</li>
+<li><a href="docs/reference/parser.md">Parser API</a> — natural-language parse/create endpoints, override fields, confidence handling, readonly behavior, and error envelope.</li>
+<li><a href="docs/reference/journal.md">Journal</a> — added Natural Language Quick Add section with parser workflow and link to parser API reference.</li>
+<li>MkDocs navigation now includes parser docs under Reference.</li>
 <li><a href="docs/reference/dashboard.md">Dashboard</a> — new page covering the recent-transactions widget, monthly cashflow widget, reconciliation widget, and account drill-down.</li>
 <li><a href="docs/reference/accounts.md">Accounts</a> — account notes, account reconciliation (badges, dashboard widget, API), and account-level transaction history.</li>
 <li><a href="docs/reference/analysis.md">Analysis</a> — Year-over-Year comparison charts (<code>/analysis/yoy</code>).</li>
@@ -2678,7 +2814,12 @@
 </ul>
 <h4 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h4>
 <ul>
-<li><strong>Materialized account balance summary table</strong> — Introduces <code>account_balances</code> table (migration v7) that stores pre-computed per-<code>(account, commodity)</code> balance totals updated atomically on every journal sync.</li>
+<li>
+<p><strong>Parallel commodity price fetching in sync</strong> — <code>SyncCommodities</code> now fetches price histories using a bounded worker pool (5 concurrent fetches) with goroutines and <code>sync.WaitGroup</code>, reducing end-to-end sync time when many commodities are configured while avoiding unbounded provider request fan-out.</p>
+</li>
+<li>
+<p><strong>Materialized account balance summary table</strong> — Introduces <code>account_balances</code> table (migration v7) that stores pre-computed per-<code>(account, commodity)</code> balance totals updated atomically on every journal sync.</p>
+</li>
 <li><code>account_balance.RefreshFromPostings(tx, postings)</code> — computes sums in-memory from the already-loaded postings slice and atomically replaces the entire <code>account_balances</code> table within the sync transaction. Forecast postings are excluded.</li>
 <li><code>account_balance.ByAccount(db, account)</code> — O(1) index lookup for a single account's balance rows, replacing the previous O(N) full <code>postings</code> table scan.</li>
 <li><code>account_balance.All(db)</code> — returns all materialized balance rows ordered by account and commodity.</li>
