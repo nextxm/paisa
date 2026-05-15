@@ -99,8 +99,8 @@
   "schema": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://nextxm.github.io/paisa/schema.json",
-    "title": "Paisa",
-    "description": "Paisa configuration",
+    "title": "Paisa+",
+    "description": "Paisa+ configuration",
     "type": "object",
     "properties": {
       "journal_path": {

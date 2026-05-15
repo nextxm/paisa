@@ -342,9 +342,9 @@
       {#if $obscure}
         <span class="icon is-small is-size-5">
           <i class="fas fa-user-secret"></i>
-        </span><span class="ml-2 is-primary-color">Paisa</span>
+        </span><span class="ml-2 is-primary-color">Paisa<sup>+</sup></span>
       {:else}
-        <Logo size={22} /><span class="ml-1 is-primary-color">Paisa</span>
+        <Logo size={22} /><span class="ml-1 is-primary-color">Paisa<sup>+</sup></span>
       {/if}
     </a>
 

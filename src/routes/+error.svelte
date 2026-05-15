@@ -21,7 +21,7 @@
           <article class="message invertable is-danger">
             <div class="message-header">Something Went Wrong</div>
             <div class="message-body">
-              <p>Paisa has encountered a critical error</p>
+              <p>Paisa<sup>+</sup> has encountered a critical error</p>
               <p class="mt-2">{$page.error.message}</p>
               {#if $page.error.stack}
                 <pre class="mt-2">{$page.error.stack}</pre>
