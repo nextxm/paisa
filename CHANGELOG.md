@@ -5,6 +5,10 @@
 #### Features
 
 - **Branding update to Paisa+** — Updated desktop/web branding strings and metadata from "Paisa" to "Paisa+" and aligned regression config fixtures with the new schema title/description.
+- **Fix More → Logs runtime errors** — Resolved a Logs page failure caused by Workbox navigation fallback and fragile client rendering.
+  - Updated PWA `navigateFallback` to `/index.html` so Workbox always serves a precached navigation shell (avoids `non-precached-url` for `/`).
+  - Hardened `/more/logs` rendering by removing direct `window` access in markup, guarding virtualized rows, and safely formatting log timestamps.
+  - Wrapped logs fetch in error handling to avoid unhandled promise rejections when the API request fails.
 
 - **Svelte 5 state management: complete class-based adapters and decouple UI/persisted state (P2.3)** — Completed the remaining Svelte 5 state modernisation tasks (#231 #232 #233):
   - Added `commandPaletteOpen`, `cashflowExpenseDepthAllowed`, and `cashflowIncomeDepthAllowed` to the `UIState` class in `src/lib/state/ui.svelte.ts` so all transient UI state is accessible via a single rune-compatible entry point (`uiState.<prop>.current`).
@@ -34,7 +38,6 @@
   - Backend now returns `original_amount` field on each posting, preserving the amount in the original commodity before any conversion. Frontend toggles between using `amount` (converted to default) and `original_amount` (native commodity) for all calculations and charts.
   - In actual currency view, dimensions are grouped by both category/payee/account AND commodity, so mixed-currency spending is shown separately — e.g., "Groceries" becomes "Groceries (USD)" and "Groceries (EUR)" if both exist.
   - No server roundtrip on currency toggle — all amounts are pre-calculated and sent with each posting.
-
 
 - **MoM Analysis: client-side currency conversion** — Added a "Currency" selector to the MoM analysis page control panel. On load, the page fetches latest FX rates for all configured currency pairs from the new `GET /api/expense/latest-rates` endpoint and stores them locally. Switching currencies instantly re-derives all charts and tables via a `$derived` converted postings layer — no extra network request on each switch. The new backend endpoint (`GetLatestRates`) returns a `rates[base][quote]` map plus the default currency so the UI can build the selector and apply conversions without server-side re-processing.
 
