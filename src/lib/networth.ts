@@ -22,10 +22,20 @@ function investment(d: Networth) {
   return d.investmentAmount - d.withdrawalAmount;
 }
 
+function investmentReturn(d: Networth) {
+  return d.investment_return ?? d.gainAmount - (d.fx_impact ?? 0);
+}
+
+function fxImpact(d: Networth) {
+  return d.fx_impact ?? 0;
+}
+
 export function renderNetworth(
   points: Networth[],
-  element: Element
+  element: Element,
+  options: { showFXImpact?: boolean } = {}
 ): { destroy: () => void; legends: Legend[] } {
+  const { showFXImpact = false } = options;
   const start = _.min(_.map(points, (p) => p.date)),
     end = now();
 
@@ -61,13 +71,17 @@ export function renderNetworth(
     y = d3.scaleLinear().range([height, 0]).domain(d3.extent(positions)),
     z = d3.scaleOrdinal<string>(colors).domain(areaKeys);
 
-  const area = (y0: number, y1: (d: Networth) => number) =>
-    d3
+  const area = (y0: number | ((d: Networth) => number), y1: (d: Networth) => number) => {
+    const builder = d3
       .area<Networth>()
       .curve(d3.curveMonotoneX)
       .x((d) => x(d.date))
-      .y0(y0)
       .y1(y1);
+    if (typeof y0 === "function") {
+      return builder.y0(y0);
+    }
+    return builder.y0(y0);
+  };
 
   g.append("g")
     .attr("class", "axis x")
@@ -134,6 +148,32 @@ export function renderNetworth(
         return y(d.investmentAmount - d.withdrawalAmount);
       })
     );
+
+  if (showFXImpact) {
+    layer
+      .append("path")
+      .style("fill", COLORS.primary)
+      .style("opacity", "0.12")
+      .attr(
+        "d",
+        area(
+          (d) => y(investment(d)),
+          (d) => y(investment(d) + investmentReturn(d))
+        )
+      );
+
+    layer
+      .append("path")
+      .style("fill", COLORS.tertiary)
+      .style("opacity", "0.15")
+      .attr(
+        "d",
+        area(
+          (d) => y(investment(d) + investmentReturn(d)),
+          (d) => y(networth(d))
+        )
+      );
+  }
 
   layer
     .append("path")
@@ -209,7 +249,13 @@ export function renderNetworth(
             "Net Investment",
             [formatCurrency(investment(d)), "has-text-weight-bold has-text-right"]
           ],
-          ["Gain / Loss", [formatCurrency(d.gainAmount), "has-text-weight-bold has-text-right"]]
+          ["Gain / Loss", [formatCurrency(d.gainAmount), "has-text-weight-bold has-text-right"]],
+          ["Contribution", [formatCurrency(d.contribution), "has-text-weight-bold has-text-right"]],
+          [
+            "Investment Return",
+            [formatCurrency(investmentReturn(d)), "has-text-weight-bold has-text-right"]
+          ],
+          ["FX Impact", [formatCurrency(fxImpact(d)), "has-text-weight-bold has-text-right"]]
         ])
       });
       t.show();
@@ -241,6 +287,12 @@ export function renderNetworth(
       shape: "square"
     }
   ];
+  if (showFXImpact) {
+    legends.push(
+      { label: "Investment Return", color: COLORS.primary, shape: "square" },
+      { label: "FX Impact", color: COLORS.tertiary, shape: "square" }
+    );
+  }
 
   const destroy = () => {
     t.destroy();

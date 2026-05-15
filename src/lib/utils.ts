@@ -139,9 +139,18 @@ export interface Networth {
   investmentAmount: number;
   withdrawalAmount: number;
   gainAmount: number;
+  contribution: number;
+  investment_return: number;
+  fx_impact: number;
   balanceAmount: number;
   balanceUnits: number;
   netInvestmentAmount: number;
+}
+
+export interface CurrencyExposure {
+  currency: string;
+  amount: number;
+  percentage: number;
 }
 
 export interface Gain {
@@ -752,6 +761,9 @@ export function ajax(route: "/api/allocation"): Promise<{
   aggregates: { [key: string]: Aggregate };
   aggregates_timeline: { [key: string]: Aggregate }[];
   allocation_targets: AllocationTarget[];
+}>;
+export function ajax(route: "/api/currency-exposure"): Promise<{
+  currency_exposure: CurrencyExposure[];
 }>;
 export function ajax(route: "/api/portfolio_allocation"): Promise<PortfolioAllocation>;
 export function ajax(route: "/api/income"): Promise<{
