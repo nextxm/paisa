@@ -44,10 +44,7 @@
             "amount": 994.95
           }
         ],
-        "inactive": false,
-        "contribution": 0,
-        "fx_impact": 0,
-        "investment_return": 994.95
+        "inactive": false
       }
     }
   },

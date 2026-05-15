@@ -3,7 +3,7 @@
     {
       "account": "Assets:Coinbase:BTC",
       "networth": {
-        "date": "2022-02-07T23:59:59.999999999Z",
+        "date": "2022-01-12T00:00:00Z",
         "investmentAmount": 0,
         "withdrawalAmount": 0,
         "gainAmount": 0,
@@ -43,7 +43,7 @@
     {
       "account": "Assets:Dollar",
       "networth": {
-        "date": "2022-02-07T23:59:59.999999999Z",
+        "date": "2022-02-07T00:00:00Z",
         "investmentAmount": 804.42048,
         "withdrawalAmount": 0,
         "gainAmount": 0,
@@ -83,7 +83,7 @@
     {
       "account": "Assets:Equity:AAPL",
       "networth": {
-        "date": "2022-02-07T23:59:59.999999999Z",
+        "date": "2022-01-10T00:00:00Z",
         "investmentAmount": 10000,
         "withdrawalAmount": 10027,
         "gainAmount": 27,
@@ -167,7 +167,7 @@
     {
       "account": "Assets:Equity:ABNB",
       "networth": {
-        "date": "2022-02-07T23:59:59.999999999Z",
+        "date": "2022-02-07T00:00:00Z",
         "investmentAmount": 7963.762752,
         "withdrawalAmount": 0,
         "gainAmount": 0,
@@ -207,7 +207,7 @@
     {
       "account": "Assets:Equity:NIFTY",
       "networth": {
-        "date": "2022-02-07T23:59:59.999999999Z",
+        "date": "2022-02-07T00:00:00Z",
         "investmentAmount": 80000,
         "withdrawalAmount": 0,
         "gainAmount": 218.4,
