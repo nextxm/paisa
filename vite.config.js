@@ -165,7 +165,7 @@ const config = {
     ]
   },
   ssr: {
-    noExternal: ["path-browserify"]
+    noExternal: []
   }
 };
 

@@ -4,6 +4,12 @@
 
 #### Features
 
+- **YoY Analysis: aligned top controls and denser KPI cards** — Fixed the `/analysis/yoy` top-bar control alignment so both dropdowns and the CSV action align cleanly on the same baseline. Tightened KPI card spacing/padding to reduce empty whitespace, expanded the KPI strip with new standalone cards for biggest category mover and efficiency snapshot (expense load + best net month), and tuned card heights/type scale for a more balanced 6-card layout on desktop and tablet.
+
+- **Cash Flow Monthly: aligned multi-currency summary card numbers** — Refined the Monthly Cash Flow summary cards (Income, Expenses, Taxes, Net Flow) so each value now uses a consistent amount-and-currency grid with tabular numerals. This improves readability for mixed-commodity months by lining up figures cleanly across rows and cards.
+
+- **YoY Analysis: richer dashboard layout with deeper insights** — Revamped the `/analysis/yoy` page with a stronger visual hierarchy and additional analytical elements. Added headline KPI cards (spending, income, net savings, savings rate), a hero summary band for selected comparison range, a category movers table (YoY change + expense share), and a monthly net profile panel that highlights highest expense and best net months. Existing YoY line/bar charts and CSV export remain intact, now presented within a more polished, responsive layout.
+
 - **Cash Flow Monthly: polished inflow/outflow breakdown layout** — Fixed the vertical divider spacing regression in the monthly cash-flow page so the outflow section no longer crowds the divider. Also refined inflow/outflow breakdown tables with improved row spacing, clearer amount alignment, and subtle hover treatment for better readability.
 
 - **Dev server: fixed Svelte virtual CSS parsing regression** — Adjusted Vite polyfill configuration to avoid intercepting Svelte virtual style modules in development, preventing PostCSS errors like `Unknown word` on `.svelte?type=style` requests.

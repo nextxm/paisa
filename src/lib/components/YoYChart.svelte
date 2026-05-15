@@ -152,5 +152,5 @@
   });
 </script>
 
-<LegendCard {legends} clazz="ml-4 mb-3" />
+<LegendCard {legends} clazz="ml-6 mb-3" />
 <svg {id} width="100%" />
