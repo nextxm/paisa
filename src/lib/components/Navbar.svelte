@@ -2,12 +2,18 @@
   import { page } from "$app/stores";
   import { afterNavigate } from "$app/navigation";
   import Actions from "$lib/components/Actions.svelte";
-  import { month, year, dateMax, dateMin, dateRangeOption } from "../../store";
+  import {
+    month,
+    year,
+    dateMax,
+    dateMin,
+    dateRangeOption,
+    cashflowExpenseDepthAllowed,
+    cashflowIncomeDepthAllowed
+  } from "../../store";
   import {
     cashflowExpenseDepth,
-    cashflowExpenseDepthAllowed,
     cashflowIncomeDepth,
-    cashflowIncomeDepthAllowed,
     cashflowShowTransfers,
     obscure,
     sankeyPeriod,
@@ -122,7 +128,10 @@
       label: "Analysis",
       href: "/analysis",
       tag: "alpha",
-      children: [{ label: "YoY", href: "/yoy", tag: "alpha" }]
+      children: [
+        { label: "YoY", href: "/yoy", tag: "alpha" },
+        { label: "MoM", href: "/mom", tag: "alpha" }
+      ]
     },
     {
       label: "Ledger",
@@ -471,15 +480,15 @@
   {#if selectedLink}
     <nav
       style="margin-left: 0.73rem;"
-      class="breadcrumb has-chevron-separator mb-0 is-small"
+      class="breadcrumb has-chevron-separator mb-0 is-small app-breadcrumb"
       aria-label="breadcrumbs"
     >
       <ul>
-        <li>
-          <span class="is-inactive">{selectedLink.label}</span>
+        <li class="breadcrumb-node">
+          <span class="is-inactive breadcrumb-node-label">{selectedLink.label}</span>
           {#if selectedLink.help}
             <a
-              class="is-clear ml-1"
+              class="is-clear ml-1 breadcrumb-help"
               href={helpUrl(selectedLink.help)}
               aria-label={`Help for ${selectedLink.label}`}
               ><span class="icon is-small">
@@ -489,18 +498,16 @@
           {/if}
 
           {#if selectedLink.tag}
-            <span style="font-size: 0.6rem" class="tag is-rounded is-warning"
-              >{selectedLink.tag}</span
-            >
+            <span class="tag is-rounded is-warning breadcrumb-alpha-tag">{selectedLink.tag}</span>
           {/if}
         </li>
         {#if selectedSubLink}
-          <li>
-            <span class="is-inactive">{selectedSubLink.label}</span>
+          <li class="breadcrumb-node">
+            <span class="is-inactive breadcrumb-node-label">{selectedSubLink.label}</span>
 
             {#if selectedSubLink.help}
               <a
-                class="is-clear ml-1"
+                class="is-clear ml-1 breadcrumb-help"
                 href={helpUrl(selectedSubLink.help)}
                 aria-label={`Help for ${selectedSubLink.label}`}
                 ><span class="icon is-small">
@@ -510,7 +517,7 @@
             {/if}
 
             {#if selectedSubLink.tag}
-              <span style="font-size: 0.6rem" class="tag is-rounded is-warning mr-2"
+              <span class="tag is-rounded is-warning breadcrumb-alpha-tag"
                 >{selectedSubLink.tag}</span
               >
             {/if}

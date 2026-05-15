@@ -426,18 +426,19 @@ func (Beancount) Parse(journalPath string, prices []price.Price) ([]*posting.Pos
 		transactionRanges[record[TransactionID]] = r
 
 		posting := posting.Posting{
-			Date:          date,
-			Payee:         payee,
-			Account:       strings.TrimSpace(record[Account]),
-			Commodity:     utils.UnQuote(strings.TrimSpace(record[Commodity])),
-			Quantity:      quantity,
-			Amount:        amount,
-			TransactionID: record[TransactionID],
-			Status:        status,
-			TagRecurring:  strings.TrimSpace(record[TagRecurring]),
-			TagPeriod:     strings.TrimSpace(record[TagPeriod]),
-			Forecast:      false,
-			FileName:      fileName}
+			Date:           date,
+			Payee:          payee,
+			Account:        strings.TrimSpace(record[Account]),
+			Commodity:      utils.UnQuote(strings.TrimSpace(record[Commodity])),
+			Quantity:       quantity,
+			Amount:         amount,
+			OriginalAmount: quantity,
+			TransactionID:  record[TransactionID],
+			Status:         status,
+			TagRecurring:   strings.TrimSpace(record[TagRecurring]),
+			TagPeriod:      strings.TrimSpace(record[TagPeriod]),
+			Forecast:       false,
+			FileName:       fileName}
 		postings = append(postings, &posting)
 
 	}
@@ -758,6 +759,7 @@ func execLedgerCommand(journalPath string, flags []string) ([]*posting.Posting, 
 			Commodity:            utils.UnQuote(record[Commodity]),
 			Quantity:             quantity,
 			Amount:               amount,
+			OriginalAmount:       quantity,
 			TransactionID:        transactionID,
 			Status:               status,
 			TagRecurring:         tagRecurring,
@@ -945,6 +947,7 @@ func buildHLedgerPostings(p HLedgerPosting, t HLedgerTransaction, pricesTree map
 			Commodity:            amount.Commodity,
 			Quantity:             decimal.NewFromFloat(amount.Quantity.Value),
 			Amount:               totalAmount,
+			OriginalAmount:       decimal.NewFromFloat(amount.Quantity.Value),
 			TransactionID:        strconv.FormatInt(t.ID, 10),
 			Status:               strings.ToLower(t.Status),
 			TagRecurring:         tagRecurring,

@@ -198,6 +198,7 @@ func (q *Query) All() []posting.Posting {
 	}
 	return lo.Map(postings, func(p posting.Posting, _ int) posting.Posting {
 		p.Date = utils.ToDate(p.Date)
+		p.PreserveOriginalAmount()
 		return p
 	})
 }
@@ -214,5 +215,6 @@ func (q *Query) First() *posting.Posting {
 		log.Fatal(result.Error)
 	}
 	posting.Date = utils.ToDate(posting.Date)
+	posting.PreserveOriginalAmount()
 	return &posting
 }

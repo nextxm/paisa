@@ -2,7 +2,6 @@
   import { ajax } from "$lib/utils";
   import * as toast from "bulma-toast";
   import dayjs from "dayjs";
-  import { refresh } from "../../store";
   import {
     applySuggestionSelection,
     buildQuickAddSubmitRequest,
@@ -153,7 +152,8 @@
       if (response.success) {
         if (response.errors && response.errors.length > 0) {
           toast.toast({
-            message: "Transaction added, but journal has validation errors. Please sync and check the Editor.",
+            message:
+              "Transaction added, but journal has validation errors. Please sync and check the Editor.",
             type: "is-warning",
             duration: 10000
           });
@@ -165,7 +165,6 @@
         }
         open = false;
         resetFormState();
-        refresh();
       } else {
         toast.toast({
           message: response.error?.message || "Failed to add transaction",

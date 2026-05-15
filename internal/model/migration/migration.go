@@ -45,6 +45,7 @@ var steps = []step{
 	{Version: 6, Apply: v6AddAccountReconciliation},
 	{Version: 7, Apply: v7AddAccountBalances},
 	{Version: 8, Apply: v8AddParserTrainingLog},
+	{Version: 9, Apply: v9AddPostingTransactionHash},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -192,6 +193,24 @@ func v8AddParserTrainingLog(db *gorm.DB) error {
 	}
 	if err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_parser_training_log_user_corrected ON parser_training_log(user_corrected)`).Error; err != nil {
 		return fmt.Errorf("v8: create idx_parser_training_log_user_corrected failed: %w", err)
+	}
+	return nil
+}
+
+// v9AddPostingTransactionHash adds the transaction_hash column to the postings
+// table and a covering index to support efficient DeltaUpsert lookups.
+// Existing rows are backfilled with an empty string; the next sync will
+// recompute and populate the correct hash, causing a one-time full re-insert.
+func v9AddPostingTransactionHash(db *gorm.DB) error {
+	if err := db.AutoMigrate(&posting.Posting{}); err != nil {
+		return fmt.Errorf("v9: AutoMigrate postings failed: %w", err)
+	}
+	// Index on (transaction_id, transaction_hash) to support the lightweight
+	// SELECT DISTINCT projection used by DeltaUpsert.
+	if err := db.Exec(
+		"CREATE INDEX IF NOT EXISTS idx_postings_txn_hash ON postings(transaction_id, transaction_hash)",
+	).Error; err != nil {
+		return fmt.Errorf("v9: create idx_postings_txn_hash failed: %w", err)
 	}
 	return nil
 }

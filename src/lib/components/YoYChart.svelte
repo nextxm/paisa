@@ -71,7 +71,10 @@
       .attr("class", "axis x")
       .attr("transform", `translate(0,${height})`)
       .call(d3.axisBottom(x));
-    root.append("g").attr("class", "axis y").call(d3.axisLeft(y).tickFormat(formatCurrencyCrude));
+    root
+      .append("g")
+      .attr("class", "axis y")
+      .call(d3.axisLeft(y).tickFormat((d: any) => formatCurrencyCrude(d)));
 
     if (chartType === "line") {
       for (const year of years) {
@@ -149,5 +152,5 @@
   });
 </script>
 
-<LegendCard {legends} clazz="ml-4 mb-3" />
+<LegendCard {legends} clazz="ml-6 mb-3" />
 <svg {id} width="100%" />

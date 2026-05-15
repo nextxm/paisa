@@ -37,6 +37,7 @@ export interface Posting {
   commodity: string;
   quantity: number;
   amount: number;
+  original_amount: number;
   status: string;
   tag_recurring: string;
   transaction_begin_line: number;

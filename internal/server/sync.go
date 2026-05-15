@@ -9,10 +9,11 @@ import (
 )
 
 type SyncRequest struct {
-	Journal     bool `json:"journal"`
-	Prices      bool `json:"prices"`
-	ForcePrices bool `json:"force_prices"`
-	Portfolios  bool `json:"portfolios"`
+	Journal      bool `json:"journal"`
+	Prices       bool `json:"prices"`
+	ForcePrices  bool `json:"force_prices"`
+	ForceJournal bool `json:"force_journal"`
+	Portfolios   bool `json:"portfolios"`
 }
 
 // Sync executes the requested sync stages synchronously and returns the
@@ -32,7 +33,7 @@ func Sync(db *gorm.DB, request SyncRequest, progressFn func(completed, total int
 
 	if request.Journal {
 		var err error
-		journalResult, err = model.SyncJournal(db)
+		journalResult, err = model.SyncJournal(db, request.ForceJournal)
 		if err != nil {
 			return gin.H{
 				"success":      false,

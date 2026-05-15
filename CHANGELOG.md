@@ -4,6 +4,59 @@
 
 #### Features
 
+- **Svelte 5 state management: complete class-based adapters and decouple UI/persisted state (P2.3)** — Completed the remaining Svelte 5 state modernisation tasks (#231 #232 #233):
+  - Added `commandPaletteOpen`, `cashflowExpenseDepthAllowed`, and `cashflowIncomeDepthAllowed` to the `UIState` class in `src/lib/state/ui.svelte.ts` so all transient UI state is accessible via a single rune-compatible entry point (`uiState.<prop>.current`).
+  - Added `editorLeftWidth`, `editorRightWidth`, `editorLeftCollapsed`, `editorRightCollapsed`, and `configSidebarCollapsed` to the `PersistedState` class in `src/lib/state/persisted.svelte.ts`, completing coverage of every persisted store.
+  - Moved the non-persisted `cashflowExpenseDepthAllowed`, `cashflowIncomeDepthAllowed`, and `setCashflowDepthAllowed` from `persisted_store.ts` to `store.ts`, enforcing a clear boundary: `persisted_store.ts` contains only localStorage-backed stores while `store.ts` owns all transient runtime state.
+  - Updated `Navbar.svelte` and the yearly cash-flow page to import the moved stores from `store.ts`.
+
+- **YoY Analysis: aligned top controls and denser KPI cards** — Fixed the `/analysis/yoy` top-bar control alignment so both dropdowns and the CSV action align cleanly on the same baseline. Tightened KPI card spacing/padding to reduce empty whitespace, expanded the KPI strip with new standalone cards for biggest category mover and efficiency snapshot (expense load + best net month), and tuned card heights/type scale for a more balanced 6-card layout on desktop and tablet.
+
+- **Cash Flow Monthly: aligned multi-currency summary card numbers** — Refined the Monthly Cash Flow summary cards (Income, Expenses, Taxes, Net Flow) so each value now uses a consistent amount-and-currency grid with tabular numerals. This improves readability for mixed-commodity months by lining up figures cleanly across rows and cards.
+
+- **YoY Analysis: richer dashboard layout with deeper insights** — Revamped the `/analysis/yoy` page with a stronger visual hierarchy and additional analytical elements. Added headline KPI cards (spending, income, net savings, savings rate), a hero summary band for selected comparison range, a category movers table (YoY change + expense share), and a monthly net profile panel that highlights highest expense and best net months. Existing YoY line/bar charts and CSV export remain intact, now presented within a more polished, responsive layout.
+
+- **Cash Flow Monthly: polished inflow/outflow breakdown layout** — Fixed the vertical divider spacing regression in the monthly cash-flow page so the outflow section no longer crowds the divider. Also refined inflow/outflow breakdown tables with improved row spacing, clearer amount alignment, and subtle hover treatment for better readability.
+
+- **Dev server: fixed Svelte virtual CSS parsing regression** — Adjusted Vite polyfill configuration to avoid intercepting Svelte virtual style modules in development, preventing PostCSS errors like `Unknown word` on `.svelte?type=style` requests.
+
+- **Navigation: breadcrumb alpha tag spacing fix** — Fixed breadcrumb label/tag overlap by aligning breadcrumb items with inline-flex layout and dedicated alpha tag spacing, preventing the `alpha` badge from colliding with menu text.
+
+- **MoM Analysis: negative trajectory values bounded correctly** — Fixed the MoM expense trajectory chart so windows containing negative values no longer spill outside the chart area. The y-axis now uses real min/max series bounds (with padding), the filled area anchors to the zero baseline, and values are clamped to chart space.
+
+- **MoM Analysis: actual-currency filtering dropdown** — In actual currency mode, a new currency dropdown now allows filtering all MoM visuals and tables to a single selected currency (for example, CAD). When a currency is selected, charts, summary cards, timeline, variance/composition, and breakdown rows all render only that currency's data. Leaving it as `All currencies` preserves the current multi-currency behavior.
+
+- **MoM Analysis: toggle between default and actual currency view** — Modified the MoM analysis page to support viewing expense data in two modes:
+  - **Default Currency**: All amounts converted to and displayed in the default currency (INR by default). Reflects how much was spent in default currency terms.
+  - **Actual Currency**: Amounts displayed in their original transaction currencies (USD, EUR, etc.). When multiple currencies exist for the same dimension (e.g., "Groceries USD" and "Groceries EUR"), they appear as separate rows in the breakdown table so you can track spending by original commodity.
+  - Backend now returns `original_amount` field on each posting, preserving the amount in the original commodity before any conversion. Frontend toggles between using `amount` (converted to default) and `original_amount` (native commodity) for all calculations and charts.
+  - In actual currency view, dimensions are grouped by both category/payee/account AND commodity, so mixed-currency spending is shown separately — e.g., "Groceries" becomes "Groceries (USD)" and "Groceries (EUR)" if both exist.
+  - No server roundtrip on currency toggle — all amounts are pre-calculated and sent with each posting.
+
+
+- **MoM Analysis: client-side currency conversion** — Added a "Currency" selector to the MoM analysis page control panel. On load, the page fetches latest FX rates for all configured currency pairs from the new `GET /api/expense/latest-rates` endpoint and stores them locally. Switching currencies instantly re-derives all charts and tables via a `$derived` converted postings layer — no extra network request on each switch. The new backend endpoint (`GetLatestRates`) returns a `rates[base][quote]` map plus the default currency so the UI can build the selector and apply conversions without server-side re-processing.
+
+- **Month-on-Month (MoM) Analysis – Phase 5 & Layout Polish** — Continued improvements to the MoM analysis page:
+  - **MoM Delta Chart** — New D3 diverging bar chart (right of the Monthly Timeline) showing month-over-month change as positive (red) or negative (green) bars. Includes hover tooltips, percentage labels on large bars, and a zero baseline, making directional month changes immediately visible at a glance.
+  - **Monthly Timeline compacted to left half** — The timeline table now occupies 5/12 columns with a `white-space: nowrap` style to prevent wrapping, while the MoM Delta chart fills the freed 7/12 columns to the right. The table now shows percentage-only MoM column (hover for absolute value) for better scannability.
+  - **Signals sidebar removed** — Redundant "Largest Movers" and "30-Day Momentum" sidebar replaced by the richer Dimension Variance Chart above (added in Phase 3). Breakdown table promoted to full width.
+  - **Breakdown table MoM column** — Now shows percentage change (e.g. `+12.3%`) as primary value with absolute amount on hover, matching the Timeline table style.
+  - **Help tooltips on metrics** — Volatility card now explains Coefficient of Variation via title attribute with thresholds (Low <15%, Medium 15-30%, High >30%). 3M Avg and MoM column headers carry descriptive `title` attributes. Volatility value includes a ✓ or ⚠ indicator.
+  - **Volatility card expanded** — Added trend direction ("Up/Down this month") and 3M Avg directly into the Volatility card, replacing the previous sparse layout.
+
+- **Month-on-Month (MoM) Analysis Page – Phase 1-4 Complete** — Launched a sophisticated month-on-month analysis page with advanced visualizations and compact layout:
+  - **Phase 1: Compact Layout** — Redesigned control panel (single-row flexbox), 3-column summary cards (Latest Month, Range Highlights, Volatility & Trend), reduced padding/fonts throughout for dense information display.
+  - **Phase 2: Expense Trajectory Chart (Hero)** — Interactive D3 line chart showing actual expense trajectory + 3-month moving average overlay, with hover tooltips displaying month, expense, 3M avg, and MoM % change. Includes area fill for visual depth, grid lines, and responsive sizing.
+  - **Phase 3: Dimension Variance Chart** — Grouped bar chart (Previous vs Current month) for top movers (categories/payees/accounts), sorted by absolute change. Color-coded by direction (red=increase, green=decrease), with value labels and interactive hover details. Helps identify what drove month-over-month changes.
+  - **Phase 4: Dimension Composition Chart** — Stacked area chart showing how category/payee/account breakdown shifts over selected month window. Interactive legend for toggling visibility. Answers "How has spending distribution changed?"
+  - **Multi-currency Support** — All charts and tables respect the `report_currency` dropdown; data is converted server-side via `/api/expense` with `report_currency` parameter using available FX rates.
+  - **Supporting Tables** — Compact Monthly Timeline (month, total, MoM change, 3M avg) and Breakdown table (by selected dimension) with sparkline trends for each category.
+  - **Design Philosophy** — Charts are primary; tables are supporting reference. Opposite of YoY's basic approach. Delivers rich trend analysis for detailed expense insights.
+
+- **MoM analysis currency controls** — The MoM analysis page now supports dual display modes: original transaction currency and report currency. Users can pick currencies from configured settings (`currencies`) via selectors. In report-currency mode, `/api/expense` now accepts `report_currency` and returns expense amounts/trends converted from the default currency using available FX rates.
+
+- **Avoid app refresh after Quick Add and Editor save** — Saving via Quick Add transaction creation or Ledger Editor no longer triggers a global app refresh/remount. This prevents the perceived page refresh right after writes while keeping the existing explicit sync workflow (`Please sync to see changes`).
+
 - **Frontend typing fix for `/api/config` quick-add fetch** — Fixed `ajax("/api/config", { background: true })` typing so GET calls with options retain the config response shape (including `accounts`), resolving `svelte-check` failures in quick-add launch paths.
 
 - **Global Command Palette (Ctrl+K)** — Added a global command palette accessible via `Ctrl+K` (or `Cmd+K` on Mac) that allows quick navigation between all pages, launching the Quick Add Transaction modal, and searching currency-related views. The palette features fuzzy search, keyboard navigation (arrow keys, Enter to select, Escape to close), and a search button in the navbar for mouse users.
@@ -17,7 +70,7 @@
   - **Unit Tests** — 18+ test cases covering all 10 transaction scenarios plus edge cases (empty input, long input, missing fields, special characters). All tests passing.
   - **Phase 2 backend APIs** — Added `POST /api/parser/parse` for parser preview and `POST /api/parser/create-transaction` for parse + append + sync flow with optional user overrides.
   - **Training log persistence** — Added schema migration v8 to create `parser_training_log` and log parser predictions plus user-confirmed values for future model training.
-  - **Phase 2 frontend quick-add polish** — Added explicit “Clear Parsed State” action in Quick Add modal and extracted parser submit/suggestion helpers for focused parser-assisted quick-add tests (parse mapping, suggestion selection, create payload path).  - **Parser Enhancements for Compact Formats** — Improved parsing of compact transaction descriptions (e.g., "20 cad groceries bmo cc at no frills") with:
+  - **Phase 2 frontend quick-add polish** — Added explicit “Clear Parsed State” action in Quick Add modal and extracted parser submit/suggestion helpers for focused parser-assisted quick-add tests (parse mapping, suggestion selection, create payload path). - **Parser Enhancements for Compact Formats** — Improved parsing of compact transaction descriptions (e.g., "20 cad groceries bmo cc at no frills") with:
     - **Category hint extraction** — Detects expense/income markers in text and uses them as "to" account hints for better category matching (e.g., "groceries" → "Expenses:Groceries").
     - **Payment method expansion** — Enhances payment method hints by extracting bank/card names (e.g., "bmo cc" → "bmo credit card") for improved TF-IDF account matching (+0.5 similarity boost for matching bank names).
     - **Robust amount extraction** — Fixed regex patterns for both prefix ($15) and suffix (15$, 15 CAD) amount formats, with case-insensitive currency matching (cad, CAD, etc.).
@@ -78,12 +131,28 @@
 
 - **Year-over-Year "Until year" selector** — The Year-over-Year analysis page now includes an "Until year" dropdown alongside "Years to compare". Users can select an end year (e.g. 2025) so the comparison covers the N years up to and including that year (e.g. last 3 years until 2025 = 2023, 2024, 2025). Defaults to the current year, preserving existing behaviour. The `/api/expense` and `/api/income` endpoints now accept an optional `until_year` query parameter.
 
+- **Month-over-Month analysis page (`/analysis/mom`)** — Added a dedicated Analysis view for MoM expense trends across multiple angles.
+  - Selectable analysis window (6/12/24 months) and end month.
+  - Breakdown switches for category, payee, and account views.
+  - Monthly timeline table with MoM deltas and 3-month moving averages.
+  - Top contributors with share-of-month and compact sparklines.
+  - Additional insight cards for range highs/lows, biggest movers, and strongest 30-day momentum signals.
+
 - **Incremental price sync (delta updates)** — `SyncCommodities` now performs incremental syncs instead of fetching and replacing the full price history on every run.
   - `PriceProvider.GetPrices` accepts a new `since time.Time` parameter. Providers use it to filter returned prices to those on or after the start-of-day of `since`; a zero value means fetch the full history (first run).
   - `syncCommodities` reads the `last_price_sync` metadata timestamp and forwards it to every provider as `since`, enabling incremental fetches after the first sync.
   - The sync API now accepts `force_prices: true` to bypass `last_price_sync` and fetch the full commodity price history on demand. The Prices page exposes this via a new **Force Refresh** action.
   - `UpsertAllByTypeNameAndID` now uses a pure UPSERT (INSERT … ON CONFLICT DO UPDATE) without first deleting existing rows. Historical prices are preserved across syncs; the same date's value is updated in place if the provider returns a corrected figure.
   - New `price.FilterSince(prices, since)` helper: filters a `[]*Price` slice to entries on or after the start-of-day of `since` (UTC). Zero `since` returns the slice unmodified.
+
+- **Incremental journal sync with transaction-level change tracking** — `SyncJournal` now performs delta updates to the `postings` table instead of a full DELETE + INSERT on every sync run, significantly reducing I/O for frequent small journal edits.
+  - **File-level hash skip** — before invoking the ledger CLI at all, `SyncJournal` computes a combined SHA-256 hash of all included journal files (`ledger.Cli().Files()`) and compares it against the value stored in `metadata` under `journal_hash`. If the hash matches the sync returns `SyncResult{Skipped: true}` immediately, eliminating all CLI and database work when nothing has changed.
+  - **Transaction-level content hash** — each posting now carries a `transaction_hash` column (schema migration v9) containing a deterministic SHA-256 hash of the full set of postings belonging to the same `TransactionID`. Postings within a transaction are sorted by account name before hashing so that re-ordering within a transaction does not produce a spurious "changed" signal.
+  - **`posting.DeltaUpsert`** — new function that replaces `posting.UpsertAll` in the sync path. It loads the existing `(transaction_id, transaction_hash)` pairs with a lightweight indexed query, classifies each incoming transaction as added / updated / removed / unchanged, and issues only the SQL writes that are necessary. Unchanged transactions — the common case when only one or two transactions are appended to a large journal — are skipped entirely.
+  - **`force_journal: true` sync option** — the `POST /api/sync` request body now accepts `force_journal: true` to bypass both the file-level hash check and the transaction-level delta path and instead perform a full `DELETE all + INSERT all` replace. This mirrors the existing `force_prices` flag and is the recommended escape hatch when the `transaction_hash` index may be stale (e.g. after a manual DB edit, data import, or migration from an older build). `SyncJournal` also clears the cached journal hash before attempting the work so a subsequent ordinary sync will not silently skip.
+  - **Post-sync actions are unaffected** — `cache.WarmCache`, `service.WarmXIRRCache`, and `account_balance.RefreshFromPostings` all operate on the full `postings` table after the delta write completes, so XIRR calculations, balance computations, and market-price cache warming always see a fully consistent picture regardless of whether an incremental or full-replace sync was used.
+  - **`SyncResult` delta counters** — `SyncResult` now includes `PostingsAdded`, `PostingsUpdated`, `PostingsRemoved`, and `PostingsUnchanged` counts so operators can observe the incremental-sync efficiency at a glance.
+  - **`posting.StampTransactionHash` / `posting.ComputeTransactionHash`** — exported helpers for stamping and computing per-transaction hashes, available for use in tests and future tooling.
 
 #### Documentation
 

@@ -41,9 +41,15 @@ type SyncResult struct {
 	// Skipped is true when the journal file hash matches the last-synced hash,
 	// meaning no CLI parse or validation work was performed.
 	Skipped bool `json:"skipped,omitempty"`
+	// Delta counts for the posting table update.  All four are zero on a
+	// Skipped sync or when a non-delta (full-replace) write path is used.
+	PostingsAdded     int `json:"postings_added,omitempty"`
+	PostingsUpdated   int `json:"postings_updated,omitempty"`
+	PostingsRemoved   int `json:"postings_removed,omitempty"`
+	PostingsUnchanged int `json:"postings_unchanged,omitempty"`
 }
 
-func SyncJournal(db *gorm.DB) (SyncResult, error) {
+func SyncJournal(db *gorm.DB, forceJournal bool) (SyncResult, error) {
 	journalPath := config.GetJournalPath()
 
 	files, err := ledger.Cli().Files(journalPath)
@@ -63,10 +69,19 @@ func SyncJournal(db *gorm.DB) (SyncResult, error) {
 			Warn("Failed to compute journal hash; proceeding with full sync")
 	}
 
-	// When we have a valid current hash, compare it against the cached value.
-	// A match means the file has not changed since the last successful sync, so
-	// we can skip all expensive CLI work.
-	if currentHash != "" {
+	// When a force-refresh is requested, clear the stored journal hash so the
+	// next ordinary sync cannot accidentally skip the work we are about to do.
+	if forceJournal {
+		log.WithFields(log.Fields{"stage": "journal.hash"}).
+			Info("Force journal refresh requested; bypassing hash check and performing full replace")
+		if err := metadata.Set(db, JournalHashKey, ""); err != nil {
+			log.WithFields(log.Fields{"stage": "journal.hash", "error": err}).
+				Warn("Failed to clear cached journal hash")
+		}
+	} else if currentHash != "" {
+		// When we have a valid current hash, compare it against the cached value.
+		// A match means the file has not changed since the last successful sync,
+		// so we can skip all expensive CLI work.
 		cachedHash, err := metadata.GetOrDefault(db, JournalHashKey, "")
 		if err != nil {
 			log.WithFields(log.Fields{"stage": "journal.hash", "error": err}).
@@ -107,12 +122,29 @@ func SyncJournal(db *gorm.DB) (SyncResult, error) {
 		return SyncResult{FailedStage: "journal.parse", Message: err.Error()}, err
 	}
 
+	var deltaAdded, deltaUpdated, deltaRemoved, deltaUnchanged int
 	err = db.Transaction(func(tx *gorm.DB) error {
 		if err := price.UpsertAllByType(tx, config.Unknown, prices); err != nil {
 			return err
 		}
-		if err := posting.UpsertAll(tx, postings); err != nil {
-			return err
+		if forceJournal {
+			// Full replace: DELETE all + INSERT all, mirroring the pre-delta behaviour.
+			// This is the safe path for cases where the transaction-hash index may be
+			// stale (e.g. after a migration, data import, or manual DB edits).
+			// Note: when forceJournal is true, only PostingsAdded is meaningful in the
+			// returned SyncResult (set to len(postings)); PostingsUpdated, PostingsRemoved,
+			// and PostingsUnchanged are always zero because no per-transaction diff is
+			// computed.
+			if err := posting.UpsertAll(tx, postings); err != nil {
+				return err
+			}
+			deltaAdded = len(postings)
+		} else {
+			var deltaErr error
+			deltaAdded, deltaUpdated, deltaRemoved, deltaUnchanged, deltaErr = posting.DeltaUpsert(tx, postings)
+			if deltaErr != nil {
+				return deltaErr
+			}
 		}
 		return account_balance.RefreshFromPostings(tx, postings)
 	})
@@ -122,13 +154,22 @@ func SyncJournal(db *gorm.DB) (SyncResult, error) {
 	}
 
 	result := SyncResult{
-		PostingCount: len(postings),
-		PriceCount:   len(prices),
+		PostingCount:      len(postings),
+		PriceCount:        len(prices),
+		PostingsAdded:     deltaAdded,
+		PostingsUpdated:   deltaUpdated,
+		PostingsRemoved:   deltaRemoved,
+		PostingsUnchanged: deltaUnchanged,
 	}
 	log.WithFields(log.Fields{
-		"stage":         "journal",
-		"posting_count": result.PostingCount,
-		"price_count":   result.PriceCount,
+		"stage":              "journal",
+		"posting_count":      result.PostingCount,
+		"price_count":        result.PriceCount,
+		"force_journal":      forceJournal,
+		"postings_added":     result.PostingsAdded,
+		"postings_updated":   result.PostingsUpdated,
+		"postings_removed":   result.PostingsRemoved,
+		"postings_unchanged": result.PostingsUnchanged,
 	}).Info("Journal sync completed")
 
 	// Persist the journal hash only after a fully successful sync so that a

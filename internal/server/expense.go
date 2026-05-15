@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/transaction"
 	"github.com/ananthakumaran/paisa/internal/query"
@@ -75,6 +76,11 @@ func ComputeExpenseTrends(db *gorm.DB) []ExpenseTrend {
 		NotAccountPrefix("Expenses:Tax").
 		All()
 
+	return computeExpenseTrendsForWindows(currentPostings, previousPostings)
+}
+
+func computeExpenseTrendsForWindows(currentPostings []posting.Posting, previousPostings []posting.Posting) []ExpenseTrend {
+
 	// Aggregate amounts per category.
 	currentByCategory := make(map[string]decimal.Decimal)
 	for _, p := range currentPostings {
@@ -129,7 +135,7 @@ func GetCurrentExpense(db *gorm.DB) map[string][]posting.Posting {
 	return utils.GroupByMonth(expenses)
 }
 
-func GetExpense(db *gorm.DB, years, untilYear int) gin.H {
+func GetExpense(db *gorm.DB, years, untilYear int, reportCurrency string) gin.H {
 	postings := query.Init(db).All()
 	requestedYears := years
 	if requestedYears < 1 {
@@ -156,6 +162,32 @@ func GetExpense(db *gorm.DB, years, untilYear int) gin.H {
 		}
 	}
 
+	// Original amounts are already preserved by query.All()
+
+	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
+		expenses = convertPostingsToReportCurrency(db, expenses, reportCurrency)
+		incomes = convertPostingsToReportCurrency(db, incomes, reportCurrency)
+		investments = convertPostingsToReportCurrency(db, investments, reportCurrency)
+		taxes = convertPostingsToReportCurrency(db, taxes, reportCurrency)
+		liabilities = convertPostingsToReportCurrency(db, liabilities, reportCurrency)
+	}
+
+	trends := ComputeExpenseTrends(db)
+	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
+		now := utils.Now()
+		currentEnd := utils.EndOfDay(now)
+		currentStart := utils.ToDate(now.AddDate(0, 0, -30))
+		previousStart := utils.ToDate(now.AddDate(0, 0, -60))
+
+		currentPostings := lo.Filter(expenses, func(p posting.Posting, _ int) bool {
+			return utils.IsWithDate(p.Date, currentStart, currentEnd)
+		})
+		previousPostings := lo.Filter(expenses, func(p posting.Posting, _ int) bool {
+			return (p.Date.Equal(previousStart) || p.Date.After(previousStart)) && p.Date.Before(currentStart)
+		})
+		trends = computeExpenseTrendsForWindows(currentPostings, previousPostings)
+	}
+
 	graph := make(map[string]Graph)
 	for fy, ps := range utils.GroupByFY(postings) {
 		graph[fy] = sortGraph(computeHierarchyGraph(ps))
@@ -163,7 +195,7 @@ func GetExpense(db *gorm.DB, years, untilYear int) gin.H {
 
 	return gin.H{
 		"expenses": expenses,
-		"trends":   ComputeExpenseTrends(db),
+		"trends":   trends,
 		"multi_year": computeYoYMonthlySeries(
 			expenses,
 			requestedYears,
