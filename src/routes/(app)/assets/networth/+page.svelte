@@ -20,11 +20,15 @@
   let networth = $state(0);
   let investment = $state(0);
   let gain = $state(0);
+  let contribution = $state(0);
+  let investmentReturn = $state(0);
+  let fxImpact = $state(0);
   let xirr = $state(0);
   let svg: Element = $state();
   let destroy: () => void;
   let points: Networth[] = $state([]);
   let legends: Legend[] = $state([]);
+  let showFXImpact = $state(true);
   let reportCurrency = $state("");
   let availableCurrencies: string[] = $state([]);
 
@@ -39,7 +43,8 @@
           points,
           (p) => p.date.isSameOrBefore($dateRange.to) && p.date.isSameOrAfter($dateRange.from)
         ),
-        svg
+        svg,
+        { showFXImpact }
       ));
     }
   });
@@ -63,6 +68,9 @@
       networth = current.investmentAmount + current.gainAmount - current.withdrawalAmount;
       investment = current.investmentAmount - current.withdrawalAmount;
       gain = current.gainAmount;
+      contribution = current.contribution;
+      investmentReturn = current.investment_return;
+      fxImpact = current.fx_impact;
     }
     xirr = result.xirr;
   }
@@ -121,6 +129,17 @@
         color={gain >= 0 ? COLORS.gainText : COLORS.lossText}
         value={formatCurrency(gain)}
       />
+      <LevelItem
+        title="Contribution"
+        color={COLORS.secondary}
+        value={formatCurrency(contribution)}
+      />
+      <LevelItem
+        title="Investment Return"
+        color={COLORS.primary}
+        value={formatCurrency(investmentReturn)}
+      />
+      <LevelItem title="FX Impact" color={COLORS.tertiary} value={formatCurrency(fxImpact)} />
       <LevelItem title="XIRR" value={formatFloat(xirr)} />
     </nav>
   </div>
@@ -134,6 +153,12 @@
           <ZeroState item={points}>
             <strong>Oops!</strong> You have no transactions.
           </ZeroState>
+          <div class="is-flex is-justify-content-flex-end pr-4 pt-2">
+            <label class="checkbox is-size-7">
+              <input type="checkbox" bind:checked={showFXImpact} />
+              <span class="ml-2">Show FX impact overlay</span>
+            </label>
+          </div>
 
           <LegendCard {legends} clazz="ml-4" />
           <svg id="d3-networth-timeline" height="500" bind:this={svg} />

@@ -4,6 +4,13 @@
 
 #### Features
 
+- **FX impact decomposition and currency exposure surfaces** — Added multi-currency attribution across net worth and asset views.
+  - Backend `/api/networth` timeline points now include `contribution`, `investment_return`, and `fx_impact`, with decomposition logic that separates cumulative FX movement from local investment return for non-default-currency holdings.
+  - Added backend `GET /api/currency-exposure` to return denomination-level portfolio exposure (`currency`, `amount`, `percentage`).
+  - Updated assets net worth UI with FX overlay toggle, added decomposition metrics cards, and surfaced FX/contribution details in timeline tooltips.
+  - Added currency exposure donut widget on **Assets → Allocation** and **Ledger → FX Rates** pages.
+  - Added backend-focused tests validating FX decomposition consistency and currency exposure grouping totals.
+
 - **Fix More → Logs runtime errors** — Resolved a Logs page failure caused by Workbox navigation fallback and fragile client rendering.
   - Updated PWA `navigateFallback` to `/index.html` so Workbox always serves a precached navigation shell (avoids `non-precached-url` for `/`).
   - Hardened `/more/logs` rendering by removing direct `window` access in markup, guarding virtualized rows, and safely formatting log timestamps.

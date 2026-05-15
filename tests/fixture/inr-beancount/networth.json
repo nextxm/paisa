@@ -7,7 +7,10 @@
       "gainAmount": 0,
       "balanceAmount": 100000,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100000
+      "netInvestmentAmount": 100000,
+      "contribution": 100000,
+      "fx_impact": 0,
+      "investment_return": 0
     },
     {
       "date": "2022-01-02T00:00:00Z",
@@ -16,7 +19,10 @@
       "gainAmount": 0,
       "balanceAmount": 100000,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100000
+      "netInvestmentAmount": 100000,
+      "contribution": 100000,
+      "fx_impact": 0,
+      "investment_return": 0
     },
     {
       "date": "2022-01-03T00:00:00Z",
@@ -25,7 +31,10 @@
       "gainAmount": 0,
       "balanceAmount": 80000,
       "balanceUnits": 0,
-      "netInvestmentAmount": 80000
+      "netInvestmentAmount": 80000,
+      "contribution": 80000,
+      "fx_impact": 0,
+      "investment_return": 0
     },
     {
       "date": "2022-01-04T00:00:00Z",
@@ -34,7 +43,10 @@
       "gainAmount": 0,
       "balanceAmount": 80000,
       "balanceUnits": 0,
-      "netInvestmentAmount": 80000
+      "netInvestmentAmount": 80000,
+      "contribution": 80000,
+      "fx_impact": 0,
+      "investment_return": 0
     },
     {
       "date": "2022-01-05T00:00:00Z",
@@ -43,7 +55,10 @@
       "gainAmount": 0,
       "balanceAmount": 80000,
       "balanceUnits": 0,
-      "netInvestmentAmount": 80000
+      "netInvestmentAmount": 80000,
+      "contribution": 80000,
+      "fx_impact": 0,
+      "investment_return": 0
     },
     {
       "date": "2022-01-06T00:00:00Z",
@@ -52,7 +67,10 @@
       "gainAmount": 0,
       "balanceAmount": 100000,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100000
+      "netInvestmentAmount": 100000,
+      "contribution": 100000,
+      "fx_impact": 0,
+      "investment_return": 0
     },
     {
       "date": "2022-01-07T00:00:00Z",
@@ -61,7 +79,10 @@
       "gainAmount": 0,
       "balanceAmount": 100000,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100000
+      "netInvestmentAmount": 100000,
+      "contribution": 100000,
+      "fx_impact": 0,
+      "investment_return": 0
     },
     {
       "date": "2022-01-08T00:00:00Z",
@@ -70,7 +91,10 @@
       "gainAmount": -61.5542551296,
       "balanceAmount": 99938.4457448704,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100000
+      "netInvestmentAmount": 100000,
+      "contribution": 100000,
+      "fx_impact": 0,
+      "investment_return": -61.5542551296
     },
     {
       "date": "2022-01-09T00:00:00Z",
@@ -79,7 +103,10 @@
       "gainAmount": -61.5542551296,
       "balanceAmount": 99938.4457448704,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100000
+      "netInvestmentAmount": 100000,
+      "contribution": 100000,
+      "fx_impact": 0,
+      "investment_return": -61.5542551296
     },
     {
       "date": "2022-01-10T00:00:00Z",
@@ -88,7 +115,10 @@
       "gainAmount": -34.5542551296,
       "balanceAmount": 99965.4457448704,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100000
+      "netInvestmentAmount": 100000,
+      "contribution": 100000,
+      "fx_impact": 0,
+      "investment_return": -34.5542551296
     },
     {
       "date": "2022-01-11T00:00:00Z",
@@ -97,7 +127,10 @@
       "gainAmount": -34.5542551296,
       "balanceAmount": 99865.4457448704,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.5542551296
     },
     {
       "date": "2022-01-12T00:00:00Z",
@@ -106,7 +139,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-13T00:00:00Z",
@@ -115,7 +151,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-14T00:00:00Z",
@@ -124,7 +163,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-15T00:00:00Z",
@@ -133,7 +175,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-16T00:00:00Z",
@@ -142,7 +187,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-17T00:00:00Z",
@@ -151,7 +199,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-18T00:00:00Z",
@@ -160,7 +211,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-19T00:00:00Z",
@@ -169,7 +223,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-20T00:00:00Z",
@@ -178,7 +235,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-21T00:00:00Z",
@@ -187,7 +247,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-22T00:00:00Z",
@@ -196,7 +259,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-23T00:00:00Z",
@@ -205,7 +271,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-24T00:00:00Z",
@@ -214,7 +283,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-25T00:00:00Z",
@@ -223,7 +295,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-26T00:00:00Z",
@@ -232,7 +307,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-27T00:00:00Z",
@@ -241,7 +319,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-28T00:00:00Z",
@@ -250,7 +331,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 99865.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 99900
+      "netInvestmentAmount": 99900,
+      "contribution": 99900,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-29T00:00:00Z",
@@ -259,7 +343,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 100937.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100972
+      "netInvestmentAmount": 100972,
+      "contribution": 100972,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-30T00:00:00Z",
@@ -268,7 +355,10 @@
       "gainAmount": -34.58866180237056,
       "balanceAmount": 100937.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100972
+      "netInvestmentAmount": 100972,
+      "contribution": 100972,
+      "fx_impact": 0,
+      "investment_return": -34.58866180237056
     },
     {
       "date": "2022-01-31T00:00:00Z",
@@ -277,7 +367,10 @@
       "gainAmount": 965.4113381976294,
       "balanceAmount": 101937.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100972
+      "netInvestmentAmount": 100972,
+      "contribution": 100972,
+      "fx_impact": 0,
+      "investment_return": 965.4113381976294
     },
     {
       "date": "2022-02-01T00:00:00Z",
@@ -286,7 +379,10 @@
       "gainAmount": 965.4113381976294,
       "balanceAmount": 101937.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100972
+      "netInvestmentAmount": 100972,
+      "contribution": 100972,
+      "fx_impact": 0,
+      "investment_return": 965.4113381976294
     },
     {
       "date": "2022-02-02T00:00:00Z",
@@ -295,7 +391,10 @@
       "gainAmount": 965.4113381976294,
       "balanceAmount": 101937.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100972
+      "netInvestmentAmount": 100972,
+      "contribution": 100972,
+      "fx_impact": 0,
+      "investment_return": 965.4113381976294
     },
     {
       "date": "2022-02-03T00:00:00Z",
@@ -304,7 +403,10 @@
       "gainAmount": 965.4113381976294,
       "balanceAmount": 101937.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100972
+      "netInvestmentAmount": 100972,
+      "contribution": 100972,
+      "fx_impact": 0,
+      "investment_return": 965.4113381976294
     },
     {
       "date": "2022-02-04T00:00:00Z",
@@ -313,7 +415,10 @@
       "gainAmount": 965.4113381976294,
       "balanceAmount": 101937.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100972
+      "netInvestmentAmount": 100972,
+      "contribution": 100972,
+      "fx_impact": 0,
+      "investment_return": 965.4113381976294
     },
     {
       "date": "2022-02-05T00:00:00Z",
@@ -322,7 +427,10 @@
       "gainAmount": 965.4113381976294,
       "balanceAmount": 101937.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100972
+      "netInvestmentAmount": 100972,
+      "contribution": 100972,
+      "fx_impact": 0,
+      "investment_return": 965.4113381976294
     },
     {
       "date": "2022-02-06T00:00:00Z",
@@ -331,7 +439,10 @@
       "gainAmount": 965.4113381976294,
       "balanceAmount": 101937.41133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100972
+      "netInvestmentAmount": 100972,
+      "contribution": 100972,
+      "fx_impact": 0,
+      "investment_return": 965.4113381976294
     },
     {
       "date": "2022-02-07T00:00:00Z",
@@ -340,7 +451,10 @@
       "gainAmount": 1183.8113381976295,
       "balanceAmount": 102155.81133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100972
+      "netInvestmentAmount": 100972,
+      "contribution": 100972,
+      "fx_impact": 0,
+      "investment_return": 1183.8113381976295
     }
   ],
   "xirr": 12.14

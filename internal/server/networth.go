@@ -18,9 +18,26 @@ type Networth struct {
 	InvestmentAmount    decimal.Decimal `json:"investmentAmount"`
 	WithdrawalAmount    decimal.Decimal `json:"withdrawalAmount"`
 	GainAmount          decimal.Decimal `json:"gainAmount"`
+	Contribution        decimal.Decimal `json:"contribution"`
+	InvestmentReturn    decimal.Decimal `json:"investment_return"`
+	FXImpact            decimal.Decimal `json:"fx_impact"`
 	BalanceAmount       decimal.Decimal `json:"balanceAmount"`
 	BalanceUnits        decimal.Decimal `json:"balanceUnits"`
 	NetInvestmentAmount decimal.Decimal `json:"netInvestmentAmount"`
+}
+
+type networthRunningSum struct {
+	investment   decimal.Decimal
+	withdrawal   decimal.Decimal
+	balance      decimal.Decimal
+	balanceUnits decimal.Decimal
+}
+
+type networthFXState struct {
+	localValue decimal.Decimal
+	quote      string
+	rate       decimal.Decimal
+	hasRate    bool
 }
 
 func GetNetworth(db *gorm.DB, reportCurrency string) gin.H {
@@ -52,6 +69,9 @@ func convertNetworthTimelineToReportCurrency(db *gorm.DB, timeline []Networth, r
 			InvestmentAmount:    n.InvestmentAmount.Mul(rate),
 			WithdrawalAmount:    n.WithdrawalAmount.Mul(rate),
 			GainAmount:          n.GainAmount.Mul(rate),
+			Contribution:        n.Contribution.Mul(rate),
+			InvestmentReturn:    n.InvestmentReturn.Mul(rate),
+			FXImpact:            n.FXImpact.Mul(rate),
 			BalanceAmount:       n.BalanceAmount.Mul(rate),
 			BalanceUnits:        n.BalanceUnits,
 			NetInvestmentAmount: n.NetInvestmentAmount.Mul(rate),
@@ -73,52 +93,15 @@ func GetCurrentNetworth(db *gorm.DB) gin.H {
 }
 
 func computeNetworth(db *gorm.DB, postings []posting.Posting) Networth {
-	var networth Networth
-
 	if len(postings) == 0 {
-		return networth
+		return Networth{}
 	}
 
-	var investment decimal.Decimal = decimal.Zero
-	var withdrawal decimal.Decimal = decimal.Zero
-	var balance decimal.Decimal = decimal.Zero
-
-	now := utils.EndOfToday()
-	for _, p := range postings {
-		isInterest := service.IsInterest(db, p)
-		isInterestRepayment := service.IsInterestRepayment(db, p)
-		isStockSplit := service.IsStockSplit(db, p)
-		isCapitalGains := service.IsCapitalGains(p)
-
-		if isInterest || isInterestRepayment {
-			balance = balance.Add(p.Amount)
-		} else if isCapitalGains {
-			withdrawal = withdrawal.Add(p.Amount.Neg())
-		} else {
-			if p.Amount.GreaterThan(decimal.Zero) && !isStockSplit {
-				investment = investment.Add(service.GetMarketPrice(db, p, p.Date))
-			}
-
-			if p.Amount.LessThan(decimal.Zero) && !isStockSplit {
-				withdrawal = withdrawal.Add(service.GetMarketPrice(db, p, p.Date).Neg())
-			}
-
-			balance = balance.Add(service.GetMarketPrice(db, p, now))
-		}
+	networthTimeline := computeNetworthTimeline(db, postings, false, utils.ToDate(utils.Now()))
+	if len(networthTimeline) == 0 {
+		return Networth{}
 	}
-
-	gain := balance.Add(withdrawal).Sub(investment)
-	netInvestment := investment.Sub(withdrawal)
-	networth = Networth{
-		Date:                now,
-		InvestmentAmount:    investment,
-		WithdrawalAmount:    withdrawal,
-		GainAmount:          gain,
-		BalanceAmount:       balance,
-		NetInvestmentAmount: netInvestment,
-	}
-
-	return networth
+	return networthTimeline[len(networthTimeline)-1]
 }
 
 func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBalanceUnits bool, asOfDate time.Time) []Networth {
@@ -130,14 +113,9 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 		return []Networth{}
 	}
 
-	type RunningSum struct {
-		investment   decimal.Decimal
-		withdrawal   decimal.Decimal
-		balance      decimal.Decimal
-		balanceUnits decimal.Decimal
-	}
-
-	accumulator := make(map[string]RunningSum)
+	accumulator := make(map[string]networthRunningSum)
+	fxStateByCommodity := make(map[string]networthFXState)
+	cumulativeFXImpact := decimal.Zero
 
 	end := utils.EndOfDay(asOfDate)
 	for start := postings[0].Date; start.Before(end); start = start.AddDate(0, 0, 1) {
@@ -175,6 +153,7 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 		var withdrawal decimal.Decimal = decimal.Zero
 		var balance decimal.Decimal = decimal.Zero
 		var balanceUnits decimal.Decimal = decimal.Zero
+		dayFXImpact := decimal.Zero
 
 		for commodity, rs := range accumulator {
 			investment = investment.Add(rs.investment)
@@ -194,15 +173,21 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 				}
 			}
 
+			dayFXImpact = dayFXImpact.Add(computeFXImpactForCommodity(db, commodity, rs, dayEnd, fxStateByCommodity))
 		}
 
 		gain := balance.Add(withdrawal).Sub(investment)
 		netInvestment := investment.Sub(withdrawal)
+		cumulativeFXImpact = cumulativeFXImpact.Add(dayFXImpact)
+		investmentReturn := gain.Sub(cumulativeFXImpact)
 		networths = append(networths, Networth{
 			Date:                start,
 			InvestmentAmount:    investment,
 			WithdrawalAmount:    withdrawal,
 			GainAmount:          gain,
+			Contribution:        netInvestment,
+			InvestmentReturn:    investmentReturn,
+			FXImpact:            cumulativeFXImpact,
 			BalanceAmount:       balance,
 			BalanceUnits:        balanceUnits,
 			NetInvestmentAmount: netInvestment,
@@ -213,4 +198,75 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 		}
 	}
 	return networths
+}
+
+func computeFXImpactForCommodity(
+	db *gorm.DB,
+	commodity string,
+	rs networthRunningSum,
+	dayEnd time.Time,
+	fxStateByCommodity map[string]networthFXState,
+) decimal.Decimal {
+	localValue, quote, rate, hasRate, trackFX := commodityFXState(db, commodity, rs.balanceUnits, dayEnd)
+	if !trackFX || localValue.IsZero() {
+		delete(fxStateByCommodity, commodity)
+		return decimal.Zero
+	}
+
+	prev, hasPrev := fxStateByCommodity[commodity]
+	fxStateByCommodity[commodity] = networthFXState{
+		localValue: localValue,
+		quote:      quote,
+		rate:       rate,
+		hasRate:    hasRate,
+	}
+
+	if !hasPrev || !prev.hasRate || !hasRate || prev.quote != quote {
+		return decimal.Zero
+	}
+
+	return prev.localValue.Mul(rate.Sub(prev.rate))
+}
+
+func commodityFXState(
+	db *gorm.DB,
+	commodity string,
+	quantity decimal.Decimal,
+	date time.Time,
+) (localValue decimal.Decimal, quote string, rate decimal.Decimal, hasRate bool, trackFX bool) {
+	defaultCurrency := config.DefaultCurrency()
+	if commodity == defaultCurrency {
+		return decimal.Zero, "", decimal.Zero, false, false
+	}
+
+	if service.IsForeignCurrency(commodity) {
+		r, ok := service.GetRate(db, commodity, defaultCurrency, date)
+		return quantity, commodity, r, ok, true
+	}
+
+	nativePrice, nativeQuote, ok := service.GetNativeUnitPrice(db, commodity, date)
+	if !ok || nativeQuote == "" || nativeQuote == defaultCurrency {
+		return decimal.Zero, "", decimal.Zero, false, false
+	}
+
+	r, found := service.GetRate(db, nativeQuote, defaultCurrency, date)
+	return quantity.Mul(nativePrice), nativeQuote, r, found, true
+}
+
+func commodityDenominationCurrency(db *gorm.DB, commodity string, date time.Time) string {
+	defaultCurrency := config.DefaultCurrency()
+	if commodity == defaultCurrency {
+		return defaultCurrency
+	}
+
+	if service.IsForeignCurrency(commodity) {
+		return commodity
+	}
+
+	_, nativeQuote, ok := service.GetNativeUnitPrice(db, commodity, date)
+	if ok && nativeQuote != "" {
+		return nativeQuote
+	}
+
+	return defaultCurrency
 }
