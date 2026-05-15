@@ -48,7 +48,10 @@
             "amount": -109.76562772
           }
         ],
-        "inactive": false
+        "inactive": false,
+        "contribution": 0,
+        "fx_impact": 0,
+        "investment_return": 13169.22810619763
       }
     }
   },
@@ -109,7 +112,10 @@
       "gainAmount": 1183.8113381976295,
       "balanceAmount": 102155.81133819763,
       "balanceUnits": 0,
-      "netInvestmentAmount": 100972
+      "netInvestmentAmount": 100972,
+      "contribution": 100972,
+      "fx_impact": 0,
+      "investment_return": 1183.8113381976295
     },
     "xirr": 12.14
   },
@@ -241,9 +247,9 @@
           "payee": "Purchased 0.00000001 BTC",
           "account": "Assets:Coinbase:BTC",
           "commodity": "BTC",
-          "quantity": 1e-8,
+          "quantity": 1e-08,
           "amount": 0,
-          "original_amount": 1e-8,
+          "original_amount": 1e-08,
           "status": "cleared",
           "tag_recurring": "",
           "tag_period": "",
@@ -254,7 +260,7 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 1e-8
+          "balance": 1e-08
         },
         {
           "id": 21,

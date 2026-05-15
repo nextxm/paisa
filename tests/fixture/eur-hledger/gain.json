@@ -9,7 +9,10 @@
         "gainAmount": 20,
         "balanceAmount": 10025.05,
         "balanceUnits": 0,
-        "netInvestmentAmount": 10005.05
+        "netInvestmentAmount": 10005.05,
+        "contribution": 10005.05,
+        "fx_impact": 0,
+        "investment_return": 20
       },
       "xirr": 2.17,
       "postings": [

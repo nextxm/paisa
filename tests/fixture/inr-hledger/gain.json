@@ -9,7 +9,10 @@
         "gainAmount": 0,
         "balanceAmount": 804.42048,
         "balanceUnits": 0,
-        "netInvestmentAmount": 804.42048
+        "netInvestmentAmount": 804.42048,
+        "contribution": 804.42048,
+        "fx_impact": 0,
+        "investment_return": 0
       },
       "xirr": 0,
       "postings": [
@@ -46,7 +49,10 @@
         "gainAmount": 27.3,
         "balanceAmount": 0,
         "balanceUnits": 0,
-        "netInvestmentAmount": -27.3
+        "netInvestmentAmount": -27.3,
+        "contribution": -27.3,
+        "fx_impact": 0,
+        "investment_return": 27.3
       },
       "xirr": 170.5,
       "postings": [
@@ -127,7 +133,10 @@
         "gainAmount": 0,
         "balanceAmount": 16050.6340142592,
         "balanceUnits": 0,
-        "netInvestmentAmount": 16050.6340142592
+        "netInvestmentAmount": 16050.6340142592,
+        "contribution": 16050.6340142592,
+        "fx_impact": 0,
+        "investment_return": 0
       },
       "xirr": 0,
       "postings": [
@@ -186,7 +195,10 @@
         "gainAmount": 218.4,
         "balanceAmount": 80218.4,
         "balanceUnits": 0,
-        "netInvestmentAmount": 80000
+        "netInvestmentAmount": 80000,
+        "contribution": 80000,
+        "fx_impact": 0,
+        "investment_return": 218.4
       },
       "xirr": 3.21,
       "postings": [
