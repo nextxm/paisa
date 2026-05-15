@@ -100,7 +100,7 @@
     "$id": "https://nextxm.github.io/paisa/schema.json",
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "additionalProperties": false,
-    "description": "Paisa configuration",
+    "description": "Paisa+ configuration",
     "properties": {
       "accounts": {
         "default": [],
@@ -1597,7 +1597,7 @@
       "journal_path",
       "db_path"
     ],
-    "title": "Paisa",
+    "title": "Paisa+",
     "type": "object"
   }
 }

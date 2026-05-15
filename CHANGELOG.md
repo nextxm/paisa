@@ -4,6 +4,8 @@
 
 #### Features
 
+- **Branding update to Paisa+** — Updated desktop/web branding strings and metadata from "Paisa" to "Paisa+" and aligned regression config fixtures with the new schema title/description.
+
 - **Svelte 5 state management: complete class-based adapters and decouple UI/persisted state (P2.3)** — Completed the remaining Svelte 5 state modernisation tasks (#231 #232 #233):
   - Added `commandPaletteOpen`, `cashflowExpenseDepthAllowed`, and `cashflowIncomeDepthAllowed` to the `UIState` class in `src/lib/state/ui.svelte.ts` so all transient UI state is accessible via a single rune-compatible entry point (`uiState.<prop>.current`).
   - Added `editorLeftWidth`, `editorRightWidth`, `editorLeftCollapsed`, `editorRightCollapsed`, and `configSidebarCollapsed` to the `PersistedState` class in `src/lib/state/persisted.svelte.ts`, completing coverage of every persisted store.
