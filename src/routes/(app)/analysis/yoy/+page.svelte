@@ -56,7 +56,9 @@
       expensePostings = expenseData.expenses || [];
 
       const availableCategories = _.sortBy(
-        Object.keys(buildCategoryYoYSeries(expenseData.expenses || [], orderedYears(expenseSeries))),
+        Object.keys(
+          buildCategoryYoYSeries(expenseData.expenses || [], orderedYears(expenseSeries))
+        ),
         (value) => value
       );
       if (!availableCategories.includes(category)) {

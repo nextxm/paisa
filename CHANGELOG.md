@@ -4,6 +4,12 @@
 
 #### Features
 
+- **Svelte 5 state management: complete class-based adapters and decouple UI/persisted state (P2.3)** — Completed the remaining Svelte 5 state modernisation tasks (#231 #232 #233):
+  - Added `commandPaletteOpen`, `cashflowExpenseDepthAllowed`, and `cashflowIncomeDepthAllowed` to the `UIState` class in `src/lib/state/ui.svelte.ts` so all transient UI state is accessible via a single rune-compatible entry point (`uiState.<prop>.current`).
+  - Added `editorLeftWidth`, `editorRightWidth`, `editorLeftCollapsed`, `editorRightCollapsed`, and `configSidebarCollapsed` to the `PersistedState` class in `src/lib/state/persisted.svelte.ts`, completing coverage of every persisted store.
+  - Moved the non-persisted `cashflowExpenseDepthAllowed`, `cashflowIncomeDepthAllowed`, and `setCashflowDepthAllowed` from `persisted_store.ts` to `store.ts`, enforcing a clear boundary: `persisted_store.ts` contains only localStorage-backed stores while `store.ts` owns all transient runtime state.
+  - Updated `Navbar.svelte` and the yearly cash-flow page to import the moved stores from `store.ts`.
+
 - **YoY Analysis: aligned top controls and denser KPI cards** — Fixed the `/analysis/yoy` top-bar control alignment so both dropdowns and the CSV action align cleanly on the same baseline. Tightened KPI card spacing/padding to reduce empty whitespace, expanded the KPI strip with new standalone cards for biggest category mover and efficiency snapshot (expense load + best net month), and tuned card heights/type scale for a more balanced 6-card layout on desktop and tablet.
 
 - **Cash Flow Monthly: aligned multi-currency summary card numbers** — Refined the Monthly Cash Flow summary cards (Income, Expenses, Taxes, Net Flow) so each value now uses a consistent amount-and-currency grid with tabular numerals. This improves readability for mixed-commodity months by lining up figures cleanly across rows and cards.
