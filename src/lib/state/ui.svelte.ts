@@ -14,7 +14,10 @@ import {
   delayedUnLoading,
   willClearTippy,
   accountTfIdf,
-  willRefresh
+  willRefresh,
+  commandPaletteOpen,
+  cashflowExpenseDepthAllowed,
+  cashflowIncomeDepthAllowed
 } from "../../store";
 
 /**
@@ -39,6 +42,9 @@ class UIState {
   readonly willClearTippy = fromStore(willClearTippy);
   readonly accountTfIdf = fromStore(accountTfIdf);
   readonly willRefresh = fromStore(willRefresh);
+  readonly commandPaletteOpen = fromStore(commandPaletteOpen);
+  readonly cashflowExpenseDepthAllowed = fromStore(cashflowExpenseDepthAllowed);
+  readonly cashflowIncomeDepthAllowed = fromStore(cashflowIncomeDepthAllowed);
 }
 
 export const uiState = new UIState();

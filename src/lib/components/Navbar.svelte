@@ -2,12 +2,18 @@
   import { page } from "$app/stores";
   import { afterNavigate } from "$app/navigation";
   import Actions from "$lib/components/Actions.svelte";
-  import { month, year, dateMax, dateMin, dateRangeOption } from "../../store";
+  import {
+    month,
+    year,
+    dateMax,
+    dateMin,
+    dateRangeOption,
+    cashflowExpenseDepthAllowed,
+    cashflowIncomeDepthAllowed
+  } from "../../store";
   import {
     cashflowExpenseDepth,
-    cashflowExpenseDepthAllowed,
     cashflowIncomeDepth,
-    cashflowIncomeDepthAllowed,
     cashflowShowTransfers,
     obscure,
     sankeyPeriod,
