@@ -27,6 +27,11 @@ import (
 // JournalHashKey is the metadata key used to persist the last-synced journal hash.
 const JournalHashKey = "journal_hash"
 
+// JournalDirtyKey is the metadata key used to persist the journal dirty flag.
+// The value is "true" when the journal files have changed since the last
+// successful sync, and "false" (or absent) when the journal is clean.
+const JournalDirtyKey = "journal_dirty"
+
 // lastPriceSyncKey is the metadata key used to persist the last-synced price fetch time.
 const LastPriceSyncKey = "last_price_sync"
 
