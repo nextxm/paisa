@@ -66,7 +66,7 @@
     },
     {
       id: "sankey_cashflow",
-      label: "Sankey (Cash Flow)",
+      label: "Money Flow",
       description: "Cash Flow",
       icon: "fa-chart-diagram",
       category: "Pages",
@@ -99,7 +99,7 @@
     },
     {
       id: "expense_flow",
-      label: "Expense Flow",
+      label: "Expense Breakdown",
       description: "Expenses",
       icon: "fa-chart-diagram",
       category: "Pages",

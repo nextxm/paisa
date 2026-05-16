@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { classifyAccount, graphToSankey } from "./sankey_utils";
+import { classifyAccount, graphToSankey, toExpenseBreakdown } from "./sankey_utils";
 import type { Graph } from "$lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -321,5 +321,41 @@ describe("graphToSankey – missing and invalid value filtering", () => {
 
     expect(nodes).toHaveLength(2);
     expect(nodes.map((n) => n.id)).not.toContain("Expenses:Food");
+  });
+});
+
+describe("toExpenseBreakdown", () => {
+  test("keeps only links that terminate at expense nodes", () => {
+    const nodes = [
+      { id: "Income:Salary", name: "Income:Salary", kind: "income" as const },
+      { id: "Assets:Checking", name: "Assets:Checking", kind: "asset" as const },
+      { id: "Expenses:Food", name: "Expenses:Food", kind: "expense" as const }
+    ];
+    const links = [
+      { source: "Income:Salary", target: "Assets:Checking", value: 5000, txnCount: 1 },
+      { source: "Assets:Checking", target: "Expenses:Food", value: 1200, txnCount: 2 }
+    ];
+
+    const { nodes: filteredNodes, links: filteredLinks } = toExpenseBreakdown(nodes, links);
+
+    expect(filteredLinks).toEqual([
+      { source: "Assets:Checking", target: "Expenses:Food", value: 1200, txnCount: 2 }
+    ]);
+    expect(filteredNodes.map((n) => n.id)).toEqual(["Assets:Checking", "Expenses:Food"]);
+  });
+
+  test("returns empty output when no expense-target links exist", () => {
+    const nodes = [
+      { id: "Income:Salary", name: "Income:Salary", kind: "income" as const },
+      { id: "Assets:Checking", name: "Assets:Checking", kind: "asset" as const }
+    ];
+    const links = [
+      { source: "Income:Salary", target: "Assets:Checking", value: 5000, txnCount: 1 }
+    ];
+
+    const { nodes: filteredNodes, links: filteredLinks } = toExpenseBreakdown(nodes, links);
+
+    expect(filteredNodes).toEqual([]);
+    expect(filteredLinks).toEqual([]);
   });
 });

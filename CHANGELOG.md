@@ -4,6 +4,11 @@
 
 #### Features
 
+- **Clarify Sankey views: Money Flow vs Expense Breakdown** — Kept both Sankey pages but made their scope explicit after investigating parameter and rendering differences.
+  - **Cash Flow → Money Flow** (`/cash_flow/sankey`) continues to query `/api/sankey` with a period selector and supports account-depth aggregation plus optional asset-transfer hiding for full-path flow analysis.
+  - **Expenses → Expense Breakdown** (`/expense/sankey`) continues to use date-range bounds but now renders only links that terminate in expense accounts, producing a focused outflow view.
+  - Updated navigation and command palette labels to remove ambiguous "Sankey/Flow" naming, and added inline help text on both pages to explain each view.
+
 - **Create top-level Planning navigation for Goals and Tax** — Promoted planning workflows out of the More section for better discoverability.
   - Moved routes from `/more/goals` to `/planning/goals` and from `/more/tax/*` to `/planning/tax/*`.
   - Added a new top-level **Planning** navbar section (between Income and Ledger) with **Goals**, plus INR-gated **Tax** submenu entries.
