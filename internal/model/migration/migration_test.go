@@ -8,6 +8,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/account_balance"
 	"github.com/ananthakumaran/paisa/internal/model/account_note"
 	"github.com/ananthakumaran/paisa/internal/model/account_reconciliation"
+	"github.com/ananthakumaran/paisa/internal/model/dashboard_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/import_preset"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
@@ -32,7 +33,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 9, version)
+	assert.Equal(t, 10, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -42,7 +43,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 9, version)
+	assert.Equal(t, 10, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -60,12 +61,12 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	db := openMemoryDB(t)
 
 	// Simulate an existing install that has tables but no schema_versions table.
-	// RunMigrations should create the table and record v9 without error.
+	// RunMigrations should create the table and record v10 without error.
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	// Schema version should be 9 after migration.
-	assert.Equal(t, 9, migration.CurrentVersion(db))
+	// Schema version should be 10 after migration.
+	assert.Equal(t, 10, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -101,9 +102,9 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&migration.SchemaVersion{}))
 	require.NoError(t, db.Create(&migration.SchemaVersion{Version: 1, AppliedAt: time.Now()}).Error)
 
-	// Run migrations – v2, v3, v4, v5, v6, v7, v8, and v9 should execute.
+	// Run migrations – v2 through v10 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 9, migration.CurrentVersion(db))
+	assert.Equal(t, 10, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -286,6 +287,23 @@ func TestV9Migration_PostingTransactionHashColumnExists(t *testing.T) {
 		"SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_postings_txn_hash'",
 	).Scan(&count).Error)
 	assert.Equal(t, int64(1), count, "idx_postings_txn_hash index must exist after v9 migration")
+}
+
+func TestV10Migration_DashboardSnapshotsTableExists(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	require.NoError(t, db.Create(&dashboard_snapshot.DashboardSnapshot{
+		Name:          dashboard_snapshot.SnapshotName,
+		SchemaVersion: dashboard_snapshot.SchemaVersion,
+		Payload:       []byte(`{"ok":true}`),
+		UpdatedAt:     time.Now(),
+	}).Error)
+
+	snapshot, err := dashboard_snapshot.Get(db)
+	require.NoError(t, err)
+	assert.Equal(t, dashboard_snapshot.SnapshotName, snapshot.Name)
+	assert.Equal(t, []byte(`{"ok":true}`), snapshot.Payload)
 }
 
 // parser_training_log table exists and accepts writes.

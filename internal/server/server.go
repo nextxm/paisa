@@ -208,9 +208,14 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 
 	router.GET("/api/dashboard", func(c *gin.Context) {
 		requestDB, telemetry := beginRequestTelemetry(db)
+		if payload, ok := getDashboardSnapshotPayload(requestDB); ok {
+			telemetry.writeHeaders(c)
+			c.Data(http.StatusOK, "application/json; charset=utf-8", payload)
+			return
+		}
 		result := GetDashboard(requestDB)
 		telemetry.writeHeaders(c)
-		c.JSON(200, result)
+		c.JSON(http.StatusOK, result)
 	})
 
 	router.GET("/api/networth", func(c *gin.Context) {
