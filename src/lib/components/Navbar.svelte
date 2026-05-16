@@ -134,6 +134,11 @@
       ]
     },
     {
+      label: "Planning",
+      href: "/planning",
+      children: [{ label: "Goals", href: "/goals", help: "goals" }]
+    },
+    {
       label: "Ledger",
       href: "/ledger",
       children: [
@@ -151,7 +156,6 @@
       children: [
         { label: "Configuration", href: "/config", help: "config" },
         { label: "Sheets", href: "/sheets", help: "sheets", disablePreload: true },
-        { label: "Goals", href: "/goals", help: "goals" },
         { label: "Doctor", href: "/doctor" },
         ...(USER_CONFIG.labs?.firefly_reconcile
           ? [{ label: "Reconciliation", href: "/reconciliation" }]
@@ -177,8 +181,9 @@
     ]
   };
 
+  const planning = _.find(links, { label: "Planning" });
   if (USER_CONFIG.default_currency == "INR") {
-    _.last(links)?.children?.push(tax);
+    planning?.children?.push(tax);
   }
 
   const about = { label: "About", href: "/about" };
