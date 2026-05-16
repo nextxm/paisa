@@ -38,7 +38,11 @@
           "market_amount": 10025.05,
           "balance": 0
         }
-      ]
+      ],
+      "income_received": 0.0,
+      "price_appreciation": 20.0,
+      "total_return": 20.0,
+      "ttm_yield": 0.0
     }
   ]
 }

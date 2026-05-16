@@ -40,47 +40,33 @@ type AccountGain struct {
 }
 
 func GetGain(db *gorm.DB) gin.H {
-	patterns := append([]string{"Assets:%", "Income:CapitalGains:%"}, investmentIncomeLikePatterns()...)
-	postings := query.Init(db).Like(patterns...).NotAccountPrefix("Assets:Checking").All()
+	postings := query.Init(db).Like("Assets:%", "Income:CapitalGains:%").NotAccountPrefix("Assets:Checking").All()
 	postings = service.PopulateMarketPrice(db, postings)
 	byAccount := lo.GroupBy(postings, func(p posting.Posting) string {
 		if service.IsCapitalGains(p) {
 			return service.CapitalGainsSourceAccount(p.Account)
 		}
-		if isInvestmentIncomePosting(p) {
-			return investmentIncomeHoldingAccount(p.Account)
-		}
 		return p.Account
 	})
 	var gains []Gain
-	ttmStart := trailing12MonthsStart(utils.ToDate(utils.Now()))
+	asOfDate := utils.ToDate(utils.Now())
 	for _, account := range utils.SortedKeys(byAccount) {
 		ps := byAccount[account]
 		networth := computeNetworth(db, ps)
-		incomeReceived := utils.SumBy(ps, func(p posting.Posting) decimal.Decimal {
-			if isInvestmentIncomePosting(p) {
-				return p.Amount.Neg()
-			}
-			return decimal.Zero
-		})
-		ttmIncome := utils.SumBy(ps, func(p posting.Posting) decimal.Decimal {
-			if isInvestmentIncomePosting(p) && !p.Date.Before(ttmStart) {
-				return p.Amount.Neg()
-			}
-			return decimal.Zero
-		})
+		incomeReceived, ttmIncome := computeInvestmentIncomeForAccount(db, account, asOfDate)
 		ttmYield := decimal.Zero
 		if networth.BalanceAmount.GreaterThan(decimal.Zero) {
 			ttmYield = ttmIncome.Div(networth.BalanceAmount).Mul(decimal.NewFromInt(100))
 		}
-		totalReturn := networth.GainAmount
+		priceAppreciation := networth.GainAmount
+		totalReturn := priceAppreciation.Add(incomeReceived)
 		gains = append(gains, Gain{
 			Account:           account,
 			XIRR:              service.XIRR(db, ps),
 			Networth:          networth,
 			Postings:          ps,
 			IncomeReceived:    incomeReceived,
-			PriceAppreciation: totalReturn.Sub(incomeReceived),
+			PriceAppreciation: priceAppreciation,
 			TotalReturn:       totalReturn,
 			TTMYield:          ttmYield,
 		})
@@ -91,12 +77,7 @@ func GetGain(db *gorm.DB) gin.H {
 
 func GetAccountGain(db *gorm.DB, account string, asOfDate time.Time) gin.H {
 	capitalGainsAccount := strings.Replace(account, "Assets", "Income:CapitalGains", 1)
-	assetAndGains := query.Init(db).UntilDate(asOfDate).AccountPrefix(account, capitalGainsAccount).All()
-	investmentIncome := query.Init(db).UntilDate(asOfDate).Like(investmentIncomeLikePatterns()...).All()
-	investmentIncome = lo.Filter(investmentIncome, func(p posting.Posting, _ int) bool {
-		return investmentIncomeHoldingAccount(p.Account) == account
-	})
-	postings := append(assetAndGains, investmentIncome...)
+	postings := query.Init(db).UntilDate(asOfDate).AccountPrefix(account, capitalGainsAccount).All()
 	sort.Slice(postings, func(i, j int) bool {
 		if postings[i].Date.Equal(postings[j].Date) {
 			return postings[i].Amount.GreaterThan(postings[j].Amount)
@@ -109,31 +90,20 @@ func GetAccountGain(db *gorm.DB, account string, asOfDate time.Time) gin.H {
 	if len(networthTimeline) > 0 {
 		networth = networthTimeline[len(networthTimeline)-1]
 	}
-	incomeReceived := utils.SumBy(postings, func(p posting.Posting) decimal.Decimal {
-		if isInvestmentIncomePosting(p) {
-			return p.Amount.Neg()
-		}
-		return decimal.Zero
-	})
-	ttmStart := trailing12MonthsStart(asOfDate)
-	ttmIncome := utils.SumBy(postings, func(p posting.Posting) decimal.Decimal {
-		if isInvestmentIncomePosting(p) && !p.Date.Before(ttmStart) {
-			return p.Amount.Neg()
-		}
-		return decimal.Zero
-	})
+	incomeReceived, ttmIncome := computeInvestmentIncomeForAccount(db, account, asOfDate)
 	ttmYield := decimal.Zero
 	if networth.BalanceAmount.GreaterThan(decimal.Zero) {
 		ttmYield = ttmIncome.Div(networth.BalanceAmount).Mul(decimal.NewFromInt(100))
 	}
-	totalReturn := networth.GainAmount
+	priceAppreciation := networth.GainAmount
+	totalReturn := priceAppreciation.Add(incomeReceived)
 	gain := AccountGain{
 		Account:           account,
 		XIRR:              service.XIRR(db, postings),
 		NetworthTimeline:  networthTimeline,
 		Postings:          postings,
 		IncomeReceived:    incomeReceived,
-		PriceAppreciation: totalReturn.Sub(incomeReceived),
+		PriceAppreciation: priceAppreciation,
 		TotalReturn:       totalReturn,
 		TTMYield:          ttmYield,
 	}
@@ -148,4 +118,22 @@ func GetAccountGain(db *gorm.DB, account string, asOfDate time.Time) gin.H {
 	assetBreakdown := assets.ComputeBreakdownAt(db, postings, false, account, asOfDate)
 
 	return gin.H{"gain_timeline_breakdown": gain, "portfolio_allocation": portfolio_groups, "asset_breakdown": assetBreakdown}
+}
+
+func computeInvestmentIncomeForAccount(db *gorm.DB, account string, asOfDate time.Time) (decimal.Decimal, decimal.Decimal) {
+	incomePostings := query.Init(db).UntilDate(asOfDate).Like(investmentIncomeLikePatterns()...).All()
+	ttmStart := trailing12MonthsStart(asOfDate)
+	total := decimal.Zero
+	ttm := decimal.Zero
+	for _, p := range incomePostings {
+		if investmentIncomeHoldingAccount(p.Account) != account {
+			continue
+		}
+		amount := p.Amount.Neg()
+		total = total.Add(amount)
+		if !p.Date.Before(ttmStart) {
+			ttm = ttm.Add(amount)
+		}
+	}
+	return total, ttm
 }
