@@ -11,6 +11,7 @@
   } from "$lib/utils";
   import _ from "lodash";
   import { onMount } from "svelte";
+  import { year } from "../../../../store";
 
   let holdings: InvestmentIncomeHolding[] = $state([]);
   let timeline: InvestmentIncomeTimelinePoint[] = $state([]);
@@ -18,6 +19,12 @@
   let dividendTTM = $state(0);
   let interestTTM = $state(0);
   let distributionTTM = $state(0);
+  type InvestmentIncomeResponse = {
+    income_by_type: Record<string, InvestmentIncomeHolding[]>;
+    holdings: InvestmentIncomeHolding[];
+    timeline: InvestmentIncomeTimelinePoint[];
+    ttm_total: number;
+  };
 
   function yearlyMapForSparkline(holding: InvestmentIncomeHolding): Record<string, number> {
     return _.chain(holding.yearly_income)
@@ -27,12 +34,28 @@
       .value();
   }
 
-  onMount(async () => {
-    const response = await ajax("/api/income/investment");
+  let mounted = $state(false);
+
+  async function fetchInvestment(selectedYear: string) {
+    const params = new URLSearchParams();
+    if (selectedYear) params.set("year", selectedYear);
+    const query = params.toString();
+    const response = (await ajax(
+      query ? `/api/income/investment?${query}` : "/api/income/investment"
+    )) as InvestmentIncomeResponse;
     ({ holdings, timeline, ttm_total: ttmTotal } = response);
     dividendTTM = _.sumBy(response.income_by_type.Dividend ?? [], (h) => h.ttm_income);
     interestTTM = _.sumBy(response.income_by_type.Interest ?? [], (h) => h.ttm_income);
     distributionTTM = _.sumBy(response.income_by_type.Distribution ?? [], (h) => h.ttm_income);
+  }
+
+  onMount(() => {
+    mounted = true;
+  });
+
+  $effect(() => {
+    if (!mounted) return;
+    void fetchInvestment($year);
   });
 </script>
 

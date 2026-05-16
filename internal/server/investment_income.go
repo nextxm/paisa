@@ -200,8 +200,8 @@ func computeInvestmentIncomeTimeline(holdings []InvestmentIncomeHolding) []Inves
 	return timeline
 }
 
-func GetInvestmentIncome(db *gorm.DB) gin.H {
-	holdings := computeInvestmentIncomeByHolding(db, utils.ToDate(utils.Now()))
+func GetInvestmentIncome(db *gorm.DB, asOfDate time.Time) gin.H {
+	holdings := computeInvestmentIncomeByHolding(db, asOfDate)
 	timeline := computeInvestmentIncomeTimeline(holdings)
 	ttmTotal := utils.SumBy(holdings, func(h InvestmentIncomeHolding) decimal.Decimal {
 		return h.TTMIncome

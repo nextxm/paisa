@@ -4,6 +4,13 @@
 
 #### Features
 
+- **Income section polish: Timeline label, Investment year picker, and cross-link summary** — Completed the Income navigation and historical investment-income polish.
+  - Renamed **Income → Overview** to **Income → Timeline** so navbar and breadcrumb labels match the page semantics.
+  - Enabled the financial-year picker on **Income → Investment** and wired the page to request `/api/income/investment?year=<FY>`.
+  - Updated backend `GET /api/income/investment` to accept both `as_of_date` and `year` query parameters for historical trailing-12-month yield calculations.
+  - Added a **TTM Investment Income** summary card to the Income Timeline page, sourced from `/api/income/investment`.
+  - Added focused tests for Income navbar route selection and investment-income year/as_of_date query handling.
+
 - **Investment income tracking and total-return enhancements** — Added dedicated investment income aggregation and surfaced trailing yield/total return across backend and UI.
   - Added backend `GET /api/income/investment` to classify investment income (`Dividend`, `Interest`, `Distribution`) by holding, return monthly timeline data, and compute per-holding trailing 12-month yield.
   - Extended gain computations so investment income is included in total return; `/api/gain` and `/api/gain/:account` now return `income_received`, `price_appreciation`, `total_return`, and `ttm_yield`.
