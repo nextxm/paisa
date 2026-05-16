@@ -21,6 +21,18 @@ const links: Link[] = [
     ]
   },
   {
+    label: "Expenses",
+    href: "/expense",
+    children: [
+      { label: "Monthly", href: "/monthly" },
+      { label: "Yearly", href: "/yearly" },
+      { label: "Budget", href: "/budget" },
+      { label: "Flow", href: "/sankey" },
+      { label: "YoY", href: "/yoy" },
+      { label: "MoM", href: "/mom" }
+    ]
+  },
+  {
     label: "Income",
     href: "/income",
     children: [
@@ -76,6 +88,22 @@ describe("navbar selection", () => {
 
     expect(selection.selectedLink?.label).toBe("Income");
     expect(selection.selectedSubLink?.label).toBe("Investment");
+    expect(selection.selectedSubSubLink).toBeNull();
+  });
+
+  test("selects expenses YoY child for /expense/yoy route", () => {
+    const selection = resolveNavbarSelectionTyped(links, "/expense/yoy");
+
+    expect(selection.selectedLink?.label).toBe("Expenses");
+    expect(selection.selectedSubLink?.label).toBe("YoY");
+    expect(selection.selectedSubSubLink).toBeNull();
+  });
+
+  test("selects expenses MoM child for /expense/mom route", () => {
+    const selection = resolveNavbarSelectionTyped(links, "/expense/mom");
+
+    expect(selection.selectedLink?.label).toBe("Expenses");
+    expect(selection.selectedSubLink?.label).toBe("MoM");
     expect(selection.selectedSubSubLink).toBeNull();
   });
 });

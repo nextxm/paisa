@@ -98,7 +98,9 @@
         { label: "Monthly", href: "/monthly", monthPicker: true, dateRangeSelector: true },
         { label: "Yearly", href: "/yearly", financialYearPicker: true },
         { label: "Budget", href: "/budget", help: "budget", monthPicker: true },
-        { label: "Flow", href: "/sankey", dateRangeSelector: true }
+        { label: "Flow", href: "/sankey", dateRangeSelector: true },
+        { label: "YoY", href: "/yoy" },
+        { label: "MoM", href: "/mom" }
       ]
     },
     {
@@ -129,15 +131,6 @@
       children: [
         { label: "Timeline", href: "" },
         { label: "Investment", href: "/investment", financialYearPicker: true }
-      ]
-    },
-    {
-      label: "Analysis",
-      href: "/analysis",
-      tag: "alpha",
-      children: [
-        { label: "YoY", href: "/yoy", tag: "alpha" },
-        { label: "MoM", href: "/mom", tag: "alpha" }
       ]
     },
     {
