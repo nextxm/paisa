@@ -50,7 +50,9 @@
   let isEmpty = $state(false);
   let checkingBalances: Record<string, AssetBreakdown> = $state({});
   let investmentIncomeTTM = $state(0);
+  let investmentIncomeLoading = $state(false);
   let fireProjection: NetworthProjectionResponse | null = $state(null);
+  let fireProjectionLoading = $state(false);
 
   $effect(() => {
     if (renderer) {
@@ -64,7 +66,15 @@
   }
 
   onMount(async () => {
+    // Phase 1: critical dashboard payload — unblocks first paint.
+    performance.mark("paisa-home-phase1-start");
     const dashboardResult = await ajax("/api/dashboard");
+    performance.mark("paisa-home-phase1-end");
+    performance.measure(
+      "paisa-home-phase1-dashboard",
+      "paisa-home-phase1-start",
+      "paisa-home-phase1-end"
+    );
 
     ({
       expenses,
@@ -76,8 +86,6 @@
       checkingBalances: { asset_breakdowns: checkingBalances },
       transactions
     } = dashboardResult);
-    ({ ttm_total: investmentIncomeTTM } = await ajax("/api/income/investment"));
-    fireProjection = (await ajax("/api/networth/projection")) as NetworthProjectionResponse;
 
     goalSummaries = _.sortBy(goalSummaries, (g) => -g.priority);
 
@@ -103,6 +111,30 @@
     transactionSequences = _.take(
       sortTrantionSequence(enrichTrantionSequence(transactionSequences)),
       16
+    );
+
+    // Phase 2: non-critical secondary fetches deferred until after first paint.
+    // Both requests are fired concurrently as background calls so the global
+    // loading spinner is not re-triggered.
+    investmentIncomeLoading = true;
+    fireProjectionLoading = true;
+    performance.mark("paisa-home-phase2-start");
+
+    const [incomeResult, projectionResult] = await Promise.all([
+      ajax("/api/income/investment", { background: true }),
+      ajax("/api/networth/projection", { background: true })
+    ]);
+
+    investmentIncomeTTM = incomeResult.ttm_total;
+    investmentIncomeLoading = false;
+    fireProjection = projectionResult as NetworthProjectionResponse;
+    fireProjectionLoading = false;
+
+    performance.mark("paisa-home-phase2-end");
+    performance.measure(
+      "paisa-home-phase2-secondary",
+      "paisa-home-phase2-start",
+      "paisa-home-phase2-end"
     );
   });
 </script>
@@ -192,7 +224,15 @@
 
                       <LevelItem narrow title="XIRR" value={formatFloat(xirr)} />
                     </nav>
-                    {#if fireProjection}
+                    {#if fireProjectionLoading}
+                      <nav class="level grid-2 mt-3">
+                        <LevelItem narrow small title="Years to FIRE" value="—" />
+                        <LevelItem narrow small title="Target Corpus" value="—" />
+                      </nav>
+                      <nav class="level grid-1">
+                        <LevelItem narrow small title="FIRE Progress" value="—" />
+                      </nav>
+                    {:else if fireProjection}
                       <nav class="level grid-2 mt-3">
                         <LevelItem
                           narrow
@@ -264,8 +304,8 @@
                   <LevelItem
                     narrow
                     title="TTM Dividend + Interest"
-                    color={COLORS.gainText}
-                    value={formatCurrency(investmentIncomeTTM)}
+                    color={investmentIncomeLoading ? undefined : COLORS.gainText}
+                    value={investmentIncomeLoading ? "—" : formatCurrency(investmentIncomeTTM)}
                   />
                 </nav>
               </div>
