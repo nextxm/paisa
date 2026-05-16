@@ -147,6 +147,38 @@ export interface Networth {
   netInvestmentAmount: number;
 }
 
+export interface NetworthProjectionPoint {
+  date: dayjs.Dayjs;
+  balanceAmount: number;
+}
+
+export interface NetworthProjectionMilestone {
+  label: string;
+  date: dayjs.Dayjs;
+  amount: number;
+}
+
+export interface NetworthProjectionResponse {
+  current_networth: number;
+  savings_rate: number;
+  monthly_contribution: number;
+  derived_contribution: number;
+  annual_expenses: number;
+  swr: number;
+  target_corpus: number;
+  years_to_fire: number | null;
+  fire_progress_percent: number;
+  projection: {
+    conservative: NetworthProjectionPoint[];
+    expected: NetworthProjectionPoint[];
+    optimistic: NetworthProjectionPoint[];
+  };
+  milestones: NetworthProjectionMilestone[];
+  conservative_cagr: number;
+  expected_cagr: number;
+  optimistic_cagr: number;
+}
+
 export interface CurrencyExposure {
   currency: string;
   amount: number;
@@ -758,6 +790,7 @@ export function ajax(route: "/api/networth"): Promise<{
   networthTimeline: Networth[];
   xirr: number;
 }>;
+export function ajax(route: "/api/networth/projection"): Promise<NetworthProjectionResponse>;
 export function ajax(route: "/api/gain"): Promise<{
   gain_breakdown: Gain[];
 }>;

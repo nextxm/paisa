@@ -5,7 +5,8 @@
     formatFloat,
     isMobile,
     type Legend,
-    type Networth
+    type Networth,
+    type NetworthProjectionResponse
   } from "$lib/utils";
   import COLORS from "$lib/colors";
   import { renderNetworth } from "$lib/networth";
@@ -29,8 +30,10 @@
   let points: Networth[] = $state([]);
   let legends: Legend[] = $state([]);
   let showFXImpact = $state(true);
+  let showProjection = $state(false);
   let reportCurrency = $state("");
   let availableCurrencies: string[] = $state([]);
+  let projection: NetworthProjectionResponse | null = $state(null);
 
   $effect(() => {
     if (!_.isEmpty(points)) {
@@ -44,7 +47,29 @@
           (p) => p.date.isSameOrBefore($dateRange.to) && p.date.isSameOrAfter($dateRange.from)
         ),
         svg,
-        { showFXImpact }
+        {
+          showFXImpact,
+          projections: showProjection
+            ? [
+                {
+                  label: "Conservative Projection",
+                  color: COLORS.lossText,
+                  points: projection?.projection.conservative || []
+                },
+                {
+                  label: "Expected Projection",
+                  color: COLORS.primary,
+                  points: projection?.projection.expected || []
+                },
+                {
+                  label: "Optimistic Projection",
+                  color: COLORS.gainText,
+                  points: projection?.projection.optimistic || []
+                }
+              ]
+            : [],
+          milestones: showProjection ? projection?.milestones || [] : []
+        }
       ));
     }
   });
@@ -75,9 +100,19 @@
     xirr = result.xirr;
   }
 
+  async function fetchProjection() {
+    projection = (await ajax("/api/networth/projection")) as NetworthProjectionResponse;
+  }
+
   onMount(async () => {
     const [, currencyResult] = await Promise.all([fetchNetworth(), ajax("/api/price/currencies")]);
     availableCurrencies = currencyResult.currencies || [];
+  });
+
+  $effect(() => {
+    if (showProjection && !projection) {
+      fetchProjection();
+    }
   });
 </script>
 
@@ -117,6 +152,17 @@
         </div>
       </div>
     {/if}
+    <div class="box p-3 mb-4">
+      <div class="field mb-0">
+        <input id="project-forward" type="checkbox" bind:checked={showProjection} class="switch" />
+        <label for="project-forward">Project Forward</label>
+      </div>
+      {#if showProjection && projection?.milestones?.[0]}
+        <p class="is-size-7 has-text-grey mt-2">
+          {projection.milestones[0].label} by {projection.milestones[0].date.format("MMM YYYY")}
+        </p>
+      {/if}
+    </div>
     <nav class="level {isMobile() && 'grid-2'}">
       <LevelItem title="Net worth" color={COLORS.primary} value={formatCurrency(networth)} />
       <LevelItem

@@ -112,7 +112,8 @@
         { label: "Investment", href: "/investment" },
         { label: "Gain", href: "/gain" },
         { label: "Allocation", href: "/allocation", help: "allocation-targets" },
-        { label: "Portfolio", href: "/portfolio", tag: "alpha", help: "analysis" }
+        { label: "Portfolio", href: "/portfolio", tag: "alpha", help: "analysis" },
+        { label: "Projection", href: "/projection" }
       ]
     },
     {
