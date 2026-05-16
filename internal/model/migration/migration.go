@@ -50,6 +50,7 @@ var steps = []step{
 	{Version: 9, Apply: v9AddPostingTransactionHash},
 	{Version: 10, Apply: v10AddDashboardSnapshots},
 	{Version: 11, Apply: v11AddProjectionSnapshots},
+	{Version: 12, Apply: v12AddPostingReadIndexes},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -233,6 +234,25 @@ func v10AddDashboardSnapshots(db *gorm.DB) error {
 func v11AddProjectionSnapshots(db *gorm.DB) error {
 	if err := db.AutoMigrate(&projection_snapshot.ProjectionSnapshot{}); err != nil {
 		return fmt.Errorf("v11: AutoMigrate projection_snapshots failed: %w", err)
+	}
+	return nil
+}
+
+// v12AddPostingReadIndexes adds composite indexes to accelerate long-history
+// dashboard/projection query patterns that filter by forecast/date/account.
+func v12AddPostingReadIndexes(db *gorm.DB) error {
+	// Supports forecast + date-range scans used by UntilToday/LastNMonths paths.
+	if err := db.Exec(
+		"CREATE INDEX IF NOT EXISTS idx_postings_forecast_date ON postings(forecast, date)",
+	).Error; err != nil {
+		return fmt.Errorf("v12: create idx_postings_forecast_date failed: %w", err)
+	}
+	// Supports forecast + account-prefix + date-range scans used by projection
+	// derivation and other account-scoped dashboard computations.
+	if err := db.Exec(
+		"CREATE INDEX IF NOT EXISTS idx_postings_forecast_account_date ON postings(forecast, account, date)",
+	).Error; err != nil {
+		return fmt.Errorf("v12: create idx_postings_forecast_account_date failed: %w", err)
 	}
 	return nil
 }
