@@ -195,6 +195,24 @@
                 </nav>
               </div>
             </div>
+            <div class="column is-full">
+              <div>
+                <nav class="level grid-2">
+                  <LevelItem
+                    narrow
+                    title="Income Received"
+                    color={COLORS.gainText}
+                    value={formatCurrency(gain.income_received)}
+                  />
+                  <LevelItem
+                    narrow
+                    title="TTM Yield"
+                    value={formatPercentage(gain.ttm_yield, 2)}
+                    subtitle="{formatCurrency(gain.total_return)} total return"
+                  />
+                </nav>
+              </div>
+            </div>
           {/if}
 
           <div class="column is-full">

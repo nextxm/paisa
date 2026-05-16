@@ -4,6 +4,12 @@
 
 #### Features
 
+- **Investment income tracking and total-return enhancements** — Added dedicated investment income aggregation and surfaced trailing yield/total return across backend and UI.
+  - Added backend `GET /api/income/investment` to classify investment income (`Dividend`, `Interest`, `Distribution`) by holding, return monthly timeline data, and compute per-holding trailing 12-month yield.
+  - Extended gain computations so investment income is included in total return; `/api/gain` and `/api/gain/:account` now return `income_received`, `price_appreciation`, `total_return`, and `ttm_yield`.
+  - Updated UI navigation with **Income → Overview / Investment**, added a new **Income → Investment** page with holding/type breakdown and timeline, added a gain breakdown table with a new trailing yield column in **Assets → Gain**, and added an investment-income compact card on the dashboard assets tile.
+  - Added focused backend tests for investment income grouping, yield calculation, and gain total-return composition.
+
 - **FX impact decomposition and currency exposure surfaces** — Added multi-currency attribution across net worth and asset views.
   - Backend `/api/networth` timeline points now include `contribution`, `investment_return`, and `fx_impact`, with decomposition logic that separates cumulative FX movement from local investment return for non-default-currency holdings.
   - Added backend `GET /api/currency-exposure` to return denomination-level portfolio exposure (`currency`, `amount`, `percentage`).

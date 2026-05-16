@@ -127,10 +127,11 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 			isInterestRepayment := service.IsInterestRepayment(db, p)
 			isStockSplit := service.IsStockSplit(db, p)
 			isCapitalGains := service.IsCapitalGains(p)
+			isInvestmentIncome := isInvestmentIncomePosting(p)
 
 			if isInterest || isInterestRepayment {
 				rs.balance = rs.balance.Add(p.Amount)
-			} else if isCapitalGains {
+			} else if isCapitalGains || isInvestmentIncome {
 				rs.withdrawal = rs.withdrawal.Add(p.Amount.Neg())
 			} else {
 				if p.Amount.GreaterThan(decimal.Zero) && !isStockSplit {

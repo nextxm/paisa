@@ -219,6 +219,9 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/income", func(c *gin.Context) {
 		c.JSON(200, GetIncome(db, parseYearsParam(c.Query("years")), parseUntilYearParam(c.Query("until_year"))))
 	})
+	router.GET("/api/income/investment", func(c *gin.Context) {
+		c.JSON(200, GetInvestmentIncome(db))
+	})
 	router.GET("/api/expense", func(c *gin.Context) {
 		c.JSON(200, GetExpense(db, parseYearsParam(c.Query("years")), parseUntilYearParam(c.Query("until_year")), c.Query("report_currency")))
 	})
