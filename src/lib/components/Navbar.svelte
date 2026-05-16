@@ -88,7 +88,7 @@
           monthPicker: true,
           recurringIcons: true
         },
-        { label: "Sankey", href: "/sankey", sankeyPeriodSelector: true }
+        { label: "Money Flow", href: "/sankey", sankeyPeriodSelector: true }
       ]
     },
     {
@@ -98,7 +98,7 @@
         { label: "Monthly", href: "/monthly", monthPicker: true, dateRangeSelector: true },
         { label: "Yearly", href: "/yearly", financialYearPicker: true },
         { label: "Budget", href: "/budget", help: "budget", monthPicker: true },
-        { label: "Flow", href: "/sankey", dateRangeSelector: true },
+        { label: "Expense Breakdown", href: "/sankey", dateRangeSelector: true },
         { label: "YoY", href: "/yoy" },
         { label: "MoM", href: "/mom" }
       ]
