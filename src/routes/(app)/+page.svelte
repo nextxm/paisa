@@ -17,7 +17,8 @@
     type Legend,
     now,
     type GoalSummary,
-    type AssetBreakdown
+    type AssetBreakdown,
+    type NetworthProjectionResponse
   } from "$lib/utils";
   import _ from "lodash";
   import { onMount } from "svelte";
@@ -49,6 +50,7 @@
   let isEmpty = $state(false);
   let checkingBalances: Record<string, AssetBreakdown> = $state({});
   let investmentIncomeTTM = $state(0);
+  let fireProjection: NetworthProjectionResponse | null = $state(null);
 
   $effect(() => {
     if (renderer) {
@@ -75,6 +77,7 @@
       transactions
     } = dashboardResult);
     ({ ttm_total: investmentIncomeTTM } = await ajax("/api/income/investment"));
+    fireProjection = (await ajax("/api/networth/projection")) as NetworthProjectionResponse;
 
     goalSummaries = _.sortBy(goalSummaries, (g) => -g.priority);
 
@@ -189,6 +192,36 @@
 
                       <LevelItem narrow title="XIRR" value={formatFloat(xirr)} />
                     </nav>
+                    {#if fireProjection}
+                      <nav class="level grid-2 mt-3">
+                        <LevelItem
+                          narrow
+                          small
+                          title="Years to FIRE"
+                          color={COLORS.tertiary}
+                          value={fireProjection.years_to_fire !== null
+                            ? `${formatFloat(fireProjection.years_to_fire)}y`
+                            : "N/A"}
+                        />
+                        <LevelItem
+                          narrow
+                          small
+                          title="Target Corpus"
+                          color={COLORS.secondary}
+                          value={formatCurrency(fireProjection.target_corpus)}
+                        />
+                      </nav>
+                      <nav class="level grid-1">
+                        <LevelItem
+                          narrow
+                          small
+                          title="FIRE Progress"
+                          color={COLORS.primary}
+                          value={`${formatFloat(fireProjection.fire_progress_percent)}%`}
+                          href="/assets/projection"
+                        />
+                      </nav>
+                    {/if}
                   {/if}
                 </div>
               </div>

@@ -11,7 +11,9 @@ import {
   svgUrl,
   tooltip,
   type Legend,
-  type Networth
+  type Networth,
+  type NetworthProjectionMilestone,
+  type NetworthProjectionPoint
 } from "./utils";
 
 function networth(d: Networth) {
@@ -30,14 +32,33 @@ function fxImpact(d: Networth) {
   return d.fx_impact ?? 0;
 }
 
+export interface NetworthProjectionSeries {
+  label: string;
+  color: string;
+  points: NetworthProjectionPoint[];
+}
+
+interface ProjectionBandPoint {
+  date: NetworthProjectionPoint["date"];
+  min: number;
+  max: number;
+}
+
 export function renderNetworth(
   points: Networth[],
   element: Element,
-  options: { showFXImpact?: boolean } = {}
+  options: {
+    showFXImpact?: boolean;
+    projections?: NetworthProjectionSeries[];
+    milestones?: NetworthProjectionMilestone[];
+  } = {}
 ): { destroy: () => void; legends: Legend[] } {
-  const { showFXImpact = false } = options;
+  const { showFXImpact = false, projections = [], milestones = [] } = options;
+  const projectionEnd = _.max(
+    _.flatMap(projections, (p) => _.map(p.points, (point) => point.date))
+  );
   const start = _.min(_.map(points, (p) => p.date)),
-    end = now();
+    end = _.max([now(), projectionEnd || now()]);
 
   const svg = d3.select(element);
 
@@ -65,6 +86,10 @@ export function renderNetworth(
     p.gainAmount + p.investmentAmount - p.withdrawalAmount,
     p.investmentAmount - p.withdrawalAmount
   ]);
+  positions.push(
+    ..._.flatMap(projections, (series) => _.map(series.points, (point) => point.balanceAmount))
+  );
+  positions.push(..._.map(milestones, (milestone) => milestone.amount));
   positions.push(0);
 
   const x = d3.scaleTime().range([0, width]).domain([start, end]),
@@ -203,6 +228,74 @@ export function renderNetworth(
         .y((d) => y(networth(d)))
     );
 
+  if (projections.length > 1) {
+    const bandPoints: ProjectionBandPoint[] = _.map(projections[0].points, (point, index) => {
+      const balances = _.chain(projections)
+        .map((scenario) => scenario.points[index]?.balanceAmount)
+        .filter((value) => value !== undefined)
+        .value() as number[];
+      return {
+        date: point.date,
+        min: _.min(balances) || point.balanceAmount,
+        max: _.max(balances) || point.balanceAmount
+      };
+    });
+
+    layer
+      .append("path")
+      .style("fill", COLORS.primary)
+      .style("opacity", "0.08")
+      .attr(
+        "d",
+        d3
+          .area<ProjectionBandPoint>()
+          .curve(d3.curveMonotoneX)
+          .x((d) => x(d.date))
+          .y0((d) => y(d.min))
+          .y1((d) => y(d.max))(bandPoints)
+      );
+  }
+
+  for (const projection of projections) {
+    layer
+      .append("path")
+      .style("stroke", projection.color)
+      .style("stroke-width", "1.5")
+      .style("stroke-dasharray", "4,3")
+      .style("fill", "none")
+      .attr(
+        "d",
+        d3
+          .line<NetworthProjectionPoint>()
+          .curve(d3.curveMonotoneX)
+          .x((d) => x(d.date))
+          .y((d) => y(d.balanceAmount))(projection.points)
+      );
+  }
+
+  for (const milestone of milestones) {
+    const milestoneX = x(milestone.date);
+    layer
+      .append("line")
+      .attr("x1", milestoneX)
+      .attr("x2", milestoneX)
+      .attr("y1", 0)
+      .attr("y2", height)
+      .style("stroke", COLORS.neutral)
+      .style("stroke-width", "1")
+      .style("stroke-dasharray", "3,3")
+      .style("opacity", "0.3");
+
+    layer
+      .append("text")
+      .attr("x", milestoneX + 6)
+      .attr("y", 12)
+      .style("font-size", "10px")
+      .style("fill", COLORS.neutral)
+      .style("opacity", "0.75")
+      .text(milestone.label);
+  }
+
   const hoverCircle = layer.append("circle").attr("r", "3").attr("fill", "none");
   const t = tippy(hoverCircle.node(), { theme: "light", delay: 0, allowHTML: true });
 
@@ -293,6 +386,20 @@ export function renderNetworth(
       { label: "FX Impact", color: COLORS.tertiary, shape: "square" }
     );
   }
+  if (projections.length > 1) {
+    legends.push({
+      label: "Projection Band",
+      color: COLORS.primary,
+      shape: "square"
+    });
+  }
+  legends.push(
+    ...projections.map((scenario) => ({
+      label: scenario.label,
+      color: scenario.color,
+      shape: "line" as const
+    }))
+  );
 
   const destroy = () => {
     t.destroy();

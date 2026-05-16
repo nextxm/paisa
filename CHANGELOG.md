@@ -4,6 +4,12 @@
 
 #### Features
 
+- **Net worth projection and FIRE calculator** — Added forward-looking wealth planning across backend and UI.
+  - Added backend `GET /api/networth/projection` with conservative/expected/optimistic CAGR scenarios, historical savings-rate-derived monthly contribution defaults, FIRE target corpus (`annual_expenses / SWR`), years-to-FIRE estimation, and milestone markers.
+  - Added **Assets → Projection** page with interactive CAGR/monthly contribution/SWR controls and a scenario-band chart over historical net worth.
+  - Added a compact FIRE progress widget to the dashboard Assets tile and a **Project Forward** toggle on **Assets → Networth** to overlay projected lines and milestones.
+  - Added focused backend projection math tests.
+
 - **Clarify Sankey views: Money Flow vs Expense Breakdown** — Kept both Sankey pages but made their scope explicit after investigating parameter and rendering differences.
   - **Cash Flow → Money Flow** (`/cash_flow/sankey`) continues to query `/api/sankey` with a period selector and supports account-depth aggregation plus optional asset-transfer hiding for full-path flow analysis.
   - **Expenses → Expense Breakdown** (`/expense/sankey`) continues to use date-range bounds but now renders only links that terminate in expense accounts, producing a focused outflow view.

@@ -185,6 +185,13 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/networth", func(c *gin.Context) {
 		c.JSON(200, GetNetworth(db, c.Query("report_currency")))
 	})
+	router.GET("/api/networth/projection", func(c *gin.Context) {
+		req, ok := parseNetworthProjectionRequest(c)
+		if !ok {
+			return
+		}
+		c.JSON(200, GetNetworthProjection(db, req))
+	})
 
 	router.GET("/api/assets/balance", func(c *gin.Context) {
 		asOfDate, ok := parseAsOfDate(c)
