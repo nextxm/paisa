@@ -92,6 +92,20 @@ func Sync(db *gorm.DB, request SyncRequest, progressFn func(completed, total int
 	if request.Journal || request.Prices {
 		xirrWarnings := service.WarmXIRRCache(db)
 		details = append(details, xirrWarnings...)
+		if err := RefreshNetworthProjectionSnapshot(db); err != nil {
+			return gin.H{
+				"success":      false,
+				"failed_stage": "projection_snapshot",
+				"message":      err.Error(),
+			}, details
+		}
+		if err := RefreshDashboardSnapshot(db); err != nil {
+			return gin.H{
+				"success":      false,
+				"failed_stage": "dashboard_snapshot",
+				"message":      err.Error(),
+			}, details
+		}
 	}
 
 	return gin.H{

@@ -4,6 +4,23 @@
 
 #### Features
 
+- **Phase 4: Home page load-shaping and deferred secondary fetches** — Improved time-to-interactive for the home page.
+  - `onMount` now awaits only the critical `/api/dashboard` payload before rendering the first paint; the expensive `/api/income/investment` and `/api/networth/projection` calls are deferred.
+  - Deferred requests are fired concurrently (`Promise.all`) as background calls after the first paint, so the global loading spinner is not re-triggered.
+  - Investment Income TTM and FIRE metrics widgets show `—` placeholders while their deferred data loads, providing graceful loading states without layout shift.
+  - Added `performance.mark`/`performance.measure` telemetry around both load phases (`paisa-home-phase1-dashboard` and `paisa-home-phase2-secondary`) so the API waterfall is visible in browser DevTools Performance panel.
+
+- **Phase 3 projection-input snapshot** — `GET /api/networth/projection` now reads precomputed sync-time base inputs instead of rescanning history on the hot path.
+  - Added a `projection_snapshots` SQLite read-model table plus migration v11 for current net worth, derived monthly contribution, annual expenses, and savings rate.
+  - Successful journal/price syncs now refresh the projection snapshot alongside other warmed read models, while request-time query params and response schema remain unchanged.
+  - Added focused migration, snapshot persistence, and projection parity tests plus perf-harness seeding for the new snapshot.
+
+- **Phase 2 dashboard materialized snapshot** — `GET /api/dashboard` now serves a persisted sync-time snapshot instead of recomputing every section on the hot path.
+  - Added a `dashboard_snapshots` SQLite read-model table plus migration v10.
+  - Successful journal/price syncs now rebuild the dashboard JSON snapshot after cache/XIRR warming and write it atomically so failed refreshes cannot leave a half-written payload behind.
+  - `GET /api/dashboard` now reads the snapshot first and falls back to the live query path only when the snapshot is missing, invalid, or schema-mismatched.
+  - Added focused migration, snapshot transaction, and dashboard handler regression tests.
+
 - **Out-of-band journal change detection** — The app now detects when ledger files are edited externally (outside the app) and immediately reflects the dirty state in the sync icon without waiting for the user to manually trigger a sync.
   - Added a background `JournalWatcher` goroutine that polls file modification times every 10 seconds. When any watched file's mtime advances it performs a SHA256 hash comparison; on a real content change it persists `JournalDirtyKey = "true"` in metadata.
   - `GET /api/config` now reads `is_journal_dirty` from the persisted metadata entry instead of computing a full SHA256 at request time (Phase 1: remove hot-path hashing).

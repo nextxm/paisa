@@ -10,6 +10,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/account_reconciliation"
 	"github.com/ananthakumaran/paisa/internal/model/cache"
 	"github.com/ananthakumaran/paisa/internal/model/cii"
+	"github.com/ananthakumaran/paisa/internal/model/dashboard_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/import_preset"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	mutualfundModel "github.com/ananthakumaran/paisa/internal/model/mutualfund/scheme"
@@ -17,6 +18,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/portfolio"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/price"
+	"github.com/ananthakumaran/paisa/internal/model/projection_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/session"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -46,6 +48,8 @@ var steps = []step{
 	{Version: 7, Apply: v7AddAccountBalances},
 	{Version: 8, Apply: v8AddParserTrainingLog},
 	{Version: 9, Apply: v9AddPostingTransactionHash},
+	{Version: 10, Apply: v10AddDashboardSnapshots},
+	{Version: 11, Apply: v11AddProjectionSnapshots},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -211,6 +215,24 @@ func v9AddPostingTransactionHash(db *gorm.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_postings_txn_hash ON postings(transaction_id, transaction_hash)",
 	).Error; err != nil {
 		return fmt.Errorf("v9: create idx_postings_txn_hash failed: %w", err)
+	}
+	return nil
+}
+
+// v10AddDashboardSnapshots creates the dashboard_snapshots materialized-read
+// model table that stores the pre-rendered /api/dashboard response payload.
+func v10AddDashboardSnapshots(db *gorm.DB) error {
+	if err := db.AutoMigrate(&dashboard_snapshot.DashboardSnapshot{}); err != nil {
+		return fmt.Errorf("v10: AutoMigrate dashboard_snapshots failed: %w", err)
+	}
+	return nil
+}
+
+// v11AddProjectionSnapshots creates the projection_snapshots materialized-read
+// model table that stores the precomputed /api/networth/projection base inputs.
+func v11AddProjectionSnapshots(db *gorm.DB) error {
+	if err := db.AutoMigrate(&projection_snapshot.ProjectionSnapshot{}); err != nil {
+		return fmt.Errorf("v11: AutoMigrate projection_snapshots failed: %w", err)
 	}
 	return nil
 }
