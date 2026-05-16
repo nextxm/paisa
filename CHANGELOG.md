@@ -4,6 +4,13 @@
 
 #### Features
 
+- **Rename Assets → Analysis to Assets → Portfolio** — Eliminated the naming collision between the top-level Analysis section and the Assets child page.
+  - Renamed the navbar entry under Assets from **Analysis** to **Portfolio** (route `/assets/portfolio`).
+  - Moved the route from `src/routes/(app)/assets/analysis/` to `src/routes/(app)/assets/portfolio/`.
+  - Added a 301 redirect from `/assets/analysis` to `/assets/portfolio` for backward compatibility.
+  - Breadcrumb now renders as `Assets > Portfolio`; the `alpha` tag is preserved.
+
+
 - **Income section polish: Timeline label, Investment year picker, and cross-link summary** — Completed the Income navigation and historical investment-income polish.
   - Renamed **Income → Overview** to **Income → Timeline** so navbar and breadcrumb labels match the page semantics.
   - Enabled the financial-year picker on **Income → Investment** and wired the page to request `/api/income/investment?year=<FY>`.
