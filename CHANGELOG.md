@@ -4,6 +4,12 @@
 
 #### Features
 
+- **Phase 4: Home page load-shaping and deferred secondary fetches** — Improved time-to-interactive for the home page.
+  - `onMount` now awaits only the critical `/api/dashboard` payload before rendering the first paint; the expensive `/api/income/investment` and `/api/networth/projection` calls are deferred.
+  - Deferred requests are fired concurrently (`Promise.all`) as background calls after the first paint, so the global loading spinner is not re-triggered.
+  - Investment Income TTM and FIRE metrics widgets show `—` placeholders while their deferred data loads, providing graceful loading states without layout shift.
+  - Added `performance.mark`/`performance.measure` telemetry around both load phases (`paisa-home-phase1-dashboard` and `paisa-home-phase2-secondary`) so the API waterfall is visible in browser DevTools Performance panel.
+
 - **Phase 3 projection-input snapshot** — `GET /api/networth/projection` now reads precomputed sync-time base inputs instead of rescanning history on the hot path.
   - Added a `projection_snapshots` SQLite read-model table plus migration v11 for current net worth, derived monthly contribution, annual expenses, and savings rate.
   - Successful journal/price syncs now refresh the projection snapshot alongside other warmed read models, while request-time query params and response schema remain unchanged.
