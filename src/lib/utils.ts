@@ -158,6 +158,10 @@ export interface Gain {
   networth: Networth;
   xirr: number;
   postings: Posting[];
+  income_received: number;
+  price_appreciation: number;
+  total_return: number;
+  ttm_yield: number;
 }
 
 export interface AccountGain {
@@ -165,6 +169,10 @@ export interface AccountGain {
   networthTimeline: Networth[];
   xirr: number;
   postings: Posting[];
+  income_received: number;
+  price_appreciation: number;
+  total_return: number;
+  ttm_yield: number;
 }
 
 export interface InterestOverview {
@@ -289,6 +297,25 @@ export interface IncomeYearlyCard {
   net_tax: number;
   gross_income: number;
   net_income: number;
+}
+
+export interface InvestmentIncomeHolding {
+  type: string;
+  holding: string;
+  postings: Posting[];
+  total_income: number;
+  ttm_income: number;
+  ttm_yield: number;
+  current_balance: number;
+  yearly_income: Record<string, number>;
+}
+
+export interface InvestmentIncomeTimelinePoint {
+  date: dayjs.Dayjs;
+  dividend: number;
+  interest: number;
+  distribution: number;
+  total: number;
 }
 
 export interface YoYSeries {
@@ -771,6 +798,12 @@ export function ajax(route: "/api/income"): Promise<{
   tax_timeline: Tax[];
   yearly_cards: IncomeYearlyCard[];
   multi_year: Record<string, YoYSeries>;
+}>;
+export function ajax(route: "/api/income/investment"): Promise<{
+  income_by_type: Record<string, InvestmentIncomeHolding[]>;
+  holdings: InvestmentIncomeHolding[];
+  timeline: InvestmentIncomeTimelinePoint[];
+  ttm_total: number;
 }>;
 export function ajax(route: "/api/expense"): Promise<{
   expenses: Posting[];

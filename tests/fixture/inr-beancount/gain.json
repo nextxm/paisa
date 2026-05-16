@@ -38,7 +38,11 @@
           "market_amount": 0,
           "balance": 0
         }
-      ]
+      ],
+      "income_received": 0.0,
+      "price_appreciation": 0.0,
+      "total_return": 0.0,
+      "ttm_yield": 0.0
     },
     {
       "account": "Assets:Dollar",
@@ -78,7 +82,11 @@
           "market_amount": 804.42048,
           "balance": 0
         }
-      ]
+      ],
+      "income_received": 0.0,
+      "price_appreciation": 0.0,
+      "total_return": 0.0,
+      "ttm_yield": 0.0
     },
     {
       "account": "Assets:Equity:AAPL",
@@ -162,7 +170,11 @@
           "market_amount": -10000,
           "balance": 0
         }
-      ]
+      ],
+      "income_received": 0.0,
+      "price_appreciation": 27.0,
+      "total_return": 27.0,
+      "ttm_yield": 0.0
     },
     {
       "account": "Assets:Equity:ABNB",
@@ -202,7 +214,11 @@
           "market_amount": 7963.762752,
           "balance": 0
         }
-      ]
+      ],
+      "income_received": 0.0,
+      "price_appreciation": 0.0,
+      "total_return": 0.0,
+      "ttm_yield": 0.0
     },
     {
       "account": "Assets:Equity:NIFTY",
@@ -242,7 +258,11 @@
           "market_amount": 80218.4,
           "balance": 0
         }
-      ]
+      ],
+      "income_received": 0.0,
+      "price_appreciation": 218.4,
+      "total_return": 218.4,
+      "ttm_yield": 0.0
     }
   ]
 }

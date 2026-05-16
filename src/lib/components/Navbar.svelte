@@ -123,7 +123,14 @@
         { label: "Interest", href: "/interest" }
       ]
     },
-    { label: "Income", href: "/income" },
+    {
+      label: "Income",
+      href: "/income",
+      children: [
+        { label: "Overview", href: "" },
+        { label: "Investment", href: "/investment" }
+      ]
+    },
     {
       label: "Analysis",
       href: "/analysis",

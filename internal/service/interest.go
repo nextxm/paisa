@@ -59,6 +59,24 @@ func IsCapitalGains(p posting.Posting) bool {
 	return false
 }
 
+func InvestmentIncomeType(account string) (string, bool) {
+	switch {
+	case strings.HasPrefix(account, "Income:Dividend"):
+		return "Dividend", true
+	case strings.HasPrefix(account, "Income:Interest"):
+		return "Interest", true
+	case strings.HasPrefix(account, "Income:Distribution"), strings.HasPrefix(account, "Income:Distributions"):
+		return "Distribution", true
+	default:
+		return "", false
+	}
+}
+
+func IsInvestmentIncome(p posting.Posting) bool {
+	_, ok := InvestmentIncomeType(p.Account)
+	return ok
+}
+
 func IsRefund(p posting.Posting) bool {
 	if utils.IsParent(p.Account, "Income:Refund") {
 		return true

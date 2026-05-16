@@ -48,6 +48,7 @@
   let currentBudget = $derived(budgetsByMonth[month]);
   let isEmpty = $state(false);
   let checkingBalances: Record<string, AssetBreakdown> = $state({});
+  let investmentIncomeTTM = $state(0);
 
   $effect(() => {
     if (renderer) {
@@ -73,6 +74,7 @@
       checkingBalances: { asset_breakdowns: checkingBalances },
       transactions
     } = dashboardResult);
+    ({ ttm_total: investmentIncomeTTM } = await ajax("/api/income/investment"));
 
     goalSummaries = _.sortBy(goalSummaries, (g) => -g.priority);
 
@@ -215,6 +217,28 @@
             </article>
           </div>
         {/if}
+
+        <div class="tile is-parent">
+          <article class="tile is-child">
+            <div class="content">
+              <p class="subtitle">
+                <a class="secondary-link has-text-grey" href="/income/investment"
+                  >Investment Income</a
+                >
+              </p>
+              <div class="content">
+                <nav class="level grid-1">
+                  <LevelItem
+                    narrow
+                    title="TTM Dividend + Interest"
+                    color={COLORS.gainText}
+                    value={formatCurrency(investmentIncomeTTM)}
+                  />
+                </nav>
+              </div>
+            </div>
+          </article>
+        </div>
 
         <div class="tile is-parent">
           <article class="tile is-child min-w-0">
