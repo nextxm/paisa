@@ -109,6 +109,9 @@ func setupBenchmarkDB(years int) (*gorm.DB, func(), error) {
 	if err := server.RefreshDashboardSnapshot(db); err != nil {
 		return nil, nil, err
 	}
+	if err := server.RefreshNetworthProjectionSnapshot(db); err != nil {
+		return nil, nil, err
+	}
 
 	cleanup := func() {
 		_ = os.RemoveAll(tempDir)

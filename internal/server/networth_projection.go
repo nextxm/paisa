@@ -119,29 +119,25 @@ func parseNetworthProjectionRequest(c *gin.Context) (NetworthProjectionRequest, 
 }
 
 func GetNetworthProjection(db *gorm.DB, req NetworthProjectionRequest) gin.H {
-	postings := query.Init(db).Like("Assets:%", "Income:CapitalGains:%", "Liabilities:%").UntilToday().All()
-	postings = service.PopulateMarketPrice(db, postings)
-	currentNetworth := computeNetworth(db, postings).BalanceAmount
-
-	derived := deriveProjectionInputs(db)
+	inputs := getProjectionBaseInputs(db)
 	monthlyContribution := req.MonthlyContribution
 	if monthlyContribution.IsZero() {
-		monthlyContribution = derived.MonthlyContribution
+		monthlyContribution = inputs.MonthlyContribution
 	}
 
 	months := req.Years * 12
 	now := utils.ToDate(utils.Now())
-	conservative := projectNetworth(now, currentNetworth, monthlyContribution, req.ConservativeCAGR, months)
-	expected := projectNetworth(now, currentNetworth, monthlyContribution, req.ExpectedCAGR, months)
-	optimistic := projectNetworth(now, currentNetworth, monthlyContribution, req.OptimisticCAGR, months)
+	conservative := projectNetworth(now, inputs.CurrentNetworth, monthlyContribution, req.ConservativeCAGR, months)
+	expected := projectNetworth(now, inputs.CurrentNetworth, monthlyContribution, req.ExpectedCAGR, months)
+	optimistic := projectNetworth(now, inputs.CurrentNetworth, monthlyContribution, req.OptimisticCAGR, months)
 
 	targetCorpus := decimal.Zero
 	fireProgress := decimal.Zero
 	var yearsToFIRE *decimal.Decimal
 	if req.SWR.GreaterThan(decimal.Zero) {
-		targetCorpus = derived.AnnualExpenses.Div(req.SWR.Div(decimal.NewFromInt(100)))
+		targetCorpus = inputs.AnnualExpenses.Div(req.SWR.Div(decimal.NewFromInt(100)))
 		if targetCorpus.GreaterThan(decimal.Zero) {
-			fireProgress = currentNetworth.Div(targetCorpus).Mul(decimal.NewFromInt(100))
+			fireProgress = inputs.CurrentNetworth.Div(targetCorpus).Mul(decimal.NewFromInt(100))
 			if fireProgress.GreaterThan(decimal.NewFromInt(100)) {
 				fireProgress = decimal.NewFromInt(100)
 			}
@@ -154,11 +150,11 @@ func GetNetworthProjection(db *gorm.DB, req NetworthProjectionRequest) gin.H {
 	}
 
 	return gin.H{
-		"current_networth":      currentNetworth,
-		"savings_rate":          derived.SavingsRate.Round(2),
+		"current_networth":      inputs.CurrentNetworth,
+		"savings_rate":          inputs.SavingsRate.Round(2),
 		"monthly_contribution":  monthlyContribution.Round(2),
-		"derived_contribution":  derived.MonthlyContribution.Round(2),
-		"annual_expenses":       derived.AnnualExpenses.Round(2),
+		"derived_contribution":  inputs.MonthlyContribution.Round(2),
+		"annual_expenses":       inputs.AnnualExpenses.Round(2),
 		"swr":                   req.SWR.Round(2),
 		"target_corpus":         targetCorpus.Round(2),
 		"years_to_fire":         yearsToFIRE,
