@@ -4,6 +4,10 @@
 
 #### Features
 
+- **Stabilize `/api/editor/files` metadata ordering across environments** — Fixed flaky regression snapshots for ledger file metadata.
+  - `accounts`, `payees`, and `commodities` are now derived from postings ordered by `(date, transaction_begin_line, id)` and deduplicated in first-seen order, removing dependence on SQL `DISTINCT` row-order behavior.
+  - Added focused `internal/server/editor_test.go` coverage for first-seen metadata order and file-name sorting.
+
 - **Phase 5: Query plan tuning and posting index optimization for long-history journals** — Added migration-backed posting indexes and query-plan validation for dashboard/projection hot filters.
   - Added migration v12 to create `idx_postings_forecast_date` and `idx_postings_forecast_account_date`, applied safely with `CREATE INDEX IF NOT EXISTS` for existing databases.
   - Added migration tests that verify index creation and assert `EXPLAIN QUERY PLAN` uses the new indexes for representative projection/dashboard-style predicates.

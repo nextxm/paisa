@@ -7,11 +7,37 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestCollectEditorMetadata_PreservesFirstSeenOrder(t *testing.T) {
+	postings := []posting.Posting{
+		{Date: time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC), TransactionBeginLine: 1, Account: "Income:Salary:Acme", Payee: "Salary", Commodity: "EUR"},
+		{Date: time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC), TransactionBeginLine: 1, Account: "Assets:Checking", Payee: "Salary", Commodity: "EUR"},
+		{Date: time.Date(2022, 1, 5, 0, 0, 0, 0, time.UTC), TransactionBeginLine: 2, Account: "Assets:Equity:AAPL", Payee: "Buy stock", Commodity: "AAPL"},
+		{Date: time.Date(2022, 1, 5, 0, 0, 0, 0, time.UTC), TransactionBeginLine: 2, Account: "Assets:Checking", Payee: "Buy stock", Commodity: "EUR"},
+	}
+
+	accounts, payees, commodities := collectEditorMetadata(postings)
+
+	assert.Equal(t, []string{"Income:Salary:Acme", "Assets:Checking", "Assets:Equity:AAPL"}, accounts)
+	assert.Equal(t, []string{"Salary", "Buy stock"}, payees)
+	assert.Equal(t, []string{"EUR", "AAPL"}, commodities)
+}
+
+func TestSortEditorFileResponse_SortsFiles(t *testing.T) {
+	files := []*LedgerFile{{Name: "z.ledger"}, {Name: "a.ledger"}}
+
+	sortEditorFileResponse(nil, nil, nil, files)
+
+	assert.Equal(t, "a.ledger", files[0].Name)
+	assert.Equal(t, "z.ledger", files[1].Name)
+}
 
 // TestReadLedgerFile_MissingFile verifies that readLedgerFile returns an error
 // (instead of calling log.Fatal) when the requested path does not exist.
