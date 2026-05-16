@@ -19,6 +19,14 @@ const links: Link[] = [
         children: [{ label: "Upcoming", href: "/upcoming" }]
       }
     ]
+  },
+  {
+    label: "Income",
+    href: "/income",
+    children: [
+      { label: "Timeline", href: "" },
+      { label: "Investment", href: "/investment" }
+    ]
   }
 ];
 
@@ -52,6 +60,22 @@ describe("navbar selection", () => {
 
     expect(selection.selectedLink).toBeNull();
     expect(selection.selectedSubLink).toBeNull();
+    expect(selection.selectedSubSubLink).toBeNull();
+  });
+
+  test("selects income timeline child for /income route", () => {
+    const selection = resolveNavbarSelectionTyped(links, "/income");
+
+    expect(selection.selectedLink?.label).toBe("Income");
+    expect(selection.selectedSubLink?.label).toBe("Timeline");
+    expect(selection.selectedSubSubLink).toBeNull();
+  });
+
+  test("selects income investment child for /income/investment route", () => {
+    const selection = resolveNavbarSelectionTyped(links, "/income/investment");
+
+    expect(selection.selectedLink?.label).toBe("Income");
+    expect(selection.selectedSubLink?.label).toBe("Investment");
     expect(selection.selectedSubSubLink).toBeNull();
   });
 });

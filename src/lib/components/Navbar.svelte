@@ -127,8 +127,8 @@
       label: "Income",
       href: "/income",
       children: [
-        { label: "Overview", href: "" },
-        { label: "Investment", href: "/investment" }
+        { label: "Timeline", href: "" },
+        { label: "Investment", href: "/investment", financialYearPicker: true }
       ]
     },
     {
