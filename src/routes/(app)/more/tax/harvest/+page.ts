@@ -1,6 +1,6 @@
 import { redirect } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 
-export const load = (({ params }) => {
-  throw redirect(301, `/planning/goals/savings/${params.slug}`);
+export const load = (() => {
+  throw redirect(301, "/planning/tax/harvest");
 }) satisfies PageLoad;

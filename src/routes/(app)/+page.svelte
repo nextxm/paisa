@@ -285,7 +285,7 @@
               <article class="tile is-child">
                 <div class="content">
                   <p class="subtitle">
-                    <a class="secondary-link has-text-grey" href="/more/goals">Goals</a>
+                    <a class="secondary-link has-text-grey" href="/planning/goals">Goals</a>
                   </p>
                   <div class="content">
                     {#each goalSummaries as goal}

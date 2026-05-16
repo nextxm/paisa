@@ -39,6 +39,18 @@ const links: Link[] = [
       { label: "Timeline", href: "" },
       { label: "Investment", href: "/investment" }
     ]
+  },
+  {
+    label: "Planning",
+    href: "/planning",
+    children: [
+      { label: "Goals", href: "/goals" },
+      {
+        label: "Tax",
+        href: "/tax",
+        children: [{ label: "Harvest", href: "/harvest" }]
+      }
+    ]
   }
 ];
 
@@ -105,5 +117,21 @@ describe("navbar selection", () => {
     expect(selection.selectedLink?.label).toBe("Expenses");
     expect(selection.selectedSubLink?.label).toBe("MoM");
     expect(selection.selectedSubSubLink).toBeNull();
+  });
+
+  test("selects planning goals for /planning/goals route", () => {
+    const selection = resolveNavbarSelectionTyped(links, "/planning/goals");
+
+    expect(selection.selectedLink?.label).toBe("Planning");
+    expect(selection.selectedSubLink?.label).toBe("Goals");
+    expect(selection.selectedSubSubLink).toBeNull();
+  });
+
+  test("selects planning tax harvest hierarchy for /planning/tax/harvest route", () => {
+    const selection = resolveNavbarSelectionTyped(links, "/planning/tax/harvest");
+
+    expect(selection.selectedLink?.label).toBe("Planning");
+    expect(selection.selectedSubLink?.label).toBe("Tax");
+    expect(selection.selectedSubSubLink?.label).toBe("Harvest");
   });
 });

@@ -4,6 +4,13 @@
 
 #### Features
 
+- **Create top-level Planning navigation for Goals and Tax** — Promoted planning workflows out of the More section for better discoverability.
+  - Moved routes from `/more/goals` to `/planning/goals` and from `/more/tax/*` to `/planning/tax/*`.
+  - Added a new top-level **Planning** navbar section (between Income and Ledger) with **Goals**, plus INR-gated **Tax** submenu entries.
+  - Removed Goals/Tax links from **More** and updated internal links (dashboard and command palette) to point to `/planning/*`.
+  - Added legacy redirects from `/more/goals` and `/more/tax/*` to the new planning routes.
+  - Added focused navbar-selection tests for `Planning > Goals` and `Planning > Tax > Harvest`.
+
 - **Move YoY and MoM analysis under Expenses navigation** — Removed the top-level Analysis section and relocated both pages under Expenses.
   - Moved routes from `/analysis/yoy` and `/analysis/mom` to `/expense/yoy` and `/expense/mom`.
   - Added legacy redirects from old analysis URLs to the new expense URLs.

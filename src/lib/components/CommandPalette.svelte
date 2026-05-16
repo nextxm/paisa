@@ -256,10 +256,10 @@
     {
       id: "goals",
       label: "Goals",
-      description: "More",
+      description: "Planning",
       icon: "fa-bullseye",
       category: "Pages",
-      action: () => navigate("/more/goals")
+      action: () => navigate("/planning/goals")
     },
     {
       id: "doctor",
@@ -308,26 +308,26 @@
           {
             id: "tax_harvest",
             label: "Tax Harvest",
-            description: "Tax",
+            description: "Planning",
             icon: "fa-seedling",
             category: "Pages",
-            action: () => navigate("/more/tax/harvest")
+            action: () => navigate("/planning/tax/harvest")
           },
           {
             id: "capital_gains",
             label: "Capital Gains",
-            description: "Tax",
+            description: "Planning",
             icon: "fa-coins",
             category: "Pages",
-            action: () => navigate("/more/tax/capital_gains")
+            action: () => navigate("/planning/tax/capital_gains")
           },
           {
             id: "schedule_al",
             label: "Schedule AL",
-            description: "Tax",
+            description: "Planning",
             icon: "fa-file-lines",
             category: "Pages",
-            action: () => navigate("/more/tax/schedule_al")
+            action: () => navigate("/planning/tax/schedule_al")
           }
         ]
       : []),
