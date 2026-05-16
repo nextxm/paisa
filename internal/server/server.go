@@ -88,12 +88,13 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.POST("/api/auth/logout", Logout(db))
 
 	router.GET("/api/config", func(c *gin.Context) {
+		requestDB, telemetry := beginRequestTelemetry(db)
 		var now *time.Time
 		if utils.IsNowDefined() {
 			n := utils.Now()
 			now = &n
 		}
-		lastPriceUpdate, _ := metadata.GetOrDefault(db, model.LastPriceSyncKey, "")
+		lastPriceUpdate, _ := metadata.GetOrDefault(requestDB, model.LastPriceSyncKey, "")
 
 		// Check if journal is dirty
 		journalPath := config.GetJournalPath()
@@ -102,12 +103,13 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 			files = []string{journalPath}
 		}
 		currentHash, _ := utils.SHA256Files(files)
-		lastHash, _ := metadata.GetOrDefault(db, model.JournalHashKey, "")
+		lastHash, _ := metadata.GetOrDefault(requestDB, model.JournalHashKey, "")
 		isJournalDirty := currentHash != lastHash
 
+		telemetry.writeHeaders(c)
 		c.JSON(200, gin.H{
 			"config":            config.GetConfig(),
-			"accounts":          accounting.AllAccounts(db),
+			"accounts":          accounting.AllAccounts(requestDB),
 			"now":               now,
 			"schema":            config.GetSchema(),
 			"last_price_update": lastPriceUpdate,
@@ -179,7 +181,10 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.GET("/api/dashboard", func(c *gin.Context) {
-		c.JSON(200, GetDashboard(db))
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetDashboard(requestDB)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
 	})
 
 	router.GET("/api/networth", func(c *gin.Context) {
@@ -190,7 +195,10 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		if !ok {
 			return
 		}
-		c.JSON(200, GetNetworthProjection(db, req))
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetNetworthProjection(requestDB, req)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
 	})
 
 	router.GET("/api/assets/balance", func(c *gin.Context) {
