@@ -4,6 +4,13 @@
 
 #### Features
 
+- **Out-of-band journal change detection** — The app now detects when ledger files are edited externally (outside the app) and immediately reflects the dirty state in the sync icon without waiting for the user to manually trigger a sync.
+  - Added a background `JournalWatcher` goroutine that polls file modification times every 10 seconds. When any watched file's mtime advances it performs a SHA256 hash comparison; on a real content change it persists `JournalDirtyKey = "true"` in metadata.
+  - `GET /api/config` now reads `is_journal_dirty` from the persisted metadata entry instead of computing a full SHA256 at request time (Phase 1: remove hot-path hashing).
+  - Added `GET /api/journal/status` — a lightweight endpoint (`{"is_dirty": bool}`) backed by a single DB metadata read. Used by the frontend's background poll.
+  - The frontend polls `/api/journal/status` every 30 seconds and also on `visibilitychange` (when the user returns to the tab). On a dirty-state change it updates the sync icon colour without triggering a full page reload.
+  - After a successful journal sync the watcher resets its file list (via ledger CLI) and clears the dirty flag. After a failed journal sync the dirty flag is set so the warning remains visible.
+
 - **Phase 0 performance baseline telemetry for config/dashboard/projection** — Added request-scope performance instrumentation and a reproducible benchmark harness for key slow paths.
   - `GET /api/config`, `GET /api/dashboard`, and `GET /api/networth/projection` now emit per-request telemetry headers: `X-Paisa-Perf-Latency-Ms`, `X-Paisa-Perf-SQL-Count`, and `X-Paisa-Perf-SQL-Time-Ms`.
   - Added `cmd/perfbaseline` to seed a synthetic long-history dataset and report p50/p95 latency plus SQL query/time totals for each endpoint.

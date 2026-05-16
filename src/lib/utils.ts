@@ -1028,6 +1028,7 @@ export function ajax(
 ): Promise<{ success: boolean; error?: string }>;
 
 export function ajax(route: "/api/ping"): Promise<{ success: boolean; error?: string }>;
+export function ajax(route: "/api/journal/status"): Promise<{ is_dirty: boolean }>;
 
 // Generic overload for dynamically constructed routes (e.g. with query params).
 export function ajax(route: string, options?: RequestOptions): Promise<any>;
