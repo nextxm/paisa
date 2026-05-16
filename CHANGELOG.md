@@ -4,6 +4,11 @@
 
 #### Features
 
+- **Phase 0 performance baseline telemetry for config/dashboard/projection** — Added request-scope performance instrumentation and a reproducible benchmark harness for key slow paths.
+  - `GET /api/config`, `GET /api/dashboard`, and `GET /api/networth/projection` now emit per-request telemetry headers: `X-Paisa-Perf-Latency-Ms`, `X-Paisa-Perf-SQL-Count`, and `X-Paisa-Perf-SQL-Time-Ms`.
+  - Added `cmd/perfbaseline` to seed a synthetic long-history dataset and report p50/p95 latency plus SQL query/time totals for each endpoint.
+  - Added `docs/reference/performance-baseline-phase0.md` with baseline numbers, run steps, and a reusable before/after comparison checklist.
+
 - **Net worth projection and FIRE calculator** — Added forward-looking wealth planning across backend and UI.
   - Added backend `GET /api/networth/projection` with conservative/expected/optimistic CAGR scenarios, historical savings-rate-derived monthly contribution defaults, FIRE target corpus (`annual_expenses / SWR`), years-to-FIRE estimation, and milestone markers.
   - Added **Assets → Projection** page with interactive CAGR/monthly contribution/SWR controls and a scenario-band chart over historical net worth.
