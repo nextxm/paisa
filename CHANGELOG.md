@@ -4,6 +4,11 @@
 
 #### Features
 
+- **Phase 5: Query plan tuning and posting index optimization for long-history journals** — Added migration-backed posting indexes and query-plan validation for dashboard/projection hot filters.
+  - Added migration v12 to create `idx_postings_forecast_date` and `idx_postings_forecast_account_date`, applied safely with `CREATE INDEX IF NOT EXISTS` for existing databases.
+  - Added migration tests that verify index creation and assert `EXPLAIN QUERY PLAN` uses the new indexes for representative projection/dashboard-style predicates.
+  - Documented the migration/rollback strategy and phase-5 validation workflow in `docs/reference/performance-phase5-query-plan.md`.
+
 - **Phase 4: Home page load-shaping and deferred secondary fetches** — Improved time-to-interactive for the home page.
   - `onMount` now awaits only the critical `/api/dashboard` payload before rendering the first paint; the expensive `/api/income/investment` and `/api/networth/projection` calls are deferred.
   - Deferred requests are fired concurrently (`Promise.all`) as background calls after the first paint, so the global loading spinner is not re-triggered.

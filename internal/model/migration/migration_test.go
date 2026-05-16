@@ -34,7 +34,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 11, version)
+	assert.Equal(t, 12, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -44,7 +44,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 11, version)
+	assert.Equal(t, 12, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -66,7 +66,7 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	assert.Equal(t, 11, migration.CurrentVersion(db))
+	assert.Equal(t, 12, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -102,9 +102,9 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&migration.SchemaVersion{}))
 	require.NoError(t, db.Create(&migration.SchemaVersion{Version: 1, AppliedAt: time.Now()}).Error)
 
-	// Run migrations – v2 through v11 should execute.
+	// Run migrations – v2 through v12 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 11, migration.CurrentVersion(db))
+	assert.Equal(t, 12, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -327,6 +327,72 @@ func TestV11Migration_ProjectionSnapshotsTableExists(t *testing.T) {
 	assert.True(t, snapshot.MonthlyContribution.Equal(decimal.NewFromInt(5000)))
 	assert.True(t, snapshot.SavingsRate.Equal(decimal.RequireFromString("22.5")))
 	assert.True(t, snapshot.AnnualExpenses.Equal(decimal.NewFromInt(240000)))
+}
+
+func TestV12Migration_PostingReadIndexesExist(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	var count int64
+	require.NoError(t, db.Raw(
+		"SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_postings_forecast_date'",
+	).Scan(&count).Error)
+	assert.Equal(t, int64(1), count, "idx_postings_forecast_date index must exist after v12 migration")
+
+	require.NoError(t, db.Raw(
+		"SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_postings_forecast_account_date'",
+	).Scan(&count).Error)
+	assert.Equal(t, int64(1), count, "idx_postings_forecast_account_date index must exist after v12 migration")
+}
+
+func TestV12Migration_ExplainUsesPostingReadIndexes(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	require.NoError(t, db.Exec(
+		`INSERT INTO postings (transaction_id, date, account, commodity, quantity, amount, forecast)
+		 VALUES
+		 (?, ?, ?, ?, ?, ?, ?),
+		 (?, ?, ?, ?, ?, ?, ?),
+		 (?, ?, ?, ?, ?, ?, ?)`,
+		"txn-1", "2024-01-01 00:00:00", "Income:Salary", "INR", "100", "100", false,
+		"txn-2", "2024-02-01 00:00:00", "Expenses:Rent", "INR", "-10", "-10", false,
+		"txn-3", "2024-03-01 00:00:00", "Assets:Checking", "INR", "10", "10", false,
+	).Error)
+
+	var planRows []struct {
+		Detail string `gorm:"column:detail"`
+	}
+	require.NoError(t, db.Raw(
+		`EXPLAIN QUERY PLAN
+		 SELECT * FROM postings
+		 WHERE forecast = 0 AND account LIKE ?
+		 ORDER BY account ASC, date ASC`,
+		"Income:%",
+	).Scan(&planRows).Error)
+	require.NotEmpty(t, planRows)
+
+	var details string
+	for _, row := range planRows {
+		details += row.Detail + "\n"
+	}
+	assert.Contains(t, details, "idx_postings_forecast_account_date")
+
+	planRows = nil
+	require.NoError(t, db.Raw(
+		`EXPLAIN QUERY PLAN
+		 SELECT * FROM postings
+		 WHERE forecast = 0 AND date < ?
+		 ORDER BY date ASC, amount DESC, account ASC`,
+		"2025-01-01 00:00:00",
+	).Scan(&planRows).Error)
+	require.NotEmpty(t, planRows)
+
+	details = ""
+	for _, row := range planRows {
+		details += row.Detail + "\n"
+	}
+	assert.Contains(t, details, "idx_postings_forecast_date")
 }
 
 // parser_training_log table exists and accepts writes.
