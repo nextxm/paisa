@@ -12,6 +12,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/import_preset"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
+	"github.com/ananthakumaran/paisa/internal/model/projection_snapshot"
 	"github.com/glebarez/sqlite"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 10, version)
+	assert.Equal(t, 11, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -43,7 +44,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 10, version)
+	assert.Equal(t, 11, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -61,12 +62,11 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	db := openMemoryDB(t)
 
 	// Simulate an existing install that has tables but no schema_versions table.
-	// RunMigrations should create the table and record v10 without error.
+	// RunMigrations should create the table and record the latest version without error.
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	// Schema version should be 10 after migration.
-	assert.Equal(t, 10, migration.CurrentVersion(db))
+	assert.Equal(t, 11, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -102,9 +102,9 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&migration.SchemaVersion{}))
 	require.NoError(t, db.Create(&migration.SchemaVersion{Version: 1, AppliedAt: time.Now()}).Error)
 
-	// Run migrations – v2 through v10 should execute.
+	// Run migrations – v2 through v11 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 10, migration.CurrentVersion(db))
+	assert.Equal(t, 11, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -304,6 +304,29 @@ func TestV10Migration_DashboardSnapshotsTableExists(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, dashboard_snapshot.SnapshotName, snapshot.Name)
 	assert.Equal(t, []byte(`{"ok":true}`), snapshot.Payload)
+}
+
+func TestV11Migration_ProjectionSnapshotsTableExists(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	require.NoError(t, db.Create(&projection_snapshot.ProjectionSnapshot{
+		Name:                projection_snapshot.SnapshotName,
+		SchemaVersion:       projection_snapshot.SchemaVersion,
+		CurrentNetworth:     decimal.NewFromInt(100000),
+		MonthlyContribution: decimal.NewFromInt(5000),
+		SavingsRate:         decimal.RequireFromString("22.5"),
+		AnnualExpenses:      decimal.NewFromInt(240000),
+		UpdatedAt:           time.Now(),
+	}).Error)
+
+	snapshot, err := projection_snapshot.Get(db)
+	require.NoError(t, err)
+	assert.Equal(t, projection_snapshot.SnapshotName, snapshot.Name)
+	assert.True(t, snapshot.CurrentNetworth.Equal(decimal.NewFromInt(100000)))
+	assert.True(t, snapshot.MonthlyContribution.Equal(decimal.NewFromInt(5000)))
+	assert.True(t, snapshot.SavingsRate.Equal(decimal.RequireFromString("22.5")))
+	assert.True(t, snapshot.AnnualExpenses.Equal(decimal.NewFromInt(240000)))
 }
 
 // parser_training_log table exists and accepts writes.

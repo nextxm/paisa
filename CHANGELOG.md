@@ -4,6 +4,11 @@
 
 #### Features
 
+- **Phase 3 projection-input snapshot** — `GET /api/networth/projection` now reads precomputed sync-time base inputs instead of rescanning history on the hot path.
+  - Added a `projection_snapshots` SQLite read-model table plus migration v11 for current net worth, derived monthly contribution, annual expenses, and savings rate.
+  - Successful journal/price syncs now refresh the projection snapshot alongside other warmed read models, while request-time query params and response schema remain unchanged.
+  - Added focused migration, snapshot persistence, and projection parity tests plus perf-harness seeding for the new snapshot.
+
 - **Phase 2 dashboard materialized snapshot** — `GET /api/dashboard` now serves a persisted sync-time snapshot instead of recomputing every section on the hot path.
   - Added a `dashboard_snapshots` SQLite read-model table plus migration v10.
   - Successful journal/price syncs now rebuild the dashboard JSON snapshot after cache/XIRR warming and write it atomically so failed refreshes cannot leave a half-written payload behind.
