@@ -31,6 +31,8 @@ func TestReplaceAndGet(t *testing.T) {
 			decimal.NewFromInt(25000),
 			decimal.RequireFromString("37.5"),
 			decimal.NewFromInt(720000),
+			"dummy-journal-hash",
+			"dummy-price-sync",
 		)
 	}))
 
@@ -54,6 +56,8 @@ func TestReplace_RollbackPreservesPreviousSnapshot(t *testing.T) {
 			decimal.NewFromInt(10),
 			decimal.NewFromInt(20),
 			decimal.NewFromInt(30),
+			"dummy-journal-hash-1",
+			"dummy-price-sync-1",
 		)
 	}))
 
@@ -65,6 +69,8 @@ func TestReplace_RollbackPreservesPreviousSnapshot(t *testing.T) {
 			decimal.NewFromInt(20),
 			decimal.NewFromInt(40),
 			decimal.NewFromInt(60),
+			"dummy-journal-hash-2",
+			"dummy-price-sync-2",
 		); err != nil {
 			return err
 		}

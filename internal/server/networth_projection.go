@@ -19,9 +19,9 @@ import (
 
 const (
 	defaultProjectionYears            = 15
-	defaultProjectionConservativeCAGR = 8.0
-	defaultProjectionExpectedCAGR     = 12.0
-	defaultProjectionOptimisticCAGR   = 16.0
+	defaultProjectionConservativeCAGR = 6.0
+	defaultProjectionExpectedCAGR     = 9.0
+	defaultProjectionOptimisticCAGR   = 12.0
 	defaultProjectionSWR              = 4.0
 	oneCrore                          = 10000000
 )

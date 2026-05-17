@@ -15,24 +15,24 @@
   import dayjs from "dayjs";
   import { debounce } from "lodash";
 
-  let svg: Element = $state();
+  let svg: Element | undefined = $state();
   let destroy: () => void;
   let legends: Legend[] = $state([]);
   let points: Networth[] = $state([]);
   let baseData: NetworthProjectionResponse | null = $state(null);
 
   let years = $state(15);
-  let conservativeCagr = $state(8);
-  let expectedCagr = $state(12);
-  let optimisticCagr = $state(16);
+  let conservativeCagr = $state(6);
+  let expectedCagr = $state(9);
+  let optimisticCagr = $state(12);
   let monthlyContribution = $state(0);
   let swr = $state(4);
   let controlsInitialized = $state(false);
 
   let calcYears = $state(15);
-  let calcConservativeCagr = $state(8);
-  let calcExpectedCagr = $state(12);
-  let calcOptimisticCagr = $state(16);
+  let calcConservativeCagr = $state(6);
+  let calcExpectedCagr = $state(9);
+  let calcOptimisticCagr = $state(12);
   let calcMonthlyContribution = $state(0);
   let calcSwr = $state(4);
 
@@ -228,11 +228,23 @@
   });
 
   onMount(async () => {
-    const networthResult = await ajax("/api/networth");
-    points = networthResult.networthTimeline;
-
     baseData = (await ajax("/api/networth/projection")) as NetworthProjectionResponse;
     if (baseData) {
+      points = [
+        {
+          date: dayjs(),
+          investmentAmount: baseData.current_networth,
+          withdrawalAmount: 0,
+          gainAmount: 0,
+          contribution: baseData.current_networth,
+          investment_return: 0,
+          fx_impact: 0,
+          balanceAmount: baseData.current_networth,
+          balanceUnits: 0,
+          netInvestmentAmount: baseData.current_networth
+        }
+      ];
+
       years = Math.round(baseData.projection.expected.length / 12) || 15;
       conservativeCagr = baseData.conservative_cagr;
       expectedCagr = baseData.expected_cagr;

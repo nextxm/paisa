@@ -17,12 +17,12 @@
 
   let { children }: { children: Snippet } = $props();
 
-  let lastConfig: typeof globalThis.USER_CONFIG = $state(null);
-  let config: typeof globalThis.USER_CONFIG = $state(null);
-  let schema: JSONSchema7 = $state(null);
+  let lastConfig: typeof globalThis.USER_CONFIG | null = $state(null);
+  let config: typeof globalThis.USER_CONFIG | null = $state(null);
+  let schema: JSONSchema7 | null = $state(null);
   let isLoading = $state(false);
   let isTogglingProviderDebug = $state(false);
-  let error: string = $state(null);
+  let error: string | null | undefined = $state(null);
   let accounts: string[] = $state([]);
   let isSidebarCollapsed = $state(get(configSidebarCollapsed));
 
@@ -57,7 +57,7 @@
     get error() {
       return error;
     },
-    set error(v: string | null) {
+    set error(v: string | null | undefined) {
       error = v;
     },
     get isTogglingProviderDebug() {
@@ -77,11 +77,10 @@
       }));
       if (success) {
         lastConfig = _.cloneDeep(config);
-        globalThis.USER_CONFIG = _.cloneDeep(config);
+        globalThis.USER_CONFIG = _.cloneDeep(config!);
         configUpdated();
         refresh();
         toast.toast({ message: "Saved config", type: "is-success" });
-        await sync({ journal: true });
       }
     } finally {
       isLoading = false;
@@ -98,7 +97,10 @@
         "Are you sure you want to reset the config to defaults? This action is not reversible."
       )
     ) {
-      const minimal = { journal_path: lastConfig.journal_path, db_path: lastConfig.db_path } as any;
+      const minimal = {
+        journal_path: lastConfig!.journal_path,
+        db_path: lastConfig!.db_path
+      } as any;
       isLoading = true;
       try {
         let success = false;
@@ -134,9 +136,9 @@
         background: true
       });
       if (response.success) {
-        config.provider_debug_http = enabled;
-        lastConfig.provider_debug_http = enabled;
-        globalThis.USER_CONFIG = _.cloneDeep(config);
+        config!.provider_debug_http = enabled;
+        lastConfig!.provider_debug_http = enabled;
+        globalThis.USER_CONFIG = _.cloneDeep(config!);
         configUpdated();
         toast.toast({
           message: `Provider HTTP debug logging ${enabled ? "enabled" : "disabled"}`,
@@ -246,8 +248,8 @@
       <div class="config-content">
         <article class="message is-info is-small config-info-banner">
           <div class="message-body py-2 px-3">
-            Prices are <b>not</b> automatically updated after a config change. Use the menu at the top
-            right to update prices. If the journal failed to sync, fix the issues and sync again.
+            Prices and the journal are <b>not</b> automatically updated after a config change. Use the
+            menu at the top right to sync the journal or update prices.
           </div>
         </article>
 

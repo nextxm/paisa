@@ -3,6 +3,8 @@ package server
 import (
 	"errors"
 
+	"github.com/ananthakumaran/paisa/internal/model"
+	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/projection_snapshot"
 	"github.com/ananthakumaran/paisa/internal/query"
 	"github.com/ananthakumaran/paisa/internal/service"
@@ -28,6 +30,8 @@ func computeProjectionBaseInputs(db *gorm.DB) projectionBaseInputs {
 
 func RefreshNetworthProjectionSnapshot(db *gorm.DB) error {
 	inputs := computeProjectionBaseInputs(db)
+	journalHash, _ := metadata.GetOrDefault(db, model.JournalHashKey, "")
+	lastPriceSync, _ := metadata.GetOrDefault(db, model.LastPriceSyncKey, "")
 
 	return db.Transaction(func(tx *gorm.DB) error {
 		return projection_snapshot.Replace(
@@ -36,22 +40,56 @@ func RefreshNetworthProjectionSnapshot(db *gorm.DB) error {
 			inputs.MonthlyContribution,
 			inputs.SavingsRate,
 			inputs.AnnualExpenses,
+			journalHash,
+			lastPriceSync,
 		)
 	})
 }
 
 func getProjectionBaseInputs(db *gorm.DB) projectionBaseInputs {
 	snapshot, err := projection_snapshot.Get(db)
+
+	// Fetch latest sync metadata to compare
+	currentJournalHash, _ := metadata.GetOrDefault(db, model.JournalHashKey, "")
+	currentLastPriceSync, _ := metadata.GetOrDefault(db, model.LastPriceSyncKey, "")
+
+	// Helper to recalculate, persist and return
+	recalculateAndSave := func() projectionBaseInputs {
+		inputs := computeProjectionBaseInputs(db)
+		err := db.Transaction(func(tx *gorm.DB) error {
+			return projection_snapshot.Replace(
+				tx,
+				inputs.CurrentNetworth,
+				inputs.MonthlyContribution,
+				inputs.SavingsRate,
+				inputs.AnnualExpenses,
+				currentJournalHash,
+				currentLastPriceSync,
+			)
+		})
+		if err != nil {
+			log.WithError(err).Warn("Failed to persist updated projection snapshot")
+		}
+		return inputs
+	}
+
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			log.WithError(err).Warn("Failed to load projection snapshot; falling back to live query path")
+			log.WithError(err).Warn("Failed to load projection snapshot; recalculating")
 		}
-		return computeProjectionBaseInputs(db)
+		return recalculateAndSave()
 	}
+
 	if snapshot.SchemaVersion != projection_snapshot.SchemaVersion {
 		log.WithField("schema_version", snapshot.SchemaVersion).
-			Warn("Projection snapshot schema version mismatch; falling back to live query path")
-		return computeProjectionBaseInputs(db)
+			Warn("Projection snapshot schema version mismatch; recalculating")
+		return recalculateAndSave()
+	}
+
+	// Check if either of the sync timestamps / hashes have changed
+	if snapshot.JournalHash != currentJournalHash || snapshot.LastPriceSync != currentLastPriceSync {
+		log.Info("Sync state changed (journal or prices updated); recalculating projection snapshot")
+		return recalculateAndSave()
 	}
 
 	return projectionBaseInputs{

@@ -12,7 +12,7 @@ const (
 	// SnapshotName is the singleton projection snapshot row key.
 	SnapshotName = "networth_projection"
 	// SchemaVersion tracks the persisted projection-input contract.
-	SchemaVersion = 1
+	SchemaVersion = 2
 )
 
 // ProjectionSnapshot stores the precomputed base inputs for
@@ -24,6 +24,8 @@ type ProjectionSnapshot struct {
 	MonthlyContribution decimal.Decimal `gorm:"not null"`
 	SavingsRate         decimal.Decimal `gorm:"not null"`
 	AnnualExpenses      decimal.Decimal `gorm:"not null"`
+	JournalHash         string          `gorm:"not null;default:''"`
+	LastPriceSync       string          `gorm:"not null;default:''"`
 	UpdatedAt           time.Time       `gorm:"not null"`
 }
 
@@ -45,10 +47,12 @@ func Replace(
 	monthlyContribution decimal.Decimal,
 	savingsRate decimal.Decimal,
 	annualExpenses decimal.Decimal,
+	journalHash string,
+	lastPriceSync string,
 ) error {
 	return tx.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "name"}},
-		DoUpdates: clause.AssignmentColumns([]string{"schema_version", "current_networth", "monthly_contribution", "savings_rate", "annual_expenses", "updated_at"}),
+		DoUpdates: clause.AssignmentColumns([]string{"schema_version", "current_networth", "monthly_contribution", "savings_rate", "annual_expenses", "journal_hash", "last_price_sync", "updated_at"}),
 	}).Create(&ProjectionSnapshot{
 		Name:                SnapshotName,
 		SchemaVersion:       SchemaVersion,
@@ -56,6 +60,8 @@ func Replace(
 		MonthlyContribution: monthlyContribution,
 		SavingsRate:         savingsRate,
 		AnnualExpenses:      annualExpenses,
+		JournalHash:         journalHash,
+		LastPriceSync:       lastPriceSync,
 		UpdatedAt:           time.Now(),
 	}).Error
 }

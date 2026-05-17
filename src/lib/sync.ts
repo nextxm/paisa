@@ -91,7 +91,8 @@ export function startPolling(
   }
 ): void {
   const fetchJob =
-    options?.fetchJob ?? ((id: string) => ajax("/api/jobs/:id", { background: true }, { id }));
+    options?.fetchJob ??
+    ((id: string) => ajax("/api/jobs/:id", { background: true, cache: "no-store" }, { id }));
   const intervalMs = options?.intervalMs ?? POLL_INTERVAL_MS;
   const maxErrors = options?.maxErrors ?? MAX_CONSECUTIVE_ERRORS;
   const maxPolls = options?.maxPolls ?? MAX_POLLS;
@@ -101,6 +102,10 @@ export function startPolling(
 
   async function poll() {
     if (pollCount >= maxPolls) {
+      jobs.updateById(jobId, {
+        status: "failed",
+        error: "Sync timed out: exceeded maximum polling attempts."
+      });
       return;
     }
     pollCount++;
@@ -134,6 +139,10 @@ export function startPolling(
       }
       consecutiveErrors++;
       if (consecutiveErrors >= maxErrors) {
+        jobs.updateById(jobId, {
+          status: "failed",
+          error: "Network error: lost connection to server during sync."
+        });
         return;
       }
       setTimeout(poll, intervalMs);

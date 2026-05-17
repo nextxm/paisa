@@ -34,8 +34,9 @@ The **Target Corpus** is the total asset valuation required to sustain your curr
 
 $$\text{Target Corpus} = \frac{\text{Annual Expenses}}{\text{SWR} / 100}$$
 
-*   **Annual Expenses**: Derived from the cost sum of your `Expenses:*` postings (excluding `Expenses:Tax`) over the last 12 months. This is annualized proportionally based on the number of months with active data:
+*   **Annual Expenses**: Derived from the cost sum of all transaction postings matching the `Expenses:*` prefix (excluding tax-related postings under `Expenses:Tax` so tax liabilities do not distort long-term sustainable living costs) over the trailing 12 months (TTM). This is annualized proportionally based on the number of active months that contain transaction data:
     $$\text{Annual Expenses} = \frac{\text{Total Expenses in TTM}}{\text{Active Months}} \times 12$$
+    *   *Active Months* represents the duration of data presence, computed as the difference in months between the earliest expense posting date within the TTM window and the current month (capped at a minimum of 1 and a maximum of 12).
 *   **SWR (Safe Withdrawal Rate)**: The withdrawal rate percentage (defaults to **4.0%**, representing the standard 25x expenses rule), which is fully adjustable in the UI.
 
 #### 2. Years to FIRE
@@ -57,9 +58,9 @@ $$\text{FIRE Progress} = \min\left(100\%,\, \frac{\text{Current Net Worth}}{\tex
 
 Paisa models three projection curves over your chosen timeframe (1 to 40 years, default 15):
 
-*   **Conservative**: Defaults to **8.0% CAGR**
-*   **Expected**: Defaults to **12.0% CAGR** (used to calculate Years to FIRE)
-*   **Optimistic**: Defaults to **16.0% CAGR**
+*   **Conservative**: Defaults to **6.0% CAGR**
+*   **Expected**: Defaults to **9.0% CAGR** (used to calculate Years to FIRE)
+*   **Optimistic**: Defaults to **12.0% CAGR**
 
 For each month $i$, the compound balance is calculated as:
 
@@ -77,10 +78,12 @@ Paisa automatically analyzes your last 12 months of journal history to pre-popul
 
 1.  **Current Net Worth**: The valuation sum of all postings in `Assets:*` (excluding checking accounts), `Income:CapitalGains:*`, and `Liabilities:*` up to today, with historical market prices applied.
 2.  **Net Investment**: The total cost sum of postings to asset accounts (`Assets:*`), excluding checking accounts (`Assets:Checking`) and any transactions tied to liabilities (`Liabilities:*`). Non-cash adjustment transactions such as stock splits are filtered out.
-3.  **Monthly Contribution**: 
-    *   If net income (total `Income:*` postings cost) is greater than zero, Paisa calculates a **Savings Rate**:
+3.  **Monthly Contribution**:
+    *   Paisa derives your regular monthly contribution by analyzing your historical savings rate and actual net investments.
+    *   First, your **Net Income** is computed as the negative sum of all income postings (matching the `Income:*` prefix) over the past 12 months.
+    *   If your **Net Income** is greater than zero, Paisa calculates your **Savings Rate** as:
         $$\text{Savings Rate} = \frac{\text{Net Investment}}{\text{Net Income}} \times 100\%$$
-    *   The **Monthly Contribution** is then calculated by multiplying your average monthly income by this savings rate:
+    *   The **Monthly Contribution** is then calculated by multiplying your average monthly income by this savings rate, which provides a smoothed, representative estimation of your monthly investments:
         $$\text{Monthly Contribution} = \text{Average Monthly Income} \times \frac{\text{Savings Rate}}{100}$$
-    *   If net income is zero or negative, the monthly contribution defaults directly to the average monthly net investment:
+    *   If your **Net Income** is zero or negative (representing cases with no formal income data, or net expenses exceeding income), the savings rate calculation is skipped. Instead, the monthly contribution defaults directly to the average monthly net investment:
         $$\text{Monthly Contribution} = \frac{\text{Net Investment}}{\text{Active Months}}$$
