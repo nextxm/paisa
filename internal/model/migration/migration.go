@@ -53,6 +53,7 @@ var steps = []step{
 	{Version: 11, Apply: v11AddProjectionSnapshots},
 	{Version: 12, Apply: v12AddPostingReadIndexes},
 	{Version: 13, Apply: v13AddInvestmentIncomeSnapshots},
+	{Version: 14, Apply: v14AddProjectionSnapshotSyncMetadata},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -264,6 +265,15 @@ func v12AddPostingReadIndexes(db *gorm.DB) error {
 func v13AddInvestmentIncomeSnapshots(db *gorm.DB) error {
 	if err := db.AutoMigrate(&investment_income_snapshot.InvestmentIncomeSnapshot{}); err != nil {
 		return fmt.Errorf("v13: AutoMigrate investment_income_snapshots failed: %w", err)
+	}
+	return nil
+}
+
+// v14AddProjectionSnapshotSyncMetadata adds journal_hash and last_price_sync columns
+// to the projection_snapshots table to support conditional sync-state evaluation.
+func v14AddProjectionSnapshotSyncMetadata(db *gorm.DB) error {
+	if err := db.AutoMigrate(&projection_snapshot.ProjectionSnapshot{}); err != nil {
+		return fmt.Errorf("v14: AutoMigrate projection_snapshots failed: %w", err)
 	}
 	return nil
 }

@@ -22,17 +22,17 @@
   let baseData: NetworthProjectionResponse | null = $state(null);
 
   let years = $state(15);
-  let conservativeCagr = $state(8);
-  let expectedCagr = $state(12);
-  let optimisticCagr = $state(16);
+  let conservativeCagr = $state(6);
+  let expectedCagr = $state(9);
+  let optimisticCagr = $state(12);
   let monthlyContribution = $state(0);
   let swr = $state(4);
   let controlsInitialized = $state(false);
 
   let calcYears = $state(15);
-  let calcConservativeCagr = $state(8);
-  let calcExpectedCagr = $state(12);
-  let calcOptimisticCagr = $state(16);
+  let calcConservativeCagr = $state(6);
+  let calcExpectedCagr = $state(9);
+  let calcOptimisticCagr = $state(12);
   let calcMonthlyContribution = $state(0);
   let calcSwr = $state(4);
 

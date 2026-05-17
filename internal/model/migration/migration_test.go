@@ -35,7 +35,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 13, version)
+	assert.Equal(t, 14, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -45,7 +45,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 13, version)
+	assert.Equal(t, 14, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -67,7 +67,7 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	assert.Equal(t, 13, migration.CurrentVersion(db))
+	assert.Equal(t, 14, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -105,7 +105,7 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 
 	// Run migrations – v2 through v12 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 13, migration.CurrentVersion(db))
+	assert.Equal(t, 14, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -428,4 +428,26 @@ func TestV13Migration_InvestmentIncomeSnapshotsTableExists(t *testing.T) {
 	var count int64
 	require.NoError(t, db.Raw("SELECT COUNT(*) FROM investment_income_snapshots WHERE name = 'investment_income'").Scan(&count).Error)
 	assert.Equal(t, int64(1), count)
+}
+
+func TestV14Migration_ProjectionSnapshotsSyncMetadata(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	require.NoError(t, db.Create(&projection_snapshot.ProjectionSnapshot{
+		Name:                projection_snapshot.SnapshotName,
+		SchemaVersion:       projection_snapshot.SchemaVersion,
+		CurrentNetworth:     decimal.NewFromInt(100000),
+		MonthlyContribution: decimal.NewFromInt(5000),
+		SavingsRate:         decimal.RequireFromString("22.5"),
+		AnnualExpenses:      decimal.NewFromInt(240000),
+		JournalHash:         "test-journal-hash",
+		LastPriceSync:       "test-price-sync-time",
+		UpdatedAt:           time.Now(),
+	}).Error)
+
+	snapshot, err := projection_snapshot.Get(db)
+	require.NoError(t, err)
+	assert.Equal(t, "test-journal-hash", snapshot.JournalHash)
+	assert.Equal(t, "test-price-sync-time", snapshot.LastPriceSync)
 }

@@ -119,7 +119,7 @@ func seedProjectionTestPostings(t *testing.T, db *gorm.DB) {
 
 	postings := make([]posting.Posting, 0, 36)
 	for month := 0; month < 12; month++ {
-		baseDate := mustParseDate("2024-04-01").AddDate(0, month, 0)
+		baseDate := mustParseDate("2024-04-10").AddDate(0, month, 0)
 		idPrefix := baseDate.Format("2006-01")
 
 		postings = append(postings,
