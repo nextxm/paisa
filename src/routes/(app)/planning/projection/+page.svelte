@@ -228,11 +228,23 @@
   });
 
   onMount(async () => {
-    const networthResult = await ajax("/api/networth");
-    points = networthResult.networthTimeline;
-
     baseData = (await ajax("/api/networth/projection")) as NetworthProjectionResponse;
     if (baseData) {
+      points = [
+        {
+          date: dayjs(),
+          investmentAmount: baseData.current_networth,
+          withdrawalAmount: 0,
+          gainAmount: 0,
+          contribution: baseData.current_networth,
+          investment_return: 0,
+          fx_impact: 0,
+          balanceAmount: baseData.current_networth,
+          balanceUnits: 0,
+          netInvestmentAmount: baseData.current_networth
+        }
+      ];
+
       years = Math.round(baseData.projection.expected.length / 12) || 15;
       conservativeCagr = baseData.conservative_cagr;
       expectedCagr = baseData.expected_cagr;
