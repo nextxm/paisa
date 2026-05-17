@@ -99,6 +99,13 @@ func Sync(db *gorm.DB, request SyncRequest, progressFn func(completed, total int
 				"message":      err.Error(),
 			}, details
 		}
+		if err := RefreshInvestmentIncomeSnapshot(db); err != nil {
+			return gin.H{
+				"success":      false,
+				"failed_stage": "investment_income_snapshot",
+				"message":      err.Error(),
+			}, details
+		}
 		if err := RefreshDashboardSnapshot(db); err != nil {
 			return gin.H{
 				"success":      false,

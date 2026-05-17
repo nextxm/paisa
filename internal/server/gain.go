@@ -50,10 +50,31 @@ func GetGain(db *gorm.DB) gin.H {
 	})
 	var gains []Gain
 	asOfDate := utils.ToDate(utils.Now())
+
+	incomePostings := query.Init(db).UntilDate(asOfDate).Like(investmentIncomeLikePatterns()...).All()
+	ttmStart := trailing12MonthsStart(asOfDate)
+
+	type incomeSums struct {
+		total decimal.Decimal
+		ttm   decimal.Decimal
+	}
+	incomeByAccount := make(map[string]incomeSums)
+	for _, p := range incomePostings {
+		acc := investmentIncomeHoldingAccount(p.Account)
+		amount := p.Amount.Neg()
+		sums := incomeByAccount[acc]
+		sums.total = sums.total.Add(amount)
+		if !p.Date.Before(ttmStart) {
+			sums.ttm = sums.ttm.Add(amount)
+		}
+		incomeByAccount[acc] = sums
+	}
+
 	for _, account := range utils.SortedKeys(byAccount) {
 		ps := byAccount[account]
 		networth := computeNetworth(db, ps)
-		incomeReceived, ttmIncome := computeInvestmentIncomeForAccount(db, account, asOfDate)
+		sums := incomeByAccount[account]
+		incomeReceived, ttmIncome := sums.total, sums.ttm
 		ttmYield := decimal.Zero
 		if networth.BalanceAmount.GreaterThan(decimal.Zero) {
 			ttmYield = ttmIncome.Div(networth.BalanceAmount).Mul(decimal.NewFromInt(100))

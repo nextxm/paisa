@@ -104,6 +104,33 @@ func computeInvestmentIncomeByHolding(db *gorm.DB, asOfDate time.Time) []Investm
 	}
 
 	keys := utils.SortedKeys(grouped)
+
+	holdingsToFetch := []string{}
+	for _, key := range keys {
+		holding := strings.SplitN(key, "|", 2)[1]
+		if _, found := currentBalances[holding]; !found {
+			holdingsToFetch = append(holdingsToFetch, holding)
+			currentBalances[holding] = decimal.Zero // initialize
+		}
+	}
+
+	if len(holdingsToFetch) > 0 {
+		postings := query.Init(db).UntilDate(asOfDate).AccountPrefix(holdingsToFetch...).All()
+		groupedPostings := make(map[string][]posting.Posting)
+		for _, p := range postings {
+			for _, h := range holdingsToFetch {
+				if p.Account == h || strings.HasPrefix(p.Account, h+":") {
+					groupedPostings[h] = append(groupedPostings[h], p)
+					break
+				}
+			}
+		}
+		for h, ps := range groupedPostings {
+			networth := computeNetworth(db, ps)
+			currentBalances[h] = networth.BalanceAmount
+		}
+	}
+
 	result := make([]InvestmentIncomeHolding, 0, len(keys))
 	for _, key := range keys {
 		parts := strings.SplitN(key, "|", 2)
@@ -119,12 +146,7 @@ func computeInvestmentIncomeByHolding(db *gorm.DB, asOfDate time.Time) []Investm
 		}
 		ttmIncome := computeInvestmentIncomeAmount(ttmPostings)
 
-		balance, found := currentBalances[holding]
-		if !found {
-			networth := computeNetworth(db, query.Init(db).UntilDate(asOfDate).AccountPrefix(holding).All())
-			balance = networth.BalanceAmount
-			currentBalances[holding] = balance
-		}
+		balance := currentBalances[holding]
 
 		ttmYield := decimal.Zero
 		if balance.GreaterThan(decimal.Zero) {
@@ -207,6 +229,18 @@ func GetInvestmentIncome(db *gorm.DB, asOfDate time.Time) gin.H {
 		return h.TTMIncome
 	})
 
+	var ttmDividend, ttmInterest, ttmDistribution decimal.Decimal
+	for _, h := range holdings {
+		switch h.Type {
+		case "Dividend":
+			ttmDividend = ttmDividend.Add(h.TTMIncome)
+		case "Interest":
+			ttmInterest = ttmInterest.Add(h.TTMIncome)
+		default:
+			ttmDistribution = ttmDistribution.Add(h.TTMIncome)
+		}
+	}
+
 	byType := map[string][]InvestmentIncomeHolding{
 		"Dividend":     {},
 		"Interest":     {},
@@ -217,9 +251,12 @@ func GetInvestmentIncome(db *gorm.DB, asOfDate time.Time) gin.H {
 	}
 
 	return gin.H{
-		"income_by_type": byType,
-		"holdings":       holdings,
-		"timeline":       timeline,
-		"ttm_total":      ttmTotal,
+		"income_by_type":   byType,
+		"holdings":         holdings,
+		"timeline":         timeline,
+		"ttm_total":        ttmTotal,
+		"ttm_dividend":     ttmDividend,
+		"ttm_interest":     ttmInterest,
+		"ttm_distribution": ttmDistribution,
 	}
 }

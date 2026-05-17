@@ -49,10 +49,9 @@
   let currentBudget = $derived(budgetsByMonth[month]);
   let isEmpty = $state(false);
   let checkingBalances: Record<string, AssetBreakdown> = $state({});
-  let investmentIncomeTTM = $state(0);
+  let investmentIncomeDividendTTM = $state(0);
+  let investmentIncomeInterestTTM = $state(0);
   let investmentIncomeLoading = $state(false);
-  let fireProjection: NetworthProjectionResponse | null = $state(null);
-  let fireProjectionLoading = $state(false);
 
   $effect(() => {
     if (renderer) {
@@ -116,19 +115,13 @@
     // Phase 2: non-critical secondary fetches deferred until after first paint.
     // Both requests are fired concurrently as background calls so the global
     // loading spinner is not re-triggered.
-    investmentIncomeLoading = true;
-    fireProjectionLoading = true;
     performance.mark("paisa-home-phase2-start");
 
-    const [incomeResult, projectionResult] = await Promise.all([
-      ajax("/api/income/investment", { background: true }),
-      ajax("/api/networth/projection", { background: true })
-    ]);
+    const incomeResult = await ajax("/api/income/investment", { background: true });
 
-    investmentIncomeTTM = incomeResult.ttm_total;
+    investmentIncomeDividendTTM = incomeResult.ttm_dividend || 0;
+    investmentIncomeInterestTTM = incomeResult.ttm_interest || 0;
     investmentIncomeLoading = false;
-    fireProjection = projectionResult as NetworthProjectionResponse;
-    fireProjectionLoading = false;
 
     performance.mark("paisa-home-phase2-end");
     performance.measure(
@@ -224,44 +217,6 @@
 
                       <LevelItem narrow title="XIRR" value={formatFloat(xirr)} />
                     </nav>
-                    {#if fireProjectionLoading}
-                      <nav class="level grid-2 mt-3">
-                        <LevelItem narrow small title="Years to FIRE" value="—" />
-                        <LevelItem narrow small title="Target Corpus" value="—" />
-                      </nav>
-                      <nav class="level grid-1">
-                        <LevelItem narrow small title="FIRE Progress" value="—" />
-                      </nav>
-                    {:else if fireProjection}
-                      <nav class="level grid-2 mt-3">
-                        <LevelItem
-                          narrow
-                          small
-                          title="Years to FIRE"
-                          color={COLORS.tertiary}
-                          value={fireProjection.years_to_fire !== null
-                            ? `${formatFloat(fireProjection.years_to_fire)}y`
-                            : "N/A"}
-                        />
-                        <LevelItem
-                          narrow
-                          small
-                          title="Target Corpus"
-                          color={COLORS.secondary}
-                          value={formatCurrency(fireProjection.target_corpus)}
-                        />
-                      </nav>
-                      <nav class="level grid-1">
-                        <LevelItem
-                          narrow
-                          small
-                          title="FIRE Progress"
-                          color={COLORS.primary}
-                          value={`${formatFloat(fireProjection.fire_progress_percent)}%`}
-                          href="/assets/projection"
-                        />
-                      </nav>
-                    {/if}
                   {/if}
                 </div>
               </div>
@@ -300,12 +255,22 @@
                 >
               </p>
               <div class="content">
-                <nav class="level grid-1">
+                <nav class="level grid-2">
                   <LevelItem
                     narrow
-                    title="TTM Dividend + Interest"
+                    title="TTM Dividend"
                     color={investmentIncomeLoading ? undefined : COLORS.gainText}
-                    value={investmentIncomeLoading ? "—" : formatCurrency(investmentIncomeTTM)}
+                    value={investmentIncomeLoading
+                      ? "—"
+                      : formatCurrency(investmentIncomeDividendTTM)}
+                  />
+                  <LevelItem
+                    narrow
+                    title="TTM Interest"
+                    color={investmentIncomeLoading ? undefined : COLORS.gainText}
+                    value={investmentIncomeLoading
+                      ? "—"
+                      : formatCurrency(investmentIncomeInterestTTM)}
                   />
                 </nav>
               </div>

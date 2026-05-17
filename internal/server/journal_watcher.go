@@ -68,12 +68,7 @@ func (w *JournalWatcher) RefreshFiles(files []string) {
 // Start seeds the file list from the current config and launches the
 // background polling goroutine.
 func (w *JournalWatcher) Start() {
-	// Seed with just the root journal path so the first check has a baseline.
-	// After the first sync the file list is refreshed with the full include-tree.
-	journalPath := config.GetJournalPath()
-	if journalPath != "" {
-		w.RefreshFiles([]string{journalPath})
-	}
+	w.RefreshFilesFromConfig()
 	go w.run()
 }
 

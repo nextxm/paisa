@@ -10,6 +10,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/account_reconciliation"
 	"github.com/ananthakumaran/paisa/internal/model/dashboard_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/import_preset"
+	"github.com/ananthakumaran/paisa/internal/model/investment_income_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/ananthakumaran/paisa/internal/model/projection_snapshot"
@@ -34,7 +35,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 12, version)
+	assert.Equal(t, 13, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -44,7 +45,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 12, version)
+	assert.Equal(t, 13, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -66,7 +67,7 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	assert.Equal(t, 12, migration.CurrentVersion(db))
+	assert.Equal(t, 13, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -104,7 +105,7 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 
 	// Run migrations – v2 through v12 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 12, migration.CurrentVersion(db))
+	assert.Equal(t, 13, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -411,5 +412,20 @@ func TestV8Migration_ParserTrainingLogTableExists(t *testing.T) {
 
 	var count int64
 	require.NoError(t, db.Raw("SELECT COUNT(*) FROM parser_training_log").Scan(&count).Error)
+	assert.Equal(t, int64(1), count)
+}
+
+func TestV13Migration_InvestmentIncomeSnapshotsTableExists(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	require.NoError(t, db.Create(&investment_income_snapshot.InvestmentIncomeSnapshot{
+		Name:      "investment_income",
+		Payload:   []byte(`{"ok":true}`),
+		UpdatedAt: time.Now(),
+	}).Error)
+
+	var count int64
+	require.NoError(t, db.Raw("SELECT COUNT(*) FROM investment_income_snapshots WHERE name = 'investment_income'").Scan(&count).Error)
 	assert.Equal(t, int64(1), count)
 }

@@ -112,8 +112,7 @@
         { label: "Investment", href: "/investment" },
         { label: "Gain", href: "/gain" },
         { label: "Allocation", href: "/allocation", help: "allocation-targets" },
-        { label: "Portfolio", href: "/portfolio", tag: "alpha", help: "analysis" },
-        { label: "Projection", href: "/projection" }
+        { label: "Portfolio", href: "/portfolio", tag: "alpha", help: "analysis" }
       ]
     },
     {
@@ -137,7 +136,10 @@
     {
       label: "Planning",
       href: "/planning",
-      children: [{ label: "Goals", href: "/goals", help: "goals" }]
+      children: [
+        { label: "Goals", href: "/goals", help: "goals" },
+        { label: "Projection", href: "/projection" }
+      ]
     },
     {
       label: "Ledger",

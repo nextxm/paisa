@@ -266,6 +266,13 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, GetIncome(db, parseYearsParam(c.Query("years")), parseUntilYearParam(c.Query("until_year"))))
 	})
 	router.GET("/api/income/investment", func(c *gin.Context) {
+		if c.Request.URL.RawQuery == "" {
+			if payload, ok := getInvestmentIncomeSnapshotPayload(db); ok {
+				c.Data(200, "application/json; charset=utf-8", payload)
+				return
+			}
+		}
+
 		asOfDate, ok := parseAsOfDateOrYear(c)
 		if !ok {
 			return

@@ -273,7 +273,7 @@ export function renderNetworth(
       );
   }
 
-  for (const milestone of milestones) {
+  milestones.forEach((milestone, idx) => {
     const milestoneX = x(milestone.date);
     layer
       .append("line")
@@ -289,12 +289,12 @@ export function renderNetworth(
     layer
       .append("text")
       .attr("x", milestoneX + 6)
-      .attr("y", 12)
+      .attr("y", 12 + idx * 14)
       .style("font-size", "10px")
       .style("fill", COLORS.neutral)
       .style("opacity", "0.75")
       .text(milestone.label);
-  }
+  });
 
   const hoverCircle = layer.append("circle").attr("r", "3").attr("fill", "none");
   const t = tippy(hoverCircle.node(), { theme: "light", delay: 0, allowHTML: true });
@@ -304,22 +304,35 @@ export function renderNetworth(
     x(d.date),
     y(investment(d))
   ]);
-  const voronoi = Delaunay.from(networthVoronoiPoints.concat(investmentVoronoiPoints)).voronoi([
-    0,
-    0,
-    width,
-    height
-  ]);
+
+  const projectionVoronoiPoints: Delaunay.Point[] = [];
+  const expectedSeries = projections[1]; // expected is at index 1
+  if (expectedSeries) {
+    expectedSeries.points.forEach((p) => {
+      projectionVoronoiPoints.push([x(p.date), y(p.balanceAmount)]);
+    });
+  }
+
+  const allVoronoiPoints = networthVoronoiPoints
+    .concat(investmentVoronoiPoints)
+    .concat(projectionVoronoiPoints);
+
+  const voronoi = Delaunay.from(allVoronoiPoints).voronoi([0, 0, width, height]);
+
+  const dataList: any[] = points
+    .map((p) => ["networth", p])
+    .concat(points.map((p) => ["investment", p]));
+
+  if (expectedSeries) {
+    expectedSeries.points.forEach((p, idx) => {
+      dataList.push(["projection", p, idx]);
+    });
+  }
 
   layer
     .append("g")
     .selectAll("path")
-    .data(
-      points.map((p) => ["networth", p]).concat(points.map((p) => ["investment", p])) as [
-        string,
-        Networth
-      ][]
-    )
+    .data(dataList)
     .enter()
     .append("path")
     .style("pointer-events", "all")
@@ -327,31 +340,60 @@ export function renderNetworth(
     .attr("d", (_, i) => {
       return voronoi.renderCell(i);
     })
-    .on("mouseover", (_, [pointType, d]) => {
-      hoverCircle
-        .attr("cx", x(d.date))
-        .attr("cy", y(pointType == "networth" ? networth(d) : investment(d)))
-        .attr("fill", lineScale(pointType));
+    .on("mouseover", (event, item) => {
+      const itemType = item[0];
+      if (itemType === "projection") {
+        const p = item[1];
+        const idx = item[2];
+        const consVal = projections[0]?.points[idx]?.balanceAmount ?? 0;
+        const expVal = projections[1]?.points[idx]?.balanceAmount ?? 0;
+        const optVal = projections[2]?.points[idx]?.balanceAmount ?? 0;
 
-      t.setProps({
-        placement: pointType == "networth" ? "top" : "bottom",
-        content: tooltip([
-          ["Date", d.date.format("DD MMM YYYY")],
-          ["Net Worth", [formatCurrency(networth(d)), "has-text-weight-bold has-text-right"]],
-          [
-            "Net Investment",
-            [formatCurrency(investment(d)), "has-text-weight-bold has-text-right"]
-          ],
-          ["Gain / Loss", [formatCurrency(d.gainAmount), "has-text-weight-bold has-text-right"]],
-          ["Contribution", [formatCurrency(d.contribution), "has-text-weight-bold has-text-right"]],
-          [
-            "Investment Return",
-            [formatCurrency(investmentReturn(d)), "has-text-weight-bold has-text-right"]
-          ],
-          ["FX Impact", [formatCurrency(fxImpact(d)), "has-text-weight-bold has-text-right"]]
-        ])
-      });
-      t.show();
+        hoverCircle
+          .attr("cx", x(p.date))
+          .attr("cy", y(p.balanceAmount))
+          .attr("fill", COLORS.primary);
+
+        t.setProps({
+          placement: "top",
+          content: tooltip([
+            ["Date", p.date.format("MMM YYYY")],
+            ["Conservative", [formatCurrency(consVal), "has-text-weight-bold has-text-right"]],
+            ["Expected", [formatCurrency(expVal), "has-text-weight-bold has-text-right"]],
+            ["Optimistic", [formatCurrency(optVal), "has-text-weight-bold has-text-right"]]
+          ])
+        });
+        t.show();
+      } else {
+        const d = item[1];
+        hoverCircle
+          .attr("cx", x(d.date))
+          .attr("cy", y(itemType == "networth" ? networth(d) : investment(d)))
+          .attr("fill", lineScale(itemType));
+
+        t.setProps({
+          placement: itemType == "networth" ? "top" : "bottom",
+          content: tooltip([
+            ["Date", d.date.format("DD MMM YYYY")],
+            ["Net Worth", [formatCurrency(networth(d)), "has-text-weight-bold has-text-right"]],
+            [
+              "Net Investment",
+              [formatCurrency(investment(d)), "has-text-weight-bold has-text-right"]
+            ],
+            ["Gain / Loss", [formatCurrency(d.gainAmount), "has-text-weight-bold has-text-right"]],
+            [
+              "Contribution",
+              [formatCurrency(d.contribution), "has-text-weight-bold has-text-right"]
+            ],
+            [
+              "Investment Return",
+              [formatCurrency(investmentReturn(d)), "has-text-weight-bold has-text-right"]
+            ],
+            ["FX Impact", [formatCurrency(fxImpact(d)), "has-text-weight-bold has-text-right"]]
+          ])
+        });
+        t.show();
+      }
     })
     .on("mouseout", () => {
       t.hide();

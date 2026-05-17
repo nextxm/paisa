@@ -12,6 +12,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/cii"
 	"github.com/ananthakumaran/paisa/internal/model/dashboard_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/import_preset"
+	"github.com/ananthakumaran/paisa/internal/model/investment_income_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	mutualfundModel "github.com/ananthakumaran/paisa/internal/model/mutualfund/scheme"
 	npsModel "github.com/ananthakumaran/paisa/internal/model/nps/scheme"
@@ -51,6 +52,7 @@ var steps = []step{
 	{Version: 10, Apply: v10AddDashboardSnapshots},
 	{Version: 11, Apply: v11AddProjectionSnapshots},
 	{Version: 12, Apply: v12AddPostingReadIndexes},
+	{Version: 13, Apply: v13AddInvestmentIncomeSnapshots},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -253,6 +255,15 @@ func v12AddPostingReadIndexes(db *gorm.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_postings_forecast_account_date ON postings(forecast, account, date)",
 	).Error; err != nil {
 		return fmt.Errorf("v12: create idx_postings_forecast_account_date failed: %w", err)
+	}
+	return nil
+}
+
+// v13AddInvestmentIncomeSnapshots creates the investment_income_snapshots materialized-read
+// model table that stores the pre-rendered /api/income/investment response payload.
+func v13AddInvestmentIncomeSnapshots(db *gorm.DB) error {
+	if err := db.AutoMigrate(&investment_income_snapshot.InvestmentIncomeSnapshot{}); err != nil {
+		return fmt.Errorf("v13: AutoMigrate investment_income_snapshots failed: %w", err)
 	}
 	return nil
 }
