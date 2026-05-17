@@ -45,7 +45,7 @@ func GetFiles(db *gorm.DB) gin.H {
 		}
 		files = append(files, file)
 	}
-	sortEditorFileResponse(accounts, payees, commodities, files)
+	sortEditorFileResponse(files)
 
 	return gin.H{"files": files, "accounts": accounts, "payees": payees, "commodities": commodities}
 }
@@ -77,7 +77,7 @@ func collectEditorMetadata(postings []posting.Posting) ([]string, []string, []st
 	return accounts, payees, commodities
 }
 
-func sortEditorFileResponse(accounts []string, payees []string, commodities []string, files []*LedgerFile) {
+func sortEditorFileResponse(files []*LedgerFile) {
 	sort.Slice(files, func(i, j int) bool {
 		return files[i].Name < files[j].Name
 	})

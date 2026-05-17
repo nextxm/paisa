@@ -14,6 +14,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/gen/paisa/v1/paisav1connect"
 	"github.com/ananthakumaran/paisa/internal/generator"
+	"github.com/ananthakumaran/paisa/internal/ledger"
 	"github.com/ananthakumaran/paisa/internal/model"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/session"
@@ -38,14 +39,6 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 
 	registry := worker.NewRegistry()
-
-	// Create and start the background journal file watcher.  It polls file
-	// modification times cheaply and only does a full SHA256 comparison when
-	// at least one mtime has advanced.  When the content has changed the
-	// watcher persists JournalDirtyKey="true" so GET /api/config and
-	// GET /api/journal/status reflect the out-of-band edit immediately.
-	watcher := NewJournalWatcher(db)
-	watcher.Start()
 
 	router := gin.New()
 	if enableCompression {
@@ -103,11 +96,15 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		}
 		lastPriceUpdate, _ := metadata.GetOrDefault(requestDB, model.LastPriceSyncKey, "")
 
-		// Read dirty state from metadata (set by the background file watcher
-		// or cleared by a successful journal sync).  Defaults to "false" when
-		// absent (fresh install / legacy DB) so the indicator starts clean.
-		dirty, _ := metadata.GetOrDefault(requestDB, model.JournalDirtyKey, "false")
-		isJournalDirty := dirty == "true"
+		// Check if journal is dirty
+		journalPath := config.GetJournalPath()
+		files, err := ledger.Cli().Files(journalPath)
+		if err != nil {
+			files = []string{journalPath}
+		}
+		currentHash, _ := utils.SHA256Files(files)
+		lastHash, _ := metadata.GetOrDefault(requestDB, model.JournalHashKey, "")
+		isJournalDirty := currentHash != lastHash
 
 		telemetry.writeHeaders(c)
 		c.JSON(200, gin.H{
@@ -118,15 +115,6 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 			"last_price_update": lastPriceUpdate,
 			"is_journal_dirty":  isJournalDirty,
 		})
-	})
-
-	// GET /api/journal/status returns the persisted dirty flag as a lightweight
-	// alternative to the full /api/config call.  The frontend polls this
-	// endpoint periodically to pick up out-of-band journal edits without
-	// triggering a full page reload.
-	router.GET("/api/journal/status", func(c *gin.Context) {
-		dirty, _ := metadata.GetOrDefault(db, model.JournalDirtyKey, "false")
-		c.JSON(http.StatusOK, gin.H{"is_dirty": dirty == "true"})
 	})
 
 	writeGroup.POST("/api/config", func(c *gin.Context) {
@@ -151,10 +139,6 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		config.LoadConfigFile(config.GetConfigPath())
 		// Ignore the result and details; /api/init is a one-shot bootstrap.
 		_, _ = Sync(db, SyncRequest{Journal: true, Prices: true, Portfolios: true}, nil)
-		// Mark clean and update watcher file list so subsequent external edits
-		// are detected immediately.
-		_ = metadata.Set(db, model.JournalDirtyKey, "false")
-		watcher.RefreshFilesFromConfig()
 		c.JSON(200, gin.H{"success": true})
 	})
 
@@ -179,17 +163,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 				if message == "" {
 					message = "sync failed"
 				}
-				// Journal sync failed — mark dirty so the UI keeps the warning.
-				if syncRequest.Journal {
-					_ = metadata.Set(db, model.JournalDirtyKey, "true")
-				}
 				return details, errors.New(message)
-			}
-			// Successful sync — clear dirty flag and refresh the watcher file
-			// list so subsequent out-of-band edits are detected immediately.
-			if syncRequest.Journal {
-				_ = metadata.Set(db, model.JournalDirtyKey, "false")
-				watcher.RefreshFilesFromConfig()
 			}
 			return details, nil
 		})

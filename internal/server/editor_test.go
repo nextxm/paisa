@@ -33,7 +33,7 @@ func TestCollectEditorMetadata_PreservesFirstSeenOrder(t *testing.T) {
 func TestSortEditorFileResponse_SortsFiles(t *testing.T) {
 	files := []*LedgerFile{{Name: "z.ledger"}, {Name: "a.ledger"}}
 
-	sortEditorFileResponse(nil, nil, nil, files)
+	sortEditorFileResponse(files)
 
 	assert.Equal(t, "a.ledger", files[0].Name)
 	assert.Equal(t, "z.ledger", files[1].Name)

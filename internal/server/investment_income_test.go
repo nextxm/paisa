@@ -205,9 +205,10 @@ func TestGetGain_IncludesInvestmentIncomeInTotalReturn_MultipleHoldings(t *testi
 
 	var gainABC, gainXYZ Gain
 	for _, g := range gains {
-		if g.Account == "Assets:Equity:ABC" {
+		switch g.Account {
+		case "Assets:Equity:ABC":
 			gainABC = g
-		} else if g.Account == "Assets:Equity:XYZ" {
+		case "Assets:Equity:XYZ":
 			gainXYZ = g
 		}
 	}
