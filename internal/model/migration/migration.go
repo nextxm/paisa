@@ -54,6 +54,7 @@ var steps = []step{
 	{Version: 12, Apply: v12AddPostingReadIndexes},
 	{Version: 13, Apply: v13AddInvestmentIncomeSnapshots},
 	{Version: 14, Apply: v14AddProjectionSnapshotSyncMetadata},
+	{Version: 15, Apply: v15AddPostingOriginalAmount},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -274,6 +275,14 @@ func v13AddInvestmentIncomeSnapshots(db *gorm.DB) error {
 func v14AddProjectionSnapshotSyncMetadata(db *gorm.DB) error {
 	if err := db.AutoMigrate(&projection_snapshot.ProjectionSnapshot{}); err != nil {
 		return fmt.Errorf("v14: AutoMigrate projection_snapshots failed: %w", err)
+	}
+	return nil
+}
+
+// v15AddPostingOriginalAmount adds the original_amount column to the postings table.
+func v15AddPostingOriginalAmount(db *gorm.DB) error {
+	if err := db.AutoMigrate(&posting.Posting{}); err != nil {
+		return fmt.Errorf("v15: AutoMigrate postings failed: %w", err)
 	}
 	return nil
 }

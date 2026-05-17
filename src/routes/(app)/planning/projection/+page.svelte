@@ -15,7 +15,7 @@
   import dayjs from "dayjs";
   import { debounce } from "lodash";
 
-  let svg: Element = $state();
+  let svg: Element | undefined = $state();
   let destroy: () => void;
   let legends: Legend[] = $state([]);
   let points: Networth[] = $state([]);
