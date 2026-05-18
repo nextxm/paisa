@@ -89,7 +89,10 @@ func Sync(db *gorm.DB, request SyncRequest, progressFn func(completed, total int
 	// data may have changed (journal or price sync was requested).  Any accounts
 	// whose XIRR solver did not converge are recorded as Details so operators
 	// can investigate without having to inspect server logs.
-	if request.Journal || request.Prices {
+	// Refresh the projection snapshot when actual data changes: when journal sync
+	// runs (not skipped) or when price sync is requested. Do not refresh when
+	// journal sync is requested but skipped due to unchanged hash.
+	if (request.Journal && !journalResult.Skipped) || request.Prices {
 		xirrWarnings := service.WarmXIRRCache(db)
 		details = append(details, xirrWarnings...)
 		if err := RefreshNetworthProjectionSnapshot(db); err != nil {
