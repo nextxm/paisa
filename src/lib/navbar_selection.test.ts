@@ -28,6 +28,7 @@ const links: Link[] = [
       { label: "Yearly", href: "/yearly" },
       { label: "Budget", href: "/budget" },
       { label: "Flow", href: "/sankey" },
+      { label: "Heatmap", href: "/heatmap" },
       { label: "YoY", href: "/yoy" },
       { label: "MoM", href: "/mom" }
     ]
@@ -108,6 +109,14 @@ describe("navbar selection", () => {
 
     expect(selection.selectedLink?.label).toBe("Expenses");
     expect(selection.selectedSubLink?.label).toBe("YoY");
+    expect(selection.selectedSubSubLink).toBeNull();
+  });
+
+  test("selects expenses Heatmap child for /expense/heatmap route", () => {
+    const selection = resolveNavbarSelectionTyped(links, "/expense/heatmap");
+
+    expect(selection.selectedLink?.label).toBe("Expenses");
+    expect(selection.selectedSubLink?.label).toBe("Heatmap");
     expect(selection.selectedSubSubLink).toBeNull();
   });
 

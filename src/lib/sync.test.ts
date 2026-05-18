@@ -141,7 +141,7 @@ describe("sync SSE stream", () => {
     await ensureJobsStream();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const fetchCall = fetchMock.mock.calls[0];
+    const fetchCall = fetchMock.mock.calls[0] as any;
     const headers = fetchCall[1].headers;
     expect(headers["X-Auth"]).toBeUndefined();
   });

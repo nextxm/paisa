@@ -711,6 +711,19 @@ export interface SankeyResponse {
   meta: SankeyMeta;
 }
 
+export interface DailyExpenseDay {
+  date: dayjs.Dayjs;
+  total: number;
+  by_category?: Record<string, number>;
+}
+
+export interface DailyExpenseResponse {
+  from_date: dayjs.Dayjs;
+  to_date: dayjs.Dayjs;
+  categories: string[];
+  days: DailyExpenseDay[];
+}
+
 export interface ReconcileItem {
   firefly_account: string;
   paisa_account: string;
@@ -844,6 +857,7 @@ export function ajax(route: "/api/expense"): Promise<{
   };
   graph: { [key: string]: Graph };
 }>;
+export function ajax(route: "/api/expense/daily"): Promise<DailyExpenseResponse>;
 
 export function ajax(route: "/api/budget"): Promise<{
   budgetsByMonth: { [key: string]: Budget };
