@@ -13,6 +13,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/dashboard_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/import_preset"
 	"github.com/ananthakumaran/paisa/internal/model/investment_income_snapshot"
+	"github.com/ananthakumaran/paisa/internal/model/job"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	mutualfundModel "github.com/ananthakumaran/paisa/internal/model/mutualfund/scheme"
 	npsModel "github.com/ananthakumaran/paisa/internal/model/nps/scheme"
@@ -55,6 +56,7 @@ var steps = []step{
 	{Version: 13, Apply: v13AddInvestmentIncomeSnapshots},
 	{Version: 14, Apply: v14AddProjectionSnapshotSyncMetadata},
 	{Version: 15, Apply: v15AddPostingOriginalAmount},
+	{Version: 16, Apply: v16AddPersistentJobs},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -288,6 +290,14 @@ func v15AddPostingOriginalAmount(db *gorm.DB) error {
 		"UPDATE postings SET original_amount = quantity WHERE original_amount IS NULL OR original_amount = ''",
 	).Error; err != nil {
 		return fmt.Errorf("v15: backfill original_amount failed: %w", err)
+	}
+	return nil
+}
+
+// v16AddPersistentJobs creates the jobs table used by the persistent worker queue.
+func v16AddPersistentJobs(db *gorm.DB) error {
+	if err := db.AutoMigrate(&job.Job{}); err != nil {
+		return fmt.Errorf("v16: AutoMigrate jobs failed: %w", err)
 	}
 	return nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/dashboard_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/import_preset"
 	"github.com/ananthakumaran/paisa/internal/model/investment_income_snapshot"
+	"github.com/ananthakumaran/paisa/internal/model/job"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/ananthakumaran/paisa/internal/model/projection_snapshot"
@@ -35,7 +36,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 15, version)
+	assert.Equal(t, 16, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -45,7 +46,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 15, version)
+	assert.Equal(t, 16, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -67,7 +68,7 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	assert.Equal(t, 15, migration.CurrentVersion(db))
+	assert.Equal(t, 16, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -105,7 +106,7 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 
 	// Run migrations – v2 through v12 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 15, migration.CurrentVersion(db))
+	assert.Equal(t, 16, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -450,4 +451,22 @@ func TestV14Migration_ProjectionSnapshotsSyncMetadata(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "test-journal-hash", snapshot.JournalHash)
 	assert.Equal(t, "test-price-sync-time", snapshot.LastPriceSync)
+}
+
+func TestV16Migration_JobsTableExists(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	require.NoError(t, db.Create(&job.Job{
+		ID:        "job-1",
+		Type:      "sync",
+		Status:    "pending",
+		Metadata:  map[string]any{"journal": true},
+		Payload:   `{"journal":true}`,
+		CreatedAt: time.Now(),
+	}).Error)
+
+	var count int64
+	require.NoError(t, db.Raw("SELECT COUNT(*) FROM jobs WHERE id = 'job-1'").Scan(&count).Error)
+	assert.Equal(t, int64(1), count)
 }

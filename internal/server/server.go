@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"crypto/subtle"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -38,7 +39,25 @@ import (
 func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 
-	registry := worker.NewRegistry()
+	registry := worker.NewRegistry(db)
+	registry.RegisterRecoverable("sync", func(_ context.Context, payload json.RawMessage, progress func(int, int)) ([]string, error) {
+		var syncRequest SyncRequest
+		if err := json.Unmarshal(payload, &syncRequest); err != nil {
+			return nil, fmt.Errorf("invalid persisted sync payload: %w", err)
+		}
+		result, details := Sync(db, syncRequest, progress)
+		if success, ok := result["success"].(bool); ok && !success {
+			message, _ := result["message"].(string)
+			if message == "" {
+				message = "sync failed"
+			}
+			return details, errors.New(message)
+		}
+		return details, nil
+	})
+	if err := registry.RecoverInterrupted(context.Background()); err != nil {
+		log.WithError(err).Warn("failed to recover interrupted jobs")
+	}
 
 	router := gin.New()
 	if enableCompression {
@@ -148,29 +167,50 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 			return
 		}
 
-		jobID := registry.SubmitDetailed(context.Background(), map[string]any{
+		jobID, err := registry.SubmitRecoverable(context.Background(), "sync", syncRequest, map[string]any{
 			"journal":      syncRequest.Journal,
 			"prices":       syncRequest.Prices,
 			"force_prices": syncRequest.ForcePrices,
 			"portfolios":   syncRequest.Portfolios,
-		}, func(_ context.Context, progress func(int, int)) ([]string, error) {
-			// context.Background() is intentional: the sync job must outlive the
-			// HTTP request.  Using c.Request.Context() would cancel the job as
-			// soon as the 202 response is flushed to the client.
-			result, details := Sync(db, syncRequest, progress)
-			if success, ok := result["success"].(bool); ok && !success {
-				message, _ := result["message"].(string)
-				if message == "" {
-					message = "sync failed"
-				}
-				return details, errors.New(message)
-			}
-			return details, nil
 		})
+		if err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
 
 		c.JSON(http.StatusAccepted, gin.H{"job_id": jobID})
 	})
 
+	router.GET("/api/jobs/stream", func(c *gin.Context) {
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Connection", "keep-alive")
+		c.Header("X-Accel-Buffering", "no")
+
+		for _, job := range registry.List() {
+			c.SSEvent("job", job)
+		}
+		c.Writer.Flush()
+
+		events, cancel := registry.Subscribe()
+		defer cancel()
+
+		for {
+			select {
+			case <-c.Request.Context().Done():
+				return
+			case job, ok := <-events:
+				if !ok {
+					return
+				}
+				c.SSEvent("job", job)
+				c.Writer.Flush()
+			case <-time.After(30 * time.Second):
+				c.SSEvent("ping", "ok")
+				c.Writer.Flush()
+			}
+		}
+	})
 	router.GET("/api/jobs/:id", func(c *gin.Context) {
 		job, ok := registry.Get(c.Param("id"))
 		if !ok {
