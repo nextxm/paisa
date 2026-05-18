@@ -6,6 +6,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -70,18 +71,34 @@ type Result struct {
 	Meta       Meta
 }
 
-type Chart struct {
-	Result []Result
+type ChartError struct {
+	Code        string `json:"code"`
+	Description string `json:"description"`
 }
+
+type Chart struct {
+	Result []Result    `json:"result"`
+	Error  *ChartError `json:"error"`
+}
+
 type Response struct {
 	Chart Chart
 }
 
-func GetHistory(ticker string, commodityName string) ([]*price.Price, error) {
+func GetHistory(ticker string, commodityName string, since time.Time) ([]*price.Price, error) {
 	log.Info("Fetching stock price history from Yahoo")
-	response, err := getTicker(ticker)
+	response, err := getTicker(ticker, since)
 	if err != nil {
 		return nil, err
+	}
+
+	if response.Chart.Error != nil {
+		errObj := response.Chart.Error
+		if errObj.Code == "Bad Request" && (strings.Contains(errObj.Description, "Data doesn't exist") || strings.Contains(errObj.Description, "start date cannot be after end date")) {
+			log.Infof("No new stock price data available for %s since %s", ticker, since.Format("2006-01-02"))
+			return nil, nil
+		}
+		return nil, fmt.Errorf("Failed to fetch data for %s: %s (%s)", ticker, errObj.Description, errObj.Code)
 	}
 
 	var prices []*price.Price
@@ -110,7 +127,7 @@ func GetHistory(ticker string, commodityName string) ([]*price.Price, error) {
 	// market-price service can convert native prices to the default currency.
 	if needExchangePrice {
 		exchangeTicker := fmt.Sprintf("%s%s=X", nativeCurrency, defaultCurrency)
-		exchangeResponse, err := getTicker(exchangeTicker)
+		exchangeResponse, err := getTicker(exchangeTicker, since)
 		if err != nil {
 			return nil, err
 		}
@@ -152,8 +169,13 @@ func appendYahooPrices(prices []*price.Price, result Result, build func(time.Tim
 	return prices
 }
 
-func getTicker(ticker string) (*Response, error) {
-	url := fmt.Sprintf("https://query2.finance.yahoo.com/v8/finance/chart/%s?interval=1d&range=50y", ticker)
+func getTicker(ticker string, since time.Time) (*Response, error) {
+	var url string
+	if since.IsZero() {
+		url = fmt.Sprintf("https://query2.finance.yahoo.com/v8/finance/chart/%s?interval=1d&range=50y", ticker)
+	} else {
+		url = fmt.Sprintf("https://query2.finance.yahoo.com/v8/finance/chart/%s?interval=1d&period1=%d&period2=%d", ticker, since.Unix(), time.Now().Unix())
+	}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -211,7 +233,7 @@ func (p *YahooPriceProvider) ClearCache(db *gorm.DB) {
 }
 
 func (p *YahooPriceProvider) GetPrices(code string, commodityName string, since time.Time) ([]*price.Price, error) {
-	prices, err := GetHistory(code, commodityName)
+	prices, err := GetHistory(code, commodityName, since)
 	if err != nil {
 		return nil, err
 	}

@@ -984,6 +984,11 @@ export function ajax(
 export function ajax(route: "/api/sync", options?: RequestOptions): Promise<{ job_id: string }>;
 
 export function ajax(
+  route: "/api/jobs/clear",
+  options?: RequestOptions
+): Promise<{ success: boolean }>;
+
+export function ajax(
   route: "/api/jobs/:id",
   options?: RequestOptions,
   params?: Record<string, string>

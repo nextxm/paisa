@@ -8,6 +8,9 @@ const AUTH_TOKEN_KEY = "token";
 /** Set of job IDs for which a failure toast has already been shown. */
 const toastedFailureIds = new Set<string>();
 
+/** Set of job IDs that were actively initiated/tracked in the current page session. */
+const activelyTrackedJobIds = new Set<string>();
+
 /** Registered terminal-state listeners per job ID. */
 const terminalListeners = new Map<string, Set<(job: Job) => void>>();
 
@@ -26,6 +29,7 @@ let reconnectDelayMs = INITIAL_RECONNECT_DELAY_MS;
  */
 export function clearSyncStateForTests(): void {
   toastedFailureIds.clear();
+  activelyTrackedJobIds.clear();
   terminalListeners.clear();
   if (streamAbortController) {
     streamAbortController.abort();
@@ -57,7 +61,11 @@ function notifyTerminal(job: Job): void {
 }
 
 function maybeShowFailureToast(job: Job): void {
-  if (job.status !== "failed" || toastedFailureIds.has(job.id)) {
+  if (
+    job.status !== "failed" ||
+    !activelyTrackedJobIds.has(job.id) ||
+    toastedFailureIds.has(job.id)
+  ) {
     return;
   }
   toastedFailureIds.add(job.id);
@@ -124,20 +132,21 @@ export async function ensureJobsStream(): Promise<void> {
   }
 
   const token = localStorage.getItem(AUTH_TOKEN_KEY);
-  if (!token) {
-    return;
-  }
 
   const controller = new AbortController();
   streamAbortController = controller;
 
   try {
+    const headers: Record<string, string> = {
+      Accept: "text/event-stream"
+    };
+    if (token) {
+      headers["X-Auth"] = token;
+    }
+
     const response = await fetch("/api/jobs/stream", {
       method: "GET",
-      headers: {
-        Accept: "text/event-stream",
-        "X-Auth": token
-      },
+      headers,
       cache: "no-store",
       signal: controller.signal
     });
@@ -194,6 +203,8 @@ export async function sync(request: Record<string, any>): Promise<string | null>
     metadata: request
   });
 
+  activelyTrackedJobIds.add(job_id);
+
   void ensureJobsStream();
 
   return job_id;
@@ -204,6 +215,7 @@ export async function sync(request: Record<string, any>): Promise<string | null>
  * updates instead of polling.
  */
 export function startPolling(jobId: string, onTerminal?: (job: Job) => void): void {
+  activelyTrackedJobIds.add(jobId);
   if (onTerminal) {
     const listeners = terminalListeners.get(jobId) ?? new Set<(job: Job) => void>();
     listeners.add(onTerminal);

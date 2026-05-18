@@ -1,5 +1,5 @@
 import { writable, derived, get } from "svelte/store";
-import type { Job } from "$lib/utils";
+import { ajax, type Job } from "$lib/utils";
 
 /** Internal map from job ID to Job snapshot. */
 type JobsMap = Record<string, Job>;
@@ -35,7 +35,12 @@ export function createJobsStore() {
     },
 
     /** Remove all tracked jobs from the store. */
-    reset(): void {
+    async reset(): Promise<void> {
+      try {
+        await ajax("/api/jobs/clear", { method: "POST" });
+      } catch (err) {
+        console.error("Failed to clear background jobs on server:", err);
+      }
       set({});
     },
 

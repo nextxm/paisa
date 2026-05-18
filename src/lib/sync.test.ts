@@ -127,7 +127,7 @@ describe("sync SSE stream", () => {
     expect(jobs.snapshot()["job-from-sync"].status).toBe("pending");
   });
 
-  test("ensureJobsStream does nothing without auth token", async () => {
+  test("ensureJobsStream connects without auth token but omits X-Auth header", async () => {
     localStorage.removeItem("token");
     const fetchMock = mock(
       async () =>
@@ -140,6 +140,9 @@ describe("sync SSE stream", () => {
 
     await ensureJobsStream();
 
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const fetchCall = fetchMock.mock.calls[0];
+    const headers = fetchCall[1].headers;
+    expect(headers["X-Auth"]).toBeUndefined();
   });
 });

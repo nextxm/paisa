@@ -66,13 +66,62 @@ func upsertPriceParams(price *Price) sqlcdb.UpsertPriceParams {
 
 func UpsertAllByTypeNameAndID(db *gorm.DB, commodityType config.CommodityType, commodityName string, commodityID string, prices []*Price) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		queries := dbutil.Queries(tx)
+		conn := tx.ConnPool
+		if tx.Statement != nil && tx.Statement.ConnPool != nil {
+			conn = tx.Statement.ConnPool
+		}
+
+		ctx := context.Background()
 		dc := defaultQuoteCommodity()
-		for _, price := range deduplicatePricePointers(prices) {
+		deduplicated := deduplicatePricePointers(prices)
+
+		if len(deduplicated) == 0 {
+			return nil
+		}
+
+		const query = `INSERT INTO prices (
+    date,
+    commodity_type,
+    commodity_id,
+    commodity_name,
+    quote_commodity,
+    value,
+    source
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+)
+ON CONFLICT (commodity_type, date, commodity_name, quote_commodity) DO UPDATE SET
+    commodity_id = excluded.commodity_id,
+    value = excluded.value,
+    source = excluded.source`
+
+		stmt, err := conn.PrepareContext(ctx, query)
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+
+		for _, price := range deduplicated {
 			if price.QuoteCommodity == "" {
 				price.QuoteCommodity = dc
 			}
-			if err := queries.UpsertPrice(context.Background(), upsertPriceParams(price)); err != nil {
+			params := upsertPriceParams(price)
+			_, err = stmt.ExecContext(ctx,
+				params.Date,
+				params.CommodityType,
+				params.CommodityID,
+				params.CommodityName,
+				params.QuoteCommodity,
+				params.Value,
+				params.Source,
+			)
+			if err != nil {
 				return err
 			}
 		}
@@ -156,18 +205,65 @@ func deduplicatePrices(prices []Price) []Price {
 
 func UpsertAllByType(db *gorm.DB, commodityType config.CommodityType, prices []Price) error {
 	return db.Transaction(func(tx *gorm.DB) error {
+		conn := tx.ConnPool
+		if tx.Statement != nil && tx.Statement.ConnPool != nil {
+			conn = tx.Statement.ConnPool
+		}
+
 		queries := dbutil.Queries(tx)
 		if err := queries.DeletePricesByType(context.Background(), commodityType); err != nil {
 			return err
 		}
 		dc := defaultQuoteCommodity()
-		for i := range prices {
-			if prices[i].QuoteCommodity == "" {
-				prices[i].QuoteCommodity = dc
-			}
+		deduplicated := deduplicatePrices(prices)
+
+		if len(deduplicated) == 0 {
+			return nil
 		}
-		for _, price := range deduplicatePrices(prices) {
-			if err := queries.UpsertPrice(context.Background(), upsertPriceParams(&price)); err != nil {
+
+		const query = `INSERT INTO prices (
+    date,
+    commodity_type,
+    commodity_id,
+    commodity_name,
+    quote_commodity,
+    value,
+    source
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+)
+ON CONFLICT (commodity_type, date, commodity_name, quote_commodity) DO UPDATE SET
+    commodity_id = excluded.commodity_id,
+    value = excluded.value,
+    source = excluded.source`
+
+		stmt, err := conn.PrepareContext(context.Background(), query)
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+
+		for _, price := range deduplicated {
+			if price.QuoteCommodity == "" {
+				price.QuoteCommodity = dc
+			}
+			params := upsertPriceParams(&price)
+			_, err = stmt.ExecContext(context.Background(),
+				params.Date,
+				params.CommodityType,
+				params.CommodityID,
+				params.CommodityName,
+				params.QuoteCommodity,
+				params.Value,
+				params.Source,
+			)
+			if err != nil {
 				return err
 			}
 		}

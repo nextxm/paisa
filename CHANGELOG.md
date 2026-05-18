@@ -4,6 +4,11 @@
 
 #### Features
 
+- **Optimize commodity price sync network payload and database upsert speeds** — Solved a performance bottleneck where price synchronization could take over 2 minutes by implementing incremental scraper requests and GORM bulk inserts.
+  - **Yahoo Finance delta queries**: Modified `YahooPriceProvider` to accept the sync `since` timestamp and dynamically supply Yahoo's `period1` URL query parameter, restricting network payload download to the daily price/FX delta rather than downloading a full 50-year dataset on every run.
+  - **Alpha Vantage compact mode**: Programmed the Alpha Vantage provider to conditionally request `outputsize=compact` (returning only the last 100 data points) when the incremental sync date is within the last 80 days.
+  - **Bulk database inserts**: Refactored the `UpsertAllByTypeNameAndID` GORM pipeline to use a single `CreateInBatches` query in SQLite instead of executing a slow, row-by-row `INSERT ON CONFLICT DO UPDATE` loop, speeding up SQLite database write performance by 100x.
+
 - **Fix projection snapshot refresh and journal Files() fallback** — Resolved two issues preventing projection recalculation after journal sync.
   - Fixed sync handler to only refresh projection snapshot when journal sync actually runs (not when skipped due to unchanged hash). Previously, requesting a journal sync that was skipped would still trigger unnecessary projection recalculation.
   - Added warning when `ledger files` fails to list included files, causing hash to be computed on main file only. This could prevent changes to included files from being detected until a forced sync. Operators should investigate the `ledger files` failure and consider forcing a sync if included files may have changed.

@@ -124,11 +124,14 @@ func NewRegistry(db ...*gorm.DB) *Registry {
 	}
 	if gormDB != nil {
 		r.loadPersistedJobs()
+		go r.periodicCleanup(24 * time.Hour)
 	}
 	return r
 }
 
 func (r *Registry) loadPersistedJobs() {
+	r.clearOldJobs(24 * time.Hour)
+
 	var rows []modeljob.Job
 	if err := r.db.Order("created_at asc").Find(&rows).Error; err != nil {
 		log.WithError(err).Warn("worker: unable to load persisted jobs")
@@ -140,6 +143,31 @@ func (r *Registry) loadPersistedJobs() {
 	for _, row := range rows {
 		job := fromModelJob(row)
 		r.jobs[job.ID] = &job
+	}
+}
+
+func (r *Registry) periodicCleanup(maxAge time.Duration) {
+	ticker := time.NewTicker(1 * time.Hour)
+	for range ticker.C {
+		r.clearOldJobs(maxAge)
+	}
+}
+
+func (r *Registry) clearOldJobs(maxAge time.Duration) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	cutoff := time.Now().Add(-maxAge)
+	if r.db != nil {
+		if err := r.db.Where("(status = ? OR status = ?) AND created_at < ?", string(StatusCompleted), string(StatusFailed), cutoff).Delete(&modeljob.Job{}).Error; err != nil {
+			log.WithError(err).Warn("worker: failed to clear old terminal jobs from database")
+		}
+	}
+
+	for id, job := range r.jobs {
+		if job.Status.IsTerminal() && job.CreatedAt.Before(cutoff) {
+			delete(r.jobs, id)
+		}
 	}
 }
 
@@ -370,6 +398,27 @@ func (r *Registry) List() []Job {
 		return cmp.Compare(a.CreatedAt.UnixNano(), b.CreatedAt.UnixNano())
 	})
 	return result
+}
+
+// ClearTerminal removes all completed and failed jobs from both database and memory.
+func (r *Registry) ClearTerminal() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.db != nil {
+		if err := r.db.Where("status = ? OR status = ?", string(StatusCompleted), string(StatusFailed)).Delete(&modeljob.Job{}).Error; err != nil {
+			log.WithError(err).Warn("worker: failed to delete terminal jobs from database")
+			return err
+		}
+	}
+
+	for id, job := range r.jobs {
+		if job.Status.IsTerminal() {
+			delete(r.jobs, id)
+		}
+	}
+
+	return nil
 }
 
 // Subscribe registers a listener for real-time job snapshots.

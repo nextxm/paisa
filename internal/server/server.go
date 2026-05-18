@@ -181,6 +181,14 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(http.StatusAccepted, gin.H{"job_id": jobID})
 	})
 
+	writeGroup.POST("/api/jobs/clear", func(c *gin.Context) {
+		if err := registry.ClearTerminal(); err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"success": true})
+	})
+
 	router.GET("/api/jobs/stream", func(c *gin.Context) {
 		c.Header("Content-Type", "text/event-stream")
 		c.Header("Cache-Control", "no-cache")

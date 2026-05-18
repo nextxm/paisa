@@ -568,3 +568,73 @@ func TestRegistry_SubscribeReceivesUpdates(t *testing.T) {
 		}
 	}, 2*time.Second, 5*time.Millisecond)
 }
+
+func TestRegistry_ClearTerminal(t *testing.T) {
+	db := openTestDB(t)
+	r := worker.NewRegistry(db)
+
+	// Submit completed job
+	id1 := r.Submit(context.Background(), func(_ context.Context) error { return nil })
+	assert.Eventually(t, func() bool {
+		j, _ := r.Get(id1)
+		return j.Status == worker.StatusCompleted
+	}, 2*time.Second, 5*time.Millisecond)
+
+	// Submit failed job
+	id2 := r.Submit(context.Background(), func(_ context.Context) error { return errors.New("failed") })
+	assert.Eventually(t, func() bool {
+		j, _ := r.Get(id2)
+		return j.Status == worker.StatusFailed
+	}, 2*time.Second, 5*time.Millisecond)
+
+	// Submit running/pending job (gated so it stays running)
+	gate := make(chan struct{})
+	id3 := r.Submit(context.Background(), func(_ context.Context) error {
+		<-gate
+		return nil
+	})
+
+	// Wait until it enters running or pending status
+	assert.Eventually(t, func() bool {
+		j, _ := r.Get(id3)
+		return j.Status == worker.StatusRunning || j.Status == worker.StatusPending
+	}, 2*time.Second, 5*time.Millisecond)
+
+	// Clear terminal jobs
+	require.NoError(t, r.ClearTerminal())
+
+	// Completed and failed should be gone
+	_, ok1 := r.Get(id1)
+	assert.False(t, ok1)
+	_, ok2 := r.Get(id2)
+	assert.False(t, ok2)
+
+	// Running/pending job should still exist
+	_, ok3 := r.Get(id3)
+	assert.True(t, ok3)
+
+	close(gate)
+}
+
+func TestRegistry_ClearOldJobs(t *testing.T) {
+	db := openTestDB(t)
+	r := worker.NewRegistry(db)
+
+	// Submit completed job
+	id := r.Submit(context.Background(), func(_ context.Context) error { return nil })
+	assert.Eventually(t, func() bool {
+		j, _ := r.Get(id)
+		return j.Status == worker.StatusCompleted
+	}, 2*time.Second, 5*time.Millisecond)
+
+	// Artificially modify CreatedAt in database to be 25 hours old
+	oldTime := time.Now().Add(-25 * time.Hour)
+	require.NoError(t, db.Exec("UPDATE jobs SET created_at = ? WHERE id = ?", oldTime, id).Error)
+
+	// Restart a new registry to load persisted jobs (which will trigger startup cleanup)
+	restarted := worker.NewRegistry(db)
+
+	// Verify that the job was cleared from database and restarted registry's memory
+	_, ok := restarted.Get(id)
+	assert.False(t, ok, "Completed job older than 24 hours should be auto-cleared on startup")
+}
