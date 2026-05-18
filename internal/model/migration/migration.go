@@ -284,6 +284,11 @@ func v15AddPostingOriginalAmount(db *gorm.DB) error {
 	if err := db.AutoMigrate(&posting.Posting{}); err != nil {
 		return fmt.Errorf("v15: AutoMigrate postings failed: %w", err)
 	}
+	if err := db.Exec(
+		"UPDATE postings SET original_amount = quantity WHERE original_amount IS NULL OR original_amount = ''",
+	).Error; err != nil {
+		return fmt.Errorf("v15: backfill original_amount failed: %w", err)
+	}
 	return nil
 }
 
@@ -311,6 +316,16 @@ func RunMigrations(db *gorm.DB) error {
 
 		if err := db.Create(&SchemaVersion{Version: m.Version, AppliedAt: time.Now()}).Error; err != nil {
 			return fmt.Errorf("failed to record migration v%d: %w", m.Version, err)
+		}
+	}
+
+	// Backfill any NULL original_amount fields in case the column was added
+	// but the migration failed or got skipped, or backfill wasn't run.
+	if db.Migrator().HasColumn(&posting.Posting{}, "original_amount") {
+		if err := db.Exec(
+			"UPDATE postings SET original_amount = quantity WHERE original_amount IS NULL OR original_amount = ''",
+		).Error; err != nil {
+			return fmt.Errorf("failed to backfill original_amount: %w", err)
 		}
 	}
 
