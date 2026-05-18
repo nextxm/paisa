@@ -1,12 +1,14 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/stretchr/testify/assert"
@@ -218,6 +220,49 @@ func TestIntegration_GetJob_NotFound(t *testing.T) {
 	router.ServeHTTP(rec, req)
 
 	assert.Equal(t, http.StatusNotFound, rec.Code, "unknown job ID must return 404")
+}
+
+func TestIntegration_JobsStream_EmitsUpdates(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+	router := Build(db, false)
+
+	syncReq := httptest.NewRequest(http.MethodPost, "/api/sync", strings.NewReader(`{"journal":false}`))
+	syncReq.Header.Set("Content-Type", "application/json")
+	syncRec := httptest.NewRecorder()
+	router.ServeHTTP(syncRec, syncReq)
+	require.Equal(t, http.StatusAccepted, syncRec.Code)
+
+	var body map[string]json.RawMessage
+	require.NoError(t, json.NewDecoder(syncRec.Body).Decode(&body))
+	var jobID string
+	require.NoError(t, json.Unmarshal(body["job_id"], &jobID))
+	require.NotEmpty(t, jobID)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	streamReq := httptest.NewRequest(http.MethodGet, "/api/jobs/stream", nil).WithContext(ctx)
+	streamRec := httptest.NewRecorder()
+	done := make(chan struct{})
+	go func() {
+		router.ServeHTTP(streamRec, streamReq)
+		close(done)
+	}()
+
+	assert.Eventually(t, func() bool {
+		return strings.Contains(streamRec.Body.String(), `"id":"`+jobID+`"`)
+	}, 2*time.Second, 10*time.Millisecond, "stream must emit at least one event for submitted job")
+
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("stream handler did not stop after context cancellation")
+	}
+
+	assert.Equal(t, http.StatusOK, streamRec.Code)
+	assert.Contains(t, streamRec.Header().Get("Content-Type"), "text/event-stream")
 }
 
 // TestIntegration_SyncAsync_FailureStillReturns202 verifies that even when the
