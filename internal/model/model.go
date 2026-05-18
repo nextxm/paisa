@@ -60,7 +60,7 @@ func SyncJournal(db *gorm.DB, forceJournal bool) (SyncResult, error) {
 	files, err := ledger.Cli().Files(journalPath)
 	if err != nil {
 		log.WithFields(log.Fields{"stage": "journal.files", "error": err}).
-			Warn("Failed to list journal files; proceeding with root file only")
+			Warn("Failed to list journal files; proceeding with root file only. Changes to included files may not be detected until next forced sync.")
 		files = []string{journalPath}
 	}
 

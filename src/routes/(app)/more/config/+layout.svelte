@@ -3,6 +3,7 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import { ajax, configUpdated } from "$lib/utils";
+  import { fetchConfig, updateConfig } from "$lib/config_client";
   import { onMount } from "svelte";
   import type { JSONSchema7 } from "json-schema";
   import _ from "lodash";
@@ -31,7 +32,7 @@
   });
 
   onMount(async () => {
-    ({ config, schema, accounts } = await ajax("/api/config"));
+    ({ config, schema, accounts } = await fetchConfig());
     lastConfig = _.cloneDeep(config);
   });
 
@@ -70,11 +71,7 @@
     isLoading = true;
     try {
       let success = false;
-      ({ success, error } = await ajax("/api/config", {
-        method: "POST",
-        body: JSON.stringify(config),
-        background: true
-      }));
+      ({ success, error } = await updateConfig(config as UserConfig, { background: true }));
       if (success) {
         lastConfig = _.cloneDeep(config);
         globalThis.USER_CONFIG = _.cloneDeep(config!);
@@ -104,11 +101,7 @@
       isLoading = true;
       try {
         let success = false;
-        ({ success, error } = await ajax("/api/config", {
-          method: "POST",
-          body: JSON.stringify(minimal),
-          background: true
-        }));
+        ({ success, error } = await updateConfig(minimal as UserConfig, { background: true }));
         if (success) {
           lastConfig = _.cloneDeep(minimal);
           config = _.cloneDeep(minimal);

@@ -4,6 +4,16 @@
 
 #### Features
 
+- **Fix projection snapshot refresh and journal Files() fallback** — Resolved two issues preventing projection recalculation after journal sync.
+  - Fixed sync handler to only refresh projection snapshot when journal sync actually runs (not when skipped due to unchanged hash). Previously, requesting a journal sync that was skipped would still trigger unnecessary projection recalculation.
+  - Added warning when `ledger files` fails to list included files, causing hash to be computed on main file only. This could prevent changes to included files from being detected until a forced sync. Operators should investigate the `ledger files` failure and consider forcing a sync if included files may have changed.
+
+- **Connect-RPC config contract expansion** — Added typed Connect methods for config reads/writes and migrated frontend config consumers away from `/api/config` REST calls.
+  - Extended `proto/api.proto` with `GetConfig` and `UpdateConfig` RPCs and regenerated Go/TypeScript stubs.
+  - Implemented Connect handlers in `internal/server/connect_service.go` with journal-dirty and schema/config payload parity.
+  - Added `src/lib/config_client.ts` and switched config-loading/saving paths in app shell, command palette quick add, goals, config editor, and reconciliation UI to `paisaClient`.
+  - Removed legacy `/api/config` AJAX overloads from `src/lib/utils.ts`.
+
 - **SQLc-backed posting, price, and portfolio persistence hot paths** — Added a typed raw-SQL query layer for the highest-traffic SQLite reads and writes.
   - Added `sqlc.yaml` plus `internal/db/schema.sql` / `internal/db/queries.sql`, and checked in generated Go clients under `internal/db/sqlc/`.
   - Refactored posting queries (`internal/query`), price reads/writes, portfolio reads/writes, and posting upserts to execute through SQLc-generated code while preserving the existing package APIs and focused GORM fallback for unsupported ad-hoc predicates.

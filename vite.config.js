@@ -147,6 +147,9 @@ const config = {
     proxy: {
       "/api": {
         target: "http://localhost:7500"
+      },
+      "/connect": {
+        target: "http://localhost:7500"
       }
     },
     fs: {
