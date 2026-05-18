@@ -99,6 +99,7 @@
         { label: "Yearly", href: "/yearly", financialYearPicker: true },
         { label: "Budget", href: "/budget", help: "budget", monthPicker: true },
         { label: "Expense Breakdown", href: "/sankey", dateRangeSelector: true },
+        { label: "Heatmap", href: "/heatmap" },
         { label: "YoY", href: "/yoy" },
         { label: "MoM", href: "/mom" }
       ]

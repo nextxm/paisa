@@ -4,6 +4,11 @@
 
 #### Features
 
+- **Add Expenses → Heatmap for daily spend patterns and seasonality** — Introduced a calendar-style spending heatmap plus weekday/month seasonality views.
+  - Added backend `GET /api/expense/daily` with configurable `from`/`to` bounds and optional category grouping for daily spend totals.
+  - Added **Expenses → Heatmap** with a year selector, category filter, GitHub-style spend intensity grid, weekday averages, and month-of-year seasonality bars.
+  - Added focused backend aggregation tests and frontend heatmap utility tests for date-range padding and seasonality calculations.
+
 - **Optimize commodity price sync network payload and database upsert speeds** — Solved a performance bottleneck where price synchronization could take over 2 minutes by implementing incremental scraper requests and GORM bulk inserts.
   - **Yahoo Finance delta queries**: Modified `YahooPriceProvider` to accept the sync `since` timestamp and dynamically supply Yahoo's `period1` URL query parameter, restricting network payload download to the daily price/FX delta rather than downloading a full 50-year dataset on every run.
   - **Alpha Vantage compact mode**: Programmed the Alpha Vantage provider to conditionally request `outputsize=compact` (returning only the last 100 data points) when the incremental sync date is within the last 80 days.
