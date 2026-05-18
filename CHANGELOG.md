@@ -33,6 +33,7 @@
   - In actual currency view, dimensions are grouped by both category/payee/account AND commodity, so mixed-currency spending is shown separately — e.g., "Groceries" becomes "Groceries (USD)" and "Groceries (EUR)" if both exist.
   - No server roundtrip on currency toggle — all amounts are pre-calculated and sent with each posting.
 
+
 - **MoM Analysis: client-side currency conversion** — Added a "Currency" selector to the MoM analysis page control panel. On load, the page fetches latest FX rates for all configured currency pairs from the new `GET /api/expense/latest-rates` endpoint and stores them locally. Switching currencies instantly re-derives all charts and tables via a `$derived` converted postings layer — no extra network request on each switch. The new backend endpoint (`GetLatestRates`) returns a `rates[base][quote]` map plus the default currency so the UI can build the selector and apply conversions without server-side re-processing.
 
 - **Month-on-Month (MoM) Analysis – Phase 5 & Layout Polish** — Continued improvements to the MoM analysis page:
