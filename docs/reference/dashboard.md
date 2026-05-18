@@ -4,14 +4,24 @@ description: "Overview of the Paisa dashboard and its widgets"
 
 # Dashboard
 
-The **Dashboard** is the landing page of Paisa.  It provides an
+The **Dashboard** is the landing page of Paisa. It provides an
 at-a-glance overview of your financial health through a collection of
 widgets.
+
+## Widget customization
+
+Use the **Widgets** gear button in the dashboard header to open the widget picker.
+
+- Drag widgets to reorder them.
+- Toggle **Show** to hide or reveal individual widgets.
+- Adjust per-widget numeric settings (for example, item limits on Budget, Goals, Recurring, and Recent Transactions).
+
+Dashboard preferences are persisted in browser `localStorage` under the `dashboard-layout` key.
 
 ## Recent Transactions
 
 The **Recent Transactions** widget shows the 15 most recent
-transactions from your journal.  Each entry is rendered as a
+transactions from your journal. Each entry is rendered as a
 transaction card with the date, description, and posting amounts.
 
 The `GET /api/transaction` endpoint supports optional `limit` and
@@ -24,7 +34,7 @@ level).
 
 The **Monthly Cashflow** widget provides a multi-currency breakdown of
 income versus expenses for the current month, using the original
-ledger quantities (no mark-to-market conversion).  This gives a quick,
+ledger quantities (no mark-to-market conversion). This gives a quick,
 currency-accurate net cashflow figure.
 
 ## Account Reconciliation
