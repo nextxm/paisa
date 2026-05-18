@@ -351,3 +351,74 @@ accounts:
 	require.Len(t, postings, 1)
 	assert.Equal(t, "Assets:Active", postings[0].Account)
 }
+
+func TestAll_SQLcFiltersAndOrdering(t *testing.T) {
+	db := openTestDB(t)
+	require.NoError(t, db.Create(&posting.Posting{
+		TransactionID: "t1",
+		Date:          time.Date(2024, 1, 10, 0, 0, 0, 0, time.UTC),
+		Account:       "Assets:Checking:HDFC",
+		Commodity:     "INR",
+		Amount:        decimal.NewFromFloat(200),
+		Quantity:      decimal.NewFromFloat(200),
+		Status:        "cleared",
+	}).Error)
+	require.NoError(t, db.Create(&posting.Posting{
+		TransactionID: "t2",
+		Date:          time.Date(2024, 1, 11, 0, 0, 0, 0, time.UTC),
+		Account:       "Assets:Checking:SBI",
+		Commodity:     "INR",
+		Amount:        decimal.NewFromFloat(100),
+		Quantity:      decimal.NewFromFloat(100),
+		Status:        "pending",
+	}).Error)
+	require.NoError(t, db.Create(&posting.Posting{
+		TransactionID: "t3",
+		Date:          time.Date(2024, 1, 12, 0, 0, 0, 0, time.UTC),
+		Account:       "Expenses:Food",
+		Commodity:     "INR",
+		Amount:        decimal.NewFromFloat(-50),
+		Quantity:      decimal.NewFromFloat(-50),
+		Status:        "cleared",
+	}).Error)
+
+	postings := Init(db).
+		Desc().
+		AccountPrefix("Assets:Checking").
+		Status("cleared").
+		Credit().
+		All()
+
+	require.Len(t, postings, 1)
+	assert.Equal(t, "t1", postings[0].TransactionID)
+	assert.Equal(t, "Assets:Checking:HDFC", postings[0].Account)
+}
+
+func TestFirst_WhereAccountAndDateBetween(t *testing.T) {
+	db := openTestDB(t)
+	require.NoError(t, db.Create(&posting.Posting{
+		TransactionID: "old",
+		Date:          time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		Account:       "Assets:Brokerage",
+		Commodity:     "AAPL",
+		Amount:        decimal.NewFromFloat(10),
+		Quantity:      decimal.NewFromFloat(1),
+	}).Error)
+	require.NoError(t, db.Create(&posting.Posting{
+		TransactionID: "new",
+		Date:          time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC),
+		Account:       "Assets:Brokerage",
+		Commodity:     "AAPL",
+		Amount:        decimal.NewFromFloat(20),
+		Quantity:      decimal.NewFromFloat(2),
+	}).Error)
+
+	first := Init(db).
+		Desc().
+		Where("account = ?", "Assets:Brokerage").
+		Where("date between ? AND ?", time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC), time.Date(2024, 2, 28, 23, 59, 59, 0, time.UTC)).
+		First()
+
+	require.NotNil(t, first)
+	assert.Equal(t, "new", first.TransactionID)
+}
