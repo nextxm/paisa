@@ -4,6 +4,12 @@
 
 #### Features
 
+- **Customizable dashboard widgets and layout persistence** — Added dashboard widget personalization with per-widget settings and saved layout preferences.
+  - Introduced a dashboard widget registry with metadata (title, column, default order/visibility, configurable numeric limits).
+  - Added a dashboard gear/settings modal with show/hide toggles plus drag-and-drop and keyboard up/down reordering controls.
+  - Persisted widget order, visibility, and settings to localStorage under the `dashboard-layout` key, and applied settings to Budget/Goals/Recurring/Recent Transactions widgets.
+  - Added focused frontend unit tests for layout defaulting, persistence, and reorder behavior.
+
 - **Add Expenses → Heatmap for daily spend patterns and seasonality** — Introduced a calendar-style spending heatmap plus weekday/month seasonality views.
   - Added backend `GET /api/expense/daily` with configurable `from`/`to` bounds and optional category grouping for daily spend totals.
   - Added **Expenses → Heatmap** with a year selector, category filter, GitHub-style spend intensity grid, weekday averages, and month-of-year seasonality bars.
