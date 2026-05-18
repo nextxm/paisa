@@ -9,11 +9,20 @@
   import { ajax, type Legend } from "$lib/utils";
   import _ from "lodash";
   import { onMount } from "svelte";
+  import type { PageData } from "./$types";
+
+  let { data }: { data: PageData } = $props();
 
   let monthlyInvestmentTimelineLegends: Legend[] = $state([]);
   let yearlyInvestmentTimelineLegends: Legend[] = $state([]);
   let reportCurrency = $state("");
-  let availableCurrencies: string[] = $state([]);
+  let availableCurrencies: string[] = $state(data.currencies.currencies || []);
+
+  function renderInvestment(payload: PageData["investment"]) {
+    monthlyInvestmentTimelineLegends = renderMonthlyInvestmentTimeline(payload.assets);
+    yearlyInvestmentTimelineLegends = renderYearlyInvestmentTimeline(payload.yearly_cards);
+    renderYearlyCards(payload.yearly_cards);
+  }
 
   async function fetchInvestment() {
     const params = new URLSearchParams();
@@ -22,17 +31,11 @@
     const { assets: assets, yearly_cards: yearlyCards } = await ajax(
       query ? `/api/investment?${query}` : "/api/investment"
     );
-    monthlyInvestmentTimelineLegends = renderMonthlyInvestmentTimeline(assets);
-    yearlyInvestmentTimelineLegends = renderYearlyInvestmentTimeline(yearlyCards);
-    renderYearlyCards(yearlyCards);
+    renderInvestment({ assets, yearly_cards: yearlyCards });
   }
 
-  onMount(async () => {
-    const [, currencyResult] = await Promise.all([
-      fetchInvestment(),
-      ajax("/api/price/currencies")
-    ]);
-    availableCurrencies = currencyResult.currencies || [];
+  onMount(() => {
+    renderInvestment(data.investment);
   });
 </script>
 
