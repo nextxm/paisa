@@ -33,7 +33,6 @@
   - In actual currency view, dimensions are grouped by both category/payee/account AND commodity, so mixed-currency spending is shown separately — e.g., "Groceries" becomes "Groceries (USD)" and "Groceries (EUR)" if both exist.
   - No server roundtrip on currency toggle — all amounts are pre-calculated and sent with each posting.
 
-
 - **MoM Analysis: client-side currency conversion** — Added a "Currency" selector to the MoM analysis page control panel. On load, the page fetches latest FX rates for all configured currency pairs from the new `GET /api/expense/latest-rates` endpoint and stores them locally. Switching currencies instantly re-derives all charts and tables via a `$derived` converted postings layer — no extra network request on each switch. The new backend endpoint (`GetLatestRates`) returns a `rates[base][quote]` map plus the default currency so the UI can build the selector and apply conversions without server-side re-processing.
 
 - **Month-on-Month (MoM) Analysis – Phase 5 & Layout Polish** — Continued improvements to the MoM analysis page:
@@ -276,6 +275,11 @@
 - **Extensible PriceProvider interface** — `internal/model/price.PriceProvider` is now fully documented with explicit return-value semantics for every method, making it straightforward to implement a custom provider. Compile-time interface-satisfaction checks (`var _ price.PriceProvider = ...`) have been added to every built-in provider package to catch drift early.
 
 #### Bug fixes
+
+- **Frontend jobs store API export hardening** — Typed `src/lib/stores/jobs.ts` with an explicit
+  `JobsStore` contract so the exported `jobs` store is guaranteed to expose `upsert`,
+  `updateById`, `reset`, and `snapshot` alongside `subscribe`, preventing regressions where tests
+  encounter `jobs.reset is not a function`.
 
 - **Journal sync posting writes optimized** — `posting.UpsertAll` now performs replacement
   inserts using GORM `CreateInBatches` instead of one-row-at-a-time inserts, reducing sync
