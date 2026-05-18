@@ -57,7 +57,12 @@
     root
       .append("g")
       .attr("class", "axis y")
-      .call(d3.axisLeft(y).ticks(5).tickFormat((value: number) => formatCurrencyCrude(value)));
+      .call(
+        d3
+          .axisLeft(y)
+          .ticks(5)
+          .tickFormat((value: number) => formatCurrencyCrude(value))
+      );
 
     root
       .append("g")
@@ -72,7 +77,8 @@
       .attr("fill", color)
       .append("title")
       .text(
-        (point) => `${point.label}: ${formatCurrency(point.value)} average (${formatCurrency(point.total)} total)`
+        (point) =>
+          `${point.label}: ${formatCurrency(point.value)} average (${formatCurrency(point.total)} total)`
       );
   }
 

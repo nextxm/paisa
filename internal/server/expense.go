@@ -54,10 +54,10 @@ type DailyExpenseDay struct {
 }
 
 type DailyExpenseResponse struct {
-	FromDate   time.Time          `json:"from_date"`
-	ToDate     time.Time          `json:"to_date"`
-	Categories []string           `json:"categories"`
-	Days       []DailyExpenseDay  `json:"days"`
+	FromDate   time.Time         `json:"from_date"`
+	ToDate     time.Time         `json:"to_date"`
+	Categories []string          `json:"categories"`
+	Days       []DailyExpenseDay `json:"days"`
 }
 
 const expenseDailyDateLayout = "2006-01-02"

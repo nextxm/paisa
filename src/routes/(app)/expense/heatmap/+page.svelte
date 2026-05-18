@@ -54,12 +54,21 @@
   let toDate = $derived(response?.to_date || dayjs(`${selectedYear}-12-31`));
   let days = $derived(response?.days || []);
   let categories = $derived(response?.categories || []);
-  let filteredTotals = $derived(days.map((day) => ({ date: day.date, total: getDailyExpenseAmount(day, selectedCategory) })));
+  let filteredTotals = $derived(
+    days.map((day) => ({ date: day.date, total: getDailyExpenseAmount(day, selectedCategory) }))
+  );
   let totalSpend = $derived(_.sumBy(filteredTotals, (entry) => entry.total));
   let activeDays = $derived(filteredTotals.filter((entry) => entry.total > 0).length);
-  let peakDay = $derived(_.maxBy(filteredTotals.filter((entry) => entry.total > 0), (entry) => entry.total) || null);
+  let peakDay = $derived(
+    _.maxBy(
+      filteredTotals.filter((entry) => entry.total > 0),
+      (entry) => entry.total
+    ) || null
+  );
   let weekdayPattern = $derived(buildWeekdayPattern(days, fromDate, toDate, selectedCategory));
-  let seasonalityPattern = $derived(buildSeasonalityPattern(days, fromDate, toDate, selectedCategory));
+  let seasonalityPattern = $derived(
+    buildSeasonalityPattern(days, fromDate, toDate, selectedCategory)
+  );
   let peakWeekday = $derived(_.maxBy(weekdayPattern, (entry) => entry.value) || null);
   let peakMonth = $derived(
     _.maxBy(
@@ -129,7 +138,9 @@
         <div class="box heatmap-stat-card">
           <p class="heading is-size-7 mb-1">Active spend days</p>
           <p class="title is-5 mb-1">{activeDays}</p>
-          <p class="is-size-7 has-text-grey">{formatCurrency(totalSpend / Math.max(calendarDays, 1))} per calendar day</p>
+          <p class="is-size-7 has-text-grey">
+            {formatCurrency(totalSpend / Math.max(calendarDays, 1))} per calendar day
+          </p>
         </div>
       </div>
       <div class="column is-3-desktop is-6-tablet">
@@ -146,7 +157,9 @@
           <p class="heading is-size-7 mb-1">Strongest pattern</p>
           <p class="title is-6 mb-1">{peakMonth?.label || "n/a"} / {peakWeekday?.label || "n/a"}</p>
           <p class="is-size-7 has-text-grey">
-            {formatCurrency(peakMonth?.value || 0)} avg month • {formatCurrency(peakWeekday?.value || 0)} avg weekday
+            {formatCurrency(peakMonth?.value || 0)} avg month • {formatCurrency(
+              peakWeekday?.value || 0
+            )} avg weekday
           </p>
         </div>
       </div>
@@ -158,7 +171,7 @@
           {#if isLoading}
             <p class="has-text-grey is-size-7">Loading heatmap…</p>
           {:else}
-            <ExpenseHeatmap days={days} from={fromDate} to={toDate} category={selectedCategory} />
+            <ExpenseHeatmap {days} from={fromDate} to={toDate} category={selectedCategory} />
           {/if}
         </div>
         <BoxLabel text="Daily Spend Intensity" />
@@ -196,7 +209,7 @@
     justify-content: space-between;
     gap: 1rem;
     flex-wrap: wrap;
-    align-items: end;
+    align-items: flex-end;
   }
 
   .heatmap-filters {

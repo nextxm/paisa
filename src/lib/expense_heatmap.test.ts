@@ -63,7 +63,15 @@ describe("expense heatmap utils", () => {
       "Dining"
     );
 
-    expect(pattern.map((point) => point.label)).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+    expect(pattern.map((point) => point.label)).toEqual([
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+    ]);
     expect(pattern.find((point) => point.label === "Wed")?.value).toBe(20);
     expect(pattern.find((point) => point.label === "Fri")?.value).toBe(0);
   });

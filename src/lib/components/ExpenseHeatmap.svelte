@@ -51,7 +51,10 @@
 <div class="expense-heatmap" data-testid="expense-heatmap">
   <div class="months">
     <div class="months-spacer"></div>
-    <div class="months-grid" style={`grid-template-columns: repeat(${weeks.length}, minmax(0, 1fr));`}>
+    <div
+      class="months-grid"
+      style={`grid-template-columns: repeat(${weeks.length}, minmax(0, 1fr));`}
+    >
       {#each monthHeaders as month}
         <div class="month-label">{month}</div>
       {/each}
@@ -65,7 +68,10 @@
       {/each}
     </div>
 
-    <div class="weeks-grid" style={`grid-template-columns: repeat(${weeks.length}, minmax(0, 1fr));`}>
+    <div
+      class="weeks-grid"
+      style={`grid-template-columns: repeat(${weeks.length}, minmax(0, 1fr));`}
+    >
       {#each weeks as week}
         <div class="week-column">
           {#each week as cell}

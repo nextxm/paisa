@@ -15,7 +15,20 @@ export interface ExpensePatternPoint {
 }
 
 const weekdayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const monthLabels = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec"
+];
 
 export function getDailyExpenseAmount(day: DailyExpenseDay, category = "") {
   return category ? day.by_category?.[category] || 0 : day.total;
@@ -75,7 +88,11 @@ export function buildWeekdayPattern(
   const totals = Array.from({ length: 7 }, () => 0);
   const counts = Array.from({ length: 7 }, () => 0);
 
-  for (let cursor = from.startOf("day"); !cursor.isAfter(to, "day"); cursor = cursor.add(1, "day")) {
+  for (
+    let cursor = from.startOf("day");
+    !cursor.isAfter(to, "day");
+    cursor = cursor.add(1, "day")
+  ) {
     const index = weekdayIndex(cursor);
     counts[index] += 1;
     totals[index] += lookup.get(cursor.format("YYYY-MM-DD")) || 0;
@@ -104,8 +121,12 @@ export function buildSeasonalityPattern(
     !monthCursor.isAfter(to, "month");
     monthCursor = monthCursor.add(1, "month")
   ) {
-    const monthStart = monthCursor.isSame(from, "month") ? from.startOf("day") : monthCursor.startOf("month");
-    const monthEnd = monthCursor.isSame(to, "month") ? to.startOf("day") : monthCursor.endOf("month");
+    const monthStart = monthCursor.isSame(from, "month")
+      ? from.startOf("day")
+      : monthCursor.startOf("month");
+    const monthEnd = monthCursor.isSame(to, "month")
+      ? to.startOf("day")
+      : monthCursor.endOf("month");
     let monthlyTotal = 0;
 
     for (let cursor = monthStart; !cursor.isAfter(monthEnd, "day"); cursor = cursor.add(1, "day")) {
