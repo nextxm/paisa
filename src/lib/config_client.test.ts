@@ -1,8 +1,25 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { writable } from "svelte/store";
+
 const loadingSet = mock((_value: boolean) => {});
 mock.module("../store", () => ({
-  loading: { set: loadingSet }
+  loading: { set: loadingSet },
+  accountTfIdf: writable(null),
+  theme: writable("light"),
+  month: writable("2024-01"),
+  year: writable(""),
+  dateMin: writable(null),
+  dateMax: writable(null),
+  editorState: writable({}),
+  sheetEditorState: writable({}),
+  willClearTippy: writable(0),
+  willRefresh: writable(0),
+  commandPaletteOpen: writable(false),
+  refresh: async () => true,
+  jobs: writable({}),
+  jobsList: writable([]),
+  isJobRunning: writable(false)
 }));
 
 let getConfigImpl: (request?: unknown) => Promise<any> = mock(async (_request?: unknown) => ({}));

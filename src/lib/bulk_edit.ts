@@ -18,7 +18,7 @@ export function applyChanges(
   const newFiles = _.map(files, (file) => {
     const transactions = transactionsGrouped[file.name] || [];
 
-    const lines = file.content.split("\n");
+    const lines = file.content.replace(/\r/g, "").split("\n");
     const sortedTransactions = _.sortBy(transactions, (t) => t.beginLine);
     let lastLine = 0;
     const newLines: string[] = [];
@@ -68,7 +68,7 @@ function renameAccount(
   const regex = new RegExp(
     `^((?:\t|\\s{2})\\s*)(${escapeRegExp(args.oldAccountName)})((?:\t|\\s{2}).*|\\s*)$`
   );
-  const lines = text.split("\n");
+  const lines = text.replace(/\r/g, "").split("\n");
   const content = format(
     _.map(lines, (line) => {
       return line.replace(regex, `$1${args.newAccountName}$3`);

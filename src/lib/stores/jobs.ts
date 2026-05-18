@@ -35,11 +35,15 @@ export function createJobsStore() {
     },
 
     /** Remove all tracked jobs from the store. */
-    async reset(): Promise<void> {
-      try {
-        await ajax("/api/jobs/clear", { method: "POST" });
-      } catch (err) {
-        console.error("Failed to clear background jobs on server:", err);
+    reset(): void {
+      if (
+        typeof window !== "undefined" &&
+        window.location.href &&
+        !window.location.href.startsWith("about:")
+      ) {
+        ajax("/api/jobs/clear", { method: "POST" }).catch((err) => {
+          console.error("Failed to clear background jobs on server:", err);
+        });
       }
       set({});
     },
