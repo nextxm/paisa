@@ -4,6 +4,11 @@
 
 #### Features
 
+- **SQLc-backed posting, price, and portfolio persistence hot paths** — Added a typed raw-SQL query layer for the highest-traffic SQLite reads and writes.
+  - Added `sqlc.yaml` plus `internal/db/schema.sql` / `internal/db/queries.sql`, and checked in generated Go clients under `internal/db/sqlc/`.
+  - Refactored posting queries (`internal/query`), price reads/writes, portfolio reads/writes, and posting upserts to execute through SQLc-generated code while preserving the existing package APIs and focused GORM fallback for unsupported ad-hoc predicates.
+  - Integrated `sqlc generate` into the `Makefile` build pipeline and added focused regression coverage for SQLc-backed posting filters and portfolio persistence.
+
 - **Stabilize `/api/editor/files` metadata ordering across environments** — Fixed flaky regression snapshots for ledger file metadata.
   - `accounts`, `payees`, and `commodities` are now derived from postings ordered by `(date, transaction_begin_line, id)` and deduplicated in first-seen order, removing dependence on SQL `DISTINCT` row-order behavior.
   - Added focused `internal/server/editor_test.go` coverage for first-seen metadata order and file-name sorting.
