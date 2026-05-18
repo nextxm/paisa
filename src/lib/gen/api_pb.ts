@@ -13,16 +13,14 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Message } from "@bufbuild/protobuf";
+import { file_google_protobuf_struct } from "@bufbuild/protobuf/wkt";
+import type { JsonObject, Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file api.proto.
  */
-export const file_api: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    "CglhcGkucHJvdG8SCHBhaXNhLnYxIqIBCgtUcmFuc2FjdGlvbhIKCgJpZBgBIAEoCRIMCgRkYXRlGAIgASgJEg0KBXBheWVlGAMgASgJEiMKCHBvc3RpbmdzGAQgAygLMhEucGFpc2EudjEuUG9zdGluZxISCgpiZWdpbl9saW5lGAUgASgDEhAKCGVuZF9saW5lGAYgASgDEhEKCWZpbGVfbmFtZRgHIAEoCRIMCgRub3RlGAggASgJIsACCgdQb3N0aW5nEgoKAmlkGAEgASgEEgwKBGRhdGUYAiABKAkSDQoFcGF5ZWUYAyABKAkSDwoHYWNjb3VudBgEIAEoCRIRCgljb21tb2RpdHkYBSABKAkSEAoIcXVhbnRpdHkYBiABKAkSDgoGYW1vdW50GAcgASgJEg4KBnN0YXR1cxgIIAEoCRIVCg10YWdfcmVjdXJyaW5nGAkgASgJEh4KFnRyYW5zYWN0aW9uX2JlZ2luX2xpbmUYCiABKAMSHAoUdHJhbnNhY3Rpb25fZW5kX2xpbmUYCyABKAMSEQoJZmlsZV9uYW1lGAwgASgJEgwKBG5vdGUYDSABKAkSGAoQdHJhbnNhY3Rpb25fbm90ZRgOIAEoCRIVCg1tYXJrZXRfYW1vdW50GA8gASgJEg8KB2JhbGFuY2UYECABKAkiRAoOQWNjb3VudEJhbGFuY2USDwoHYWNjb3VudBgBIAEoCRIPCgdiYWxhbmNlGAIgASgJEhAKCGN1cnJlbmN5GAMgASgJImgKC0FjY291bnROb2RlEgwKBG5hbWUYASABKAkSEQoJZnVsbF9uYW1lGAIgASgJEg8KB2lzX2xlYWYYAyABKAgSJwoIY2hpbGRyZW4YBCADKAsyFS5wYWlzYS52MS5BY2NvdW50Tm9kZSIXChVHZXRBY2NvdW50VHJlZVJlcXVlc3QiQQoWR2V0QWNjb3VudFRyZWVSZXNwb25zZRInCghhY2NvdW50cxgBIAMoCzIVLnBhaXNhLnYxLkFjY291bnROb2RlMmMKDFBhaXNhU2VydmljZRJTCg5HZXRBY2NvdW50VHJlZRIfLnBhaXNhLnYxLkdldEFjY291bnRUcmVlUmVxdWVzdBogLnBhaXNhLnYxLkdldEFjY291bnRUcmVlUmVzcG9uc2VCP1o9Z2l0aHViLmNvbS9hbmFudGhha3VtYXJhbi9wYWlzYS9pbnRlcm5hbC9nZW4vcGFpc2EvdjE7cGFpc2F2MWIGcHJvdG8z"
-  );
+export const file_api: GenFile = /*@__PURE__*/
+  fileDesc("CglhcGkucHJvdG8SCHBhaXNhLnYxIqIBCgtUcmFuc2FjdGlvbhIKCgJpZBgBIAEoCRIMCgRkYXRlGAIgASgJEg0KBXBheWVlGAMgASgJEiMKCHBvc3RpbmdzGAQgAygLMhEucGFpc2EudjEuUG9zdGluZxISCgpiZWdpbl9saW5lGAUgASgDEhAKCGVuZF9saW5lGAYgASgDEhEKCWZpbGVfbmFtZRgHIAEoCRIMCgRub3RlGAggASgJIsACCgdQb3N0aW5nEgoKAmlkGAEgASgEEgwKBGRhdGUYAiABKAkSDQoFcGF5ZWUYAyABKAkSDwoHYWNjb3VudBgEIAEoCRIRCgljb21tb2RpdHkYBSABKAkSEAoIcXVhbnRpdHkYBiABKAkSDgoGYW1vdW50GAcgASgJEg4KBnN0YXR1cxgIIAEoCRIVCg10YWdfcmVjdXJyaW5nGAkgASgJEh4KFnRyYW5zYWN0aW9uX2JlZ2luX2xpbmUYCiABKAMSHAoUdHJhbnNhY3Rpb25fZW5kX2xpbmUYCyABKAMSEQoJZmlsZV9uYW1lGAwgASgJEgwKBG5vdGUYDSABKAkSGAoQdHJhbnNhY3Rpb25fbm90ZRgOIAEoCRIVCg1tYXJrZXRfYW1vdW50GA8gASgJEg8KB2JhbGFuY2UYECABKAkiRAoOQWNjb3VudEJhbGFuY2USDwoHYWNjb3VudBgBIAEoCRIPCgdiYWxhbmNlGAIgASgJEhAKCGN1cnJlbmN5GAMgASgJImgKC0FjY291bnROb2RlEgwKBG5hbWUYASABKAkSEQoJZnVsbF9uYW1lGAIgASgJEg8KB2lzX2xlYWYYAyABKAgSJwoIY2hpbGRyZW4YBCADKAsyFS5wYWlzYS52MS5BY2NvdW50Tm9kZSIXChVHZXRBY2NvdW50VHJlZVJlcXVlc3QiQQoWR2V0QWNjb3VudFRyZWVSZXNwb25zZRInCghhY2NvdW50cxgBIAMoCzIVLnBhaXNhLnYxLkFjY291bnROb2RlIhIKEEdldENvbmZpZ1JlcXVlc3QixgEKEUdldENvbmZpZ1Jlc3BvbnNlEicKBmNvbmZpZxgBIAEoCzIXLmdvb2dsZS5wcm90b2J1Zi5TdHJ1Y3QSJwoGc2NoZW1hGAIgASgLMhcuZ29vZ2xlLnByb3RvYnVmLlN0cnVjdBIQCghhY2NvdW50cxgDIAMoCRIZChFsYXN0X3ByaWNlX3VwZGF0ZRgEIAEoCRIYChBpc19qb3VybmFsX2RpcnR5GAUgASgIEhAKA25vdxgGIAEoCUgAiAEBQgYKBF9ub3ciPgoTVXBkYXRlQ29uZmlnUmVxdWVzdBInCgZjb25maWcYASABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0IicKFFVwZGF0ZUNvbmZpZ1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgy+AEKDFBhaXNhU2VydmljZRJTCg5HZXRBY2NvdW50VHJlZRIfLnBhaXNhLnYxLkdldEFjY291bnRUcmVlUmVxdWVzdBogLnBhaXNhLnYxLkdldEFjY291bnRUcmVlUmVzcG9uc2USRAoJR2V0Q29uZmlnEhoucGFpc2EudjEuR2V0Q29uZmlnUmVxdWVzdBobLnBhaXNhLnYxLkdldENvbmZpZ1Jlc3BvbnNlEk0KDFVwZGF0ZUNvbmZpZxIdLnBhaXNhLnYxLlVwZGF0ZUNvbmZpZ1JlcXVlc3QaHi5wYWlzYS52MS5VcGRhdGVDb25maWdSZXNwb25zZUI/Wj1naXRodWIuY29tL2FuYW50aGFrdW1hcmFuL3BhaXNhL2ludGVybmFsL2dlbi9wYWlzYS92MTtwYWlzYXYxYgZwcm90bzM", [file_google_protobuf_struct]);
 
 /**
  * Transaction represents a double-entry ledger transaction.
@@ -91,7 +89,8 @@ export type Transaction = Message<"paisa.v1.Transaction"> & {
  * Describes the message paisa.v1.Transaction.
  * Use `create(TransactionSchema)` to create a new message.
  */
-export const TransactionSchema: GenMessage<Transaction> = /*@__PURE__*/ messageDesc(file_api, 0);
+export const TransactionSchema: GenMessage<Transaction> = /*@__PURE__*/
+  messageDesc(file_api, 0);
 
 /**
  * Posting is a single debit or credit entry within a Transaction.
@@ -216,7 +215,8 @@ export type Posting = Message<"paisa.v1.Posting"> & {
  * Describes the message paisa.v1.Posting.
  * Use `create(PostingSchema)` to create a new message.
  */
-export const PostingSchema: GenMessage<Posting> = /*@__PURE__*/ messageDesc(file_api, 1);
+export const PostingSchema: GenMessage<Posting> = /*@__PURE__*/
+  messageDesc(file_api, 1);
 
 /**
  * AccountBalance holds a point-in-time balance for a single account.
@@ -250,8 +250,7 @@ export type AccountBalance = Message<"paisa.v1.AccountBalance"> & {
  * Describes the message paisa.v1.AccountBalance.
  * Use `create(AccountBalanceSchema)` to create a new message.
  */
-export const AccountBalanceSchema: GenMessage<AccountBalance> =
-  /*@__PURE__*/
+export const AccountBalanceSchema: GenMessage<AccountBalance> = /*@__PURE__*/
   messageDesc(file_api, 2);
 
 /**
@@ -293,21 +292,22 @@ export type AccountNode = Message<"paisa.v1.AccountNode"> & {
  * Describes the message paisa.v1.AccountNode.
  * Use `create(AccountNodeSchema)` to create a new message.
  */
-export const AccountNodeSchema: GenMessage<AccountNode> = /*@__PURE__*/ messageDesc(file_api, 3);
+export const AccountNodeSchema: GenMessage<AccountNode> = /*@__PURE__*/
+  messageDesc(file_api, 3);
 
 /**
  * GetAccountTreeRequest is currently empty; future versions may add filters.
  *
  * @generated from message paisa.v1.GetAccountTreeRequest
  */
-export type GetAccountTreeRequest = Message<"paisa.v1.GetAccountTreeRequest"> & {};
+export type GetAccountTreeRequest = Message<"paisa.v1.GetAccountTreeRequest"> & {
+};
 
 /**
  * Describes the message paisa.v1.GetAccountTreeRequest.
  * Use `create(GetAccountTreeRequestSchema)` to create a new message.
  */
-export const GetAccountTreeRequestSchema: GenMessage<GetAccountTreeRequest> =
-  /*@__PURE__*/
+export const GetAccountTreeRequestSchema: GenMessage<GetAccountTreeRequest> = /*@__PURE__*/
   messageDesc(file_api, 4);
 
 /**
@@ -328,9 +328,111 @@ export type GetAccountTreeResponse = Message<"paisa.v1.GetAccountTreeResponse"> 
  * Describes the message paisa.v1.GetAccountTreeResponse.
  * Use `create(GetAccountTreeResponseSchema)` to create a new message.
  */
-export const GetAccountTreeResponseSchema: GenMessage<GetAccountTreeResponse> =
-  /*@__PURE__*/
+export const GetAccountTreeResponseSchema: GenMessage<GetAccountTreeResponse> = /*@__PURE__*/
   messageDesc(file_api, 5);
+
+/**
+ * @generated from message paisa.v1.GetConfigRequest
+ */
+export type GetConfigRequest = Message<"paisa.v1.GetConfigRequest"> & {
+};
+
+/**
+ * Describes the message paisa.v1.GetConfigRequest.
+ * Use `create(GetConfigRequestSchema)` to create a new message.
+ */
+export const GetConfigRequestSchema: GenMessage<GetConfigRequest> = /*@__PURE__*/
+  messageDesc(file_api, 6);
+
+/**
+ * @generated from message paisa.v1.GetConfigResponse
+ */
+export type GetConfigResponse = Message<"paisa.v1.GetConfigResponse"> & {
+  /**
+   * Current application config.
+   *
+   * @generated from field: google.protobuf.Struct config = 1;
+   */
+  config?: JsonObject | undefined;
+
+  /**
+   * Config schema used by the frontend editor.
+   *
+   * @generated from field: google.protobuf.Struct schema = 2;
+   */
+  schema?: JsonObject | undefined;
+
+  /**
+   * Flat account list.
+   *
+   * @generated from field: repeated string accounts = 3;
+   */
+  accounts: string[];
+
+  /**
+   * Last price sync marker.
+   *
+   * @generated from field: string last_price_update = 4;
+   */
+  lastPriceUpdate: string;
+
+  /**
+   * Whether the journal file hash differs from the last synced hash.
+   *
+   * @generated from field: bool is_journal_dirty = 5;
+   */
+  isJournalDirty: boolean;
+
+  /**
+   * Optional frozen "now" timestamp in RFC3339 format.
+   *
+   * @generated from field: optional string now = 6;
+   */
+  now?: string | undefined;
+};
+
+/**
+ * Describes the message paisa.v1.GetConfigResponse.
+ * Use `create(GetConfigResponseSchema)` to create a new message.
+ */
+export const GetConfigResponseSchema: GenMessage<GetConfigResponse> = /*@__PURE__*/
+  messageDesc(file_api, 7);
+
+/**
+ * @generated from message paisa.v1.UpdateConfigRequest
+ */
+export type UpdateConfigRequest = Message<"paisa.v1.UpdateConfigRequest"> & {
+  /**
+   * Full config object to persist.
+   *
+   * @generated from field: google.protobuf.Struct config = 1;
+   */
+  config?: JsonObject | undefined;
+};
+
+/**
+ * Describes the message paisa.v1.UpdateConfigRequest.
+ * Use `create(UpdateConfigRequestSchema)` to create a new message.
+ */
+export const UpdateConfigRequestSchema: GenMessage<UpdateConfigRequest> = /*@__PURE__*/
+  messageDesc(file_api, 8);
+
+/**
+ * @generated from message paisa.v1.UpdateConfigResponse
+ */
+export type UpdateConfigResponse = Message<"paisa.v1.UpdateConfigResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+};
+
+/**
+ * Describes the message paisa.v1.UpdateConfigResponse.
+ * Use `create(UpdateConfigResponseSchema)` to create a new message.
+ */
+export const UpdateConfigResponseSchema: GenMessage<UpdateConfigResponse> = /*@__PURE__*/
+  messageDesc(file_api, 9);
 
 /**
  * PaisaService exposes typed, schema-driven endpoints.
@@ -349,5 +451,27 @@ export const PaisaService: GenService<{
     methodKind: "unary";
     input: typeof GetAccountTreeRequestSchema;
     output: typeof GetAccountTreeResponseSchema;
-  };
-}> = /*@__PURE__*/ serviceDesc(file_api, 0);
+  },
+  /**
+   * GetConfig returns runtime config and schema payloads used by the app shell.
+   *
+   * @generated from rpc paisa.v1.PaisaService.GetConfig
+   */
+  getConfig: {
+    methodKind: "unary";
+    input: typeof GetConfigRequestSchema;
+    output: typeof GetConfigResponseSchema;
+  },
+  /**
+   * UpdateConfig persists a full config payload.
+   *
+   * @generated from rpc paisa.v1.PaisaService.UpdateConfig
+   */
+  updateConfig: {
+    methodKind: "unary";
+    input: typeof UpdateConfigRequestSchema;
+    output: typeof UpdateConfigResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_api, 0);
+

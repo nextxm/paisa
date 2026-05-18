@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { ajax } from "$lib/utils";
+  import { fetchConfig } from "$lib/config_client";
   import { tick } from "svelte";
   import _ from "lodash";
   import QuickAddModal from "./QuickAddModal.svelte";
@@ -382,7 +383,7 @@
     showQuickAdd = true;
 
     if (accounts.length === 0) {
-      const response = await ajax("/api/config", { background: true });
+      const response = await fetchConfig({ background: true });
       accounts = response.accounts;
     }
   }

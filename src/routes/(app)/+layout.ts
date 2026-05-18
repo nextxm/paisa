@@ -1,10 +1,11 @@
 export const trailingSlash = "never";
 
 import type { LayoutLoad } from "./$types";
-import { ajax, configUpdated, setNow } from "$lib/utils";
+import { configUpdated, setNow } from "$lib/utils";
+import { fetchConfig } from "$lib/config_client";
 
 export const load = (async () => {
-  const { config, now, last_price_update, is_journal_dirty } = await ajax("/api/config");
+  const { config, now, last_price_update, is_journal_dirty } = await fetchConfig();
   if (now) {
     setNow(now);
   }

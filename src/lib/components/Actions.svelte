@@ -10,7 +10,7 @@
   import { refresh, now, willRefresh, commandPaletteOpen } from "../../store";
   import SyncHistoryOverlay from "./SyncHistoryOverlay.svelte";
   import QuickAddModal from "./QuickAddModal.svelte";
-  import { ajax } from "$lib/utils";
+  import { fetchConfig } from "$lib/config_client";
 
   let showHistory = $state(false);
   let showQuickAdd = $state(false);
@@ -20,7 +20,7 @@
     showQuickAdd = true;
 
     if (accounts.length === 0) {
-      const response = await ajax("/api/config", { background: true });
+      const response = await fetchConfig({ background: true });
       accounts = response.accounts;
     }
   }
