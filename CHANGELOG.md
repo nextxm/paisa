@@ -8,6 +8,11 @@
   - Fixed sync handler to only refresh projection snapshot when journal sync actually runs (not when skipped due to unchanged hash). Previously, requesting a journal sync that was skipped would still trigger unnecessary projection recalculation.
   - Added warning when `ledger files` fails to list included files, causing hash to be computed on main file only. This could prevent changes to included files from being detected until a forced sync. Operators should investigate the `ledger files` failure and consider forcing a sync if included files may have changed.
 
+- **SvelteKit route-level data loading for core SPA views** — Moved primary API fetches from component lifecycle hooks to idiomatic `+page.ts` load functions.
+  - Added page `load` prefetching for Dashboard, Assets Networth, Assets Investment, Planning Goals, Ledger Import, and goal detail pages (retirement/savings), and expanded Ledger Editor detail load data.
+  - Updated affected pages to consume typed `data` props for initial render and kept `onMount` focused on DOM/chart initialization only.
+  - Added a navigation-state loading pill in app layout using SvelteKit `$navigating` to surface route transitions during load.
+
 - **Connect-RPC config contract expansion** — Added typed Connect methods for config reads/writes and migrated frontend config consumers away from `/api/config` REST calls.
   - Extended `proto/api.proto` with `GetConfig` and `UpdateConfig` RPCs and regenerated Go/TypeScript stubs.
   - Implemented Connect handlers in `internal/server/connect_service.go` with journal-dirty and schema/config payload parity.

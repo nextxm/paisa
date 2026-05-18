@@ -823,6 +823,8 @@ export function ajax(route: "/api/income/investment"): Promise<{
   holdings: InvestmentIncomeHolding[];
   timeline: InvestmentIncomeTimelinePoint[];
   ttm_total: number;
+  ttm_dividend: number;
+  ttm_interest: number;
 }>;
 export function ajax(route: "/api/expense"): Promise<{
   expenses: Posting[];
