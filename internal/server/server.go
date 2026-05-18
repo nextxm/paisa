@@ -296,6 +296,13 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/expense", func(c *gin.Context) {
 		c.JSON(200, GetExpense(db, parseYearsParam(c.Query("years")), parseUntilYearParam(c.Query("until_year")), c.Query("report_currency")))
 	})
+	router.GET("/api/expense/daily", func(c *gin.Context) {
+		from, to, ok := parseExpenseDailyRange(c)
+		if !ok {
+			return
+		}
+		c.JSON(http.StatusOK, GetDailyExpense(db, from, to, c.Query("group_by") == "category"))
+	})
 
 	router.GET("/api/budget", func(c *gin.Context) {
 		c.JSON(200, GetBudget(db))
