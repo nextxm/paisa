@@ -1,7 +1,6 @@
 <script lang="ts">
   import COLORS from "$lib/colors";
   import {
-    ajax,
     formatCurrency,
     formatFloat,
     isMobile,
@@ -74,7 +73,7 @@
       xirr,
       paymentPerPeriod,
       balances
-    } = await ajax("/api/goals/savings/:name", null, data));
+    } = data.goal);
 
     latestPostings = _.chain(postings)
       .sortBy((p) => p.date)

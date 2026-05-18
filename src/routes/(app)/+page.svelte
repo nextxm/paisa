@@ -17,11 +17,11 @@
     type Legend,
     now,
     type GoalSummary,
-    type AssetBreakdown,
-    type NetworthProjectionResponse
+    type AssetBreakdown
   } from "$lib/utils";
   import _ from "lodash";
   import { onMount } from "svelte";
+  import type { PageData } from "./$types";
 
   import BudgetCard from "$lib/components/BudgetCard.svelte";
   import LevelItem from "$lib/components/LevelItem.svelte";
@@ -33,24 +33,32 @@
   import BalanceCard from "$lib/components/BalanceCard.svelte";
   import RecentTransactionsWidget from "$lib/components/RecentTransactionsWidget.svelte";
 
+  let { data }: { data: PageData } = $props();
+
   let cashflowLegends: Legend[] = $state([]);
   let month = $state(now().format("YYYY-MM"));
-  let goalSummaries: GoalSummary[] = $state([]);
-  let transactionSequences: TransactionSequence[] = $state([]);
-  let cashFlows: CashFlow[] = $state([]);
-  let expenses: { [key: string]: Posting[] } = $state({});
-  let xirr = $state(0);
-  let networth: Networth = $state(null);
+  let goalSummaries: GoalSummary[] = $state(
+    _.sortBy(data.dashboard.goalSummaries, (g) => -g.priority)
+  );
+  let transactionSequences: TransactionSequence[] = $state(
+    _.take(sortTrantionSequence(enrichTrantionSequence(data.dashboard.transactionSequences)), 16)
+  );
+  let cashFlows: CashFlow[] = $state(data.dashboard.cashFlows);
+  let expenses: { [key: string]: Posting[] } = $state(data.dashboard.expenses);
+  let xirr = $state(data.dashboard.networth.xirr);
+  let networth: Networth = $state(data.dashboard.networth.networth);
   let renderer: (data: Posting[]) => void = $state();
   let selectedExpenses = $derived(expenses[month] || []);
   let totalExpense = $derived(_.sumBy(selectedExpenses, (p) => p.amount));
-  let transactions: Transaction[] = $state([]);
-  let budgetsByMonth: Record<string, Budget> = $state({});
+  let transactions: Transaction[] = $state(data.dashboard.transactions);
+  let budgetsByMonth: Record<string, Budget> = $state(data.dashboard.budget.budgetsByMonth);
   let currentBudget = $derived(budgetsByMonth[month]);
-  let isEmpty = $state(false);
-  let checkingBalances: Record<string, AssetBreakdown> = $state({});
-  let investmentIncomeDividendTTM = $state(0);
-  let investmentIncomeInterestTTM = $state(0);
+  let isEmpty = $state(_.isEmpty(data.dashboard.transactions));
+  let checkingBalances: Record<string, AssetBreakdown> = $state(
+    data.dashboard.checkingBalances.asset_breakdowns
+  );
+  let investmentIncomeDividendTTM = $state(data.income.ttm_dividend || 0);
+  let investmentIncomeInterestTTM = $state(data.income.ttm_interest || 0);
   let investmentIncomeLoading = $state(false);
 
   $effect(() => {
@@ -64,36 +72,7 @@
     refresh();
   }
 
-  onMount(async () => {
-    // Phase 1: critical dashboard payload — unblocks first paint.
-    performance.mark("paisa-home-phase1-start");
-    const dashboardResult = await ajax("/api/dashboard");
-    performance.mark("paisa-home-phase1-end");
-    performance.measure(
-      "paisa-home-phase1-dashboard",
-      "paisa-home-phase1-start",
-      "paisa-home-phase1-end"
-    );
-
-    ({
-      expenses,
-      cashFlows,
-      goalSummaries,
-      budget: { budgetsByMonth },
-      transactionSequences,
-      networth: { networth, xirr },
-      checkingBalances: { asset_breakdowns: checkingBalances },
-      transactions
-    } = dashboardResult);
-
-    goalSummaries = _.sortBy(goalSummaries, (g) => -g.priority);
-
-    if (_.isEmpty(transactions)) {
-      isEmpty = true;
-    } else {
-      isEmpty = false;
-    }
-
+  onMount(() => {
     const postings = _.chain(expenses).values().flatten().value();
     const z = expense.colorScale(postings);
     renderer = expense.renderCurrentExpensesBreakdown(z);
@@ -107,28 +86,6 @@
     );
     cashflowRenderer(cashFlows);
     cashflowLegends = legends;
-    transactionSequences = _.take(
-      sortTrantionSequence(enrichTrantionSequence(transactionSequences)),
-      16
-    );
-
-    // Phase 2: non-critical secondary fetches deferred until after first paint.
-    // Both requests are fired concurrently as background calls so the global
-    // loading spinner is not re-triggered.
-    performance.mark("paisa-home-phase2-start");
-
-    const incomeResult = await ajax("/api/income/investment", { background: true });
-
-    investmentIncomeDividendTTM = incomeResult.ttm_dividend || 0;
-    investmentIncomeInterestTTM = incomeResult.ttm_interest || 0;
-    investmentIncomeLoading = false;
-
-    performance.mark("paisa-home-phase2-end");
-    performance.measure(
-      "paisa-home-phase2-secondary",
-      "paisa-home-phase2-start",
-      "paisa-home-phase2-end"
-    );
   });
 </script>
 

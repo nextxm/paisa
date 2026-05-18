@@ -11,12 +11,15 @@
   import COLORS from "$lib/colors";
   import { renderNetworth } from "$lib/networth";
   import _ from "lodash";
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy } from "svelte";
   import { dateRange, setAllowedDateRange } from "../../../../store";
   import LevelItem from "$lib/components/LevelItem.svelte";
   import ZeroState from "$lib/components/ZeroState.svelte";
   import BoxLabel from "$lib/components/BoxLabel.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
+  import type { PageData } from "./$types";
+
+  let { data }: { data: PageData } = $props();
 
   let networth = $state(0);
   let investment = $state(0);
@@ -32,7 +35,7 @@
   let showFXImpact = $state(true);
   let showProjection = $state(false);
   let reportCurrency = $state("");
-  let availableCurrencies: string[] = $state([]);
+  let availableCurrencies: string[] = $state(data.currencies.currencies || []);
   let projection: NetworthProjectionResponse | null = $state(null);
 
   $effect(() => {
@@ -80,11 +83,7 @@
     }
   });
 
-  async function fetchNetworth() {
-    const params = new URLSearchParams();
-    if (reportCurrency) params.set("report_currency", reportCurrency);
-    const query = params.toString();
-    const result = await ajax(query ? `/api/networth?${query}` : "/api/networth");
+  function applyNetworthResult(result: PageData["networth"]) {
     points = result.networthTimeline;
     setAllowedDateRange(_.map(points, (p) => p.date));
 
@@ -100,14 +99,18 @@
     xirr = result.xirr;
   }
 
+  applyNetworthResult(data.networth);
+
+  async function fetchNetworth() {
+    const params = new URLSearchParams();
+    if (reportCurrency) params.set("report_currency", reportCurrency);
+    const query = params.toString();
+    applyNetworthResult(await ajax(query ? `/api/networth?${query}` : "/api/networth"));
+  }
+
   async function fetchProjection() {
     projection = (await ajax("/api/networth/projection")) as NetworthProjectionResponse;
   }
-
-  onMount(async () => {
-    const [, currencyResult] = await Promise.all([fetchNetworth(), ajax("/api/price/currencies")]);
-    availableCurrencies = currencyResult.currencies || [];
-  });
 
   $effect(() => {
     if (showProjection && !projection) {

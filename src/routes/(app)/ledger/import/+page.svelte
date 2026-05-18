@@ -25,10 +25,13 @@
   import * as toast from "bulma-toast";
   import FileModal from "$lib/components/FileModal.svelte";
   import Modal from "$lib/components/Modal.svelte";
+  import type { PageData } from "./$types";
 
-  let templates: ImportTemplate[] = $state([]);
-  let selectedTemplate: ImportTemplate = $state(null);
-  let saveAsName: string = $state(null);
+  let { data: pageData }: { data: PageData } = $props();
+
+  let templates: ImportTemplate[] = $state(pageData.templates);
+  let selectedTemplate: ImportTemplate = $state(pageData.templates[0]);
+  let saveAsName: string = $state(selectedTemplate?.name || null);
   let preview = $state("");
   let parseErrorMessage: string = $state(null);
   let columnCount: number = $state(0);
@@ -36,9 +39,11 @@
   let rows: Array<Record<string, any>> = $state([]);
   let previewRows: ImportPreviewRow[] = $state([]);
   let includedPreviewRows: boolean[] = $state([]);
-  let importPresets: ImportPreset[] = $state([]);
-  let selectedPreset: ImportPreset = $state(null);
-  let delimiter: string = $state(",");
+  let importPresets: ImportPreset[] = $state(pageData.importPresets);
+  let selectedPreset: ImportPreset = $state(
+    _.find(pageData.importPresets, { name: "Generic Bank CSV" }) || pageData.importPresets[0]
+  );
+  let delimiter: string = $state(selectedPreset?.delimiter || ",");
   let options: { reverse: boolean; trim: boolean } = $state({ reverse: false, trim: true });
   let importSaving = $state(false);
 
@@ -48,15 +53,9 @@
   let previewEditorDom: Element = $state();
   let previewEditor: EditorView = $state();
 
-  onMount(async () => {
-    accountTfIdf.set(await ajax("/api/account/tf_idf"));
-    ({ templates } = await ajax("/api/templates"));
-    ({ presets: importPresets } = await ajax("/api/import/presets"));
-    selectedPreset = _.find(importPresets, { name: "Generic Bank CSV" }) || importPresets[0];
-    delimiter = selectedPreset?.delimiter || ",";
-    selectedTemplate = templates[0];
-    saveAsName = selectedTemplate.name;
-    templateEditor = createTemplateEditor(selectedTemplate.content, templateEditorDom);
+  onMount(() => {
+    accountTfIdf.set(pageData.accountTfIdf);
+    templateEditor = createTemplateEditor(selectedTemplate?.content || "", templateEditorDom);
     previewEditor = createPreviewEditor("", preview, previewEditorDom, { readonly: true });
   });
 

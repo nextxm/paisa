@@ -1,7 +1,6 @@
 <script lang="ts">
   import COLORS from "$lib/colors";
   import {
-    ajax,
     formatCurrency,
     formatFloat,
     isMobile,
@@ -62,7 +61,7 @@
       name,
       postings,
       balances
-    } = await ajax("/api/goals/retirement/:name", null, data));
+    } = data.goal);
     targetSavings = yearlyExpense * (100 / swr);
 
     latestPostings = _.chain(postings)
