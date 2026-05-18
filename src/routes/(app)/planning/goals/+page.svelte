@@ -4,6 +4,7 @@
   import GoalSummaryCard from "$lib/components/GoalSummaryCard.svelte";
   import ZeroState from "$lib/components/ZeroState.svelte";
   import { ajax, helpUrl, type GoalSummary } from "$lib/utils";
+  import { fetchConfig, updateConfig } from "$lib/config_client";
   import _ from "lodash";
   import { onMount } from "svelte";
   import * as toast from "bulma-toast";
@@ -35,11 +36,7 @@
   }
 
   async function save(newConfig: UserConfig) {
-    const { success, error } = await ajax("/api/config", {
-      method: "POST",
-      body: JSON.stringify(newConfig),
-      background: true
-    });
+    const { success, error } = await updateConfig(newConfig, { background: true });
 
     if (success) {
       globalThis.USER_CONFIG = _.cloneDeep(newConfig);
@@ -57,7 +54,7 @@
   }
 
   onMount(async () => {
-    ({ config } = await ajax("/api/config"));
+    ({ config } = await fetchConfig());
     ({ goals } = await ajax("/api/goals"));
     goals = _.sortBy(goals, (g) => -g.priority);
     if (_.isEmpty(goals)) {

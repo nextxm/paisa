@@ -2,7 +2,6 @@ import dayjs from "dayjs";
 import _ from "lodash";
 import * as d3 from "d3";
 import { loading } from "../store";
-import type { JSONSchema7 } from "json-schema";
 import { get } from "svelte/store";
 import { obscure } from "../persisted_store";
 import { error } from "@sveltejs/kit";
@@ -734,19 +733,6 @@ type RequestOptions = RequestInit & {
   background?: boolean;
 };
 
-type ConfigResponse = {
-  config: UserConfig;
-  schema: JSONSchema7;
-  now: dayjs.Dayjs;
-  accounts: string[];
-  last_price_update: string;
-  is_journal_dirty: boolean;
-};
-
-export function ajax(
-  route: "/api/config",
-  options?: RequestOptions & { method?: "GET" | undefined }
-): Promise<ConfigResponse>;
 export function ajax(
   route: "/api/config/provider-debug-http",
   options?: RequestOptions
@@ -1022,13 +1008,6 @@ export function ajax(
 ): Promise<{ completions: AutoCompleteItem[] }>;
 export function ajax(route: "/api/init", options?: RequestOptions): Promise<any>;
 
-export function ajax(
-  route: "/api/config",
-  options: RequestOptions & { method: "POST" }
-): Promise<{ success: boolean; error?: string }>;
-
-export function ajax(route: "/api/ping"): Promise<{ success: boolean; error?: string }>;
-
 // Generic overload for dynamically constructed routes (e.g. with query params).
 export function ajax(route: string, options?: RequestOptions): Promise<any>;
 
@@ -1066,7 +1045,7 @@ export async function ajax(
   }
 
   if (!response.ok) {
-    if (response.status == 401 && route != "/api/ping") {
+    if (response.status == 401) {
       logout();
       await goto("/login");
       error(401, "Unauthorized");
