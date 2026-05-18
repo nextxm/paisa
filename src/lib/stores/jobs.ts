@@ -39,7 +39,8 @@ export function createJobsStore() {
       if (
         typeof window !== "undefined" &&
         window.location.href &&
-        !window.location.href.startsWith("about:")
+        !window.location.href.startsWith("about:") &&
+        !(typeof process !== "undefined" && process.env.NODE_ENV === "test")
       ) {
         ajax("/api/jobs/clear", { method: "POST" }).catch((err) => {
           console.error("Failed to clear background jobs on server:", err);
