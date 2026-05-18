@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"crypto/subtle"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -38,7 +39,25 @@ import (
 func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 
-	registry := worker.NewRegistry()
+	registry := worker.NewRegistry(db)
+	registry.RegisterRecoverable("sync", func(_ context.Context, payload json.RawMessage, progress func(int, int)) ([]string, error) {
+		var syncRequest SyncRequest
+		if err := json.Unmarshal(payload, &syncRequest); err != nil {
+			return nil, fmt.Errorf("invalid persisted sync payload: %w", err)
+		}
+		result, details := Sync(db, syncRequest, progress)
+		if success, ok := result["success"].(bool); ok && !success {
+			message, _ := result["message"].(string)
+			if message == "" {
+				message = "sync failed"
+			}
+			return details, errors.New(message)
+		}
+		return details, nil
+	})
+	if err := registry.RecoverInterrupted(context.Background()); err != nil {
+		log.WithError(err).Warn("failed to recover interrupted jobs")
+	}
 
 	router := gin.New()
 	if enableCompression {
@@ -88,12 +107,13 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.POST("/api/auth/logout", Logout(db))
 
 	router.GET("/api/config", func(c *gin.Context) {
+		requestDB, telemetry := beginRequestTelemetry(db)
 		var now *time.Time
 		if utils.IsNowDefined() {
 			n := utils.Now()
 			now = &n
 		}
-		lastPriceUpdate, _ := metadata.GetOrDefault(db, model.LastPriceSyncKey, "")
+		lastPriceUpdate, _ := metadata.GetOrDefault(requestDB, model.LastPriceSyncKey, "")
 
 		// Check if journal is dirty
 		journalPath := config.GetJournalPath()
@@ -102,12 +122,13 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 			files = []string{journalPath}
 		}
 		currentHash, _ := utils.SHA256Files(files)
-		lastHash, _ := metadata.GetOrDefault(db, model.JournalHashKey, "")
+		lastHash, _ := metadata.GetOrDefault(requestDB, model.JournalHashKey, "")
 		isJournalDirty := currentHash != lastHash
 
+		telemetry.writeHeaders(c)
 		c.JSON(200, gin.H{
 			"config":            config.GetConfig(),
-			"accounts":          accounting.AllAccounts(db),
+			"accounts":          accounting.AllAccounts(requestDB),
 			"now":               now,
 			"schema":            config.GetSchema(),
 			"last_price_update": lastPriceUpdate,
@@ -146,29 +167,50 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 			return
 		}
 
-		jobID := registry.SubmitDetailed(context.Background(), map[string]any{
+		jobID, err := registry.SubmitRecoverable(context.Background(), "sync", syncRequest, map[string]any{
 			"journal":      syncRequest.Journal,
 			"prices":       syncRequest.Prices,
 			"force_prices": syncRequest.ForcePrices,
 			"portfolios":   syncRequest.Portfolios,
-		}, func(_ context.Context, progress func(int, int)) ([]string, error) {
-			// context.Background() is intentional: the sync job must outlive the
-			// HTTP request.  Using c.Request.Context() would cancel the job as
-			// soon as the 202 response is flushed to the client.
-			result, details := Sync(db, syncRequest, progress)
-			if success, ok := result["success"].(bool); ok && !success {
-				message, _ := result["message"].(string)
-				if message == "" {
-					message = "sync failed"
-				}
-				return details, errors.New(message)
-			}
-			return details, nil
 		})
+		if err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
 
 		c.JSON(http.StatusAccepted, gin.H{"job_id": jobID})
 	})
 
+	router.GET("/api/jobs/stream", func(c *gin.Context) {
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Connection", "keep-alive")
+		c.Header("X-Accel-Buffering", "no")
+
+		for _, job := range registry.List() {
+			c.SSEvent("job", job)
+		}
+		c.Writer.Flush()
+
+		events, cancel := registry.Subscribe()
+		defer cancel()
+
+		for {
+			select {
+			case <-c.Request.Context().Done():
+				return
+			case job, ok := <-events:
+				if !ok {
+					return
+				}
+				c.SSEvent("job", job)
+				c.Writer.Flush()
+			case <-time.After(30 * time.Second):
+				c.SSEvent("ping", "ok")
+				c.Writer.Flush()
+			}
+		}
+	})
 	router.GET("/api/jobs/:id", func(c *gin.Context) {
 		job, ok := registry.Get(c.Param("id"))
 		if !ok {
@@ -179,11 +221,29 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.GET("/api/dashboard", func(c *gin.Context) {
-		c.JSON(200, GetDashboard(db))
+		requestDB, telemetry := beginRequestTelemetry(db)
+		if payload, ok := getDashboardSnapshotPayload(requestDB); ok {
+			telemetry.writeHeaders(c)
+			c.Data(http.StatusOK, "application/json; charset=utf-8", payload)
+			return
+		}
+		result := GetDashboard(requestDB)
+		telemetry.writeHeaders(c)
+		c.JSON(http.StatusOK, result)
 	})
 
 	router.GET("/api/networth", func(c *gin.Context) {
 		c.JSON(200, GetNetworth(db, c.Query("report_currency")))
+	})
+	router.GET("/api/networth/projection", func(c *gin.Context) {
+		req, ok := parseNetworthProjectionRequest(c)
+		if !ok {
+			return
+		}
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetNetworthProjection(requestDB, req)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
 	})
 
 	router.GET("/api/assets/balance", func(c *gin.Context) {
@@ -219,6 +279,20 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/income", func(c *gin.Context) {
 		c.JSON(200, GetIncome(db, parseYearsParam(c.Query("years")), parseUntilYearParam(c.Query("until_year"))))
 	})
+	router.GET("/api/income/investment", func(c *gin.Context) {
+		if c.Request.URL.RawQuery == "" {
+			if payload, ok := getInvestmentIncomeSnapshotPayload(db); ok {
+				c.Data(200, "application/json; charset=utf-8", payload)
+				return
+			}
+		}
+
+		asOfDate, ok := parseAsOfDateOrYear(c)
+		if !ok {
+			return
+		}
+		c.JSON(200, GetInvestmentIncome(db, asOfDate))
+	})
 	router.GET("/api/expense", func(c *gin.Context) {
 		c.JSON(200, GetExpense(db, parseYearsParam(c.Query("years")), parseUntilYearParam(c.Query("until_year")), c.Query("report_currency")))
 	})
@@ -238,6 +312,9 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 	router.GET("/api/allocation", func(c *gin.Context) {
 		c.JSON(200, GetAllocation(db))
+	})
+	router.GET("/api/currency-exposure", func(c *gin.Context) {
+		c.JSON(200, GetCurrencyExposure(db))
 	})
 	router.GET("/api/portfolio_allocation", func(c *gin.Context) {
 		c.JSON(200, GetPortfolioAllocation(db))

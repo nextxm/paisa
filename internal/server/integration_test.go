@@ -27,7 +27,7 @@ func loadTestConfig(t *testing.T, readonly bool) {
 	if readonly {
 		readonlyStr = "true"
 	}
-	yaml := "journal_path: main.ledger\ndb_path: paisa.db\nreadonly: " + readonlyStr
+	yaml := "journal_path: main.ledger\ndb_path: paisa.db\ntime_zone: UTC\nreadonly: " + readonlyStr
 	require.NoError(t, config.LoadConfig([]byte(yaml), ""), "loadTestConfig: LoadConfig failed")
 
 	t.Cleanup(func() {

@@ -3,13 +3,16 @@
     {
       "account": "Assets:Dollar",
       "networth": {
-        "date": "2022-02-07T23:59:59.999999999Z",
+        "date": "2022-02-07T00:00:00Z",
         "investmentAmount": 804.42048,
         "withdrawalAmount": 0,
         "gainAmount": 0,
         "balanceAmount": 804.42048,
         "balanceUnits": 0,
-        "netInvestmentAmount": 804.42048
+        "netInvestmentAmount": 804.42048,
+        "contribution": 804.42048,
+        "fx_impact": 0,
+        "investment_return": 0
       },
       "xirr": 0,
       "postings": [
@@ -35,18 +38,25 @@
           "market_amount": 804.42048,
           "balance": 0
         }
-      ]
+      ],
+      "income_received": 0.0,
+      "price_appreciation": 0.0,
+      "total_return": 0.0,
+      "ttm_yield": 0.0
     },
     {
       "account": "Assets:Equity:AAPL",
       "networth": {
-        "date": "2022-02-07T23:59:59.999999999Z",
+        "date": "2022-01-10T00:00:00Z",
         "investmentAmount": 10000,
         "withdrawalAmount": 10027.3,
         "gainAmount": 27.3,
         "balanceAmount": 0,
         "balanceUnits": 0,
-        "netInvestmentAmount": -27.3
+        "netInvestmentAmount": -27.3,
+        "contribution": -27.3,
+        "fx_impact": 0,
+        "investment_return": 27.3
       },
       "xirr": 170.5,
       "postings": [
@@ -116,18 +126,25 @@
           "market_amount": -10027.3,
           "balance": 0
         }
-      ]
+      ],
+      "income_received": 0.0,
+      "price_appreciation": 27.3,
+      "total_return": 27.3,
+      "ttm_yield": 0.0
     },
     {
       "account": "Assets:Equity:ABNB",
       "networth": {
-        "date": "2022-02-07T23:59:59.999999999Z",
+        "date": "2022-02-07T00:00:00Z",
         "investmentAmount": 8025.3170071296,
         "withdrawalAmount": 0,
         "gainAmount": 0,
         "balanceAmount": 8025.3170071296,
         "balanceUnits": 0,
-        "netInvestmentAmount": 8025.3170071296
+        "netInvestmentAmount": 8025.3170071296,
+        "contribution": 8025.3170071296,
+        "fx_impact": 0,
+        "investment_return": 0
       },
       "xirr": 0,
       "postings": [
@@ -153,18 +170,25 @@
           "market_amount": 8025.3170071296,
           "balance": 0
         }
-      ]
+      ],
+      "income_received": 0.0,
+      "price_appreciation": 0.0,
+      "total_return": 0.0,
+      "ttm_yield": 0.0
     },
     {
       "account": "Assets:Equity:NIFTY",
       "networth": {
-        "date": "2022-02-07T23:59:59.999999999Z",
+        "date": "2022-02-07T00:00:00Z",
         "investmentAmount": 80000,
         "withdrawalAmount": 0,
         "gainAmount": 218.4,
         "balanceAmount": 80218.4,
         "balanceUnits": 0,
-        "netInvestmentAmount": 80000
+        "netInvestmentAmount": 80000,
+        "contribution": 80000,
+        "fx_impact": 0,
+        "investment_return": 218.4
       },
       "xirr": 3.16,
       "postings": [
@@ -190,7 +214,11 @@
           "market_amount": 80218.4,
           "balance": 0
         }
-      ]
+      ],
+      "income_received": 0.0,
+      "price_appreciation": 218.4,
+      "total_return": 218.4,
+      "ttm_yield": 0.0
     }
   ]
 }

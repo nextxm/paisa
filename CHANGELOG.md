@@ -4,6 +4,119 @@
 
 #### Features
 
+- **Fix projection snapshot refresh and journal Files() fallback** — Resolved two issues preventing projection recalculation after journal sync.
+  - Fixed sync handler to only refresh projection snapshot when journal sync actually runs (not when skipped due to unchanged hash). Previously, requesting a journal sync that was skipped would still trigger unnecessary projection recalculation.
+  - Added warning when `ledger files` fails to list included files, causing hash to be computed on main file only. This could prevent changes to included files from being detected until a forced sync. Operators should investigate the `ledger files` failure and consider forcing a sync if included files may have changed.
+
+- **SvelteKit route-level data loading for core SPA views** — Moved primary API fetches from component lifecycle hooks to idiomatic `+page.ts` load functions.
+  - Added page `load` prefetching for Dashboard, Assets Networth, Assets Investment, Planning Goals, Ledger Import, and goal detail pages (retirement/savings), and expanded Ledger Editor detail load data.
+  - Updated affected pages to consume typed `data` props for initial render and kept `onMount` focused on DOM/chart initialization only.
+  - Added a navigation-state loading pill in app layout using SvelteKit `$navigating` to surface route transitions during load.
+
+- **Connect-RPC config contract expansion** — Added typed Connect methods for config reads/writes and migrated frontend config consumers away from `/api/config` REST calls.
+  - Extended `proto/api.proto` with `GetConfig` and `UpdateConfig` RPCs and regenerated Go/TypeScript stubs.
+  - Implemented Connect handlers in `internal/server/connect_service.go` with journal-dirty and schema/config payload parity.
+  - Added `src/lib/config_client.ts` and switched config-loading/saving paths in app shell, command palette quick add, goals, config editor, and reconciliation UI to `paisaClient`.
+  - Removed legacy `/api/config` AJAX overloads from `src/lib/utils.ts`.
+
+- **SQLc-backed posting, price, and portfolio persistence hot paths** — Added a typed raw-SQL query layer for the highest-traffic SQLite reads and writes.
+  - Added `sqlc.yaml` plus `internal/db/schema.sql` / `internal/db/queries.sql`, and checked in generated Go clients under `internal/db/sqlc/`.
+  - Refactored posting queries (`internal/query`), price reads/writes, portfolio reads/writes, and posting upserts to execute through SQLc-generated code while preserving the existing package APIs and focused GORM fallback for unsupported ad-hoc predicates.
+  - Integrated `sqlc generate` into the `Makefile` build pipeline and added focused regression coverage for SQLc-backed posting filters and portfolio persistence.
+
+- **Stabilize `/api/editor/files` metadata ordering across environments** — Fixed flaky regression snapshots for ledger file metadata.
+  - `accounts`, `payees`, and `commodities` are now derived from postings ordered by `(date, transaction_begin_line, id)` and deduplicated in first-seen order, removing dependence on SQL `DISTINCT` row-order behavior.
+  - Added focused `internal/server/editor_test.go` coverage for first-seen metadata order and file-name sorting.
+
+- **Phase 5: Query plan tuning and posting index optimization for long-history journals** — Added migration-backed posting indexes and query-plan validation for dashboard/projection hot filters.
+  - Added migration v12 to create `idx_postings_forecast_date` and `idx_postings_forecast_account_date`, applied safely with `CREATE INDEX IF NOT EXISTS` for existing databases.
+  - Added migration tests that verify index creation and assert `EXPLAIN QUERY PLAN` uses the new indexes for representative projection/dashboard-style predicates.
+  - Documented the migration/rollback strategy and phase-5 validation workflow in `docs/reference/performance-phase5-query-plan.md`.
+
+- **Phase 4: Home page load-shaping and deferred secondary fetches** — Improved time-to-interactive for the home page.
+  - `onMount` now awaits only the critical `/api/dashboard` payload before rendering the first paint; the expensive `/api/income/investment` and `/api/networth/projection` calls are deferred.
+  - Deferred requests are fired concurrently (`Promise.all`) as background calls after the first paint, so the global loading spinner is not re-triggered.
+  - Investment Income TTM and FIRE metrics widgets show `—` placeholders while their deferred data loads, providing graceful loading states without layout shift.
+  - Added `performance.mark`/`performance.measure` telemetry around both load phases (`paisa-home-phase1-dashboard` and `paisa-home-phase2-secondary`) so the API waterfall is visible in browser DevTools Performance panel.
+
+- **Phase 3 projection-input snapshot** — `GET /api/networth/projection` now reads precomputed sync-time base inputs instead of rescanning history on the hot path.
+  - Added a `projection_snapshots` SQLite read-model table plus migration v11 for current net worth, derived monthly contribution, annual expenses, and savings rate.
+  - Successful journal/price syncs now refresh the projection snapshot alongside other warmed read models, while request-time query params and response schema remain unchanged.
+  - Added focused migration, snapshot persistence, and projection parity tests plus perf-harness seeding for the new snapshot.
+
+- **Phase 2 dashboard materialized snapshot** — `GET /api/dashboard` now serves a persisted sync-time snapshot instead of recomputing every section on the hot path.
+  - Added a `dashboard_snapshots` SQLite read-model table plus migration v10.
+  - Successful journal/price syncs now rebuild the dashboard JSON snapshot after cache/XIRR warming and write it atomically so failed refreshes cannot leave a half-written payload behind.
+  - `GET /api/dashboard` now reads the snapshot first and falls back to the live query path only when the snapshot is missing, invalid, or schema-mismatched.
+  - Added focused migration, snapshot transaction, and dashboard handler regression tests.
+
+- **Out-of-band journal change detection** — The app now detects when ledger files are edited externally (outside the app) and immediately reflects the dirty state in the sync icon without waiting for the user to manually trigger a sync.
+  - Added a background `JournalWatcher` goroutine that polls file modification times every 10 seconds. When any watched file's mtime advances it performs a SHA256 hash comparison; on a real content change it persists `JournalDirtyKey = "true"` in metadata.
+  - `GET /api/config` now reads `is_journal_dirty` from the persisted metadata entry instead of computing a full SHA256 at request time (Phase 1: remove hot-path hashing).
+  - Added `GET /api/journal/status` — a lightweight endpoint (`{"is_dirty": bool}`) backed by a single DB metadata read. Used by the frontend's background poll.
+  - The frontend polls `/api/journal/status` every 30 seconds and also on `visibilitychange` (when the user returns to the tab). On a dirty-state change it updates the sync icon colour without triggering a full page reload.
+  - After a successful journal sync the watcher resets its file list (via ledger CLI) and clears the dirty flag. After a failed journal sync the dirty flag is set so the warning remains visible.
+
+- **Phase 0 performance baseline telemetry for config/dashboard/projection** — Added request-scope performance instrumentation and a reproducible benchmark harness for key slow paths.
+  - `GET /api/config`, `GET /api/dashboard`, and `GET /api/networth/projection` now emit per-request telemetry headers: `X-Paisa-Perf-Latency-Ms`, `X-Paisa-Perf-SQL-Count`, and `X-Paisa-Perf-SQL-Time-Ms`.
+  - Added `cmd/perfbaseline` to seed a synthetic long-history dataset and report p50/p95 latency plus SQL query/time totals for each endpoint.
+  - Added `docs/reference/performance-baseline-phase0.md` with baseline numbers, run steps, and a reusable before/after comparison checklist.
+
+- **Net worth projection and FIRE calculator** — Added forward-looking wealth planning across backend and UI.
+  - Added backend `GET /api/networth/projection` with conservative/expected/optimistic CAGR scenarios, historical savings-rate-derived monthly contribution defaults, FIRE target corpus (`annual_expenses / SWR`), years-to-FIRE estimation, and milestone markers.
+  - Added **Assets → Projection** page with interactive CAGR/monthly contribution/SWR controls and a scenario-band chart over historical net worth.
+  - Added a compact FIRE progress widget to the dashboard Assets tile and a **Project Forward** toggle on **Assets → Networth** to overlay projected lines and milestones.
+  - Added focused backend projection math tests.
+
+- **Clarify Sankey views: Money Flow vs Expense Breakdown** — Kept both Sankey pages but made their scope explicit after investigating parameter and rendering differences.
+  - **Cash Flow → Money Flow** (`/cash_flow/sankey`) continues to query `/api/sankey` with a period selector and supports account-depth aggregation plus optional asset-transfer hiding for full-path flow analysis.
+  - **Expenses → Expense Breakdown** (`/expense/sankey`) continues to use date-range bounds but now renders only links that terminate in expense accounts, producing a focused outflow view.
+  - Updated navigation and command palette labels to remove ambiguous "Sankey/Flow" naming, and added inline help text on both pages to explain each view.
+
+- **Create top-level Planning navigation for Goals and Tax** — Promoted planning workflows out of the More section for better discoverability.
+  - Moved routes from `/more/goals` to `/planning/goals` and from `/more/tax/*` to `/planning/tax/*`.
+  - Added a new top-level **Planning** navbar section (between Income and Ledger) with **Goals**, plus INR-gated **Tax** submenu entries.
+  - Removed Goals/Tax links from **More** and updated internal links (dashboard and command palette) to point to `/planning/*`.
+  - Added legacy redirects from `/more/goals` and `/more/tax/*` to the new planning routes.
+  - Added focused navbar-selection tests for `Planning > Goals` and `Planning > Tax > Harvest`.
+
+- **Move YoY and MoM analysis under Expenses navigation** — Removed the top-level Analysis section and relocated both pages under Expenses.
+  - Moved routes from `/analysis/yoy` and `/analysis/mom` to `/expense/yoy` and `/expense/mom`.
+  - Added legacy redirects from old analysis URLs to the new expense URLs.
+  - Updated navbar hierarchy so Expenses now includes **Monthly, Yearly, Budget, Flow, YoY, MoM** and removed alpha tags for YoY/MoM.
+  - Breadcrumbs now resolve as `Expenses > YoY` and `Expenses > MoM`.
+
+- **Rename Assets → Analysis to Assets → Portfolio** — Eliminated the naming collision between the top-level Analysis section and the Assets child page.
+  - Renamed the navbar entry under Assets from **Analysis** to **Portfolio** (route `/assets/portfolio`).
+  - Moved the route from `src/routes/(app)/assets/analysis/` to `src/routes/(app)/assets/portfolio/`.
+  - Added a 301 redirect from `/assets/analysis` to `/assets/portfolio` for backward compatibility.
+  - Breadcrumb now renders as `Assets > Portfolio`; the `alpha` tag is preserved.
+
+- **Income section polish: Timeline label, Investment year picker, and cross-link summary** — Completed the Income navigation and historical investment-income polish.
+  - Renamed **Income → Overview** to **Income → Timeline** so navbar and breadcrumb labels match the page semantics.
+  - Enabled the financial-year picker on **Income → Investment** and wired the page to request `/api/income/investment?year=<FY>`.
+  - Updated backend `GET /api/income/investment` to accept both `as_of_date` and `year` query parameters for historical trailing-12-month yield calculations.
+  - Added a **TTM Investment Income** summary card to the Income Timeline page, sourced from `/api/income/investment`.
+  - Added focused tests for Income navbar route selection and investment-income year/as_of_date query handling.
+
+- **Investment income tracking and total-return enhancements** — Added dedicated investment income aggregation and surfaced trailing yield/total return across backend and UI.
+  - Added backend `GET /api/income/investment` to classify investment income (`Dividend`, `Interest`, `Distribution`) by holding, return monthly timeline data, and compute per-holding trailing 12-month yield.
+  - Extended gain computations so investment income is included in total return; `/api/gain` and `/api/gain/:account` now return `income_received`, `price_appreciation`, `total_return`, and `ttm_yield`.
+  - Updated UI navigation with **Income → Overview / Investment**, added a new **Income → Investment** page with holding/type breakdown and timeline, added a gain breakdown table with a new trailing yield column in **Assets → Gain**, and added an investment-income compact card on the dashboard assets tile.
+  - Added focused backend tests for investment income grouping, yield calculation, and gain total-return composition.
+
+- **FX impact decomposition and currency exposure surfaces** — Added multi-currency attribution across net worth and asset views.
+  - Backend `/api/networth` timeline points now include `contribution`, `investment_return`, and `fx_impact`, with decomposition logic that separates cumulative FX movement from local investment return for non-default-currency holdings.
+  - Added backend `GET /api/currency-exposure` to return denomination-level portfolio exposure (`currency`, `amount`, `percentage`).
+  - Updated assets net worth UI with FX overlay toggle, added decomposition metrics cards, and surfaced FX/contribution details in timeline tooltips.
+  - Added currency exposure donut widget on **Assets → Allocation** and **Ledger → FX Rates** pages.
+  - Added backend-focused tests validating FX decomposition consistency and currency exposure grouping totals.
+
+- **Fix More → Logs runtime errors** — Resolved a Logs page failure caused by Workbox navigation fallback and fragile client rendering.
+  - Updated PWA `navigateFallback` to `/index.html` so Workbox always serves a precached navigation shell (avoids `non-precached-url` for `/`).
+  - Hardened `/more/logs` rendering by removing direct `window` access in markup, guarding virtualized rows, and safely formatting log timestamps.
+  - Wrapped logs fetch in error handling to avoid unhandled promise rejections when the API request fails.
+
 - **Svelte 5 state management: complete class-based adapters and decouple UI/persisted state (P2.3)** — Completed the remaining Svelte 5 state modernisation tasks (#231 #232 #233):
   - Added `commandPaletteOpen`, `cashflowExpenseDepthAllowed`, and `cashflowIncomeDepthAllowed` to the `UIState` class in `src/lib/state/ui.svelte.ts` so all transient UI state is accessible via a single rune-compatible entry point (`uiState.<prop>.current`).
   - Added `editorLeftWidth`, `editorRightWidth`, `editorLeftCollapsed`, `editorRightCollapsed`, and `configSidebarCollapsed` to the `PersistedState` class in `src/lib/state/persisted.svelte.ts`, completing coverage of every persisted store.
@@ -32,7 +145,6 @@
   - Backend now returns `original_amount` field on each posting, preserving the amount in the original commodity before any conversion. Frontend toggles between using `amount` (converted to default) and `original_amount` (native commodity) for all calculations and charts.
   - In actual currency view, dimensions are grouped by both category/payee/account AND commodity, so mixed-currency spending is shown separately — e.g., "Groceries" becomes "Groceries (USD)" and "Groceries (EUR)" if both exist.
   - No server roundtrip on currency toggle — all amounts are pre-calculated and sent with each posting.
-
 
 - **MoM Analysis: client-side currency conversion** — Added a "Currency" selector to the MoM analysis page control panel. On load, the page fetches latest FX rates for all configured currency pairs from the new `GET /api/expense/latest-rates` endpoint and stores them locally. Switching currencies instantly re-derives all charts and tables via a `$derived` converted postings layer — no extra network request on each switch. The new backend endpoint (`GetLatestRates`) returns a `rates[base][quote]` map plus the default currency so the UI can build the selector and apply conversions without server-side re-processing.
 
@@ -361,7 +473,9 @@
 - **`Job` and `JobStatus` types in utils.ts** — Added `JobStatus` union type (`"pending" | "running" | "completed" | "failed"`) and `Job` interface mirroring the Go `worker.Job` struct. Date fields (`created_at`, `started_at`, `finished_at`) are typed as `string` because the ajax reviver only converts keys matching `/Date|date|time|now/`.
 - **`POST /api/sync` ajax overload updated** — The TypeScript overload for `/api/sync` now declares the return type as `{ job_id: string }`, matching the `202 Accepted` response the backend already returns. A new overload for `GET /api/jobs/:id` returning `Job` is also added.
 - **`src/lib/sync.ts` adapted for async API** — `sync()` now extracts `job_id` from the `202` response and immediately upserts a `pending` job into the jobs store. Network-level failures (non-2xx, connection errors) are surfaced as a Bulma toast; job-level failures will be surfaced via polling (P1.3-12).
-- **`startPolling` — background job status polling** — `startPolling(jobId, onTerminal?, options?)` polls `GET /api/jobs/:id` in the background at 2-second intervals, updating the jobs store on each response. Polling stops automatically when the job reaches a terminal state (completed or failed) or after 150 attempts (~5 minutes). Up to 5 consecutive network errors are tolerated before polling aborts; the error counter resets on the next successful response. On failure, a Bulma toast is shown with the error message. The `onTerminal` callback is called with the final job, enabling callers (e.g. `Actions.svelte`) to trigger a data refresh. All timing and retry parameters are injectable for unit testing (P1.3).
+- **Persistent SQLite job queue + recovery** — Background jobs are now persisted in a new `jobs` table (migration v16). `worker.Registry` can load persisted jobs on startup, replay interrupted recoverable jobs, and persist status/details/progress updates (`items_completed` / `total_items`) throughout execution.
+- **Real-time job stream via SSE** — Added `GET /api/jobs/stream` which emits job snapshots as `text/event-stream`. The frontend sync tracker now consumes the stream for live updates and terminal-state callbacks, eliminating client-side HTTP polling for job progress.
+- **`startPolling` now backed by SSE** — For call-site compatibility, `startPolling(jobId, onTerminal?)` remains exported but now registers terminal listeners and ensures the `/api/jobs/stream` SSE connection is active. No periodic `GET /api/jobs/:id` polling is performed by the frontend.
 - **`Actions.svelte` updated for async sync** — `syncWithLoader` now calls `startPolling` after `sync()` returns a `job_id`, deferring the data `refresh()` to the `onTerminal` callback rather than running it immediately. This ensures the UI reflects the completed sync result rather than stale data (P1.3).
 - **`createJobsStore` exported** — The `createJobsStore` factory in `src/lib/stores/jobs.ts` is now exported so tests and tooling can create isolated store instances without sharing the module-level singleton.
 - **Asynchronous POST /api/sync** — `POST /api/sync` now returns `202 Accepted` immediately with `{"job_id": "<uuid>"}` instead of blocking until the sync completes. The sync work is performed in the background via the `worker.Registry`; callers can poll the job status via `GET /api/jobs/:id` (P1.2). Readonly and authentication behaviour are preserved: the endpoint is still guarded by `ReadonlyMiddleware` and `TokenAuthMiddleware`.

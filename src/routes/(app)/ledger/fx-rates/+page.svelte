@@ -1,9 +1,18 @@
 <script lang="ts">
-  import { ajax, formatCurrency, now, type FXRate, type PriceFilters } from "$lib/utils";
+  import CurrencyExposureWidget from "$lib/components/CurrencyExposureWidget.svelte";
+  import {
+    ajax,
+    formatCurrency,
+    now,
+    type CurrencyExposure,
+    type FXRate,
+    type PriceFilters
+  } from "$lib/utils";
   import dayjs from "dayjs";
   import { onMount } from "svelte";
 
   let rates: FXRate[] = $state([]);
+  let currencyExposure: CurrencyExposure[] = $state([]);
   let base = $state("USD");
   let quote = $state("");
   let year = $state(now().year());
@@ -42,6 +51,8 @@
   }
 
   onMount(async () => {
+    const exposureResult = await ajax("/api/currency-exposure");
+    currencyExposure = exposureResult.currency_exposure || [];
     await loadFilterOptions();
     await fetchRates();
   });
@@ -50,6 +61,12 @@
 <section class="section tab-fx-rates">
   <div class="container is-fluid">
     <div class="columns is-multiline">
+      <div class="column is-12">
+        <div class="box p-3">
+          <CurrencyExposureWidget exposures={currencyExposure} />
+        </div>
+      </div>
+
       <div class="column is-12">
         <div class="box p-3">
           <div class="field is-grouped is-grouped-multiline mb-0">

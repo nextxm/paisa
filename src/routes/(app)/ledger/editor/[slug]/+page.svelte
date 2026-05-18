@@ -15,12 +15,10 @@
   import type { EditorView } from "codemirror";
   import { format } from "$lib/journal";
   import _ from "lodash";
-  import { onMount } from "svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import type { PageData } from "./$types";
   import FileTree from "$lib/components/FileTree.svelte";
   import FileModal from "$lib/components/FileModal.svelte";
-  import { page } from "$app/stores";
   import {
     editorLeftWidth,
     editorRightWidth,
@@ -38,7 +36,7 @@
   let commodities: string[] = $state([]);
   let payees: string[] = $state([]);
   let selectedVersion: string = $state(null);
-  let lineNumber = $state(0);
+  let lineNumber = $state(data.lineNumber || 0);
 
   let leftWidth = $state(get(editorLeftWidth));
   let rightWidth = $state(get(editorRightWidth));
@@ -128,15 +126,16 @@
     return true;
   }
 
-  onMount(async () => {
-    loadFiles(data.name);
-    const line = _.toNumber($page.url.hash.substring(1));
-    if (_.isNumber(line)) {
-      lineNumber = line;
-    }
+  $effect(() => {
+    filesMap = _.fromPairs(_.map(data.files, (f) => [f.name, f]));
+    accounts = data.accounts;
+    commodities = data.commodities;
+    payees = data.payees;
+    selectedFile = _.find(data.files, (f) => f.name == data.name) || data.files[0];
+    lineNumber = data.lineNumber || 0;
   });
 
-  async function loadFiles(selectedFileName: string) {
+  async function refreshFiles(selectedFileName: string) {
     let files;
     ({ files, accounts, commodities, payees } = await ajax("/api/editor/files"));
     filesMap = _.fromPairs(_.map(files, (f) => [f.name, f]));
@@ -257,7 +256,7 @@
 
       const success = await navigate(`/ledger/editor/${encodeURIComponent(destinationFile)}`);
       if (success) {
-        await loadFiles(destinationFile);
+        await refreshFiles(destinationFile);
       }
     } else {
       toast.toast({

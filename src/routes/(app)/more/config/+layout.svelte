@@ -3,6 +3,7 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import { ajax, configUpdated } from "$lib/utils";
+  import { fetchConfig, updateConfig } from "$lib/config_client";
   import { onMount } from "svelte";
   import type { JSONSchema7 } from "json-schema";
   import _ from "lodash";
@@ -17,12 +18,12 @@
 
   let { children }: { children: Snippet } = $props();
 
-  let lastConfig: typeof globalThis.USER_CONFIG = $state(null);
-  let config: typeof globalThis.USER_CONFIG = $state(null);
-  let schema: JSONSchema7 = $state(null);
+  let lastConfig: typeof globalThis.USER_CONFIG | null = $state(null);
+  let config: typeof globalThis.USER_CONFIG | null = $state(null);
+  let schema: JSONSchema7 | null = $state(null);
   let isLoading = $state(false);
   let isTogglingProviderDebug = $state(false);
-  let error: string = $state(null);
+  let error: string | null | undefined = $state(null);
   let accounts: string[] = $state([]);
   let isSidebarCollapsed = $state(get(configSidebarCollapsed));
 
@@ -31,7 +32,7 @@
   });
 
   onMount(async () => {
-    ({ config, schema, accounts } = await ajax("/api/config"));
+    ({ config, schema, accounts } = await fetchConfig());
     lastConfig = _.cloneDeep(config);
   });
 
@@ -57,7 +58,7 @@
     get error() {
       return error;
     },
-    set error(v: string | null) {
+    set error(v: string | null | undefined) {
       error = v;
     },
     get isTogglingProviderDebug() {
@@ -70,18 +71,13 @@
     isLoading = true;
     try {
       let success = false;
-      ({ success, error } = await ajax("/api/config", {
-        method: "POST",
-        body: JSON.stringify(config),
-        background: true
-      }));
+      ({ success, error } = await updateConfig(config as UserConfig, { background: true }));
       if (success) {
         lastConfig = _.cloneDeep(config);
-        globalThis.USER_CONFIG = _.cloneDeep(config);
+        globalThis.USER_CONFIG = _.cloneDeep(config!);
         configUpdated();
         refresh();
         toast.toast({ message: "Saved config", type: "is-success" });
-        await sync({ journal: true });
       }
     } finally {
       isLoading = false;
@@ -98,15 +94,14 @@
         "Are you sure you want to reset the config to defaults? This action is not reversible."
       )
     ) {
-      const minimal = { journal_path: lastConfig.journal_path, db_path: lastConfig.db_path } as any;
+      const minimal = {
+        journal_path: lastConfig!.journal_path,
+        db_path: lastConfig!.db_path
+      } as any;
       isLoading = true;
       try {
         let success = false;
-        ({ success, error } = await ajax("/api/config", {
-          method: "POST",
-          body: JSON.stringify(minimal),
-          background: true
-        }));
+        ({ success, error } = await updateConfig(minimal as UserConfig, { background: true }));
         if (success) {
           lastConfig = _.cloneDeep(minimal);
           config = _.cloneDeep(minimal);
@@ -134,9 +129,9 @@
         background: true
       });
       if (response.success) {
-        config.provider_debug_http = enabled;
-        lastConfig.provider_debug_http = enabled;
-        globalThis.USER_CONFIG = _.cloneDeep(config);
+        config!.provider_debug_http = enabled;
+        lastConfig!.provider_debug_http = enabled;
+        globalThis.USER_CONFIG = _.cloneDeep(config!);
         configUpdated();
         toast.toast({
           message: `Provider HTTP debug logging ${enabled ? "enabled" : "disabled"}`,
@@ -246,8 +241,8 @@
       <div class="config-content">
         <article class="message is-info is-small config-info-banner">
           <div class="message-body py-2 px-3">
-            Prices are <b>not</b> automatically updated after a config change. Use the menu at the top
-            right to update prices. If the journal failed to sync, fix the issues and sync again.
+            Prices and the journal are <b>not</b> automatically updated after a config change. Use the
+            menu at the top right to sync the journal or update prices.
           </div>
         </article>
 

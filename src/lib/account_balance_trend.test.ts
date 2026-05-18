@@ -9,6 +9,9 @@ function point(date: string, balanceAmount: number): Networth {
     investmentAmount: 0,
     withdrawalAmount: 0,
     gainAmount: 0,
+    contribution: 0,
+    investment_return: 0,
+    fx_impact: 0,
     balanceAmount,
     balanceUnits: 0,
     netInvestmentAmount: 0

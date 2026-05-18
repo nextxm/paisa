@@ -6,10 +6,18 @@
   } from "$lib/allocation";
   import COLORS, { generateColorScheme } from "$lib/colors";
   import BoxLabel from "$lib/components/BoxLabel.svelte";
+  import CurrencyExposureWidget from "$lib/components/CurrencyExposureWidget.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
   import Table from "$lib/components/Table.svelte";
   import { accountName, nonZeroCurrency, nonZeroCurrencyLink } from "$lib/table_formatters";
-  import { ajax, formatPercentage, rem, type Aggregate, type Legend } from "$lib/utils";
+  import {
+    ajax,
+    formatPercentage,
+    rem,
+    type Aggregate,
+    type CurrencyExposure,
+    type Legend
+  } from "$lib/utils";
   import _ from "lodash";
   import { onMount, tick } from "svelte";
   import type { ColumnDefinition, ProgressBarParams } from "tabulator-tables";
@@ -18,6 +26,7 @@
   let depth = $state(2);
   let allocationTimelineLegends: Legend[] = $state([]);
   let aggregateLeafNodes: Aggregate[] = $state([]);
+  let currencyExposure: CurrencyExposure[] = $state([]);
   let total = $state(0);
 
   const columns: ColumnDefinition[] = [
@@ -49,11 +58,16 @@
   ];
 
   onMount(async () => {
+    const [allocationResult, currencyExposureResult] = await Promise.all([
+      ajax("/api/allocation"),
+      ajax("/api/currency-exposure")
+    ]);
     const {
       aggregates: aggregates,
       aggregates_timeline: aggregatesTimeline,
       allocation_targets: allocationTargets
-    } = await ajax("/api/allocation");
+    } = allocationResult;
+    currencyExposure = currencyExposureResult.currency_exposure || [];
     const accounts = _.keys(aggregates);
     aggregateLeafNodes = _.filter(_.values(aggregates), (a) => a.market_amount > 0);
     total = _.sumBy(aggregateLeafNodes, (a) => a.market_amount);
@@ -76,6 +90,19 @@
     allocationTimelineLegends = renderAllocationTimeline(aggregatesTimeline);
   });
 </script>
+
+<section class="section tab-allocation">
+  <div class="container is-fluid">
+    <div class="columns">
+      <div class="column is-12">
+        <div class="box">
+          <CurrencyExposureWidget exposures={currencyExposure} />
+        </div>
+      </div>
+    </div>
+    <BoxLabel text="Currency Exposure" />
+  </div>
+</section>
 
 <section class="section tab-allocation" style={showAllocation ? "" : "display: none"}>
   <div class="container is-fluid">

@@ -27,6 +27,11 @@ import (
 // JournalHashKey is the metadata key used to persist the last-synced journal hash.
 const JournalHashKey = "journal_hash"
 
+// JournalDirtyKey is the metadata key used to persist the journal dirty flag.
+// The value is "true" when the journal files have changed since the last
+// successful sync, and "false" (or absent) when the journal is clean.
+const JournalDirtyKey = "journal_dirty"
+
 // lastPriceSyncKey is the metadata key used to persist the last-synced price fetch time.
 const LastPriceSyncKey = "last_price_sync"
 
@@ -55,7 +60,7 @@ func SyncJournal(db *gorm.DB, forceJournal bool) (SyncResult, error) {
 	files, err := ledger.Cli().Files(journalPath)
 	if err != nil {
 		log.WithFields(log.Fields{"stage": "journal.files", "error": err}).
-			Warn("Failed to list journal files; proceeding with root file only")
+			Warn("Failed to list journal files; proceeding with root file only. Changes to included files may not be detected until next forced sync.")
 		files = []string{journalPath}
 	}
 

@@ -147,7 +147,11 @@ export const CONFIG_GROUPS: ConfigGroup[] = [
         id: "advanced",
         label: "Advanced",
         icon: "fa-sliders",
-        schemaKeys: ["provider_debug_http", "disable_multi_currency_prices"],
+        schemaKeys: [
+          "provider_debug_http",
+          "disable_multi_currency_prices",
+          "disable_missing_price_logging"
+        ],
         description: "Debug logging and experimental feature flags"
       }
     ]

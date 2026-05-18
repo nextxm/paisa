@@ -21,6 +21,7 @@
   } from "$lib/utils";
   import _ from "lodash";
   import { onMount } from "svelte";
+  import type { PageData } from "./$types";
 
   import BudgetCard from "$lib/components/BudgetCard.svelte";
   import LevelItem from "$lib/components/LevelItem.svelte";
@@ -32,22 +33,33 @@
   import BalanceCard from "$lib/components/BalanceCard.svelte";
   import RecentTransactionsWidget from "$lib/components/RecentTransactionsWidget.svelte";
 
+  let { data }: { data: PageData } = $props();
+
   let cashflowLegends: Legend[] = $state([]);
   let month = $state(now().format("YYYY-MM"));
-  let goalSummaries: GoalSummary[] = $state([]);
-  let transactionSequences: TransactionSequence[] = $state([]);
-  let cashFlows: CashFlow[] = $state([]);
-  let expenses: { [key: string]: Posting[] } = $state({});
-  let xirr = $state(0);
-  let networth: Networth = $state(null);
+  let goalSummaries: GoalSummary[] = $state(
+    _.sortBy(data.dashboard.goalSummaries, (g) => -g.priority)
+  );
+  let transactionSequences: TransactionSequence[] = $state(
+    _.take(sortTrantionSequence(enrichTrantionSequence(data.dashboard.transactionSequences)), 16)
+  );
+  let cashFlows: CashFlow[] = $state(data.dashboard.cashFlows);
+  let expenses: { [key: string]: Posting[] } = $state(data.dashboard.expenses);
+  let xirr = $state(data.dashboard.networth.xirr);
+  let networth: Networth = $state(data.dashboard.networth.networth);
   let renderer: (data: Posting[]) => void = $state();
   let selectedExpenses = $derived(expenses[month] || []);
   let totalExpense = $derived(_.sumBy(selectedExpenses, (p) => p.amount));
-  let transactions: Transaction[] = $state([]);
-  let budgetsByMonth: Record<string, Budget> = $state({});
+  let transactions: Transaction[] = $state(data.dashboard.transactions);
+  let budgetsByMonth: Record<string, Budget> = $state(data.dashboard.budget.budgetsByMonth);
   let currentBudget = $derived(budgetsByMonth[month]);
-  let isEmpty = $state(false);
-  let checkingBalances: Record<string, AssetBreakdown> = $state({});
+  let isEmpty = $state(_.isEmpty(data.dashboard.transactions));
+  let checkingBalances: Record<string, AssetBreakdown> = $state(
+    data.dashboard.checkingBalances.asset_breakdowns
+  );
+  let investmentIncomeDividendTTM = $state(data.income.ttm_dividend || 0);
+  let investmentIncomeInterestTTM = $state(data.income.ttm_interest || 0);
+  let investmentIncomeLoading = $state(false);
 
   $effect(() => {
     if (renderer) {
@@ -60,28 +72,7 @@
     refresh();
   }
 
-  onMount(async () => {
-    const dashboardResult = await ajax("/api/dashboard");
-
-    ({
-      expenses,
-      cashFlows,
-      goalSummaries,
-      budget: { budgetsByMonth },
-      transactionSequences,
-      networth: { networth, xirr },
-      checkingBalances: { asset_breakdowns: checkingBalances },
-      transactions
-    } = dashboardResult);
-
-    goalSummaries = _.sortBy(goalSummaries, (g) => -g.priority);
-
-    if (_.isEmpty(transactions)) {
-      isEmpty = true;
-    } else {
-      isEmpty = false;
-    }
-
+  onMount(() => {
     const postings = _.chain(expenses).values().flatten().value();
     const z = expense.colorScale(postings);
     renderer = expense.renderCurrentExpensesBreakdown(z);
@@ -95,10 +86,6 @@
     );
     cashflowRenderer(cashFlows);
     cashflowLegends = legends;
-    transactionSequences = _.take(
-      sortTrantionSequence(enrichTrantionSequence(transactionSequences)),
-      16
-    );
   });
 </script>
 
@@ -217,6 +204,38 @@
         {/if}
 
         <div class="tile is-parent">
+          <article class="tile is-child">
+            <div class="content">
+              <p class="subtitle">
+                <a class="secondary-link has-text-grey" href="/income/investment"
+                  >Investment Income</a
+                >
+              </p>
+              <div class="content">
+                <nav class="level grid-2">
+                  <LevelItem
+                    narrow
+                    title="TTM Dividend"
+                    color={investmentIncomeLoading ? undefined : COLORS.gainText}
+                    value={investmentIncomeLoading
+                      ? "—"
+                      : formatCurrency(investmentIncomeDividendTTM)}
+                  />
+                  <LevelItem
+                    narrow
+                    title="TTM Interest"
+                    color={investmentIncomeLoading ? undefined : COLORS.gainText}
+                    value={investmentIncomeLoading
+                      ? "—"
+                      : formatCurrency(investmentIncomeInterestTTM)}
+                  />
+                </nav>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="tile is-parent">
           <article class="tile is-child min-w-0">
             <p class="subtitle">
               <a class="secondary-link has-text-grey" href="/cash_flow/monthly">Cash Flow</a>
@@ -261,7 +280,7 @@
               <article class="tile is-child">
                 <div class="content">
                   <p class="subtitle">
-                    <a class="secondary-link has-text-grey" href="/more/goals">Goals</a>
+                    <a class="secondary-link has-text-grey" href="/planning/goals">Goals</a>
                   </p>
                   <div class="content">
                     {#each goalSummaries as goal}

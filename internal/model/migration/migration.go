@@ -10,13 +10,17 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/account_reconciliation"
 	"github.com/ananthakumaran/paisa/internal/model/cache"
 	"github.com/ananthakumaran/paisa/internal/model/cii"
+	"github.com/ananthakumaran/paisa/internal/model/dashboard_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/import_preset"
+	"github.com/ananthakumaran/paisa/internal/model/investment_income_snapshot"
+	"github.com/ananthakumaran/paisa/internal/model/job"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	mutualfundModel "github.com/ananthakumaran/paisa/internal/model/mutualfund/scheme"
 	npsModel "github.com/ananthakumaran/paisa/internal/model/nps/scheme"
 	"github.com/ananthakumaran/paisa/internal/model/portfolio"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/price"
+	"github.com/ananthakumaran/paisa/internal/model/projection_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/session"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -46,6 +50,13 @@ var steps = []step{
 	{Version: 7, Apply: v7AddAccountBalances},
 	{Version: 8, Apply: v8AddParserTrainingLog},
 	{Version: 9, Apply: v9AddPostingTransactionHash},
+	{Version: 10, Apply: v10AddDashboardSnapshots},
+	{Version: 11, Apply: v11AddProjectionSnapshots},
+	{Version: 12, Apply: v12AddPostingReadIndexes},
+	{Version: 13, Apply: v13AddInvestmentIncomeSnapshots},
+	{Version: 14, Apply: v14AddProjectionSnapshotSyncMetadata},
+	{Version: 15, Apply: v15AddPostingOriginalAmount},
+	{Version: 16, Apply: v16AddPersistentJobs},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -215,6 +226,82 @@ func v9AddPostingTransactionHash(db *gorm.DB) error {
 	return nil
 }
 
+// v10AddDashboardSnapshots creates the dashboard_snapshots materialized-read
+// model table that stores the pre-rendered /api/dashboard response payload.
+func v10AddDashboardSnapshots(db *gorm.DB) error {
+	if err := db.AutoMigrate(&dashboard_snapshot.DashboardSnapshot{}); err != nil {
+		return fmt.Errorf("v10: AutoMigrate dashboard_snapshots failed: %w", err)
+	}
+	return nil
+}
+
+// v11AddProjectionSnapshots creates the projection_snapshots materialized-read
+// model table that stores the precomputed /api/networth/projection base inputs.
+func v11AddProjectionSnapshots(db *gorm.DB) error {
+	if err := db.AutoMigrate(&projection_snapshot.ProjectionSnapshot{}); err != nil {
+		return fmt.Errorf("v11: AutoMigrate projection_snapshots failed: %w", err)
+	}
+	return nil
+}
+
+// v12AddPostingReadIndexes adds composite indexes to accelerate long-history
+// dashboard/projection query patterns that filter by forecast/date/account.
+func v12AddPostingReadIndexes(db *gorm.DB) error {
+	// Supports forecast + date-range scans used by UntilToday/LastNMonths paths.
+	if err := db.Exec(
+		"CREATE INDEX IF NOT EXISTS idx_postings_forecast_date ON postings(forecast, date)",
+	).Error; err != nil {
+		return fmt.Errorf("v12: create idx_postings_forecast_date failed: %w", err)
+	}
+	// Supports forecast + account-prefix + date-range scans used by projection
+	// derivation and other account-scoped dashboard computations.
+	if err := db.Exec(
+		"CREATE INDEX IF NOT EXISTS idx_postings_forecast_account_date ON postings(forecast, account, date)",
+	).Error; err != nil {
+		return fmt.Errorf("v12: create idx_postings_forecast_account_date failed: %w", err)
+	}
+	return nil
+}
+
+// v13AddInvestmentIncomeSnapshots creates the investment_income_snapshots materialized-read
+// model table that stores the pre-rendered /api/income/investment response payload.
+func v13AddInvestmentIncomeSnapshots(db *gorm.DB) error {
+	if err := db.AutoMigrate(&investment_income_snapshot.InvestmentIncomeSnapshot{}); err != nil {
+		return fmt.Errorf("v13: AutoMigrate investment_income_snapshots failed: %w", err)
+	}
+	return nil
+}
+
+// v14AddProjectionSnapshotSyncMetadata adds journal_hash and last_price_sync columns
+// to the projection_snapshots table to support conditional sync-state evaluation.
+func v14AddProjectionSnapshotSyncMetadata(db *gorm.DB) error {
+	if err := db.AutoMigrate(&projection_snapshot.ProjectionSnapshot{}); err != nil {
+		return fmt.Errorf("v14: AutoMigrate projection_snapshots failed: %w", err)
+	}
+	return nil
+}
+
+// v15AddPostingOriginalAmount adds the original_amount column to the postings table.
+func v15AddPostingOriginalAmount(db *gorm.DB) error {
+	if err := db.AutoMigrate(&posting.Posting{}); err != nil {
+		return fmt.Errorf("v15: AutoMigrate postings failed: %w", err)
+	}
+	if err := db.Exec(
+		"UPDATE postings SET original_amount = quantity WHERE original_amount IS NULL OR original_amount = ''",
+	).Error; err != nil {
+		return fmt.Errorf("v15: backfill original_amount failed: %w", err)
+	}
+	return nil
+}
+
+// v16AddPersistentJobs creates the jobs table used by the persistent worker queue.
+func v16AddPersistentJobs(db *gorm.DB) error {
+	if err := db.AutoMigrate(&job.Job{}); err != nil {
+		return fmt.Errorf("v16: AutoMigrate jobs failed: %w", err)
+	}
+	return nil
+}
+
 // RunMigrations initializes the schema_versions table, applies any unapplied
 // migrations in version order, and logs the current schema version.
 // It is safe to call multiple times; already-applied migrations are skipped.
@@ -239,6 +326,16 @@ func RunMigrations(db *gorm.DB) error {
 
 		if err := db.Create(&SchemaVersion{Version: m.Version, AppliedAt: time.Now()}).Error; err != nil {
 			return fmt.Errorf("failed to record migration v%d: %w", m.Version, err)
+		}
+	}
+
+	// Backfill any NULL original_amount fields in case the column was added
+	// but the migration failed or got skipped, or backfill wasn't run.
+	if db.Migrator().HasColumn(&posting.Posting{}, "original_amount") {
+		if err := db.Exec(
+			"UPDATE postings SET original_amount = quantity WHERE original_amount IS NULL OR original_amount = ''",
+		).Error; err != nil {
+			return fmt.Errorf("failed to backfill original_amount: %w", err)
 		}
 	}
 

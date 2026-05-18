@@ -118,7 +118,8 @@ const config = {
         cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff}"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
-        navigateFallback: "/",
+        // Workbox requires navigateFallback to point to a precached asset.
+        navigateFallback: "/index.html",
         navigateFallbackAllowlist: [/^(?!\/_app\/immutable).*$/],
         runtimeCaching: [
           {
@@ -145,6 +146,9 @@ const config = {
   server: {
     proxy: {
       "/api": {
+        target: "http://localhost:7500"
+      },
+      "/connect": {
         target: "http://localhost:7500"
       }
     },

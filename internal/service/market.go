@@ -189,10 +189,12 @@ func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
 
 	pt := pcache.dcPricesTree[commodity]
 	if pt == nil {
-		log.WithFields(log.Fields{
-			"commodity": commodity,
-			"date":      date.Format("2006-01-02"),
-		}).Warn("Price not found, using 0")
+		if !config.IsMissingPriceLoggingDisabled() {
+			log.WithFields(log.Fields{
+				"commodity": commodity,
+				"date":      date.Format("2006-01-02"),
+			}).Warn("Price not found, using 0")
+		}
 		return price.Price{}
 	}
 
@@ -206,10 +208,12 @@ func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
 		return pc
 	}
 
-	log.WithFields(log.Fields{
-		"commodity": commodity,
-		"date":      date.Format("2006-01-02"),
-	}).Warn("Price not found, using 0")
+	if !config.IsMissingPriceLoggingDisabled() {
+		log.WithFields(log.Fields{
+			"commodity": commodity,
+			"date":      date.Format("2006-01-02"),
+		}).Warn("Price not found, using 0")
+	}
 	return price.Price{}
 }
 

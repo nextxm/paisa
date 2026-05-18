@@ -70,6 +70,7 @@
     "allow_legacy_auth": false,
     "disable_multi_currency_prices": false,
     "provider_debug_http": false,
+    "disable_missing_price_logging": false,
     "credit_cards": [],
     "firefly": {
       "url": "",
@@ -394,6 +395,11 @@
       "default_currency": {
         "description": "The default currency to use. NOTE: Paisa tries to convert other currencies to default currency, so make sure it's possible to convert to default currency by specifying the exchange rate.",
         "type": "string"
+      },
+      "disable_missing_price_logging": {
+        "default": false,
+        "description": "Set to true to disable warning logs for missing commodity prices and dates.",
+        "type": "boolean"
       },
       "disable_multi_currency_prices": {
         "default": false,
@@ -804,6 +810,15 @@
         ],
         "type": "array",
         "ui:widget": "table"
+      },
+      "inactive_accounts": {
+        "default": [],
+        "description": "List of accounts that should be treated as inactive. Supports wildcards (e.g. <code>Assets:OldBank:*</code>).",
+        "items": {
+          "type": "string"
+        },
+        "type": "array",
+        "ui:widget": "accounts"
       },
       "journal_path": {
         "description": "Path to your journal file. It can be absolute or relative to the configuration file. The main journal file can refer other files using <code>include</code> as long as all the files are in the same or sub directory",
@@ -1573,15 +1588,6 @@
         "maximum": 6,
         "minimum": 0,
         "type": "integer"
-      },
-      "inactive_accounts": {
-        "default": [],
-        "description": "List of accounts that should be treated as inactive. Supports wildcards (e.g. <code>Assets:OldBank:*</code>).",
-        "items": {
-          "type": "string"
-        },
-        "type": "array",
-        "ui:widget": "accounts"
       }
     },
     "required": [

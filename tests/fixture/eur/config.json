@@ -70,6 +70,7 @@
     "allow_legacy_auth": false,
     "disable_multi_currency_prices": false,
     "provider_debug_http": false,
+    "disable_missing_price_logging": false,
     "credit_cards": [],
     "firefly": {
       "url": "",
@@ -394,6 +395,11 @@
       "default_currency": {
         "description": "The default currency to use. NOTE: Paisa tries to convert other currencies to default currency, so make sure it's possible to convert to default currency by specifying the exchange rate.",
         "type": "string"
+      },
+      "disable_missing_price_logging": {
+        "default": false,
+        "description": "Set to true to disable warning logs for missing commodity prices and dates.",
+        "type": "boolean"
       },
       "disable_multi_currency_prices": {
         "default": false,

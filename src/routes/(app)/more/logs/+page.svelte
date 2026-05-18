@@ -2,12 +2,22 @@
   import { onMount } from "svelte";
   import { ajax, type Log } from "$lib/utils";
   import VirtualList from "svelte-tiny-virtual-list";
+  import dayjs from "dayjs";
   import _ from "lodash";
 
   let logs: Log[] = $state([]);
   const ITEM_SIZE = 20;
+  const LIST_OFFSET = 130;
+  const MIN_LIST_HEIGHT = 240;
+  let viewportHeight = $state(MIN_LIST_HEIGHT + LIST_OFFSET);
+  let listHeight = $derived(Math.max(viewportHeight - LIST_OFFSET, MIN_LIST_HEIGHT));
+
   onMount(async () => {
-    ({ logs } = await ajax("/api/logs"));
+    try {
+      ({ logs } = await ajax("/api/logs"));
+    } catch {
+      logs = [];
+    }
   });
 
   function levelClass(level: string) {
@@ -28,7 +38,16 @@
       ", "
     );
   }
+
+  function formatTime(time: unknown) {
+    if (dayjs.isDayjs(time)) {
+      return time.format("YYYY-MM-DD HH:mm:ss");
+    }
+    return String(time ?? "");
+  }
 </script>
+
+<svelte:window bind:innerHeight={viewportHeight} />
 
 <section class="section tab-price">
   <div class="container is-fluid">
@@ -39,29 +58,31 @@
             <div class="box px-2 overflow-x-auto">
               <VirtualList
                 width="100%"
-                height={window.innerHeight - 130}
+                height={listHeight}
                 itemCount={logs.length}
                 itemSize={ITEM_SIZE}
               >
                 <div slot="item" let:index let:style {style}>
                   {@const log = logs[index]}
-                  {@const fields = _.omit(log, ["time", "level", "msg"])}
-                  <div class="is-flex log is-align-items-baseline" style="min-width: 1000px;">
-                    <div class="time is-size-7">{log.time.format("YYYY-MM-DD HH:mm:ss")}</div>
-                    <div
-                      class="is-size-7 tag is-small is-light invertable py-0 log-level {levelClass(
-                        log.level
-                      )}"
-                    >
-                      {log.level}
+                  {#if log}
+                    {@const fields = _.omit(log, ["time", "level", "msg"])}
+                    <div class="is-flex log is-align-items-baseline" style="min-width: 1000px;">
+                      <div class="time is-size-7">{formatTime(log.time)}</div>
+                      <div
+                        class="is-size-7 tag is-small is-light invertable py-0 log-level {levelClass(
+                          log.level
+                        )}"
+                      >
+                        {log.level}
+                      </div>
+                      <div class="msg truncate" title={log.msg}>{log.msg}</div>
+                      <div class="fields is-size-7 truncate" title={formatFields(log)}>
+                        {#each Object.entries(fields) as [key, value]}
+                          <span class="px-1 field"><span>{key}</span>=<span>{value}</span></span>
+                        {/each}
+                      </div>
                     </div>
-                    <div class="msg truncate" title={log.msg}>{log.msg}</div>
-                    <div class="fields is-size-7 truncate" title={formatFields(log)}>
-                      {#each Object.entries(fields) as [key, value]}
-                        <span class="px-1 field"><span>{key}</span>=<span>{value}</span></span>
-                      {/each}
-                    </div>
-                  </div>
+                  {/if}
                 </div>
               </VirtualList>
             </div>

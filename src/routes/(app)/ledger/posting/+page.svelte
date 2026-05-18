@@ -133,7 +133,10 @@
                     <span class="mr-1" style={accountColorStyle(firstName(p.account))}
                       >{iconText(p.account)}</span
                     >
-                    {p.account}
+                    <a
+                      class="secondary-link"
+                      href="/accounts/{encodeURIComponent(p.account)}/transactions">{p.account}</a
+                    >
                   </div>
                 </div>
                 <div class="has-text-right">{formatCurrency(p.amount, 2)}</div>

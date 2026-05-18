@@ -19,6 +19,38 @@ const links: Link[] = [
         children: [{ label: "Upcoming", href: "/upcoming" }]
       }
     ]
+  },
+  {
+    label: "Expenses",
+    href: "/expense",
+    children: [
+      { label: "Monthly", href: "/monthly" },
+      { label: "Yearly", href: "/yearly" },
+      { label: "Budget", href: "/budget" },
+      { label: "Flow", href: "/sankey" },
+      { label: "YoY", href: "/yoy" },
+      { label: "MoM", href: "/mom" }
+    ]
+  },
+  {
+    label: "Income",
+    href: "/income",
+    children: [
+      { label: "Timeline", href: "" },
+      { label: "Investment", href: "/investment" }
+    ]
+  },
+  {
+    label: "Planning",
+    href: "/planning",
+    children: [
+      { label: "Goals", href: "/goals" },
+      {
+        label: "Tax",
+        href: "/tax",
+        children: [{ label: "Harvest", href: "/harvest" }]
+      }
+    ]
   }
 ];
 
@@ -53,5 +85,53 @@ describe("navbar selection", () => {
     expect(selection.selectedLink).toBeNull();
     expect(selection.selectedSubLink).toBeNull();
     expect(selection.selectedSubSubLink).toBeNull();
+  });
+
+  test("selects income timeline child for /income route", () => {
+    const selection = resolveNavbarSelectionTyped(links, "/income");
+
+    expect(selection.selectedLink?.label).toBe("Income");
+    expect(selection.selectedSubLink?.label).toBe("Timeline");
+    expect(selection.selectedSubSubLink).toBeNull();
+  });
+
+  test("selects income investment child for /income/investment route", () => {
+    const selection = resolveNavbarSelectionTyped(links, "/income/investment");
+
+    expect(selection.selectedLink?.label).toBe("Income");
+    expect(selection.selectedSubLink?.label).toBe("Investment");
+    expect(selection.selectedSubSubLink).toBeNull();
+  });
+
+  test("selects expenses YoY child for /expense/yoy route", () => {
+    const selection = resolveNavbarSelectionTyped(links, "/expense/yoy");
+
+    expect(selection.selectedLink?.label).toBe("Expenses");
+    expect(selection.selectedSubLink?.label).toBe("YoY");
+    expect(selection.selectedSubSubLink).toBeNull();
+  });
+
+  test("selects expenses MoM child for /expense/mom route", () => {
+    const selection = resolveNavbarSelectionTyped(links, "/expense/mom");
+
+    expect(selection.selectedLink?.label).toBe("Expenses");
+    expect(selection.selectedSubLink?.label).toBe("MoM");
+    expect(selection.selectedSubSubLink).toBeNull();
+  });
+
+  test("selects planning goals for /planning/goals route", () => {
+    const selection = resolveNavbarSelectionTyped(links, "/planning/goals");
+
+    expect(selection.selectedLink?.label).toBe("Planning");
+    expect(selection.selectedSubLink?.label).toBe("Goals");
+    expect(selection.selectedSubSubLink).toBeNull();
+  });
+
+  test("selects planning tax harvest hierarchy for /planning/tax/harvest route", () => {
+    const selection = resolveNavbarSelectionTyped(links, "/planning/tax/harvest");
+
+    expect(selection.selectedLink?.label).toBe("Planning");
+    expect(selection.selectedSubLink?.label).toBe("Tax");
+    expect(selection.selectedSubSubLink?.label).toBe("Harvest");
   });
 });
