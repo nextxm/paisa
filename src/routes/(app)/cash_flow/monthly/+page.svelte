@@ -639,7 +639,7 @@
     }
   }
 
-  :global(html[data-theme="dark"]) {
+  :global(html.dark) {
     .summary-card {
       background-color: rgba(255, 255, 255, 0.02);
       border-color: rgba(255, 255, 255, 0.1);

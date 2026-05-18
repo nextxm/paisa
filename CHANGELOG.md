@@ -4,6 +4,16 @@
 
 #### Features
 
+- **Remove Bulma CSS framework; standardize on Tailwind CSS with CSS custom properties** — Eliminated all Bulma SCSS dependencies and consolidated theme switching to a class-based Tailwind `dark` approach.
+  - Removed `bulma`, `bulma-switch`, and `@cityssm/bulma-sticky-table` npm packages.
+  - Deleted `src/light.scss`, `src/dark.scss`, and `src/colors.scss`; replaced the Bulma SCSS variable system with CSS custom properties in `src/paisa-vars.css`.
+  - Rewrote `src/app.scss` to use `var(--p-*)` CSS custom properties instead of Bulma SCSS variables; removed all Bulma `@import` and `@include` directives.
+  - Created `src/bulma-compat.css` providing a pure-CSS reimplementation of all Bulma layout, utility, and component classes used in the project (grid, section, container, buttons, tags, form fields, navbar, modals, etc.), allowing gradual HTML class migration without breaking existing templates.
+  - Updated `tailwind.config.js` to set `darkMode: "class"` so Tailwind `dark:` utilities activate via the `dark` class on `<html>`.
+  - Updated `ThemeSwitcher.svelte` to toggle `.dark` class on `document.documentElement` (instead of `data-theme` attribute) and updated all `html[data-theme="dark"]` selectors in component styles to `html.dark`.
+  - Added inline anti-flash script in `src/app.html` that reads `localStorage["theme-preference"]` and applies the `dark` class and `data-theme` attribute before first paint, eliminating theme flash on page load.
+  - Updated `src/responsive.scss` to use plain `@media` breakpoints instead of Bulma's `@include mobile`/`@include desktop` mixins.
+
 - **Fix projection snapshot refresh and journal Files() fallback** — Resolved two issues preventing projection recalculation after journal sync.
   - Fixed sync handler to only refresh projection snapshot when journal sync actually runs (not when skipped due to unchanged hash). Previously, requesting a journal sync that was skipped would still trigger unnecessary projection recalculation.
   - Added warning when `ledger files` fails to list included files, causing hash to be computed on main file only. This could prevent changes to included files from being detected until a forced sync. Operators should investigate the `ledger files` failure and consider forcing a sync if included files may have changed.

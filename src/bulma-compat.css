@@ -1,0 +1,1628 @@
+/*
+ * Bulma compatibility layer
+ * Reimplements Bulma layout, utility, and component classes used in Paisa
+ * using pure CSS and Paisa design tokens (var(--p-*)).
+ * Allows removing the bulma npm package without touching every template file.
+ */
+
+/* ============================================================
+   LAYOUT – Grid (columns / column)
+   ============================================================ */
+
+.columns {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: -0.75rem;
+  margin-right: -0.75rem;
+  margin-top: -0.75rem;
+}
+
+.columns.is-mobile {
+  display: flex;
+}
+
+.columns.is-multiline {
+  flex-wrap: wrap;
+}
+
+.columns:last-child {
+  margin-bottom: -0.75rem;
+}
+
+.columns:not(:last-child) {
+  margin-bottom: calc(1.5rem - 0.75rem);
+}
+
+.columns.is-gapless {
+  margin-left: 0;
+  margin-right: 0;
+  margin-top: 0;
+}
+
+.columns.is-gapless > .column {
+  margin: 0;
+  padding: 0 !important;
+}
+
+.columns.is-vcentered {
+  align-items: center;
+}
+
+.columns.is-centered {
+  justify-content: center;
+}
+
+.column {
+  display: block;
+  flex-basis: 0;
+  flex-grow: 1;
+  flex-shrink: 1;
+  padding: 0.75rem;
+}
+
+.column.is-narrow {
+  flex: none;
+  width: unset;
+}
+
+.column.is-full,
+.column.is-12 {
+  flex: none;
+  width: 100%;
+}
+
+.column.is-half,
+.column.is-6 {
+  flex: none;
+  width: 50%;
+}
+
+.column.is-one-third,
+.column.is-4 {
+  flex: none;
+  width: 33.3333%;
+}
+
+.column.is-two-thirds,
+.column.is-8 {
+  flex: none;
+  width: 66.6667%;
+}
+
+.column.is-one-quarter,
+.column.is-3 {
+  flex: none;
+  width: 25%;
+}
+
+.column.is-three-quarters,
+.column.is-9 {
+  flex: none;
+  width: 75%;
+}
+
+.column.is-1 {
+  flex: none;
+  width: 8.33333%;
+}
+
+.column.is-2 {
+  flex: none;
+  width: 16.6667%;
+}
+
+.column.is-5 {
+  flex: none;
+  width: 41.6667%;
+}
+
+.column.is-7 {
+  flex: none;
+  width: 58.3333%;
+}
+
+.column.is-10 {
+  flex: none;
+  width: 83.3333%;
+}
+
+.column.is-11 {
+  flex: none;
+  width: 91.6667%;
+}
+
+@media screen and (min-width: 769px) {
+  .column.is-full-tablet {
+    flex: none;
+    width: 100%;
+  }
+  .column.is-half-tablet {
+    flex: none;
+    width: 50%;
+  }
+}
+
+@media screen and (min-width: 1024px) {
+  .column.is-full-desktop {
+    flex: none;
+    width: 100%;
+  }
+  .column.is-half-desktop {
+    flex: none;
+    width: 50%;
+  }
+  .column.is-half-fullhd {
+    flex: none;
+    width: 50%;
+  }
+  .column.is-one-third-desktop {
+    flex: none;
+    width: 33.3333%;
+  }
+  .column.is-two-thirds-desktop {
+    flex: none;
+    width: 66.6667%;
+  }
+  .column.is-3-desktop {
+    flex: none;
+    width: 25%;
+  }
+  .column.is-4-desktop {
+    flex: none;
+    width: 33.3333%;
+  }
+  .column.is-6-desktop {
+    flex: none;
+    width: 50%;
+  }
+  .column.is-8-desktop {
+    flex: none;
+    width: 66.6667%;
+  }
+}
+
+/* ============================================================
+   LAYOUT – Section / Container
+   ============================================================ */
+
+.section {
+  padding: 1.5rem 0;
+}
+
+.container {
+  flex-grow: 1;
+  margin: 0 auto;
+  position: relative;
+  width: auto;
+}
+
+.container.is-fluid {
+  max-width: none !important;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  width: 100%;
+}
+
+/* ============================================================
+   LAYOUT – Level
+   ============================================================ */
+
+.level {
+  align-items: center;
+  justify-content: space-between;
+  display: flex;
+}
+
+.level-left {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-start;
+}
+
+.level-right {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.level-item {
+  align-items: center;
+  display: flex;
+  flex-basis: auto;
+  flex-grow: 0;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.level-item:not(:last-child) {
+  margin-right: 0.75rem;
+}
+
+/* ============================================================
+   LAYOUT – Tile
+   ============================================================ */
+
+.tile {
+  align-items: stretch;
+  display: block;
+  flex-basis: 0;
+  flex-grow: 1;
+  flex-shrink: 1;
+  min-height: min-content;
+}
+
+.tile.is-ancestor {
+  margin-left: -0.75rem;
+  margin-right: -0.75rem;
+  margin-top: -0.75rem;
+}
+
+.tile.is-ancestor:last-child {
+  margin-bottom: -0.75rem;
+}
+
+.tile.is-parent {
+  padding: 0.75rem;
+  display: flex;
+}
+
+.tile.is-child {
+  margin: 0 !important;
+}
+
+.tile.is-vertical {
+  flex-direction: column;
+}
+
+.tile.is-vertical > .tile:not(:last-child) {
+  margin-bottom: 1.5rem !important;
+}
+
+/* ============================================================
+   COMPONENTS – Box
+   ============================================================ */
+
+.box {
+  background-color: var(--p-white);
+  border-radius: var(--p-radius);
+  box-shadow: var(--p-box-shadow);
+  color: var(--p-text);
+  display: block;
+  padding: 1.25rem 0;
+}
+
+.box.is-selected {
+  box-shadow: var(--p-shadow);
+}
+
+/* ============================================================
+   COMPONENTS – Button
+   ============================================================ */
+
+.button {
+  align-items: center;
+  border: 1px solid var(--p-grey-lighter);
+  border-radius: var(--p-radius);
+  box-shadow: none;
+  display: inline-flex;
+  font-size: 1rem;
+  height: 2.5em;
+  justify-content: flex-start;
+  line-height: 1.5;
+  padding-bottom: calc(0.5em - 1px);
+  padding-left: 1em;
+  padding-right: 1em;
+  padding-top: calc(0.5em - 1px);
+  position: relative;
+  vertical-align: top;
+  white-space: nowrap;
+  background-color: var(--p-white);
+  color: var(--p-grey-dark);
+  cursor: pointer;
+  user-select: none;
+}
+
+.button.is-small {
+  border-radius: var(--p-radius-small);
+  font-size: 0.75rem;
+}
+
+.button.is-medium {
+  font-size: 1.25rem;
+}
+
+.button.is-large {
+  font-size: 1.5rem;
+}
+
+.button.is-rounded {
+  border-radius: 9999px;
+  padding-left: 1.25em;
+  padding-right: 1.25em;
+}
+
+.button.is-fullwidth {
+  display: flex;
+  width: 100%;
+}
+
+.button.is-light {
+  background-color: var(--p-white-ter);
+  color: var(--p-grey-dark);
+  border-color: transparent;
+}
+
+.button.is-link {
+  background-color: var(--p-link);
+  color: white;
+  border-color: transparent;
+}
+
+.button.is-link.is-light {
+  background-color: var(--p-link-light);
+  color: var(--p-link-dark);
+  border-color: transparent;
+}
+
+.button.is-danger {
+  background-color: var(--p-danger);
+  color: white;
+  border-color: transparent;
+}
+
+.button.is-danger.is-light {
+  background-color: var(--p-danger-light);
+  color: var(--p-danger);
+  border-color: transparent;
+}
+
+.button.is-success {
+  background-color: var(--p-success);
+  color: white;
+  border-color: transparent;
+}
+
+.button.is-warning {
+  background-color: var(--p-warning);
+  color: var(--p-black);
+  border-color: transparent;
+}
+
+.button.is-info {
+  background-color: var(--p-info);
+  color: white;
+  border-color: transparent;
+}
+
+.button.is-text {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--p-text);
+  text-decoration: underline;
+}
+
+.button.is-loading::after {
+  animation: spinAround 500ms infinite linear;
+  border: 2px solid var(--p-grey-lighter);
+  border-radius: 9999px;
+  border-right-color: transparent;
+  border-top-color: transparent;
+  content: "";
+  display: block;
+  height: 1em;
+  width: 1em;
+  position: absolute;
+}
+
+/* ============================================================
+   COMPONENTS – Tag / Badge
+   ============================================================ */
+
+.tag {
+  align-items: center;
+  background-color: var(--p-white-ter);
+  border-radius: var(--p-radius-small);
+  color: var(--p-text);
+  display: inline-flex;
+  font-size: 0.75rem;
+  height: 2em;
+  justify-content: center;
+  line-height: 1.5;
+  padding-left: 0.75em;
+  padding-right: 0.75em;
+  white-space: nowrap;
+}
+
+.tag.is-small {
+  font-size: 0.65rem;
+}
+
+.tag.is-medium {
+  font-size: 1rem;
+}
+
+.tag.is-large {
+  font-size: 1.25rem;
+}
+
+.tag.is-rounded {
+  border-radius: 9999px;
+}
+
+.tag.is-danger {
+  background-color: var(--p-danger);
+  color: white;
+}
+
+.tag.is-danger.is-light {
+  background-color: var(--p-danger-light);
+  color: var(--p-danger);
+}
+
+.tag.is-success {
+  background-color: var(--p-success);
+  color: white;
+}
+
+.tag.is-warning {
+  background-color: var(--p-warning);
+  color: var(--p-black);
+}
+
+.tag.is-info {
+  background-color: var(--p-info);
+  color: white;
+}
+
+.tag.is-link {
+  background-color: var(--p-link);
+  color: white;
+}
+
+.tag.is-link.is-light {
+  background-color: var(--p-link-light);
+  color: var(--p-link-dark);
+}
+
+.tag.is-primary {
+  background-color: #b388ff;
+  color: white;
+}
+
+.tags {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.tags:not(:last-child) {
+  margin-bottom: 1rem;
+}
+
+.tags > .tag {
+  margin-bottom: 0.5rem;
+}
+
+.tags > .tag:not(:last-child) {
+  margin-right: 0.5rem;
+}
+
+/* ============================================================
+   COMPONENTS – Title / Heading / Subtitle
+   ============================================================ */
+
+.title {
+  color: var(--p-black-ter);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.125;
+  word-break: break-word;
+}
+
+.title.is-1 {
+  font-size: 3rem;
+}
+.title.is-2 {
+  font-size: 2.5rem;
+}
+.title.is-3 {
+  font-size: 2rem;
+}
+.title.is-4 {
+  font-size: 1.5rem;
+}
+.title.is-5 {
+  font-size: 1.25rem;
+}
+.title.is-6 {
+  font-size: 1rem;
+}
+
+.subtitle {
+  color: var(--p-grey-dark);
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.heading {
+  display: block;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  color: var(--p-grey-dark);
+}
+
+/* ============================================================
+   COMPONENTS – Navbar (structural)
+   ============================================================ */
+
+.navbar {
+  align-items: stretch;
+  display: flex;
+  min-height: 3.25rem;
+  position: relative;
+  z-index: 30;
+  background-color: var(--p-background);
+  color: var(--p-text);
+}
+
+.navbar-brand {
+  align-items: stretch;
+  display: flex;
+  flex-shrink: 0;
+  min-height: 3.25rem;
+}
+
+.navbar-item,
+.navbar-link {
+  align-items: center;
+  display: flex;
+  padding: 0.5rem 0.75rem;
+}
+
+.navbar-item {
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+.navbar-item.has-dropdown {
+  align-items: stretch;
+  padding: 0;
+}
+
+.navbar-link {
+  cursor: pointer;
+}
+
+.navbar-dropdown {
+  background-color: var(--p-background);
+  border-top: none;
+  box-shadow: var(--p-shadow);
+  display: none;
+  left: 0;
+  min-width: 100%;
+  padding-bottom: 0.5rem;
+  padding-top: 0.5rem;
+  position: absolute;
+  top: 100%;
+  z-index: 20;
+}
+
+.navbar-item.has-dropdown.is-active > .navbar-dropdown,
+.navbar-item.has-dropdown:hover > .navbar-dropdown {
+  display: block;
+}
+
+.navbar-end {
+  margin-left: auto;
+  display: flex;
+  align-items: stretch;
+}
+
+.navbar-start {
+  display: flex;
+  align-items: stretch;
+}
+
+.navbar-menu {
+  display: flex;
+  flex-grow: 1;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   COMPONENTS – Modal
+   ============================================================ */
+
+.modal {
+  align-items: center;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  position: fixed;
+  z-index: 40;
+}
+
+.modal.is-active {
+  display: flex;
+}
+
+.modal-background {
+  background-color: rgba(0, 0, 0, 0.86);
+  bottom: 0;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.modal-card {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 40px);
+  overflow: hidden;
+  position: relative;
+}
+
+.modal-card-head {
+  align-items: center;
+  background-color: var(--p-white-ter);
+  border-bottom: 1px solid var(--p-grey-lighter);
+  border-top-left-radius: var(--p-radius);
+  border-top-right-radius: var(--p-radius);
+  display: flex;
+  padding: 20px;
+}
+
+.modal-card-body {
+  background-color: var(--p-white);
+  flex-grow: 1;
+  flex-shrink: 1;
+  overflow: auto;
+  padding: 20px;
+}
+
+.modal-card-foot {
+  align-items: center;
+  background-color: var(--p-white-ter);
+  border-bottom-left-radius: var(--p-radius);
+  border-bottom-right-radius: var(--p-radius);
+  border-top: 1px solid var(--p-grey-lighter);
+  display: flex;
+  flex-shrink: 0;
+  padding: 20px;
+}
+
+.modal-card-title {
+  color: var(--p-black-ter);
+  flex-grow: 1;
+  flex-shrink: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+  padding: 0;
+}
+
+/* ============================================================
+   COMPONENTS – Message
+   ============================================================ */
+
+.message {
+  background-color: var(--p-white-ter);
+  border-radius: var(--p-radius);
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.message-header {
+  align-items: center;
+  background-color: var(--p-text);
+  border-radius: var(--p-radius) var(--p-radius) 0 0;
+  color: white;
+  display: flex;
+  font-weight: 700;
+  justify-content: space-between;
+  line-height: 1.25;
+  padding: 0.75em 1em;
+  position: relative;
+}
+
+.message-body {
+  border: 1px solid var(--p-grey-lighter);
+  border-radius: 0 0 var(--p-radius) var(--p-radius);
+  color: var(--p-text);
+  padding: 1.25em 1.5em;
+}
+
+.message.is-danger .message-header {
+  background-color: var(--p-danger);
+}
+.message.is-success .message-header {
+  background-color: var(--p-success);
+}
+.message.is-warning .message-header {
+  background-color: var(--p-warning);
+  color: var(--p-black);
+}
+.message.is-info .message-header {
+  background-color: var(--p-info);
+}
+
+/* ============================================================
+   COMPONENTS – Form (field / control / label / input / select)
+   ============================================================ */
+
+.field {
+  margin-bottom: 0.75rem;
+}
+
+.field.is-horizontal {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.field.is-grouped {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.field.is-grouped > .control:not(:last-child) {
+  margin-right: 0.75rem;
+}
+
+.field.is-grouped.is-grouped-multiline {
+  flex-wrap: wrap;
+}
+
+.field.is-grouped.is-grouped-multiline > .control {
+  margin-bottom: 0.5rem;
+}
+
+.field-label {
+  flex-basis: 0;
+  flex-grow: 1;
+  flex-shrink: 0;
+  margin-right: 1.5rem;
+  text-align: right;
+}
+
+.field-body {
+  display: flex;
+  flex-basis: 0;
+  flex-grow: 5;
+  flex-shrink: 1;
+}
+
+.label {
+  color: var(--p-grey-darker);
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.5em;
+}
+
+.label.is-small {
+  font-size: 0.75rem;
+}
+
+.control {
+  box-sizing: border-box;
+  clear: both;
+  font-size: 1rem;
+  position: relative;
+  text-align: inherit;
+}
+
+.control.is-expanded {
+  flex-grow: 1;
+  flex-shrink: 1;
+}
+
+.input,
+.textarea {
+  background-color: var(--p-white);
+  border: 1px solid var(--p-grey-lighter);
+  border-radius: var(--p-radius);
+  color: var(--p-grey-darker);
+  display: block;
+  font-size: 1rem;
+  height: 2.5em;
+  line-height: 1.5;
+  padding: calc(0.5em - 1px) calc(0.75em - 1px);
+  width: 100%;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: var(--p-link);
+  outline: none;
+}
+
+.input.is-small,
+.textarea.is-small {
+  border-radius: var(--p-radius-small);
+  font-size: 0.75rem;
+}
+
+.select {
+  display: inline-block;
+  max-width: 100%;
+  position: relative;
+  vertical-align: top;
+}
+
+.select select {
+  appearance: none;
+  background-color: var(--p-white);
+  border: 1px solid var(--p-grey-lighter);
+  border-radius: var(--p-radius);
+  color: var(--p-grey-darker);
+  cursor: pointer;
+  display: block;
+  font-size: 1rem;
+  height: 2.5em;
+  line-height: 1.5;
+  max-width: 100%;
+  outline: none;
+  padding-bottom: calc(0.5em - 1px);
+  padding-left: calc(0.75em - 1px);
+  padding-right: 2.5em;
+  padding-top: calc(0.5em - 1px);
+}
+
+.select.is-fullwidth,
+.select.is-fullwidth select {
+  width: 100%;
+}
+
+.select.is-small select {
+  border-radius: var(--p-radius-small);
+  font-size: 0.75rem;
+}
+
+/* ============================================================
+   COMPONENTS – Breadcrumb
+   ============================================================ */
+
+.breadcrumb {
+  align-items: stretch;
+  display: flex;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.breadcrumb ul {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.breadcrumb li {
+  align-items: center;
+  display: flex;
+}
+
+.breadcrumb li + li::before {
+  color: var(--p-grey-light);
+  content: "/";
+  padding: 0 0.5em;
+}
+
+.breadcrumb a {
+  align-items: center;
+  color: var(--p-link);
+  display: flex;
+  justify-content: center;
+  padding: 0 0.75em;
+}
+
+.breadcrumb li.is-active a {
+  color: var(--p-grey-dark);
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ============================================================
+   COMPONENTS – Table
+   ============================================================ */
+
+.table {
+  background-color: var(--p-white);
+  border-collapse: collapse;
+  border-radius: var(--p-radius);
+  color: var(--p-text);
+  width: 100%;
+}
+
+.table td,
+.table th {
+  border: 1px solid var(--p-grey-lighter);
+  border-width: 0 0 1px;
+  padding: 0.5em 0.75em;
+  vertical-align: top;
+}
+
+.table th {
+  color: var(--p-black-ter);
+  font-weight: 700;
+  text-align: inherit;
+}
+
+.table.is-striped tbody tr:not(.is-selected):nth-child(even) {
+  background-color: var(--p-white-bis);
+}
+
+.table.is-hoverable tbody tr:not(.is-selected):hover {
+  background-color: var(--p-white-bis);
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+/* ============================================================
+   COMPONENTS – Progress
+   ============================================================ */
+
+.progress {
+  appearance: none;
+  background-color: var(--p-white-ter);
+  border: none;
+  border-radius: 9999px;
+  display: block;
+  height: 1rem;
+  overflow: hidden;
+  padding: 0;
+  width: 100%;
+}
+
+/* ============================================================
+   COMPONENTS – Dropdown
+   ============================================================ */
+
+.dropdown {
+  display: inline-flex;
+  position: relative;
+  vertical-align: top;
+}
+
+.dropdown.is-active .dropdown-menu,
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-menu {
+  display: none;
+  left: 0;
+  min-width: 12rem;
+  padding-top: 4px;
+  position: absolute;
+  top: 100%;
+  z-index: 20;
+}
+
+.dropdown-content {
+  background-color: var(--p-white);
+  border-radius: var(--p-radius);
+  box-shadow: var(--p-shadow);
+  padding-bottom: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.dropdown-item {
+  color: var(--p-grey-dark);
+  display: block;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  padding: 0.375rem 1rem;
+  position: relative;
+}
+
+a.dropdown-item:hover,
+button.dropdown-item:hover {
+  background-color: var(--p-white-bis);
+  color: var(--p-black-ter);
+}
+
+.dropdown-divider {
+  background-color: var(--p-grey-lighter);
+  border: none;
+  display: block;
+  height: 1px;
+  margin: 0.5rem 0;
+}
+
+/* ============================================================
+   COMPONENTS – Icon
+   ============================================================ */
+
+.icon {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  height: 1.5em;
+  width: 1.5em;
+}
+
+.icon.is-small {
+  height: 1em;
+  width: 1em;
+}
+
+.icon.is-medium {
+  height: 2em;
+  width: 2em;
+}
+
+.icon.is-large {
+  height: 3em;
+  width: 3em;
+}
+
+/* ============================================================
+   COMPONENTS – Menu
+   ============================================================ */
+
+.menu-label {
+  color: var(--p-grey);
+  font-size: 0.75em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.menu-list {
+  line-height: 1.25;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menu-list a {
+  border-radius: var(--p-radius-small);
+  color: var(--p-grey-dark);
+  display: block;
+  padding: 0.5em 0.75em;
+}
+
+.menu-list a:hover {
+  background-color: var(--p-white-bis);
+  color: var(--p-black-ter);
+}
+
+.menu-list a.is-active {
+  background-color: var(--p-link);
+  color: white;
+}
+
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
+
+/* Display */
+.is-flex {
+  display: flex !important;
+}
+.is-inline-flex {
+  display: inline-flex !important;
+}
+.is-block {
+  display: block !important;
+}
+.is-hidden {
+  display: none !important;
+}
+
+@media screen and (max-width: 768px) {
+  .is-hidden-mobile {
+    display: none !important;
+  }
+}
+
+@media screen and (min-width: 769px) {
+  .is-hidden-tablet {
+    display: none !important;
+  }
+}
+
+@media screen and (min-width: 1024px) {
+  .is-hidden-desktop {
+    display: none !important;
+  }
+}
+
+/* Visibility */
+.is-not-visible,
+.is-invisible {
+  visibility: hidden;
+}
+
+/* Flex utilities */
+.is-flex-wrap-wrap {
+  flex-wrap: wrap !important;
+}
+.is-flex-wrap-nowrap {
+  flex-wrap: nowrap !important;
+}
+.is-flex-grow-1 {
+  flex-grow: 1 !important;
+}
+.is-flex-shrink-0 {
+  flex-shrink: 0 !important;
+}
+.is-justify-content-flex-start {
+  justify-content: flex-start !important;
+}
+.is-justify-content-flex-end {
+  justify-content: flex-end !important;
+}
+.is-justify-content-center {
+  justify-content: center !important;
+}
+.is-justify-content-space-between {
+  justify-content: space-between !important;
+}
+.is-justify-content-space-around {
+  justify-content: space-around !important;
+}
+.is-align-items-flex-start,
+.is-align-items-start {
+  align-items: flex-start !important;
+}
+.is-align-items-center {
+  align-items: center !important;
+}
+.is-align-items-flex-end {
+  align-items: flex-end !important;
+}
+.is-align-items-baseline {
+  align-items: baseline !important;
+}
+.is-align-self-center {
+  align-self: center !important;
+}
+
+/* Text alignment */
+.has-text-centered {
+  text-align: center !important;
+}
+.has-text-left {
+  text-align: left !important;
+}
+.has-text-right {
+  text-align: right !important;
+}
+.has-text-justified {
+  text-align: justify !important;
+}
+
+/* Text colours */
+.has-text-grey {
+  color: var(--p-grey) !important;
+}
+.has-text-grey-dark {
+  color: var(--p-grey-dark) !important;
+}
+.has-text-grey-darker {
+  color: var(--p-grey-darker) !important;
+}
+.has-text-grey-light {
+  color: var(--p-grey-light) !important;
+}
+.has-text-grey-lighter {
+  color: var(--p-grey-lighter) !important;
+}
+.has-text-grey-lightest {
+  color: var(--p-grey-lightest) !important;
+}
+.has-text-black {
+  color: var(--p-black) !important;
+}
+.has-text-black-ter {
+  color: var(--p-black-ter) !important;
+}
+.has-text-white {
+  color: var(--p-white) !important;
+}
+.has-text-link {
+  color: var(--p-link) !important;
+}
+.has-text-danger {
+  color: var(--p-danger) !important;
+}
+.has-text-success {
+  color: var(--p-success) !important;
+}
+.has-text-warning {
+  color: var(--p-warning) !important;
+}
+.has-text-info {
+  color: var(--p-info) !important;
+}
+.has-text-primary {
+  color: #b388ff !important;
+}
+
+/* Text weight */
+.has-text-weight-bold {
+  font-weight: 700 !important;
+}
+.has-text-weight-semibold {
+  font-weight: 600 !important;
+}
+.has-text-weight-normal {
+  font-weight: 400 !important;
+}
+.has-text-weight-light {
+  font-weight: 300 !important;
+}
+.has-text-weight-medium {
+  font-weight: 500 !important;
+}
+
+/* Text transform */
+.is-uppercase {
+  text-transform: uppercase !important;
+}
+.is-lowercase {
+  text-transform: lowercase !important;
+}
+.is-capitalized {
+  text-transform: capitalize !important;
+}
+.is-italic {
+  font-style: italic !important;
+}
+
+/* Font sizes */
+.is-size-1 {
+  font-size: 3rem !important;
+}
+.is-size-2 {
+  font-size: 2.5rem !important;
+}
+.is-size-3 {
+  font-size: 2rem !important;
+}
+.is-size-4 {
+  font-size: 1.5rem !important;
+}
+.is-size-5 {
+  font-size: 1.25rem !important;
+}
+.is-size-6 {
+  font-size: 1rem !important;
+}
+.is-size-7 {
+  font-size: 0.75rem !important;
+}
+.is-size-8 {
+  font-size: 0.65rem !important;
+}
+
+/* Width */
+.is-fullwidth {
+  width: 100% !important;
+}
+
+/* Overflow */
+.is-clipped {
+  overflow: hidden !important;
+}
+.is-scrollable {
+  overflow: auto !important;
+}
+
+/* Rounded */
+.is-rounded {
+  border-radius: 9999px !important;
+}
+
+/* Background colours */
+.has-background-white {
+  background-color: var(--p-white) !important;
+}
+.has-background-white-ter {
+  background-color: var(--p-white-ter) !important;
+}
+.has-background-white-bis {
+  background-color: var(--p-white-bis) !important;
+}
+.has-background-grey-lightest {
+  background-color: var(--p-grey-lightest) !important;
+}
+.has-background-grey-lighter {
+  background-color: var(--p-grey-lighter) !important;
+}
+.has-background-grey-light {
+  background-color: var(--p-grey-light) !important;
+}
+.has-background-link-light {
+  background-color: var(--p-link-light) !important;
+}
+.has-background-danger-light {
+  background-color: var(--p-danger-light) !important;
+}
+
+/* Spacing helpers (mb, mt, ml, mr, px, py, p, m) */
+.m-0 {
+  margin: 0 !important;
+}
+.m-1 {
+  margin: 0.25rem !important;
+}
+.m-2 {
+  margin: 0.5rem !important;
+}
+.m-3 {
+  margin: 0.75rem !important;
+}
+.m-4 {
+  margin: 1rem !important;
+}
+.m-5 {
+  margin: 1.5rem !important;
+}
+.m-6 {
+  margin: 3rem !important;
+}
+
+.mt-0 {
+  margin-top: 0 !important;
+}
+.mt-1 {
+  margin-top: 0.25rem !important;
+}
+.mt-2 {
+  margin-top: 0.5rem !important;
+}
+.mt-3 {
+  margin-top: 0.75rem !important;
+}
+.mt-4 {
+  margin-top: 1rem !important;
+}
+.mt-5 {
+  margin-top: 1.5rem !important;
+}
+.mt-6 {
+  margin-top: 3rem !important;
+}
+
+.mb-0 {
+  margin-bottom: 0 !important;
+}
+.mb-1 {
+  margin-bottom: 0.25rem !important;
+}
+.mb-2 {
+  margin-bottom: 0.5rem !important;
+}
+.mb-3 {
+  margin-bottom: 0.75rem !important;
+}
+.mb-4 {
+  margin-bottom: 1rem !important;
+}
+.mb-5 {
+  margin-bottom: 1.5rem !important;
+}
+.mb-6 {
+  margin-bottom: 3rem !important;
+}
+
+.ml-0 {
+  margin-left: 0 !important;
+}
+.ml-1 {
+  margin-left: 0.25rem !important;
+}
+.ml-2 {
+  margin-left: 0.5rem !important;
+}
+.ml-3 {
+  margin-left: 0.75rem !important;
+}
+.ml-4 {
+  margin-left: 1rem !important;
+}
+.ml-5 {
+  margin-left: 1.5rem !important;
+}
+.ml-6 {
+  margin-left: 3rem !important;
+}
+
+.mr-0 {
+  margin-right: 0 !important;
+}
+.mr-1 {
+  margin-right: 0.25rem !important;
+}
+.mr-2 {
+  margin-right: 0.5rem !important;
+}
+.mr-3 {
+  margin-right: 0.75rem !important;
+}
+.mr-4 {
+  margin-right: 1rem !important;
+}
+.mr-5 {
+  margin-right: 1.5rem !important;
+}
+.mr-6 {
+  margin-right: 3rem !important;
+}
+
+.p-0 {
+  padding: 0 !important;
+}
+.p-1 {
+  padding: 0.25rem !important;
+}
+.p-2 {
+  padding: 0.5rem !important;
+}
+.p-3 {
+  padding: 0.75rem !important;
+}
+.p-4 {
+  padding: 1rem !important;
+}
+.p-5 {
+  padding: 1.5rem !important;
+}
+.p-6 {
+  padding: 3rem !important;
+}
+
+.pt-0 {
+  padding-top: 0 !important;
+}
+.pt-1 {
+  padding-top: 0.25rem !important;
+}
+.pt-2 {
+  padding-top: 0.5rem !important;
+}
+.pt-3 {
+  padding-top: 0.75rem !important;
+}
+.pt-4 {
+  padding-top: 1rem !important;
+}
+.pt-5 {
+  padding-top: 1.5rem !important;
+}
+
+.pb-0 {
+  padding-bottom: 0 !important;
+}
+.pb-1 {
+  padding-bottom: 0.25rem !important;
+}
+.pb-2 {
+  padding-bottom: 0.5rem !important;
+}
+.pb-3 {
+  padding-bottom: 0.75rem !important;
+}
+.pb-4 {
+  padding-bottom: 1rem !important;
+}
+.pb-5 {
+  padding-bottom: 1.5rem !important;
+}
+
+.pl-0 {
+  padding-left: 0 !important;
+}
+.pl-1 {
+  padding-left: 0.25rem !important;
+}
+.pl-2 {
+  padding-left: 0.5rem !important;
+}
+.pl-3 {
+  padding-left: 0.75rem !important;
+}
+.pl-4 {
+  padding-left: 1rem !important;
+}
+.pl-5 {
+  padding-left: 1.5rem !important;
+}
+
+.pr-0 {
+  padding-right: 0 !important;
+}
+.pr-1 {
+  padding-right: 0.25rem !important;
+}
+.pr-2 {
+  padding-right: 0.5rem !important;
+}
+.pr-3 {
+  padding-right: 0.75rem !important;
+}
+.pr-4 {
+  padding-right: 1rem !important;
+}
+.pr-5 {
+  padding-right: 1.5rem !important;
+}
+
+/* Loading spinner keyframes */
+@keyframes spinAround {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================
+   COMPONENTS – Notification (used by bulma-toast)
+   ============================================================ */
+
+.notification {
+  background-color: var(--p-white-ter);
+  border-radius: var(--p-radius);
+  padding: 1.25rem 2.5rem 1.25rem 1.5rem;
+  position: relative;
+  color: var(--p-text);
+}
+
+.notification .delete {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+}
+
+.notification.is-primary {
+  background-color: #b388ff;
+  color: white;
+}
+.notification.is-link {
+  background-color: var(--p-link);
+  color: white;
+}
+.notification.is-info {
+  background-color: var(--p-info);
+  color: white;
+}
+.notification.is-success {
+  background-color: var(--p-success);
+  color: white;
+}
+.notification.is-warning {
+  background-color: var(--p-warning);
+  color: var(--p-black);
+}
+.notification.is-danger {
+  background-color: var(--p-danger);
+  color: white;
+}
+.notification.is-light {
+  background-color: var(--p-white-ter);
+  color: var(--p-grey-dark);
+}

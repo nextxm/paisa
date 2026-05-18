@@ -529,7 +529,7 @@
     --cp-primary-soft: var(--bulma-primary-10, rgba(72, 95, 199, 0.1));
   }
 
-  :global(html[data-theme="dark"]) .command-palette {
+  :global(html.dark) .command-palette {
     --cp-surface: hsl(215, 18%, 14%);
     --cp-surface-alt: hsl(215, 18%, 20%);
     --cp-border: hsl(215, 18%, 26%);

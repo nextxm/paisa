@@ -2,7 +2,6 @@
   import { getColorPreference, setColorPreference } from "$lib/utils";
   import { onMount } from "svelte";
   import * as store from "../../store";
-  import { refresh } from "../../store";
 
   const initialTheme = getColorPreference();
   let theme = $state(initialTheme);
@@ -22,7 +21,13 @@
   };
 
   const reflectPreference = () => {
-    document.firstElementChild.setAttribute("data-theme", theme);
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+      document.documentElement.setAttribute("data-theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.setAttribute("data-theme", "light");
+    }
   };
 
   reflectPreference();

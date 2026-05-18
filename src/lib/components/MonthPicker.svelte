@@ -193,7 +193,7 @@
         background-color: rgba(127, 127, 127, 0.1);
         outline: none;
 
-        :global(html[data-theme="dark"]) & {
+        :global(html.dark) & {
           background-color: rgba(0, 0, 0, 0.2);
         }
       }

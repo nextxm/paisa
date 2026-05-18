@@ -87,7 +87,7 @@
       background-color: rgba(127, 127, 127, 0.1);
       border-color: rgba(127, 127, 127, 0.2);
 
-      :global(html[data-theme="dark"]) & {
+      :global(html.dark) & {
         background-color: rgba(0, 0, 0, 0.2);
         border-color: rgba(0, 0, 0, 0.3);
       }
@@ -97,7 +97,7 @@
       background-color: rgba(127, 127, 127, 0.15);
       border-color: var(--bulma-link, #485fc7);
 
-      :global(html[data-theme="dark"]) & {
+      :global(html.dark) & {
         background-color: rgba(0, 0, 0, 0.4);
       }
     }

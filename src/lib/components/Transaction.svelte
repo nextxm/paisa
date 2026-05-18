@@ -48,9 +48,7 @@
   {/if}
 </div>
 
-<style lang="scss">
-  @import "bulma/sass/utilities/_all.sass";
-
+<style>
   .description {
     display: inline-block;
     white-space: nowrap;

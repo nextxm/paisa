@@ -1,0 +1,88 @@
+/*
+ * Paisa Design Tokens
+ * CSS custom properties replacing the Bulma SCSS variable system.
+ * Light values are defined on :root; dark overrides are on .dark (html.dark).
+ */
+
+:root {
+  /* Greyscale – light theme (mirrors Bulma defaults) */
+  --p-white: #ffffff;
+  --p-white-bis: #fafafa;
+  --p-white-ter: #f5f5f5;
+  --p-grey-lightest: hsl(0, 0%, 93%);
+  --p-grey-lighter: hsl(0, 0%, 86%);
+  --p-grey-light: hsl(0, 0%, 71%);
+  --p-grey: hsl(0, 0%, 48%);
+  --p-grey-dark: hsl(0, 0%, 29%);
+  --p-grey-darker: hsl(0, 0%, 21%);
+  --p-black-ter: hsl(0, 0%, 14%);
+  --p-black-bis: hsl(0, 0%, 7%);
+  --p-black: #0a0a0a;
+
+  /* Semantic colours – light */
+  --p-text: hsl(0, 0%, 29%);
+  --p-background: #fafafa;
+  --p-link: hsl(229, 53%, 53%);
+  --p-link-light: hsl(229, 53%, 90%);
+  --p-link-dark: hsl(229, 53%, 40%);
+  --p-danger: hsl(348, 86%, 61%);
+  --p-danger-light: hsl(347, 90%, 96%);
+  --p-success: hsl(141, 53%, 53%);
+  --p-warning: hsl(48, 100%, 67%);
+  --p-warning-dark: hsl(40, 100%, 23%);
+  --p-info: hsl(204, 71%, 53%);
+
+  /* Radii */
+  --p-radius: 4px;
+  --p-radius-small: 2px;
+
+  /* Shadows */
+  --p-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.02);
+  --p-card-header-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+  --p-box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+
+  /* Diff colours */
+  --p-diff-add-bg-light: rgba(70, 149, 74, 0.15);
+  --p-diff-add-bg-dark: rgba(70, 149, 74, 0.4);
+  --p-diff-del-bg-light: rgba(229, 83, 75, 0.1);
+  --p-diff-del-bg-dark: rgba(229, 83, 75, 0.4);
+
+  /* Fonts */
+  --p-family-sans: "Roboto Flex Variable", sans-serif;
+  --p-family-sans-icon:
+    "Roboto Flex Variable", sans-serif, "arcticons", "fa6-brands", "fa6-regular", "fa6-solid",
+    "fluent-emoji-high-contrast", "mdi";
+  --p-family-mono: "Roboto Mono Variable", monospace;
+
+  /* Body */
+  --p-body-size: 14px;
+  --p-body-background: var(--p-white-bis);
+}
+
+/* Dark theme overrides – activated by adding class="dark" to <html> */
+.dark {
+  /* Greyscale – inverted (Bulma's dark.scss pattern) */
+  --p-white: hsl(215, 18%, 10%);
+  --p-white-bis: hsl(215, 18%, 13%);
+  --p-white-ter: hsl(215, 18%, 20%);
+  --p-grey-lightest: hsl(215, 18%, 21%);
+  --p-grey-lighter: hsl(215, 18%, 27%);
+  --p-grey-light: hsl(215, 18%, 35%);
+  --p-grey: hsl(0, 0%, 48%);
+  --p-grey-dark: hsl(0, 0%, 63%);
+  --p-grey-darker: hsl(0, 0%, 78%);
+  --p-black-ter: hsl(0, 0%, 81%);
+  --p-black-bis: hsl(0, 0%, 83%);
+  --p-black: hsl(0, 0%, 95%);
+
+  /* Semantic colours – dark */
+  --p-text: hsl(0, 0%, 63%);
+  --p-background: hsl(215, 18%, 13%);
+
+  /* Shadows – darker in dark mode */
+  --p-shadow: 0 0.5em 1em -0.125em rgba(0, 0, 0, 0.7), 0 1px 2px 0 rgba(0, 0, 0, 0.7);
+  --p-card-header-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.7);
+  --p-box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.7);
+
+  color-scheme: dark;
+}

@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+// Design tokens (CSS custom properties for light + dark themes)
+@import "./paisa-vars.css";
+
+// Bulma-compatible utility and component classes (pure CSS, no Bulma dependency)
+@import "./bulma-compat.css";
+
 $fa-font-path: "../node_modules/@fortawesome/fontawesome-free/webfonts";
 
 @import "@fortawesome/fontawesome-free/scss/fontawesome.scss";
@@ -22,3 +28,6 @@ $fa-font-path: "../node_modules/@fortawesome/fontawesome-free/webfonts";
 @import "tippy.js/themes/light.css";
 @import "./theme-switcher.scss";
 @import "./responsive.scss";
+
+// Paisa application styles (no Bulma SCSS variables used)
+@import "./app.scss";

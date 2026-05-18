@@ -43,8 +43,6 @@
 </div>
 
 <style lang="scss">
-  @import "bulma/sass/utilities/_all.sass";
-
   .level-item.small {
     .title {
       font-size: 1.25rem !important;
@@ -69,7 +67,7 @@
     margin-bottom: 0 !important;
   }
 
-  @include widescreen {
+  @media screen and (min-width: 1216px) {
     .title {
       font-size: 2.25rem !important;
       line-height: 2.5rem !important;

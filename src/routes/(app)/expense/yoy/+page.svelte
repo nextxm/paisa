@@ -485,7 +485,7 @@
     padding: 0 0.75rem;
   }
 
-  :global(html[data-theme="dark"]) .container.yoy-shell {
+  :global(html.dark) .container.yoy-shell {
     --yoy-ink: #e6edf7;
     --yoy-soft: #9dafc5;
     --yoy-surface: rgba(20, 30, 48, 0.72);
