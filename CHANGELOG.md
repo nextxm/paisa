@@ -399,7 +399,7 @@
 
 #### Bug fixes
 
-- **Frontend jobs store API export hardening** — Added an explicit `JobsStore` type contract in `src/lib/stores/jobs.ts` so the exported `jobs` store is guaranteed to expose `upsert`, `updateById`, `reset`, and `snapshot` in addition to `subscribe`, preventing regressions where tests fail with `jobs.reset is not a function`.
+- **Frontend jobs store API export hardening** — Added an explicit `JobsStore` type contract in `src/lib/stores/jobs.ts` so the exported `jobs` store is guaranteed to expose `upsert`, `updateById`, `reset`, and `snapshot` in addition to `subscribe`. Also switched reset's `/api/jobs/clear` call to a lazy runtime import of `ajax` and made the store a `globalThis` singleton, preventing duplicated-module test contexts from observing mismatched jobs-store instances (`jobs.reset is not a function` / stale `runningJob` state).
 
 - **Journal sync posting writes optimized** — `posting.UpsertAll` now performs replacement
   inserts using GORM `CreateInBatches` instead of one-row-at-a-time inserts, reducing sync

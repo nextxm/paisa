@@ -1,8 +1,42 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { writable } from "svelte/store";
+import { derived, get, writable } from "svelte/store";
 
 const loadingSet = mock((_value: boolean) => {});
+const jobsStore = writable<Record<string, any>>({});
+const jobsMock = {
+  ...jobsStore,
+  upsert: (job: { id: string }) => jobsStore.update((current) => ({ ...current, [job.id]: job })),
+  updateById: (id: string, partial: Record<string, any>) => {
+    let found = false;
+    jobsStore.update((current) => {
+      const existing = current[id];
+      if (!existing) return current;
+      found = true;
+      return { ...current, [id]: { ...existing, ...partial } };
+    });
+    return found;
+  },
+  reset: () => jobsStore.set({}),
+  snapshot: () => get(jobsStore)
+};
+const jobsListMock = derived(jobsStore, ($jobs) =>
+  Object.values($jobs).sort(
+    (a, b) =>
+      new Date((a as any).created_at || 0).getTime() -
+      new Date((b as any).created_at || 0).getTime()
+  )
+);
+const isJobRunningMock = derived(jobsStore, ($jobs) =>
+  Object.values($jobs).some((job: any) => job.status === "pending" || job.status === "running")
+);
+const runningJobMock = derived(
+  jobsStore,
+  ($jobs) =>
+    Object.values($jobs).find((job: any) => job.status === "pending" || job.status === "running") ??
+    null
+);
+
 mock.module("../store", () => ({
   loading: { set: loadingSet },
   accountTfIdf: writable(null),
@@ -17,9 +51,10 @@ mock.module("../store", () => ({
   willRefresh: writable(0),
   commandPaletteOpen: writable(false),
   refresh: async () => true,
-  jobs: writable({}),
-  jobsList: writable([]),
-  isJobRunning: writable(false)
+  jobs: jobsMock,
+  jobsList: jobsListMock,
+  isJobRunning: isJobRunningMock,
+  runningJob: runningJobMock
 }));
 
 let getConfigImpl: (request?: unknown) => Promise<any> = mock(async (_request?: unknown) => ({}));
@@ -85,5 +120,9 @@ describe("config_client", () => {
 
     const result = await updateConfig({ default_currency: "INR" } as UserConfig);
     expect(result).toEqual({ success: false, error: "invalid config" });
+  });
+
+  afterAll(() => {
+    mock.restore();
   });
 });
