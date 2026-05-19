@@ -1,10 +1,16 @@
-import { writable, derived, get } from "svelte/store";
+import { writable, derived, get, type Readable } from "svelte/store";
 import { ajax, type Job } from "$lib/utils";
 
 /** Internal map from job ID to Job snapshot. */
 type JobsMap = Record<string, Job>;
+type JobsStore = Readable<JobsMap> & {
+  upsert(job: Job): void;
+  updateById(id: string, partial: Partial<Job>): boolean;
+  reset(): void;
+  snapshot(): JobsMap;
+};
 
-export function createJobsStore() {
+export function createJobsStore(): JobsStore {
   const { subscribe, update, set } = writable<JobsMap>({});
 
   return {
@@ -57,7 +63,7 @@ export function createJobsStore() {
 }
 
 /** Global jobs store – tracks every known background job by ID. */
-export const jobs = createJobsStore();
+export const jobs: JobsStore = createJobsStore();
 
 /**
  * Sorted array of all known jobs, oldest first (by created_at).
