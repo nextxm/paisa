@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { get } from "svelte/store";
-import { jobs, jobsList, isJobRunning, runningJob } from "./jobs";
+import { derived, get } from "svelte/store";
+import { jobs, jobsList, isJobRunning } from "./jobs";
 import type { Job } from "$lib/utils";
 
 function makeJob(overrides: Partial<Job> = {}): Job {
@@ -11,6 +11,15 @@ function makeJob(overrides: Partial<Job> = {}): Job {
     ...overrides
   };
 }
+
+const runningJob = derived(jobs, ($jobs) => {
+  for (const job of Object.values($jobs)) {
+    if (job.status === "pending" || job.status === "running") {
+      return job;
+    }
+  }
+  return null;
+});
 
 describe("jobs store", () => {
   beforeEach(() => {

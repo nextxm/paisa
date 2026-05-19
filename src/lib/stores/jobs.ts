@@ -1,10 +1,18 @@
-import { writable, derived, get } from "svelte/store";
-import { ajax, type Job } from "$lib/utils";
+import { writable, derived, get, type Readable } from "svelte/store";
+import type { Job } from "$lib/utils";
 
 /** Internal map from job ID to Job snapshot. */
 type JobsMap = Record<string, Job>;
+type JobsStore = Readable<JobsMap> & {
+  upsert(job: Job): void;
+  updateById(id: string, partial: Partial<Job>): boolean;
+  reset(): void;
+  snapshot(): JobsMap;
+};
 
-export function createJobsStore() {
+type JobsGlobal = typeof globalThis & { __paisa_jobs_store__?: JobsStore };
+
+export function createJobsStore(): JobsStore {
   const { subscribe, update, set } = writable<JobsMap>({});
 
   return {
@@ -42,9 +50,11 @@ export function createJobsStore() {
         !window.location.href.startsWith("about:") &&
         !(typeof process !== "undefined" && process.env.NODE_ENV === "test")
       ) {
-        ajax("/api/jobs/clear", { method: "POST" }).catch((err) => {
-          console.error("Failed to clear background jobs on server:", err);
-        });
+        import("$lib/utils")
+          .then(({ ajax }) => ajax("/api/jobs/clear", { method: "POST" }))
+          .catch((err) => {
+            console.error("Failed to clear background jobs on server:", err);
+          });
       }
       set({});
     },
@@ -57,7 +67,8 @@ export function createJobsStore() {
 }
 
 /** Global jobs store – tracks every known background job by ID. */
-export const jobs = createJobsStore();
+const jobsGlobal = globalThis as JobsGlobal;
+export const jobs: JobsStore = (jobsGlobal.__paisa_jobs_store__ ??= createJobsStore());
 
 /**
  * Sorted array of all known jobs, oldest first (by created_at).
@@ -82,8 +93,11 @@ export const isJobRunning = derived(jobs, ($jobs) =>
  * (pending or running), or null when no such job exists.
  * Useful for displaying per-job progress in the navbar.
  */
-export const runningJob = derived(
-  jobs,
-  ($jobs) =>
-    Object.values($jobs).find((j) => j.status === "pending" || j.status === "running") ?? null
-);
+export const runningJob = derived(jobsList, ($jobsList) => {
+  for (const job of $jobsList) {
+    if (job.status === "pending" || job.status === "running") {
+      return job;
+    }
+  }
+  return null;
+});
