@@ -4,6 +4,11 @@
 
 #### Features
 
+- **Customizable dashboard widgets and layout persistence** — Added a widget registry-driven dashboard customization flow.
+  - Users can open a dashboard customize modal (gear button), drag-and-drop widget order, and toggle widget visibility per column.
+  - Dashboard layout state persists in `localStorage` under `dashboard-layout` and is normalized against a typed widget registry.
+  - Added per-widget configuration controls for item counts (goals, recurring, recent transactions, budget accounts, checking balances) with focused layout persistence tests.
+
 - **Lazy snapshot refresh with active-view prioritization** — Reduced sync wall-clock latency by avoiding eager rebuilds of all read-model snapshots after every data-changing sync.
   - Sync now marks dashboard, projection, and investment-income snapshots as dirty when journal/prices change.
   - The sync request can include an `active_snapshot` hint; only that snapshot is refreshed eagerly during the sync job.
