@@ -4,6 +4,12 @@
 
 #### Features
 
+- **Lazy snapshot refresh with active-view prioritization** — Reduced sync wall-clock latency by avoiding eager rebuilds of all read-model snapshots after every data-changing sync.
+  - Sync now marks dashboard, projection, and investment-income snapshots as dirty when journal/prices change.
+  - The sync request can include an `active_snapshot` hint; only that snapshot is refreshed eagerly during the sync job.
+  - Snapshot-backed endpoints now refresh their own snapshot lazily on first access when dirty, then clear the dirty marker.
+  - Sync History durations now update live every second for running jobs instead of appearing static until terminal state.
+
 - **Add Expenses → Heatmap for daily spend patterns and seasonality** — Introduced a calendar-style spending heatmap plus weekday/month seasonality views.
   - Added backend `GET /api/expense/daily` with configurable `from`/`to` bounds and optional category grouping for daily spend totals.
   - Added **Expenses → Heatmap** with a year selector, category filter, GitHub-style spend intensity grid, weekday averages, and month-of-year seasonality bars.

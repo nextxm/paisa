@@ -147,7 +147,7 @@ func TestIntegration_SyncAsync_ForcePricesMetadata(t *testing.T) {
 	router := Build(db, false)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/sync",
-		strings.NewReader(`{"prices":true,"force_prices":true}`))
+		strings.NewReader(`{"prices":true,"force_prices":true,"active_snapshot":"dashboard"}`))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
@@ -172,6 +172,7 @@ func TestIntegration_SyncAsync_ForcePricesMetadata(t *testing.T) {
 	require.NoError(t, json.NewDecoder(jobRec.Body).Decode(&job))
 	require.NotNil(t, job.Metadata)
 	assert.Equal(t, true, job.Metadata["force_prices"])
+	assert.Equal(t, "dashboard", job.Metadata["active_snapshot"])
 }
 
 // TestIntegration_GetJob_ReturnsJobStatus verifies that GET /api/jobs/:id

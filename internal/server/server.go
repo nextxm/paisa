@@ -168,10 +168,11 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		}
 
 		jobID, err := registry.SubmitRecoverable(context.Background(), "sync", syncRequest, map[string]any{
-			"journal":      syncRequest.Journal,
-			"prices":       syncRequest.Prices,
-			"force_prices": syncRequest.ForcePrices,
-			"portfolios":   syncRequest.Portfolios,
+			"journal":         syncRequest.Journal,
+			"prices":          syncRequest.Prices,
+			"force_prices":    syncRequest.ForcePrices,
+			"active_snapshot": syncRequest.ActiveSnapshot,
+			"portfolios":      syncRequest.Portfolios,
 		})
 		if err != nil {
 			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())

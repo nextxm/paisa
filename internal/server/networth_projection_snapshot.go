@@ -69,8 +69,14 @@ func getProjectionBaseInputs(db *gorm.DB) projectionBaseInputs {
 		})
 		if err != nil {
 			log.WithError(err).Warn("Failed to persist updated projection snapshot")
+		} else if dirtyErr := setSnapshotDirty(db, snapshotKindProjection, false); dirtyErr != nil {
+			log.WithError(dirtyErr).Warn("Failed to clear projection snapshot dirty marker")
 		}
 		return inputs
+	}
+
+	if isSnapshotDirty(db, snapshotKindProjection) {
+		return recalculateAndSave()
 	}
 
 	if err != nil {

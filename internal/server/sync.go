@@ -14,6 +14,9 @@ type SyncRequest struct {
 	ForcePrices  bool `json:"force_prices"`
 	ForceJournal bool `json:"force_journal"`
 	Portfolios   bool `json:"portfolios"`
+	// ActiveSnapshot hints which snapshot backs the currently-visible screen
+	// so sync can refresh only that snapshot eagerly and leave others lazy.
+	ActiveSnapshot string `json:"active_snapshot"`
 }
 
 // Sync executes the requested sync stages synchronously and returns the
@@ -86,35 +89,35 @@ func Sync(db *gorm.DB, request SyncRequest, progressFn func(completed, total int
 	// Wrap XIRR calculations in the job flow: pre-compute XIRR for every
 	// investment account and store the results in the SQLite computation cache.
 	// WarmXIRRCache is conditional because it only makes sense when investment
-	// data may have changed (journal or price sync was requested).  Any accounts
+	// data may have changed (journal or price sync was requested). Any accounts
 	// whose XIRR solver did not converge are recorded as Details so operators
 	// can investigate without having to inspect server logs.
-	// Refresh the projection snapshot when actual data changes: when journal sync
-	// runs (not skipped) or when price sync is requested. Do not refresh when
-	// journal sync is requested but skipped due to unchanged hash.
-	if (request.Journal && !journalResult.Skipped) || request.Prices {
+	//
+	// Snapshot refresh policy:
+	// 1) mark all snapshot read-models dirty when actual data changes,
+	// 2) eagerly refresh only the currently active snapshot (if supplied),
+	// 3) let other snapshot-backed endpoints refresh lazily on first access.
+	dataChanged := (request.Journal && !journalResult.Skipped) || request.Prices
+	if dataChanged {
 		xirrWarnings := service.WarmXIRRCache(db)
 		details = append(details, xirrWarnings...)
-		if err := RefreshNetworthProjectionSnapshot(db); err != nil {
+
+		if err := markAllSnapshotsDirty(db); err != nil {
 			return gin.H{
 				"success":      false,
-				"failed_stage": "projection_snapshot",
+				"failed_stage": "snapshot_dirty",
 				"message":      err.Error(),
 			}, details
 		}
-		if err := RefreshInvestmentIncomeSnapshot(db); err != nil {
-			return gin.H{
-				"success":      false,
-				"failed_stage": "investment_income_snapshot",
-				"message":      err.Error(),
-			}, details
-		}
-		if err := RefreshDashboardSnapshot(db); err != nil {
-			return gin.H{
-				"success":      false,
-				"failed_stage": "dashboard_snapshot",
-				"message":      err.Error(),
-			}, details
+
+		if active := parseSnapshotKind(request.ActiveSnapshot); active != "" {
+			if err := refreshSnapshotByKind(db, active); err != nil {
+				return gin.H{
+					"success":      false,
+					"failed_stage": string(active) + "_snapshot",
+					"message":      err.Error(),
+				}, details
+			}
 		}
 	}
 

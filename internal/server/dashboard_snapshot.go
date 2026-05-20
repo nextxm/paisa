@@ -25,6 +25,11 @@ func RefreshDashboardSnapshot(db *gorm.DB) error {
 }
 
 func getDashboardSnapshotPayload(db *gorm.DB) ([]byte, bool) {
+	if err := ensureSnapshotFresh(db, snapshotKindDashboard); err != nil {
+		log.WithError(err).Warn("Failed to refresh dashboard snapshot; falling back to live query path")
+		return nil, false
+	}
+
 	snapshot, err := dashboard_snapshot.Get(db)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {

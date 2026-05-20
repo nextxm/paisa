@@ -27,6 +27,10 @@ func RefreshInvestmentIncomeSnapshot(db *gorm.DB) error {
 }
 
 func getInvestmentIncomeSnapshotPayload(db *gorm.DB) ([]byte, bool) {
+	if err := ensureSnapshotFresh(db, snapshotKindInvestmentIncome); err != nil {
+		return nil, false
+	}
+
 	snapshot, err := investment_income_snapshot.Get(db)
 	if err != nil {
 		return nil, false

@@ -24,6 +24,17 @@ let streamAbortController: AbortController | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let reconnectDelayMs = INITIAL_RECONNECT_DELAY_MS;
 
+function currentSnapshotHint(pathname: string): string | undefined {
+  if (pathname === "/") return "dashboard";
+  if (pathname.startsWith("/planning/projection") || pathname.startsWith("/assets/networth")) {
+    return "projection";
+  }
+  if (pathname.startsWith("/income")) {
+    return "investment_income";
+  }
+  return undefined;
+}
+
 /**
  * Clear test-only singleton state. Exported for tests.
  */
@@ -179,11 +190,19 @@ export async function ensureJobsStream(): Promise<void> {
 }
 
 export async function sync(request: Record<string, any>): Promise<string | null> {
+  const payload: Record<string, any> = { ...request };
+  if (!payload.active_snapshot && typeof window !== "undefined") {
+    const hint = currentSnapshotHint(window.location.pathname);
+    if (hint) {
+      payload.active_snapshot = hint;
+    }
+  }
+
   let job_id: string;
   try {
     ({ job_id } = await ajax("/api/sync", {
       method: "POST",
-      body: JSON.stringify(request)
+      body: JSON.stringify(payload)
     }));
   } catch (err) {
     toast.toast({
@@ -200,7 +219,7 @@ export async function sync(request: Record<string, any>): Promise<string | null>
     id: job_id,
     status: "pending",
     created_at: new Date().toISOString(),
-    metadata: request
+    metadata: payload
   });
 
   activelyTrackedJobIds.add(job_id);
