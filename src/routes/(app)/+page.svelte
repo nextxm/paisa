@@ -515,6 +515,7 @@
             {#each dashboardLayout[column] as widget (widget.id)}
               {@const meta = getWidgetMeta(widget.id)}
               <div class="widget-picker-item box p-3 mb-2" animate:flip={{ duration: 200 }}>
+                {#if meta}
                 <div class="is-flex is-justify-content-space-between is-align-items-center">
                   <div class="is-flex is-align-items-center">
                     <span class="icon is-small has-text-grey mr-2"
@@ -559,6 +560,7 @@
                       />
                     {/each}
                   </div>
+                {/if}
                 {/if}
               </div>
             {/each}
