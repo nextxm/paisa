@@ -26,12 +26,12 @@
   let commodities: string[] = $state([]);
 
   let { data }: { data: PageData } = $props();
-  let editorDom: Element = $state();
-  let editor: EditorView = $state();
+  let editorDom: Element | undefined = $state();
+  let editor: EditorView | undefined = $state();
   let filesMap: Record<string, SheetFile> = $state({});
   let postings: Posting[] = $state([]);
-  let selectedFile: SheetFile = $state(null);
-  let selectedVersion: string = $state(null);
+  let selectedFile: SheetFile | null = $state(null);
+  let selectedVersion: string | null = $state(null);
   let lineNumber = $state(0);
 
   function command(fn: Function) {
@@ -103,10 +103,13 @@
       background: true
     });
 
-    updateContent(editor, file.content);
+    if (editor) {
+      updateContent(editor, file.content);
+    }
   }
 
   async function deleteBackups() {
+    if (!selectedFile) return;
     const { file } = await ajax("/api/sheets/file/delete_backups", {
       method: "POST",
       body: JSON.stringify({ name: selectedFile.name }),
@@ -117,6 +120,7 @@
   }
 
   async function save() {
+    if (!editor || !selectedFile) return;
     const doc = editor.state.doc;
     const { saved, file, message } = await ajax("/api/sheets/save", {
       method: "POST",
@@ -143,7 +147,7 @@
   }
 
   $effect(() => {
-    if (selectedFile) {
+    if (selectedFile && editorDom) {
       if (!editor || editor.state.doc.toString() != selectedFile.content) {
         if (editor) {
           editor.destroy();
@@ -247,7 +251,7 @@
               <button
                 class="button is-small"
                 disabled={$sheetEditorState.undoDepth == 0}
-                onclick={(_e) => undo(editor)}
+                onclick={(_e) => editor && undo(editor)}
               >
                 <span class="icon is-small">
                   <i class="fas fa-arrow-left"></i>
@@ -259,7 +263,7 @@
               <button
                 class="button is-small"
                 disabled={$sheetEditorState.redoDepth == 0}
-                onclick={(_e) => redo(editor)}
+                onclick={(_e) => editor && redo(editor)}
               >
                 <span>Redo</span>
                 <span class="icon is-small">
@@ -269,13 +273,13 @@
             </p>
           </div>
 
-          {#if !_.isEmpty(selectedFile?.versions)}
+          {#if selectedFile && !_.isEmpty(selectedFile.versions)}
             <div class="field has-addons ml-5 mb-0">
               <p class="control">
                 <button
                   class="button is-small"
                   disabled={!selectedVersion}
-                  onclick={(_e) => revert(selectedVersion)}
+                  onclick={(_e) => selectedVersion && revert(selectedVersion)}
                 >
                   <span class="icon is-small">
                     <i class="fas fa-clock-rotate-left"></i>
@@ -313,7 +317,8 @@
               <button
                 type="button"
                 class="button p-0 has-background-transparent"
-                onclick={(_e) => moveToLine(editor, $sheetEditorState.errors[0].line_from)}
+                onclick={(_e) =>
+                  editor && moveToLine(editor, $sheetEditorState.errors[0].line_from)}
               >
                 <span class="ml-1 tag invertable is-danger is-light"
                   >{$sheetEditorState.errors.length} error(s) found</span
@@ -342,7 +347,7 @@
               path=""
               onselect={(file) => selectFile(file)}
               files={buildDirectoryTree(_.values(filesMap))}
-              selectedFileName={selectedFile?.name}
+              selectedFileName={selectedFile?.name || ""}
               hasUnsavedChanges={$sheetEditorState.hasUnsavedChanges}
             />
           </aside>
