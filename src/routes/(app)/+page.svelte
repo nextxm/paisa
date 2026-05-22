@@ -52,28 +52,28 @@
   let month = $state(now().format("YYYY-MM"));
   let showWidgetSettings = $state(false);
   let dashboardLayout: DashboardLayout = $state(loadDashboardLayout());
-  let goalSummaries: GoalSummary[] = $state(
+  let goalSummaries: GoalSummary[] = $derived(
     _.sortBy(data.dashboard.goalSummaries, (g) => -g.priority)
   );
-  let transactionSequences: TransactionSequence[] = $state(
+  let transactionSequences: TransactionSequence[] = $derived(
     sortTrantionSequence(enrichTrantionSequence(data.dashboard.transactionSequences))
   );
-  let cashFlows: CashFlow[] = $state(data.dashboard.cashFlows);
-  let expenses: { [key: string]: Posting[] } = $state(data.dashboard.expenses);
-  let xirr = $state(data.dashboard.networth.xirr);
-  let networth: Networth = $state(data.dashboard.networth.networth);
-  let renderer: (data: Posting[]) => void = $state();
+  let cashFlows: CashFlow[] = $derived(data.dashboard.cashFlows);
+  let expenses: { [key: string]: Posting[] } = $derived(data.dashboard.expenses);
+  let xirr = $derived(data.dashboard.networth.xirr);
+  let networth: Networth = $derived(data.dashboard.networth.networth);
+  let renderer: ((data: Posting[]) => void) | undefined = $state();
   let selectedExpenses = $derived(expenses[month] || []);
   let totalExpense = $derived(_.sumBy(selectedExpenses, (p) => p.amount));
-  let transactions: Transaction[] = $state(data.dashboard.transactions);
-  let budgetsByMonth: Record<string, Budget> = $state(data.dashboard.budget.budgetsByMonth);
+  let transactions: Transaction[] = $derived(data.dashboard.transactions);
+  let budgetsByMonth: Record<string, Budget> = $derived(data.dashboard.budget.budgetsByMonth);
   let currentBudget = $derived(budgetsByMonth[month]);
-  let isEmpty = $state(_.isEmpty(data.dashboard.transactions));
-  let checkingBalances: Record<string, AssetBreakdown> = $state(
+  let isEmpty = $derived(_.isEmpty(data.dashboard.transactions));
+  let checkingBalances: Record<string, AssetBreakdown> = $derived(
     data.dashboard.checkingBalances.asset_breakdowns
   );
-  let investmentIncomeDividendTTM = $state(data.income.ttm_dividend || 0);
-  let investmentIncomeInterestTTM = $state(data.income.ttm_interest || 0);
+  let investmentIncomeDividendTTM = $derived(data.income.ttm_dividend || 0);
+  let investmentIncomeInterestTTM = $derived(data.income.ttm_interest || 0);
   let investmentIncomeLoading = $state(false);
   const widgetColumns: DashboardWidgetColumn[] = ["left", "right"];
   const leftWidgets = $derived(dashboardLayout.left);
@@ -516,51 +516,53 @@
               {@const meta = getWidgetMeta(widget.id)}
               <div class="widget-picker-item box p-3 mb-2" animate:flip={{ duration: 200 }}>
                 {#if meta}
-                <div class="is-flex is-justify-content-space-between is-align-items-center">
-                  <div class="is-flex is-align-items-center">
-                    <span class="icon is-small has-text-grey mr-2"
-                      ><i class="fas fa-grip-vertical"></i></span
-                    >
-                    <span class="has-text-weight-semibold">{meta.title}</span>
-                  </div>
-                  <label class="checkbox is-flex is-align-items-center">
-                    <input
-                      type="checkbox"
-                      checked={widget.visible}
-                      onchange={(event) =>
-                        setWidgetVisible(
-                          column,
-                          widget.id,
-                          (event.currentTarget as HTMLInputElement).checked
-                        )}
-                    />
-                    <span class="ml-1">Visible</span>
-                  </label>
-                </div>
-                {#if meta.configOptions && meta.configOptions.length > 0}
-                  <div class="mt-2">
-                    {#each meta.configOptions as option}
-                      {@const optionInputId = `widget-config-${column}-${widget.id}-${option.key}`}
-                      <label class="label is-size-7 mb-1" for={optionInputId}>{option.label}</label>
+                  <div class="is-flex is-justify-content-space-between is-align-items-center">
+                    <div class="is-flex is-align-items-center">
+                      <span class="icon is-small has-text-grey mr-2"
+                        ><i class="fas fa-grip-vertical"></i></span
+                      >
+                      <span class="has-text-weight-semibold">{meta.title}</span>
+                    </div>
+                    <label class="checkbox is-flex is-align-items-center">
                       <input
-                        id={optionInputId}
-                        class="input is-small"
-                        type="number"
-                        min={option.min}
-                        max={option.max}
-                        step={option.step || 1}
-                        value={widget.config[option.key] ?? option.defaultValue}
+                        type="checkbox"
+                        checked={widget.visible}
                         onchange={(event) =>
-                          setWidgetConfig(
+                          setWidgetVisible(
                             column,
                             widget.id,
-                            option,
-                            (event.currentTarget as HTMLInputElement).value
+                            (event.currentTarget as HTMLInputElement).checked
                           )}
                       />
-                    {/each}
+                      <span class="ml-1">Visible</span>
+                    </label>
                   </div>
-                {/if}
+                  {#if meta.configOptions && meta.configOptions.length > 0}
+                    <div class="mt-2">
+                      {#each meta.configOptions as option}
+                        {@const optionInputId = `widget-config-${column}-${widget.id}-${option.key}`}
+                        <label class="label is-size-7 mb-1" for={optionInputId}
+                          >{option.label}</label
+                        >
+                        <input
+                          id={optionInputId}
+                          class="input is-small"
+                          type="number"
+                          min={option.min}
+                          max={option.max}
+                          step={option.step || 1}
+                          value={widget.config[option.key] ?? option.defaultValue}
+                          onchange={(event) =>
+                            setWidgetConfig(
+                              column,
+                              widget.id,
+                              option,
+                              (event.currentTarget as HTMLInputElement).value
+                            )}
+                        />
+                      {/each}
+                    </div>
+                  {/if}
                 {/if}
               </div>
             {/each}

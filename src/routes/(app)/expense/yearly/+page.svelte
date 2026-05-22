@@ -17,13 +17,13 @@
   import LegendCard from "$lib/components/LegendCard.svelte";
 
   let groups = writable([]);
-  let z: d3.ScaleOrdinal<string, string, never> = $state(null),
-    renderer: (ps: Posting[]) => void = $state(),
-    expenses: Posting[] = $state(null),
-    grouped_expenses: Record<string, Posting[]> = $state(null),
-    grouped_incomes: Record<string, Posting[]> = $state(null),
-    grouped_investments: Record<string, Posting[]> = $state(null),
-    grouped_taxes: Record<string, Posting[]> = $state(null);
+  let z: d3.ScaleOrdinal<string, string, never> | null = $state(null),
+    renderer: ((ps: Posting[]) => void) | undefined = $state(),
+    expenses: Posting[] = $state([]),
+    grouped_expenses: Record<string, Posting[]> = $state({}),
+    grouped_incomes: Record<string, Posting[]> = $state({}),
+    grouped_investments: Record<string, Posting[]> = $state({}),
+    grouped_taxes: Record<string, Posting[]> = $state({});
 
   let currentYearExpenses: Posting[] = $state([]);
 
@@ -61,7 +61,7 @@
   $effect(() => {
     if (grouped_expenses && z && renderer) {
       currentYearExpenses = grouped_expenses[$year] || [];
-      renderCalendar(currentYearExpenses, z, $groups);
+      renderCalendar(currentYearExpenses, z!, $groups);
       renderer(currentYearExpenses);
     }
   });
@@ -85,7 +85,7 @@
 
     ({ z, legends } = renderYearlyExpensesTimeline(expenses, groups, year));
 
-    renderer = renderCurrentExpensesBreakdown(z);
+    renderer = renderCurrentExpensesBreakdown(z!);
   });
 
   function sum(postings: Posting[], sign = 1) {

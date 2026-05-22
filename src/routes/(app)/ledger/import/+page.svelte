@@ -29,34 +29,55 @@
 
   let { data: pageData }: { data: PageData } = $props();
 
-  let templates: ImportTemplate[] = $state(pageData.templates);
-  let selectedTemplate: ImportTemplate = $state(pageData.templates[0]);
-  let saveAsName: string = $state(selectedTemplate?.name || null);
+  let templates: ImportTemplate[] = $state([]);
+  let selectedTemplate: ImportTemplate | undefined = $state();
+  let saveAsName: string = $state("");
   let preview = $state("");
-  let parseErrorMessage: string = $state(null);
+  let parseErrorMessage: string | null = $state(null);
   let columnCount: number = $state(0);
   let data: any[][] = $state([]);
   let rows: Array<Record<string, any>> = $state([]);
   let previewRows: ImportPreviewRow[] = $state([]);
   let includedPreviewRows: boolean[] = $state([]);
-  let importPresets: ImportPreset[] = $state(pageData.importPresets);
-  let selectedPreset: ImportPreset = $state(
-    _.find(pageData.importPresets, { name: "Generic Bank CSV" }) || pageData.importPresets[0]
-  );
-  let delimiter: string = $state(selectedPreset?.delimiter || ",");
+  let importPresets: ImportPreset[] = $state([]);
+  let selectedPreset: ImportPreset | undefined = $state();
+  let delimiter: string = $state(",");
   let options: { reverse: boolean; trim: boolean } = $state({ reverse: false, trim: true });
   let importSaving = $state(false);
 
-  let templateEditorDom: Element = $state();
-  let templateEditor: EditorView = $state();
+  let templateEditorDom: Element | undefined = $state();
+  let templateEditor: EditorView | undefined = $state();
 
-  let previewEditorDom: Element = $state();
-  let previewEditor: EditorView = $state();
+  let previewEditorDom: Element | undefined = $state();
+  let previewEditor: EditorView | undefined = $state();
+
+  $effect(() => {
+    templates = pageData.templates;
+    importPresets = pageData.importPresets;
+  });
+
+  $effect(() => {
+    if (!selectedTemplate && templates.length > 0) {
+      selectedTemplate = templates[0];
+      saveAsName = selectedTemplate?.name || "";
+    }
+  });
+
+  $effect(() => {
+    if (!selectedPreset && importPresets.length > 0) {
+      selectedPreset = _.find(importPresets, { name: "Generic Bank CSV" }) || importPresets[0];
+      delimiter = selectedPreset?.delimiter || ",";
+    }
+  });
 
   onMount(() => {
     accountTfIdf.set(pageData.accountTfIdf);
-    templateEditor = createTemplateEditor(selectedTemplate?.content || "", templateEditorDom);
-    previewEditor = createPreviewEditor("", preview, previewEditorDom, { readonly: true });
+    if (templateEditorDom) {
+      templateEditor = createTemplateEditor(selectedTemplate?.content || "", templateEditorDom);
+    }
+    if (previewEditorDom) {
+      previewEditor = createPreviewEditor("", preview, previewEditorDom, { readonly: true });
+    }
   });
 
   const saveAsNameDuplicate = $derived(
@@ -67,6 +88,7 @@
   );
 
   async function save() {
+    if (!templateEditor) return;
     const { template, saved, message } = await ajax("/api/templates/upsert", {
       method: "POST",
       body: JSON.stringify({
@@ -87,7 +109,7 @@
 
     ({ templates } = await ajax("/api/templates", { background: true }));
     selectedTemplate = _.find(templates, { id: template.id });
-    saveAsName = selectedTemplate.name;
+    saveAsName = selectedTemplate?.name || "";
     toast.toast({
       message: `Saved ${saveAsName}`,
       type: "is-success"
@@ -97,6 +119,7 @@
   }
 
   async function remove() {
+    if (!selectedTemplate) return;
     const oldName = selectedTemplate.name;
     const confirmed = confirm(`Are you sure you want to delete ${oldName} template?`);
     if (!confirmed) {
@@ -121,7 +144,7 @@
 
     ({ templates } = await ajax("/api/templates", { background: true }));
     selectedTemplate = templates[0];
-    saveAsName = selectedTemplate.name;
+    saveAsName = selectedTemplate?.name || "";
     toast.toast({
       message: `Removed ${oldName}`,
       type: "is-success"
@@ -131,7 +154,7 @@
   }
 
   $effect(() => {
-    if (!_.isEmpty(data) && $templateEditorState.template) {
+    if (!_.isEmpty(data) && $templateEditorState.template && previewEditor) {
       try {
         const selectedRows = filterSelectedRows(rows, includedPreviewRows);
         preview = renderJournal(selectedRows, $templateEditorState.template, {
@@ -146,7 +169,7 @@
   });
 
   $effect(() => {
-    if (selectedTemplate && templateEditor) {
+    if (selectedTemplate && templateEditor && templateEditorDom) {
       if (templateEditor.state.doc.toString() != selectedTemplate.content) {
         templateEditor.destroy();
         templateEditor = createTemplateEditor(selectedTemplate.content, templateEditorDom);
@@ -174,7 +197,8 @@
       data = results.data;
       rows = asRows(results);
 
-      columnCount = _.maxBy(data, (row) => row.length).length;
+      const maxRow = _.maxBy(data, (row) => row.length);
+      columnCount = maxRow ? maxRow.length : 0;
       _.each(data, (row) => {
         row.length = columnCount;
       });
@@ -305,7 +329,7 @@
     });
   }
 
-  function builtinNotAllowed(action: string, template: ImportTemplate) {
+  function builtinNotAllowed(action: string, template: ImportTemplate | undefined) {
     if (template?.template_type == "builtin") {
       return `Not allowed to ${action.toLowerCase()} builtin template`;
     }
@@ -344,7 +368,10 @@
     <button
       class="du-btn du-btn-success du-btn-sm"
       disabled={_.isEmpty(saveAsName) || saveAsNameDuplicate}
-      onclick={() => save() && close()}>Create</button
+      onclick={() => {
+        save();
+        close();
+      }}>Create</button
     >
     <button class="du-btn du-btn-sm" onclick={() => close()}>Cancel</button>
   {/snippet}
@@ -419,7 +446,9 @@
                 clearable={false}
                 floatingConfig={{ strategy: "fixed" }}
                 on:change={() => {
-                  saveAsName = selectedTemplate.name;
+                  if (selectedTemplate) {
+                    saveAsName = selectedTemplate.name;
+                  }
                 }}
               >
                 <div slot="selection" let:selection>
