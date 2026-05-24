@@ -11,6 +11,7 @@
 - **Add pre-hydration boot splash to avoid initial white flash** — Added an inline startup splash in `app.html` that displays immediately and fades out once Svelte content is mounted.
   - Prevents a pure white frame while the client-only app (`ssr = false`) downloads and hydrates.
   - Uses a MutationObserver/load fallback so the splash is removed quickly when the app shell appears.
+  - Adjusted splash teardown to wait until `window.load` (with timeout fallback) to avoid hiding too early on script-only shell nodes.
 
 - **Customizable dashboard widgets and layout persistence** — Added a widget registry-driven dashboard customization flow.
   - Users can open a dashboard customize modal (gear button), drag-and-drop widget order, and toggle widget visibility per column.

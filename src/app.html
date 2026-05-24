@@ -1,5 +1,5 @@
 <!doctype html>
-<html class="paisa">
+<html class="paisa" style="background:#f5f6f8;">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -64,7 +64,7 @@
     </style>
     %sveltekit.head%
   </head>
-  <body data-sveltekit-preload-data="hover">
+  <body data-sveltekit-preload-data="hover" style="background:#f5f6f8;">
     <div id="boot-splash" aria-hidden="true">
       <div id="boot-splash-spinner"></div>
       <div id="boot-splash-text">Loading Paisa...</div>
@@ -84,26 +84,17 @@
           setTimeout(() => splash.remove(), 220);
         };
 
-        const maybeHide = () => {
-          if (appShell.childNodes.length > 0) {
-            hideSplash();
-          }
-        };
-
-        maybeHide();
-        const observer = new MutationObserver(maybeHide);
-        observer.observe(appShell, { childList: true, subtree: true });
-
         window.addEventListener(
           "load",
           () => {
-            maybeHide();
-            setTimeout(hideSplash, 1200);
+            // Wait a frame after load so first app paint can happen under splash.
+            requestAnimationFrame(() => setTimeout(hideSplash, 60));
           },
           { once: true }
         );
 
-        setTimeout(hideSplash, 5000);
+        // Safety valve if load never fires.
+        setTimeout(hideSplash, 8000);
       })();
     </script>
   </body>
