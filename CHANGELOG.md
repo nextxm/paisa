@@ -8,6 +8,10 @@
   - Prevents runtime `non-precached-url` errors for `/index.html` in `sw.js` during app load/navigation.
   - Reduces cases where the SPA boots to a blank white screen due to a failed service-worker navigation response.
 
+- **Add pre-hydration boot splash to avoid initial white flash** — Added an inline startup splash in `app.html` that displays immediately and fades out once Svelte content is mounted.
+  - Prevents a pure white frame while the client-only app (`ssr = false`) downloads and hydrates.
+  - Uses a MutationObserver/load fallback so the splash is removed quickly when the app shell appears.
+
 - **Customizable dashboard widgets and layout persistence** — Added a widget registry-driven dashboard customization flow.
   - Users can open a dashboard customize modal (gear button), drag-and-drop widget order, and toggle widget visibility per column.
   - Dashboard layout state persists in `localStorage` under `dashboard-layout` and is normalized against a typed widget registry.
