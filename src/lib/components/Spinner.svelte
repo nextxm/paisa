@@ -12,7 +12,7 @@
   <div style={$delayedUnLoading || $delayedLoading ? "visibility: hidden" : ""}>
     {@render children()}
   </div>
-  {#if $delayedLoading}
+  {#if $delayedUnLoading || $delayedLoading}
     <div class="circle-container" transition:fade={{ duration: 400 }}>
       <Logo {size} animation />
     </div>
