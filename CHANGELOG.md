@@ -4,6 +4,10 @@
 
 #### Features
 
+- **Fix PWA blank white page on load from Workbox fallback mismatch** — Updated service-worker navigation fallback to `/` so it targets an actually precached app-shell URL.
+  - Prevents runtime `non-precached-url` errors for `/index.html` in `sw.js` during app load/navigation.
+  - Reduces cases where the SPA boots to a blank white screen due to a failed service-worker navigation response.
+
 - **Customizable dashboard widgets and layout persistence** — Added a widget registry-driven dashboard customization flow.
   - Users can open a dashboard customize modal (gear button), drag-and-drop widget order, and toggle widget visibility per column.
   - Dashboard layout state persists in `localStorage` under `dashboard-layout` and is normalized against a typed widget registry.

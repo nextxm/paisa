@@ -118,8 +118,9 @@ const config = {
         cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff}"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
-        // Workbox requires navigateFallback to point to a precached asset.
-        navigateFallback: "/index.html",
+        // SvelteKit precaches the app shell at "/"; using "/index.html" can
+        // throw non-precached-url on navigation and produce a blank shell.
+        navigateFallback: "/",
         navigateFallbackAllowlist: [/^(?!\/_app\/immutable).*$/],
         runtimeCaching: [
           {
