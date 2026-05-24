@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -231,12 +232,20 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 
 	router.GET("/api/dashboard", func(c *gin.Context) {
 		requestDB, telemetry := beginRequestTelemetry(db)
+		snapshotStart := time.Now()
 		if payload, ok := getDashboardSnapshotPayload(requestDB); ok {
+			c.Header("X-Paisa-Perf-Dashboard-Source", "snapshot")
+			c.Header("X-Paisa-Perf-Dashboard-Snapshot-Ms", strconv.FormatInt(time.Since(snapshotStart).Milliseconds(), 10))
 			telemetry.writeHeaders(c)
 			c.Data(http.StatusOK, "application/json; charset=utf-8", payload)
 			return
 		}
-		result := GetDashboard(requestDB)
+		c.Header("X-Paisa-Perf-Dashboard-Source", "live")
+		c.Header("X-Paisa-Perf-Dashboard-Snapshot-Ms", strconv.FormatInt(time.Since(snapshotStart).Milliseconds(), 10))
+		result, timings := buildDashboardWithTimings(requestDB)
+		if encoded := encodeDashboardStageTimings(timings); encoded != "" {
+			c.Header("X-Paisa-Perf-Dashboard-Stages-Ms", encoded)
+		}
 		telemetry.writeHeaders(c)
 		c.JSON(http.StatusOK, result)
 	})

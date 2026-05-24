@@ -13,6 +13,10 @@
   - Uses a MutationObserver/load fallback so the splash is removed quickly when the app shell appears.
   - Adjusted splash teardown to wait until `window.load` (with timeout fallback) to avoid hiding too early on script-only shell nodes.
 
+- **Add dashboard latency breakdown headers for slow-request diagnosis** — `GET /api/dashboard` now returns extra profiling headers to pinpoint whether time is spent in snapshot refresh or live aggregation stages.
+  - Added `X-Paisa-Perf-Dashboard-Source` (`snapshot` or `live`) and `X-Paisa-Perf-Dashboard-Snapshot-Ms`.
+  - Added `X-Paisa-Perf-Dashboard-Stages-Ms` for live-path stage timings (`checkingBalances`, `networth`, `expenses`, `cashFlows`, `transactionSequences`, `transactions`, `budget`, `goalSummaries`).
+
 - **Customizable dashboard widgets and layout persistence** — Added a widget registry-driven dashboard customization flow.
   - Users can open a dashboard customize modal (gear button), drag-and-drop widget order, and toggle widget visibility per column.
   - Dashboard layout state persists in `localStorage` under `dashboard-layout` and is normalized against a typed widget registry.
