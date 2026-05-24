@@ -1,5 +1,5 @@
 <!doctype html>
-<html class="paisa" style="background: #f5f6f8">
+<html class="paisa">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -36,6 +36,11 @@
         transition: opacity 180ms ease;
       }
 
+      html[data-theme="dark"] #boot-splash {
+        background: hsl(215, 18%, 13%);
+        color: hsl(0, 0%, 83%);
+      }
+
       #boot-splash.is-hidden {
         opacity: 0;
         pointer-events: none;
@@ -48,6 +53,11 @@
         border: 3px solid #d5d9e0;
         border-top-color: #2a6df4;
         animation: boot-spin 800ms linear infinite;
+      }
+
+      html[data-theme="dark"] #boot-splash-spinner {
+        border-color: hsl(215, 18%, 27%);
+        border-top-color: hsl(221, 89%, 58%);
       }
 
       #boot-splash-text {
@@ -64,7 +74,7 @@
     </style>
     %sveltekit.head%
   </head>
-  <body data-sveltekit-preload-data="hover" style="background: #f5f6f8">
+  <body data-sveltekit-preload-data="hover">
     <div id="boot-splash" aria-hidden="true">
       <div id="boot-splash-spinner"></div>
       <div id="boot-splash-text">Loading Paisa...</div>
@@ -76,12 +86,18 @@
         const appShell = document.getElementById("app-shell");
         if (!splash || !appShell) return;
 
+        const shownAt = Date.now();
         let hidden = false;
         const hideSplash = () => {
           if (hidden) return;
           hidden = true;
-          splash.classList.add("is-hidden");
-          setTimeout(() => splash.remove(), 220);
+          const elapsed = Date.now() - shownAt;
+          const minVisibleMs = 280;
+          const delay = Math.max(0, minVisibleMs - elapsed);
+          setTimeout(() => {
+            splash.classList.add("is-hidden");
+            setTimeout(() => splash.remove(), 220);
+          }, delay);
         };
 
         window.addEventListener(
