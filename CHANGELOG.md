@@ -4,8 +4,8 @@
 
 #### Features
 
-- **Fix PWA blank white page on load from Workbox fallback mismatch** — Updated service-worker navigation fallback to `/` so it targets an actually precached app-shell URL.
-  - Prevents runtime `non-precached-url` errors for `/index.html` in `sw.js` during app load/navigation.
+- **Fix PWA blank white page on load from Workbox fallback mismatch** — Bound Workbox navigation fallback to `/index.html` and explicitly precached `index.html`.
+  - Prevents runtime `non-precached-url` errors in `sw.js` during app load/navigation.
   - Reduces cases where the SPA boots to a blank white screen due to a failed service-worker navigation response.
 
 - **Add pre-hydration boot splash to avoid initial white flash** — Added an inline startup splash in `app.html` that displays immediately and fades out once Svelte content is mounted.

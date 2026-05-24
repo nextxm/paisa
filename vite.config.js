@@ -118,9 +118,9 @@ const config = {
         cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff}"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
-        // SvelteKit precaches the app shell at "/"; using "/index.html" can
-        // throw non-precached-url on navigation and produce a blank shell.
-        navigateFallback: "/",
+        // Bind navigation fallback to a concrete, explicitly precached shell.
+        navigateFallback: "/index.html",
+        additionalManifestEntries: [{ url: "index.html", revision: null }],
         navigateFallbackAllowlist: [/^(?!\/_app\/immutable).*$/],
         runtimeCaching: [
           {
