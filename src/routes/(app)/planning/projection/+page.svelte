@@ -36,6 +36,47 @@
   let calcMonthlyContribution = $state(0);
   let calcSwr = $state(4);
 
+  type ProjectionTableRow = {
+    year: number;
+    startingCorpus: number;
+    expenses: number;
+    returnAmount: number;
+    endingCorpus: number;
+  };
+
+  type ProjectionScenarioTable = {
+    label: string;
+    cagr: number;
+    rows: ProjectionTableRow[];
+  };
+
+  function buildProjectionRows(
+    points: { date: dayjs.Dayjs; balanceAmount: number }[],
+    startingCorpus: number,
+    annualExpenses: number
+  ): ProjectionTableRow[] {
+    const rows: ProjectionTableRow[] = [];
+    let previousEnding = startingCorpus;
+
+    points.forEach((point, index) => {
+      if ((index + 1) % 12 !== 0) {
+        return;
+      }
+
+      const endingCorpus = point.balanceAmount;
+      rows.push({
+        year: Math.floor((index + 1) / 12),
+        startingCorpus: previousEnding,
+        expenses: annualExpenses,
+        returnAmount: endingCorpus - previousEnding,
+        endingCorpus
+      });
+      previousEnding = endingCorpus;
+    });
+
+    return rows;
+  }
+
   const updateCalculations = debounce(() => {
     calcYears = years;
     calcConservativeCagr = conservativeCagr;
@@ -194,6 +235,40 @@
       expected_cagr: calcExpectedCagr,
       optimistic_cagr: calcOptimisticCagr
     };
+  });
+
+  const projectionScenarioTables = $derived.by((): ProjectionScenarioTable[] | null => {
+    if (!projection) return null;
+
+    return [
+      {
+        label: "Conservative Scenario",
+        cagr: projection.conservative_cagr,
+        rows: buildProjectionRows(
+          projection.projection.conservative,
+          projection.current_networth,
+          projection.annual_expenses
+        )
+      },
+      {
+        label: "Expected Scenario",
+        cagr: projection.expected_cagr,
+        rows: buildProjectionRows(
+          projection.projection.expected,
+          projection.current_networth,
+          projection.annual_expenses
+        )
+      },
+      {
+        label: "Optimistic Scenario",
+        cagr: projection.optimistic_cagr,
+        rows: buildProjectionRows(
+          projection.projection.optimistic,
+          projection.current_networth,
+          projection.annual_expenses
+        )
+      }
+    ];
   });
 
   $effect(() => {
@@ -390,5 +465,54 @@
         </div>
       </div>
     </div>
+    {#if projectionScenarioTables}
+      <div class="box mt-5">
+        <div class="content mb-4">
+          <h3 class="title is-5 mb-2">Year-by-Year Projection Tables</h3>
+          <p class="is-size-7 has-text-grey">
+            Expenses are shown as the annual FIRE baseline. Return is the year-over-year change in
+            the projection curve, which already includes the configured monthly contribution.
+          </p>
+        </div>
+
+        {#each projectionScenarioTables as scenario}
+          <div class="mb-5">
+            <div class="is-flex is-justify-content-space-between is-align-items-baseline mb-2">
+              <h4 class="title is-6 mb-0">{scenario.label}</h4>
+              <span class="tag is-light">{formatFloat(scenario.cagr)}% CAGR</span>
+            </div>
+
+            <div class="table-container">
+              <table class="table is-striped is-hoverable is-fullwidth is-size-7">
+                <thead>
+                  <tr>
+                    <th>Year</th>
+                    <th class="has-text-right">Starting Corpus</th>
+                    <th class="has-text-right">Expenses</th>
+                    <th class="has-text-right">Return</th>
+                    <th class="has-text-right">Ending Corpus</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each scenario.rows as row}
+                    <tr>
+                      <td>{row.year}</td>
+                      <td class="has-text-right">{formatCurrency(row.startingCorpus)}</td>
+                      <td class="has-text-right">{formatCurrency(row.expenses)}</td>
+                      <td
+                        class={`has-text-right ${row.returnAmount >= 0 ? "has-text-success" : "has-text-danger"}`}
+                      >
+                        {formatCurrency(row.returnAmount)}
+                      </td>
+                      <td class="has-text-right">{formatCurrency(row.endingCorpus)}</td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {/each}
+      </div>
+    {/if}
   </div>
 </section>

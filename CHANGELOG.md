@@ -4,6 +4,8 @@
 
 #### Features
 
+- **Document and implement year-by-year FIRE projection breakdown** — Expanded the projection reference docs with a clearer explanation of how annual expenses feed the FIRE target corpus and added year-by-year scenario tables for conservative, expected, and optimistic projections on the Projection page.
+
 - **Fix PWA blank white page on load from Workbox fallback mismatch** — Bound Workbox navigation fallback to `/index.html` and explicitly precached `index.html`.
   - Prevents runtime `non-precached-url` errors in `sw.js` during app load/navigation.
   - Reduces cases where the SPA boots to a blank white screen due to a failed service-worker navigation response.

@@ -72,6 +72,36 @@ $$r = (1 + \text{CAGR})^{1/12} - 1$$
 
 ---
 
+### Year-by-Year Projection Breakdown
+
+The projection curve itself does **not** subtract annual expenses from the corpus. Expenses are used to compute the FIRE target corpus and progress metrics, while the chart grows the current corpus using the selected CAGR and monthly contribution. To make the yearly movement easier to read, the tables below show the annual recurrence in a simplified view.
+
+For each year, the starting corpus is the previous year's ending corpus. The annual expense value is shown as the baseline used by the FIRE calculation, not as a deduction in the projection curve.
+
+#### Conservative Scenario
+
+| Year | Starting Corpus | Expenses | Return | Ending Corpus |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | $C_0$ | $E$ | $C_0 \times 6\%$ | $C_0 \times 1.06$ |
+| 2 | $C_1$ | $E$ | $C_1 \times 6\%$ | $C_1 \times 1.06$ |
+| 3 | $C_2$ | $E$ | $C_2 \times 6\%$ | $C_2 \times 1.06$ |
+
+#### Expected Scenario
+
+| Year | Starting Corpus | Expenses | Return | Ending Corpus |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | $C_0$ | $E$ | $C_0 \times 9\%$ | $C_0 \times 1.09$ |
+| 2 | $C_1$ | $E$ | $C_1 \times 9\%$ | $C_1 \times 1.09$ |
+| 3 | $C_2$ | $E$ | $C_2 \times 9\%$ | $C_2 \times 1.09$ |
+
+#### Optimistic Scenario
+
+| Year | Starting Corpus | Expenses | Return | Ending Corpus |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | $C_0$ | $E$ | $C_0 \times 12\%$ | $C_0 \times 1.12$ |
+| 2 | $C_1$ | $E$ | $C_1 \times 12\%$ | $C_1 \times 1.12$ |
+| 3 | $C_2$ | $E$ | $C_2 \times 12\%$ | $C_2 \times 1.12$ |
+
 ### Deriving Historical Inputs
 
 Paisa automatically analyzes your last 12 months of journal history to pre-populate projection inputs, ensuring realistic, data-driven defaults:
