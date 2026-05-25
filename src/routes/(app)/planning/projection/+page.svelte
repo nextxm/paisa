@@ -27,6 +27,7 @@
   let optimisticCagr = $state(12);
   let monthlyContribution = $state(0);
   let swr = $state(4);
+  let inflationRate = $state(6);
   let controlsInitialized = $state(false);
 
   let calcYears = $state(15);
@@ -35,6 +36,7 @@
   let calcOptimisticCagr = $state(12);
   let calcMonthlyContribution = $state(0);
   let calcSwr = $state(4);
+  let calcInflationRate = $state(6);
 
   type ProjectionTableRow = {
     year: number;
@@ -53,7 +55,8 @@
   function buildProjectionRows(
     points: { date: dayjs.Dayjs; balanceAmount: number }[],
     startingCorpus: number,
-    annualExpenses: number
+    annualExpenses: number,
+    inflationPercent: number
   ): ProjectionTableRow[] {
     const rows: ProjectionTableRow[] = [];
     let previousEnding = startingCorpus;
@@ -64,10 +67,13 @@
       }
 
       const endingCorpus = point.balanceAmount;
+      const year = Math.floor((index + 1) / 12);
+      const inflatedExpenses =
+        annualExpenses * Math.pow(1 + inflationPercent / 100, Math.max(year - 1, 0));
       rows.push({
-        year: Math.floor((index + 1) / 12),
+        year,
         startingCorpus: previousEnding,
-        expenses: annualExpenses,
+        expenses: inflatedExpenses,
         returnAmount: endingCorpus - previousEnding,
         endingCorpus
       });
@@ -84,6 +90,7 @@
     calcOptimisticCagr = optimisticCagr;
     calcMonthlyContribution = monthlyContribution;
     calcSwr = swr;
+    calcInflationRate = inflationRate;
   }, 100);
 
   $effect(() => {
@@ -93,6 +100,7 @@
     const _oc = optimisticCagr;
     const _mc = monthlyContribution;
     const _s = swr;
+    const _i = inflationRate;
 
     if (controlsInitialized) {
       updateCalculations();
@@ -247,7 +255,8 @@
         rows: buildProjectionRows(
           projection.projection.conservative,
           projection.current_networth,
-          projection.annual_expenses
+          projection.annual_expenses,
+          calcInflationRate
         )
       },
       {
@@ -256,7 +265,8 @@
         rows: buildProjectionRows(
           projection.projection.expected,
           projection.current_networth,
-          projection.annual_expenses
+          projection.annual_expenses,
+          calcInflationRate
         )
       },
       {
@@ -265,7 +275,8 @@
         rows: buildProjectionRows(
           projection.projection.optimistic,
           projection.current_networth,
-          projection.annual_expenses
+          projection.annual_expenses,
+          calcInflationRate
         )
       }
     ];
@@ -333,6 +344,7 @@
       calcOptimisticCagr = optimisticCagr;
       calcMonthlyContribution = monthlyContribution;
       calcSwr = swr;
+      calcInflationRate = inflationRate;
 
       controlsInitialized = true;
     }
@@ -456,6 +468,19 @@
             >
             <input id="projection-swr" type="range" min="2" max="8" step="0.1" bind:value={swr} />
           </div>
+          <div class="field">
+            <label class="label is-size-7" for="projection-inflation"
+              >Inflation Rate: {formatFloat(inflationRate)}%</label
+            >
+            <input
+              id="projection-inflation"
+              type="range"
+              min="0"
+              max="15"
+              step="0.1"
+              bind:value={inflationRate}
+            />
+          </div>
         </div>
       </div>
       <div class="column is-8">
@@ -470,8 +495,9 @@
         <div class="content mb-4">
           <h3 class="title is-5 mb-2">Year-by-Year Projection Tables</h3>
           <p class="is-size-7 has-text-grey">
-            Expenses are shown as the annual FIRE baseline. Return is the year-over-year change in
-            the projection curve, which already includes the configured monthly contribution.
+            Expenses are inflated year over year using the selected inflation rate. Return is the
+            year-over-year change in the projection curve, which already includes the configured
+            monthly contribution.
           </p>
         </div>
 
