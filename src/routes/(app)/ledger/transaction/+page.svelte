@@ -25,9 +25,28 @@
   let openPreviewModal = $state(false);
   let accounts: string[] = $state([]);
   let commodities: string[] = $state([]);
+  let selectedTagFilters: string[] = $state([]);
+  let autocompleteTags: string[] = $state([]);
+  let selectedTransactions: Record<string, boolean> = $state({});
+  let bulkTag = $state("");
+  let undoBulk: { tag: string; ids: string[] } | null = $state(null);
+  let activePredicate: (t: T) => boolean = $state(() => true);
 
   function handleInputRaw(predicate: (t: T) => boolean) {
-    filtered = _.filter(transactions, predicate);
+    activePredicate = predicate;
+    applyFilters();
+  }
+
+  function applyFilters() {
+    filtered = _.filter(transactions, (t) => {
+      if (!activePredicate(t)) {
+        return false;
+      }
+      if (selectedTagFilters.length === 0) {
+        return true;
+      }
+      return _.some(t.tags || [], (tag) => selectedTagFilters.includes(tag));
+    });
   }
 
   const handleInput = _.debounce(handleInputRaw, 100);
@@ -45,12 +64,15 @@
   const itemSize = (i: number) => {
     const t = filtered[i];
     const count = t.postings.length;
-    return 8 + count * 22 + (mobile ? 25 : 0);
+    const tagHeight = (t.tags?.length || 0) > 0 ? 26 : 0;
+    return 14 + count * 22 + tagHeight + (mobile ? 25 : 0);
   };
 
   async function loadTransactions() {
     ({ files, accounts, commodities } = await ajax("/api/editor/files"));
     ({ transactions } = await ajax("/api/transaction"));
+    ({ tags: autocompleteTags } = await ajax("/api/tags/autocomplete", { background: true }));
+    selectedTransactions = {};
     handleInputRaw(get(editorState).predicate);
 
     newFiles = files;
@@ -98,6 +120,93 @@
   onMount(async () => {
     await loadTransactions();
   });
+
+  function toggleTagFilter(tag: string) {
+    if (selectedTagFilters.includes(tag)) {
+      selectedTagFilters = selectedTagFilters.filter((t) => t !== tag);
+    } else {
+      selectedTagFilters = [...selectedTagFilters, tag];
+    }
+    applyFilters();
+  }
+
+  function clearTagFilter(tag: string) {
+    selectedTagFilters = selectedTagFilters.filter((t) => t !== tag);
+    applyFilters();
+  }
+
+  function updateSelected(detail: { id: string; selected: boolean }) {
+    selectedTransactions = {
+      ...selectedTransactions,
+      [detail.id]: detail.selected
+    };
+  }
+
+  const selectedCount = $derived(
+    _.size(_.pickBy(selectedTransactions, (isSelected) => isSelected === true))
+  );
+
+  async function applyBulkTag() {
+    const tag = bulkTag.trim();
+    if (!tag) {
+      return;
+    }
+    const ids = _.keys(_.pickBy(selectedTransactions, (isSelected) => isSelected === true));
+    if (ids.length === 0) {
+      return;
+    }
+
+    await Promise.all(
+      ids.map((id) =>
+        ajax(
+          "/api/transactions/:id/tags",
+          {
+            method: "POST",
+            body: JSON.stringify({ tag }),
+            background: true
+          },
+          { id: encodeURIComponent(id) }
+        )
+      )
+    );
+    toast.toast({
+      message: `Added tag "${tag}" to ${ids.length} transaction(s).`,
+      type: "is-success"
+    });
+    undoBulk = { tag, ids };
+    bulkTag = "";
+    await loadTransactions();
+    const undo = undoBulk;
+    setTimeout(() => {
+      if (undoBulk === undo) {
+        undoBulk = null;
+      }
+    }, 10000);
+  }
+
+  async function undoBulkTag() {
+    if (!undoBulk) {
+      return;
+    }
+    await Promise.all(
+      undoBulk.ids.map((id) =>
+        ajax(
+          "/api/transactions/:id/tags/:tag",
+          { method: "DELETE", background: true },
+          {
+            id: encodeURIComponent(id),
+            tag: encodeURIComponent(undoBulk.tag)
+          }
+        )
+      )
+    );
+    toast.toast({
+      message: `Removed tag "${undoBulk.tag}" from ${undoBulk.ids.length} transaction(s).`,
+      type: "is-info"
+    });
+    undoBulk = null;
+    await loadTransactions();
+  }
 
   async function forceFullSync() {
     const jobId = await sync({ journal: true, force_journal: true });
@@ -157,6 +266,27 @@
               <div class="level-item">
                 <p class="is-6"><b>{filtered.length}</b> transaction(s)</p>
               </div>
+              {#if selectedCount > 0}
+                <div class="level-item">
+                  <input class="input is-small" placeholder="Bulk tag" bind:value={bulkTag} />
+                </div>
+                <div class="level-item">
+                  <button
+                    class="button is-small is-link is-light"
+                    type="button"
+                    onclick={applyBulkTag}
+                  >
+                    Add Tag to {selectedCount}
+                  </button>
+                </div>
+              {/if}
+              {#if undoBulk}
+                <div class="level-item">
+                  <button class="button is-small is-text" type="button" onclick={undoBulkTag}>
+                    Undo "{undoBulk.tag}"
+                  </button>
+                </div>
+              {/if}
               <div class="level-item">
                 <button
                   type="button"
@@ -195,6 +325,27 @@
         </div>
       {/if}
 
+      {#if selectedTagFilters.length > 0}
+        <div class="columns">
+          <div class="column is-12">
+            <div class="box py-2 px-3 mb-3">
+              <span class="has-text-grey mr-2">Tag filters:</span>
+              {#each selectedTagFilters as tag}
+                <span class="tag is-light mr-1">
+                  {tag}
+                  <button
+                    class="delete is-small ml-1"
+                    type="button"
+                    aria-label={"Remove tag filter " + tag}
+                    onclick={() => clearTagFilter(tag)}
+                  ></button>
+                </span>
+              {/each}
+            </div>
+          </div>
+        </div>
+      {/if}
+
       <div class="columns">
         <div class="column is-12">
           <div class="box">
@@ -207,7 +358,20 @@
             >
               <div slot="item" let:index let:style {style}>
                 {@const t = filtered[index]}
-                <Transaction {t} />
+                <Transaction
+                  {t}
+                  selectable={true}
+                  selected={!!selectedTransactions[t.id]}
+                  {autocompleteTags}
+                  onselect={(detail) => updateSelected(detail)}
+                  ontagclick={(detail) => toggleTagFilter(detail.tag)}
+                  ontagchanged={async (_detail) => {
+                    ({ tags: autocompleteTags } = await ajax("/api/tags/autocomplete", {
+                      background: true
+                    }));
+                    applyFilters();
+                  }}
+                />
               </div>
             </VirtualList>
           </div>
