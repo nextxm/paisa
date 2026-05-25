@@ -22,6 +22,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/price"
 	"github.com/ananthakumaran/paisa/internal/model/projection_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/session"
+	"github.com/ananthakumaran/paisa/internal/model/transaction_tag"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -57,6 +58,7 @@ var steps = []step{
 	{Version: 14, Apply: v14AddProjectionSnapshotSyncMetadata},
 	{Version: 15, Apply: v15AddPostingOriginalAmount},
 	{Version: 16, Apply: v16AddPersistentJobs},
+	{Version: 17, Apply: v17AddTransactionTags},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -298,6 +300,15 @@ func v15AddPostingOriginalAmount(db *gorm.DB) error {
 func v16AddPersistentJobs(db *gorm.DB) error {
 	if err := db.AutoMigrate(&job.Job{}); err != nil {
 		return fmt.Errorf("v16: AutoMigrate jobs failed: %w", err)
+	}
+	return nil
+}
+
+// v17AddTransactionTags creates the transaction_tags table used for custom
+// transaction labels and autocomplete.
+func v17AddTransactionTags(db *gorm.DB) error {
+	if err := db.AutoMigrate(&transaction_tag.TransactionTag{}); err != nil {
+		return fmt.Errorf("v17: AutoMigrate transaction_tags failed: %w", err)
 	}
 	return nil
 }

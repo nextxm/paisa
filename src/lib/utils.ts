@@ -103,6 +103,7 @@ export interface Transaction {
   fileName: string;
   note: string;
   postings: Posting[];
+  tags?: string[];
 }
 
 export interface BalancedPosting {
@@ -782,6 +783,22 @@ export function ajax(
   options?: RequestOptions,
   params?: Record<string, string>
 ): Promise<{ transactions: Transaction[] }>;
+export function ajax(
+  route: "/api/transactions/:id/tags",
+  options?: RequestOptions,
+  params?: Record<string, string>
+): Promise<{ tags: string[] }>;
+export function ajax(
+  route: "/api/transactions/:id/tags/:tag",
+  options?: RequestOptions,
+  params?: Record<string, string>
+): Promise<{ tags: string[] }>;
+export function ajax(
+  route: "/api/tags/autocomplete",
+  options?: RequestOptions
+): Promise<{
+  tags: string[];
+}>;
 export function ajax(
   route: "/api/transaction/balanced"
 ): Promise<{ balancedPostings: BalancedPosting[] }>;

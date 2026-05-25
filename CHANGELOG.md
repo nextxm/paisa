@@ -4,6 +4,12 @@
 
 #### Features
 
+- **Epic 14: Transaction tags (simple key-value)** — Added custom transaction tags with API, filtering, and bulk tagging support.
+  - Added `transaction_tags` persistence with migration v17 and de-duplicated `(transaction_id, tag_name)` storage.
+  - Added tag APIs: `GET/POST /api/transactions/:id/tags`, `DELETE /api/transactions/:id/tags/:tag`, and `GET /api/tags/autocomplete`.
+  - Extended `GET /api/transaction` to return tags and support `?tags=a,b` OR-filtering.
+  - Updated Ledger → Transactions UI to show tag chips, add/remove tags with autocomplete, click-to-filter by tag, and bulk add/undo tagging for selected transactions.
+
 - **Document and implement year-by-year FIRE projection breakdown** — Expanded the projection reference docs with a clearer explanation of how annual expenses feed the FIRE target corpus and added year-by-year scenario tables for conservative, expected, and optimistic projections on the Projection page, including inflation-adjusted annual expense rows.
 
 - **Fix PWA blank white page on load from Workbox fallback mismatch** — Bound Workbox navigation fallback to `/index.html` and explicitly precached `index.html`.

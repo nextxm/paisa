@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/model/posting"
+	"github.com/ananthakumaran/paisa/internal/model/transaction_tag"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,8 +17,9 @@ import (
 
 type transactionListResponse struct {
 	Transactions []struct {
-		ID       string `json:"id"`
-		Payee    string `json:"payee"`
+		ID       string   `json:"id"`
+		Payee    string   `json:"payee"`
+		Tags     []string `json:"tags"`
 		Postings []struct {
 			Account string `json:"account"`
 		} `json:"postings"`
@@ -205,4 +207,34 @@ func TestGetTransactionsHandler_LimitAndOffsetFilter(t *testing.T) {
 	body := decodeTransactionResponse(t, rec)
 	require.Len(t, body.Transactions, 1, "expected 1 transaction with offset=1&limit=1")
 	assert.Equal(t, "Salary", body.Transactions[0].Payee)
+}
+
+func TestGetTransactionsHandler_TagFilter(t *testing.T) {
+	db := openTestDB(t)
+	gin.SetMode(gin.TestMode)
+
+	d := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	seedTransactions(t, db, []posting.Posting{
+		{TransactionID: "tx1", Date: d, Payee: "Trip", Account: "expenses:travel", Forecast: false},
+		{TransactionID: "tx1", Date: d, Payee: "Trip", Account: "assets:checking", Forecast: false},
+		{TransactionID: "tx2", Date: d, Payee: "Doctor", Account: "expenses:medical", Forecast: false},
+		{TransactionID: "tx2", Date: d, Payee: "Doctor", Account: "assets:checking", Forecast: false},
+		{TransactionID: "tx3", Date: d, Payee: "Office", Account: "expenses:work", Forecast: false},
+		{TransactionID: "tx3", Date: d, Payee: "Office", Account: "assets:checking", Forecast: false},
+	})
+	_, err := transaction_tag.Add(db, "tx1", "travel")
+	require.NoError(t, err)
+	_, err = transaction_tag.Add(db, "tx2", "medical")
+	require.NoError(t, err)
+
+	r := buildTransactionRouter(t, db)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/transaction?tags=travel,medical", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	body := decodeTransactionResponse(t, rec)
+	require.Len(t, body.Transactions, 2)
+	assert.ElementsMatch(t, []string{"Trip", "Doctor"}, []string{body.Transactions[0].Payee, body.Transactions[1].Payee})
 }

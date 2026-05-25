@@ -392,6 +392,18 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/transaction", func(c *gin.Context) {
 		GetTransactionsHandler(db, c)
 	})
+	router.GET("/api/transactions/:id/tags", func(c *gin.Context) {
+		GetTransactionTagsHandler(db, c)
+	})
+	writeGroup.POST("/api/transactions/:id/tags", func(c *gin.Context) {
+		AddTransactionTagHandler(db, c)
+	})
+	writeGroup.DELETE("/api/transactions/:id/tags/:tag", func(c *gin.Context) {
+		DeleteTransactionTagHandler(db, c)
+	})
+	router.GET("/api/tags/autocomplete", func(c *gin.Context) {
+		GetTagAutocompleteHandler(db, c)
+	})
 	router.POST("/api/parser/parse", ParseTransactionHandler(db))
 	writeGroup.POST("/api/parser/create-transaction", CreateParsedTransactionHandler(db))
 	writeGroup.POST("/api/transaction/add", AddTransactionHandler(db))
