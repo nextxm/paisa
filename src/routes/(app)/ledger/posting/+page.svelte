@@ -1,55 +1,53 @@
 <script lang="ts">
   import { accountColorStyle } from "$lib/colors";
+  import TransactionFilterBar from "$lib/components/TransactionFilterBar.svelte";
   import PostingNote from "$lib/components/PostingNote.svelte";
   import PostingStatus from "$lib/components/PostingStatus.svelte";
-  import SearchQuery from "$lib/components/SearchQuery.svelte";
   import { iconText } from "$lib/icon";
   import { change } from "$lib/posting";
-  import { editorState } from "$lib/search_query_editor";
+  import {
+    buildTransactionFiltersQuery,
+    emptyTransactionFilters,
+    type TransactionFilters
+  } from "$lib/transaction_filters";
   import {
     ajax,
     postingUrl,
     type Posting,
+    type Transaction,
     formatCurrency,
     formatFloat,
-    firstName,
-    type LedgerFile,
-    type Transaction,
-    asTransaction
+    firstName
   } from "$lib/utils";
   import _ from "lodash";
-  import { onDestroy, onMount } from "svelte";
+  import { onMount } from "svelte";
   import VirtualList from "svelte-tiny-virtual-list";
 
-  let files: LedgerFile[] = $state([]);
   let accounts: string[] = $state([]);
   let commodities: string[] = $state([]);
 
   let filteredPostings: Posting[] = $state([]);
-  let rows: { posting: Posting; transaction: Transaction }[] = $state([]);
+  let filters: TransactionFilters = $state(emptyTransactionFilters());
 
-  function handleInputRaw(predicate: (t: Transaction) => boolean) {
-    filteredPostings = rows.filter((r) => predicate(r.transaction)).map((r) => r.posting);
+  async function loadPostings(currentFilters = filters) {
+    const query = buildTransactionFiltersQuery(currentFilters);
+    const route = query ? `/api/transaction?${query}` : "/api/transaction";
+    const { transactions } = await ajax(route);
+    filteredPostings = _.flatMap(transactions, (transaction: Transaction) => transaction.postings);
   }
 
-  const handleInput = _.debounce(handleInputRaw, 100);
+  const debouncedLoadPostings = _.debounce((currentFilters: TransactionFilters) => {
+    loadPostings(currentFilters);
+  }, 200);
 
-  const unsubscribe = editorState.subscribe((state) => {
-    handleInput(state.predicate);
-  });
-
-  onDestroy(async () => {
-    unsubscribe();
-  });
+  function handleFiltersChange(nextFilters: TransactionFilters) {
+    filters = { ...nextFilters };
+    debouncedLoadPostings(filters);
+  }
 
   onMount(async () => {
-    ({ files, accounts, commodities } = await ajax("/api/editor/files"));
-    const { postings: postings } = await ajax("/api/ledger");
-    filteredPostings = postings;
-    rows = _.map(postings, (p) => ({
-      posting: p,
-      transaction: asTransaction(p)
-    }));
+    ({ accounts, commodities } = await ajax("/api/editor/files"));
+    await loadPostings();
   });
 
   function unlessDefault(p: Posting, text: string) {
@@ -74,17 +72,12 @@
         <nav class="level">
           <div class="level-left">
             <div class="level-item">
-              <div class="field">
-                <div class="control">
-                  <SearchQuery
-                    autocomplete={{
-                      account: accounts,
-                      commodity: commodities,
-                      filename: files.map((f) => f.name)
-                    }}
-                  />
-                </div>
-              </div>
+              <TransactionFilterBar
+                {filters}
+                {accounts}
+                {commodities}
+                onFiltersChange={handleFiltersChange}
+              />
             </div>
           </div>
         </nav>

@@ -4,6 +4,11 @@
 
 #### Features
 
+- **Transaction and posting search/filter bar with saved transaction searches** — Added richer transaction filtering across backend and frontend.
+  - Extended `GET /api/transaction` with `q`, `amount_min`, `amount_max`, `account`, `commodity`, `date_from`, and `date_to`.
+  - Added reusable `TransactionFilterBar` and integrated it into **Ledger → Transactions** and **Ledger → Postings**.
+  - Added saved transaction searches in localStorage and a command palette entry to open transaction search with focused input.
+
 - **Document and implement year-by-year FIRE projection breakdown** — Expanded the projection reference docs with a clearer explanation of how annual expenses feed the FIRE target corpus and added year-by-year scenario tables for conservative, expected, and optimistic projections on the Projection page, including inflation-adjusted annual expense rows.
 
 - **Fix PWA blank white page on load from Workbox fallback mismatch** — Bound Workbox navigation fallback to `/index.html` and explicitly precached `index.html`.
