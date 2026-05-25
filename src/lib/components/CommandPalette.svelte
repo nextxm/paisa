@@ -214,6 +214,14 @@
       action: () => navigate("/ledger/transaction")
     },
     {
+      id: "search_transactions",
+      label: "Search Transactions",
+      description: "Ledger",
+      icon: "fa-magnifying-glass",
+      category: "Pages",
+      action: () => navigate("/ledger/transaction?focus=search")
+    },
+    {
       id: "postings",
       label: "Postings",
       description: "Ledger",
