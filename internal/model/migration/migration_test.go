@@ -36,7 +36,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 16, version)
+	assert.Equal(t, 17, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -46,7 +46,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 16, version)
+	assert.Equal(t, 17, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -68,7 +68,7 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	assert.Equal(t, 16, migration.CurrentVersion(db))
+	assert.Equal(t, 17, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -104,9 +104,9 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&migration.SchemaVersion{}))
 	require.NoError(t, db.Create(&migration.SchemaVersion{Version: 1, AppliedAt: time.Now()}).Error)
 
-	// Run migrations – v2 through v12 should execute.
+	// Run migrations – v2 through v17 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 16, migration.CurrentVersion(db))
+	assert.Equal(t, 17, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()

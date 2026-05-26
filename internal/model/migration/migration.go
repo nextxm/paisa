@@ -11,6 +11,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/cache"
 	"github.com/ananthakumaran/paisa/internal/model/cii"
 	"github.com/ananthakumaran/paisa/internal/model/dashboard_snapshot"
+	"github.com/ananthakumaran/paisa/internal/model/duplicate_suppression"
 	"github.com/ananthakumaran/paisa/internal/model/import_preset"
 	"github.com/ananthakumaran/paisa/internal/model/investment_income_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/job"
@@ -57,6 +58,7 @@ var steps = []step{
 	{Version: 14, Apply: v14AddProjectionSnapshotSyncMetadata},
 	{Version: 15, Apply: v15AddPostingOriginalAmount},
 	{Version: 16, Apply: v16AddPersistentJobs},
+	{Version: 17, Apply: v17AddDuplicateSuppressions},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -298,6 +300,16 @@ func v15AddPostingOriginalAmount(db *gorm.DB) error {
 func v16AddPersistentJobs(db *gorm.DB) error {
 	if err := db.AutoMigrate(&job.Job{}); err != nil {
 		return fmt.Errorf("v16: AutoMigrate jobs failed: %w", err)
+	}
+	return nil
+}
+
+// v17AddDuplicateSuppressions creates the duplicate_suppressions table used to
+// record pairs of postings that the user has explicitly dismissed as false positives
+// in the Data Quality section of the Doctor page.
+func v17AddDuplicateSuppressions(db *gorm.DB) error {
+	if err := db.AutoMigrate(&duplicate_suppression.DuplicateSuppression{}); err != nil {
+		return fmt.Errorf("v17: AutoMigrate duplicate_suppressions failed: %w", err)
 	}
 	return nil
 }

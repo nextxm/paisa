@@ -409,6 +409,21 @@ export interface Issue {
   details: string;
 }
 
+export interface DuplicatePair {
+  posting1: Posting;
+  posting2: Posting;
+  confidence: number;
+  reason: string;
+}
+
+export interface OutlierTransaction {
+  posting: Posting;
+  mean: number;
+  std_dev: number;
+  sigma: number;
+  confidence: number;
+}
+
 export interface ScheduleALSection {
   code: string;
   section: string;
@@ -758,6 +773,9 @@ export function ajax(route: "/api/schedule_al"): Promise<{
   schedule_als: Record<string, ScheduleAL>;
 }>;
 export function ajax(route: "/api/diagnosis"): Promise<{ issues: Issue[] }>;
+export function ajax(
+  route: "/api/diagnosis/duplicates"
+): Promise<{ duplicates: DuplicatePair[]; outliers: OutlierTransaction[] }>;
 export function ajax(route: "/api/logs"): Promise<{ logs: Log[] }>;
 export function ajax(
   route: "/api/investment"

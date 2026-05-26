@@ -411,6 +411,20 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/diagnosis", func(c *gin.Context) {
 		c.JSON(200, GetDiagnosis(db))
 	})
+	router.GET("/api/diagnosis/duplicates", func(c *gin.Context) {
+		c.JSON(200, GetDuplicatesAndOutliers(db))
+	})
+	writeGroup.POST("/api/diagnosis/duplicates/suppress", func(c *gin.Context) {
+		var req SuppressRequest
+		if !BindJSONOrError(c, &req) {
+			return
+		}
+		if err := SuppressDuplicate(db, req); err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
+		c.JSON(200, gin.H{"success": true})
+	})
 
 	router.GET("/api/liabilities/interest", func(c *gin.Context) {
 		c.JSON(200, liabilities.GetInterest(db))

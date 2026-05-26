@@ -9,7 +9,8 @@
     dateMin,
     dateRangeOption,
     cashflowExpenseDepthAllowed,
-    cashflowIncomeDepthAllowed
+    cashflowIncomeDepthAllowed,
+    dataQualityIssueCount
   } from "../../store";
   import {
     cashflowExpenseDepth,
@@ -409,8 +410,17 @@
                     class="navbar-item"
                     {href}
                     data-sveltekit-preload-data={sublink.disablePreload ? "tap" : "hover"}
-                    class:is-active={normalizedPath.startsWith(href)}>{sublink.label}</a
+                    class:is-active={normalizedPath.startsWith(href)}
                   >
+                    {sublink.label}
+                    {#if sublink.href === "/doctor" && $dataQualityIssueCount > 0}
+                      <span
+                        class="tag is-danger is-rounded is-small ml-2"
+                        title="{$dataQualityIssueCount} data quality issue(s)"
+                        >{$dataQualityIssueCount}</span
+                      >
+                    {/if}
+                  </a>
                 {:else}
                   <div class="nested has-dropdown navbar-item">
                     <a

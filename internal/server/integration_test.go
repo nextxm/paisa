@@ -53,6 +53,7 @@ var writeEndpoints = []struct {
 	{http.MethodDelete, "/api/import/presets", `{"name":"preset"}`},
 	{http.MethodPost, "/api/templates/upsert", `{"name":"t","content":""}`},
 	{http.MethodPost, "/api/templates/delete", `{"name":"t"}`},
+	{http.MethodPost, "/api/diagnosis/duplicates/suppress", `{"posting_id_1":1,"posting_id_2":2}`},
 }
 
 // ---------------------------------------------------------------------------
