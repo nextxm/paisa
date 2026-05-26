@@ -4,6 +4,12 @@
 
 #### Features
 
+- **Duplicate & Anomaly Transaction Detection** — Added a Data Quality section to the Doctor page with backend duplicate detection and outlier detection algorithms.
+  - `GET /api/diagnosis/duplicates` returns duplicate posting pairs (same account + amount within 2 days) and statistical outliers (>3σ from per-account mean), each with a confidence score.
+  - `POST /api/diagnosis/duplicates/suppress` marks a pair as a false positive so it is excluded from future results (stored in new `duplicate_suppressions` DB table, schema v17).
+  - Doctor page shows duplicate pairs side-by-side with dismiss buttons and outlier cards with sigma/mean/stddev context.
+  - Doctor nav link displays a red count badge when data quality issues are detected.
+
 - **Transaction and posting search/filter bar with saved transaction searches** — Added richer transaction filtering across backend and frontend.
   - Extended `GET /api/transaction` with `q`, `amount_min`, `amount_max`, `account`, `commodity`, `date_from`, and `date_to`.
   - Added reusable `TransactionFilterBar` and integrated it into **Ledger → Transactions** and **Ledger → Postings**.
