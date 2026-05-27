@@ -53,32 +53,34 @@
   };
 
   function buildProjectionRows(
-    points: { date: dayjs.Dayjs; balanceAmount: number }[],
     startingCorpus: number,
     annualExpenses: number,
-    inflationPercent: number
+    inflationPercent: number,
+    cagrPercent: number,
+    monthlyContribution: number,
+    years: number
   ): ProjectionTableRow[] {
     const rows: ProjectionTableRow[] = [];
-    let previousEnding = startingCorpus;
+    let currentCorpus = startingCorpus;
+    const annualContribution = monthlyContribution * 12;
+    const annualReturnRate = cagrPercent / 100;
 
-    points.forEach((point, index) => {
-      if ((index + 1) % 12 !== 0) {
-        return;
-      }
-
-      const endingCorpus = point.balanceAmount;
-      const year = Math.floor((index + 1) / 12);
+    for (let year = 1; year <= years; year++) {
       const inflatedExpenses =
         annualExpenses * Math.pow(1 + inflationPercent / 100, Math.max(year - 1, 0));
+      const investmentReturn = currentCorpus * annualReturnRate;
+      const endingCorpus = currentCorpus + investmentReturn + annualContribution - inflatedExpenses;
+
       rows.push({
         year,
-        startingCorpus: previousEnding,
+        startingCorpus: currentCorpus,
         expenses: inflatedExpenses,
-        returnAmount: endingCorpus - previousEnding,
+        returnAmount: investmentReturn,
         endingCorpus
       });
-      previousEnding = endingCorpus;
-    });
+
+      currentCorpus = endingCorpus;
+    }
 
     return rows;
   }
@@ -253,30 +255,36 @@
         label: "Conservative Scenario",
         cagr: projection.conservative_cagr,
         rows: buildProjectionRows(
-          projection.projection.conservative,
           projection.current_networth,
           projection.annual_expenses,
-          calcInflationRate
+          calcInflationRate,
+          projection.conservative_cagr,
+          projection.monthly_contribution,
+          calcYears
         )
       },
       {
         label: "Expected Scenario",
         cagr: projection.expected_cagr,
         rows: buildProjectionRows(
-          projection.projection.expected,
           projection.current_networth,
           projection.annual_expenses,
-          calcInflationRate
+          calcInflationRate,
+          projection.expected_cagr,
+          projection.monthly_contribution,
+          calcYears
         )
       },
       {
         label: "Optimistic Scenario",
         cagr: projection.optimistic_cagr,
         rows: buildProjectionRows(
-          projection.projection.optimistic,
           projection.current_networth,
           projection.annual_expenses,
-          calcInflationRate
+          calcInflationRate,
+          projection.optimistic_cagr,
+          projection.monthly_contribution,
+          calcYears
         )
       }
     ];
@@ -495,9 +503,8 @@
         <div class="content mb-4">
           <h3 class="title is-5 mb-2">Year-by-Year Projection Tables</h3>
           <p class="is-size-7 has-text-grey">
-            Expenses are inflated year over year using the selected inflation rate. Return is the
-            year-over-year change in the projection curve, which already includes the configured
-            monthly contribution.
+            Expenses are inflated year over year using the selected inflation rate. Ending corpus
+            is calculated as starting corpus + return + annual contribution - annual expenses.
           </p>
         </div>
 

@@ -4,6 +4,12 @@
 
 #### Features
 
+- **Doctor page data-quality UX redesign for large journals** — Reworked the Doctor page to stay navigable with hundreds of findings.
+  - Added a summary workspace with quick focus modes (All, Duplicates, Outliers) and visible per-section counts.
+  - Added shared search and confidence filters across duplicate and outlier findings.
+  - Added configurable page sizes and independent pagination for duplicates/outliers to remove endless-scroll workflows.
+  - Added sticky controls on desktop for faster triage while reviewing long result sets.
+
 - **Duplicate & Anomaly Transaction Detection** — Added a Data Quality section to the Doctor page with backend duplicate detection and outlier detection algorithms.
   - `GET /api/diagnosis/duplicates` returns duplicate posting pairs (same account + amount within 2 days) and statistical outliers (>3σ from per-account mean), each with a confidence score.
   - `POST /api/diagnosis/duplicates/suppress` marks a pair as a false positive so it is excluded from future results (stored in new `duplicate_suppressions` DB table, schema v17).
