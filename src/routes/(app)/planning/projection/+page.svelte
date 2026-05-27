@@ -503,8 +503,8 @@
         <div class="content mb-4">
           <h3 class="title is-5 mb-2">Year-by-Year Projection Tables</h3>
           <p class="is-size-7 has-text-grey">
-            Expenses are inflated year over year using the selected inflation rate. Ending corpus
-            is calculated as starting corpus + return + annual contribution - annual expenses.
+            Expenses are inflated year over year using the selected inflation rate. Ending corpus is
+            calculated as starting corpus + return + annual contribution - annual expenses.
           </p>
         </div>
 
