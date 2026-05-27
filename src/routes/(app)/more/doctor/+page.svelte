@@ -3,7 +3,6 @@
   import COLORS from "$lib/colors";
   import { ajax, formatCurrency } from "$lib/utils";
   import type { DuplicatePair, OutlierTransaction, Issue } from "$lib/utils";
-  import { renderIssues } from "$lib/doctor";
   import { dataQualityIssueCount } from "../../../../store";
 
   let issues: Issue[] = $state([]);
@@ -11,11 +10,32 @@
   let outliers: OutlierTransaction[] = $state([]);
   let suppressLoading: Record<string, boolean> = $state({});
   let activeView: "all" | "duplicates" | "outliers" = $state("all");
+  let issueSearchText = $state("");
+  let issuePageSize = $state(25);
+  let issuePage = $state(1);
   let searchText = $state("");
   let minConfidence = $state(0);
   let pageSize = $state(25);
   let duplicatePage = $state(1);
   let outlierPage = $state(1);
+
+  let filteredIssues = $derived.by(() => {
+    const q = normalize(issueSearchText);
+    if (!q) return issues;
+    return issues.filter((issue) => {
+      const haystack = [issue.level, issue.summary, issue.description, issue.details]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  });
+
+  let issuePageCount = $derived(Math.max(1, Math.ceil(filteredIssues.length / issuePageSize)));
+
+  let pagedIssues = $derived.by(() => {
+    const start = (issuePage - 1) * issuePageSize;
+    return filteredIssues.slice(start, start + issuePageSize);
+  });
 
   let filteredDuplicates = $derived.by(() =>
     duplicates.filter(
@@ -44,10 +64,18 @@
 
   onMount(async () => {
     ({ issues } = await ajax("/api/diagnosis"));
-    renderIssues(issues);
     const dq = await ajax("/api/diagnosis/duplicates");
     duplicates = dq.duplicates || [];
     outliers = dq.outliers || [];
+  });
+
+  $effect(() => {
+    if (issuePage > issuePageCount) {
+      issuePage = issuePageCount;
+    }
+    if (issuePage < 1) {
+      issuePage = 1;
+    }
   });
 
   $effect(() => {
@@ -141,6 +169,16 @@
     activeView = view;
   }
 
+  function updateIssueSearchText(event: Event) {
+    issueSearchText = (event.currentTarget as HTMLInputElement).value;
+    issuePage = 1;
+  }
+
+  function updateIssuePageSize(event: Event) {
+    issuePageSize = Number((event.currentTarget as HTMLSelectElement).value) || 25;
+    issuePage = 1;
+  }
+
   function updateSearchText(event: Event) {
     searchText = (event.currentTarget as HTMLInputElement).value;
     applyFilters();
@@ -176,7 +214,86 @@
         </div>
       </div>
     </div>
-    <div class="columns is-flex-wrap-wrap" id="d3-diagnosis"></div>
+
+    <section class="mb-5">
+      <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+        <h2 class="title is-5 mb-0">Diagnosis Findings</h2>
+        {#if issues.length > 0}
+          <span class="tag is-info is-light is-rounded"
+            >{filteredIssues.length} / {issues.length} shown</span
+          >
+        {/if}
+      </div>
+
+      <div class="box mb-3">
+        <div class="columns is-multiline is-vcentered">
+          <div class="column is-12-tablet is-8-desktop">
+            <label class="label is-small mb-1" for="doctor-issue-search">Search findings</label>
+            <input
+              id="doctor-issue-search"
+              class="input"
+              type="text"
+              placeholder="Summary, description, details"
+              value={issueSearchText}
+              oninput={updateIssueSearchText}
+            />
+          </div>
+          <div class="column is-6-tablet is-4-desktop">
+            <label class="label is-small mb-1" for="doctor-issue-page-size">Page size</label>
+            <div class="select is-fullwidth">
+              <select
+                id="doctor-issue-page-size"
+                value={issuePageSize}
+                onchange={updateIssuePageSize}
+              >
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {#if issues.length === 0}
+        <p class="has-text-grey">No diagnosis findings.</p>
+      {:else if filteredIssues.length === 0}
+        <p class="has-text-grey">No findings match your search.</p>
+      {:else}
+        <div class="doctor-pagination mb-3">
+          <button
+            class="button is-small"
+            disabled={issuePage === 1}
+            onclick={() => (issuePage = Math.max(1, issuePage - 1))}
+          >
+            Previous
+          </button>
+          <span class="is-size-7 has-text-grey">Page {issuePage} of {issuePageCount}</span>
+          <button
+            class="button is-small"
+            disabled={issuePage === issuePageCount}
+            onclick={() => (issuePage = Math.min(issuePageCount, issuePage + 1))}
+          >
+            Next
+          </button>
+        </div>
+
+        <div class="columns is-flex-wrap-wrap">
+          {#each pagedIssues as issue}
+            <div class="column is-6">
+              <article class="message invertable is-{issue.level}">
+                <div class="message-header">
+                  <p>{issue.summary}</p>
+                </div>
+                <div class="message-body issue-details">
+                  {@html `${issue.description} <br/> <br/> ${issue.details}`}
+                </div>
+              </article>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </section>
 
     <!-- Data Quality Section -->
     <hr />
@@ -496,6 +613,10 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+  }
+
+  .issue-details {
+    overflow-wrap: anywhere;
   }
 
   @media (max-width: 768px) {

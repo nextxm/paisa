@@ -6,6 +6,7 @@
 
 - **Doctor page data-quality UX redesign for large journals** — Reworked the Doctor page to stay navigable with hundreds of findings.
   - Added a summary workspace with quick focus modes (All, Duplicates, Outliers) and visible per-section counts.
+  - Replaced unbounded Diagnosis Findings rendering with search + pagination to prevent very large single-page lists.
   - Added shared search and confidence filters across duplicate and outlier findings.
   - Added configurable page sizes and independent pagination for duplicates/outliers to remove endless-scroll workflows.
   - Added sticky controls on desktop for faster triage while reviewing long result sets.
