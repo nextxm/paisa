@@ -54,7 +54,7 @@ describe("import", () => {
 
           const actual = render(rows, compiled, { trim: true });
 
-          expect(actual).toBe(_.trim(output));
+          expect(actual.replace(/\r/g, "")).toBe(_.trim(output).replace(/\r/g, ""));
         }
       }
     });

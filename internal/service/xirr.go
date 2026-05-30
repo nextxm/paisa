@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/ananthakumaran/paisa/internal/model/cache"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
@@ -19,7 +20,7 @@ import (
 func buildXIRRCashflows(db *gorm.DB, ps []posting.Posting) []xirr.Cashflow {
 	today := utils.EndOfToday()
 	marketAmount := utils.SumBy(ps, func(p posting.Posting) decimal.Decimal {
-		if IsCapitalGains(p) {
+		if IsCapitalGains(p) || IsInvestmentIncome(p) {
 			return decimal.Zero
 		}
 		return p.MarketAmount
@@ -66,12 +67,29 @@ func APR(db *gorm.DB, ps []posting.Posting) decimal.Decimal {
 // (e.g. the background sync job) can surface these as job Details so operators
 // can identify data problems without having to inspect server logs.
 func WarmXIRRCache(db *gorm.DB) []string {
-	postings := query.Init(db).Like("Assets:%", "Income:CapitalGains:%").NotAccountPrefix("Assets:Checking").All()
+	postings := query.Init(db).Like(
+		"Assets:%",
+		"Income:CapitalGains:%",
+		"Income:Dividend%",
+		"Income:Interest%",
+		"Income:Distribution%",
+		"Income:Distributions%",
+	).NotAccountPrefix("Assets:Checking").All()
 	postings = PopulateMarketPrice(db, postings)
 
 	byAccount := lo.GroupBy(postings, func(p posting.Posting) string {
 		if IsCapitalGains(p) {
 			return CapitalGainsSourceAccount(p.Account)
+		}
+		if IsInvestmentIncome(p) {
+			parts := strings.Split(p.Account, ":")
+			if len(parts) >= 3 {
+				holding := strings.Join(parts[2:], ":")
+				if strings.HasPrefix(holding, "Assets:") {
+					return holding
+				}
+				return "Assets:" + holding
+			}
 		}
 		return p.Account
 	})

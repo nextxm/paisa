@@ -14,6 +14,7 @@
 
   let grossIncome = $state(0);
   let netTax = $state(0);
+  let ttmInvestmentIncome = $state(0);
 
   let monthlyInvestmentTimelineLegends: Legend[] = $state([]);
   let yearlyIncomeTimelineLegends: Legend[] = $state([]);
@@ -21,11 +22,10 @@
   let yearlyNetTaxTimelineLegends: Legend[] = $state([]);
 
   onMount(async () => {
-    const {
-      income_timeline: incomes,
-      tax_timeline: taxes,
-      yearly_cards: yearlyCards
-    } = await ajax("/api/income");
+    const [
+      { income_timeline: incomes, tax_timeline: taxes, yearly_cards: yearlyCards },
+      { ttm_total: ttmTotal }
+    ] = await Promise.all([ajax("/api/income"), ajax("/api/income/investment")]);
     monthlyInvestmentTimelineLegends = renderMonthlyInvestmentTimeline(incomes);
     yearlyIncomeTimelineLegends = renderYearlyIncomeTimeline(yearlyCards);
     yearlyNetIncomeTimelineLegends = renderYearlyTimelineOf(
@@ -43,6 +43,7 @@
 
     grossIncome = _.sumBy(incomes, (i) => _.sumBy(i.postings, (p) => -p.amount));
     netTax = _.sumBy(taxes, (t) => _.sumBy(t.postings, (p) => p.amount));
+    ttmInvestmentIncome = ttmTotal;
   });
 </script>
 
@@ -51,6 +52,11 @@
     <nav class="level">
       <LevelItem title="Gross Income" value={formatCurrency(grossIncome)} color={COLORS.gainText} />
       <LevelItem title="Net Tax" value={formatCurrency(netTax)} color={COLORS.lossText} />
+      <LevelItem
+        title="TTM Investment Income"
+        value={formatCurrency(ttmInvestmentIncome)}
+        color={COLORS.primary}
+      />
     </nav>
   </div>
 </section>

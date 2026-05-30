@@ -26,7 +26,9 @@
         title={p.account}
       >
         <span style={accountColorStyle(firstName(p.account))}>{iconText(p.account)}</span>
-        {p.account}
+        <a class="secondary-link" href="/accounts/{encodeURIComponent(p.account)}/transactions"
+          >{p.account}</a
+        >
       </div>
       <div
         class="has-text-right has-text-grey is-size-7 truncate"

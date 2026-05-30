@@ -165,6 +165,10 @@ export function setCashflowDepthAllowed(expense: number, income: number) {
 
 export const willRefresh = writable(0);
 export const commandPaletteOpen = writable(false);
+
+// Number of data-quality issues (duplicates + outliers) detected on the
+// last visit to the Doctor page.  Used to show a badge on the Doctor nav link.
+export const dataQualityIssueCount = writable(0);
 export async function refresh() {
   if (get(editorState).hasUnsavedChanges) {
     const confirmed = confirm("You have unsaved changes. Are you sure you want to leave?");

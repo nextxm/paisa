@@ -13,6 +13,7 @@ nav:
     - reference/architecture.md
     - reference/design.md
     - reference/engineering-review.md
+    - reference/performance-baseline-phase0.md
     - reference/roadmap.md
     - reference/accounts.md
     - reference/commodities.md

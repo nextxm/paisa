@@ -10,9 +10,10 @@ When using the Paisa web interface, you can manually trigger a sync at any time 
 
 `POST /api/sync` returns `202 Accepted` immediately with a job ID
 (`{ "job_id": "<uuid>" }`) rather than blocking until the sync
-completes.  The work is performed in the background; the UI
-automatically polls `GET /api/jobs/:id` every two seconds to track
-progress.
+completes. The work is performed in the background and tracked in a
+SQLite-backed queue, so in-flight jobs survive process restarts. The UI
+subscribes to `GET /api/jobs/stream` (Server-Sent Events) for live
+status/progress updates instead of polling.
 
 #### Sync History Overlay
 
@@ -25,7 +26,9 @@ reverse-chronological order and shows for each job:
 - An error message snippet for failed jobs.
 - An expandable list of per-step details.
 
-A **Clear history** button resets the in-memory log.  The overlay can
+A **Clear history** button resets the client-side view. The persisted
+job queue remains available on the server and is replayed into the UI
+stream after reconnect. The overlay can
 be opened and closed at any time without interrupting an in-progress
 sync.
 

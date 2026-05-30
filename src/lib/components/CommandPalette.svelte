@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { ajax } from "$lib/utils";
+  import { fetchConfig } from "$lib/config_client";
   import { tick } from "svelte";
   import _ from "lodash";
   import QuickAddModal from "./QuickAddModal.svelte";
@@ -66,7 +67,7 @@
     },
     {
       id: "sankey_cashflow",
-      label: "Sankey (Cash Flow)",
+      label: "Money Flow",
       description: "Cash Flow",
       icon: "fa-chart-diagram",
       category: "Pages",
@@ -99,7 +100,7 @@
     },
     {
       id: "expense_flow",
-      label: "Expense Flow",
+      label: "Expense Breakdown",
       description: "Expenses",
       icon: "fa-chart-diagram",
       category: "Pages",
@@ -213,6 +214,14 @@
       action: () => navigate("/ledger/transaction")
     },
     {
+      id: "search_transactions",
+      label: "Search Transactions",
+      description: "Ledger",
+      icon: "fa-magnifying-glass",
+      category: "Pages",
+      action: () => navigate("/ledger/transaction?focus=search")
+    },
+    {
       id: "postings",
       label: "Postings",
       description: "Ledger",
@@ -256,10 +265,10 @@
     {
       id: "goals",
       label: "Goals",
-      description: "More",
+      description: "Planning",
       icon: "fa-bullseye",
       category: "Pages",
-      action: () => navigate("/more/goals")
+      action: () => navigate("/planning/goals")
     },
     {
       id: "doctor",
@@ -308,26 +317,26 @@
           {
             id: "tax_harvest",
             label: "Tax Harvest",
-            description: "Tax",
+            description: "Planning",
             icon: "fa-seedling",
             category: "Pages",
-            action: () => navigate("/more/tax/harvest")
+            action: () => navigate("/planning/tax/harvest")
           },
           {
             id: "capital_gains",
             label: "Capital Gains",
-            description: "Tax",
+            description: "Planning",
             icon: "fa-coins",
             category: "Pages",
-            action: () => navigate("/more/tax/capital_gains")
+            action: () => navigate("/planning/tax/capital_gains")
           },
           {
             id: "schedule_al",
             label: "Schedule AL",
-            description: "Tax",
+            description: "Planning",
             icon: "fa-file-lines",
             category: "Pages",
-            action: () => navigate("/more/tax/schedule_al")
+            action: () => navigate("/planning/tax/schedule_al")
           }
         ]
       : []),
@@ -382,7 +391,7 @@
     showQuickAdd = true;
 
     if (accounts.length === 0) {
-      const response = await ajax("/api/config", { background: true });
+      const response = await fetchConfig({ background: true });
       accounts = response.accounts;
     }
   }

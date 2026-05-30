@@ -202,6 +202,10 @@ type Config struct {
 	// updates applied via the config API take effect for subsequent requests.
 	ProviderDebugHTTP bool `json:"provider_debug_http" yaml:"provider_debug_http"`
 
+	// DisableMissingPriceLogging suppresses warnings when a commodity price is
+	// not found in the database.
+	DisableMissingPriceLogging bool `json:"disable_missing_price_logging" yaml:"disable_missing_price_logging"`
+
 	CreditCards []CreditCard `json:"credit_cards" yaml:"credit_cards"`
 
 	Firefly FireflyConfig `json:"firefly" yaml:"firefly"`
@@ -249,6 +253,7 @@ var defaultConfig = Config{
 	Labs:                       Labs{FireflyReconcile: false},
 	CheckingAccounts:           []string{"Assets:Checking"},
 	InactiveAccounts:           []string{},
+	DisableMissingPriceLogging: false,
 }
 
 var itemsUniquePropertiesMeta = jsonschema.MustCompileString("itemsUniqueProperties.json", `{
@@ -525,6 +530,10 @@ func IsMultiCurrencyPricesEnabled() bool {
 
 func IsProviderHTTPDebugEnabled() bool {
 	return config.ProviderDebugHTTP
+}
+
+func IsMissingPriceLoggingDisabled() bool {
+	return config.DisableMissingPriceLogging
 }
 
 func TimeZone() *time.Location {

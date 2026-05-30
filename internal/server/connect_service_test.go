@@ -3,6 +3,8 @@ package server
 import (
 	"testing"
 
+	"connectrpc.com/connect"
+	v1 "github.com/ananthakumaran/paisa/internal/gen/paisa/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -112,4 +114,23 @@ func TestBuildAccountTree_FullNamePreserved(t *testing.T) {
 	aapl := stocks.Children[0]
 	assert.Equal(t, "Assets:Investments:Stocks:AAPL", aapl.FullName)
 	assert.True(t, aapl.IsLeaf)
+}
+
+func TestToProtoStruct(t *testing.T) {
+	s, err := toProtoStruct(map[string]any{
+		"name": "paisa",
+		"meta": map[string]any{"version": float64(1)},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "paisa", s.Fields["name"].GetStringValue())
+	assert.Equal(t, float64(1), s.Fields["meta"].GetStructValue().Fields["version"].GetNumberValue())
+}
+
+func TestUpdateConfig_RequiresConfigPayload(t *testing.T) {
+	svc := &paisaServiceServer{db: openTestDB(t)}
+	_, err := svc.UpdateConfig(t.Context(), connect.NewRequest(&v1.UpdateConfigRequest{}))
+	require.Error(t, err)
+	var connectErr *connect.Error
+	require.ErrorAs(t, err, &connectErr)
+	assert.Equal(t, connect.CodeInvalidArgument, connectErr.Code())
 }

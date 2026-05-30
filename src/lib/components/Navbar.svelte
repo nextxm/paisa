@@ -9,7 +9,8 @@
     dateMin,
     dateRangeOption,
     cashflowExpenseDepthAllowed,
-    cashflowIncomeDepthAllowed
+    cashflowIncomeDepthAllowed,
+    dataQualityIssueCount
   } from "../../store";
   import {
     cashflowExpenseDepth,
@@ -88,7 +89,7 @@
           monthPicker: true,
           recurringIcons: true
         },
-        { label: "Sankey", href: "/sankey", sankeyPeriodSelector: true }
+        { label: "Money Flow", href: "/sankey", sankeyPeriodSelector: true }
       ]
     },
     {
@@ -98,7 +99,10 @@
         { label: "Monthly", href: "/monthly", monthPicker: true, dateRangeSelector: true },
         { label: "Yearly", href: "/yearly", financialYearPicker: true },
         { label: "Budget", href: "/budget", help: "budget", monthPicker: true },
-        { label: "Flow", href: "/sankey", dateRangeSelector: true }
+        { label: "Expense Breakdown", href: "/sankey", dateRangeSelector: true },
+        { label: "Heatmap", href: "/heatmap" },
+        { label: "YoY", href: "/yoy" },
+        { label: "MoM", href: "/mom" }
       ]
     },
     {
@@ -110,7 +114,7 @@
         { label: "Investment", href: "/investment" },
         { label: "Gain", href: "/gain" },
         { label: "Allocation", href: "/allocation", help: "allocation-targets" },
-        { label: "Analysis", href: "/analysis", tag: "alpha", help: "analysis" }
+        { label: "Portfolio", href: "/portfolio", tag: "alpha", help: "analysis" }
       ]
     },
     {
@@ -123,22 +127,28 @@
         { label: "Interest", href: "/interest" }
       ]
     },
-    { label: "Income", href: "/income" },
     {
-      label: "Analysis",
-      href: "/analysis",
-      tag: "alpha",
+      label: "Income",
+      href: "/income",
       children: [
-        { label: "YoY", href: "/yoy", tag: "alpha" },
-        { label: "MoM", href: "/mom", tag: "alpha" }
+        { label: "Timeline", href: "" },
+        { label: "Investment", href: "/investment", financialYearPicker: true }
+      ]
+    },
+    {
+      label: "Planning",
+      href: "/planning",
+      children: [
+        { label: "Goals", href: "/goals", help: "goals" },
+        { label: "Projection", href: "/projection" }
       ]
     },
     {
       label: "Ledger",
       href: "/ledger",
       children: [
-        { label: "Import", href: "/import", help: "import" },
         { label: "Editor", href: "/editor", help: "editor", disablePreload: true },
+        { label: "Import", href: "/import", help: "import" },
         { label: "Transactions", href: "/transaction", help: "bulk-edit" },
         { label: "Postings", href: "/posting" },
         { label: "Price", href: "/price" },
@@ -151,7 +161,6 @@
       children: [
         { label: "Configuration", href: "/config", help: "config" },
         { label: "Sheets", href: "/sheets", help: "sheets", disablePreload: true },
-        { label: "Goals", href: "/goals", help: "goals" },
         { label: "Doctor", href: "/doctor" },
         ...(USER_CONFIG.labs?.firefly_reconcile
           ? [{ label: "Reconciliation", href: "/reconciliation" }]
@@ -177,8 +186,9 @@
     ]
   };
 
+  const planning = _.find(links, { label: "Planning" });
   if (USER_CONFIG.default_currency == "INR") {
-    _.last(links)?.children?.push(tax);
+    planning?.children?.push(tax);
   }
 
   const about = { label: "About", href: "/about" };
@@ -400,8 +410,17 @@
                     class="navbar-item"
                     {href}
                     data-sveltekit-preload-data={sublink.disablePreload ? "tap" : "hover"}
-                    class:is-active={normalizedPath.startsWith(href)}>{sublink.label}</a
+                    class:is-active={normalizedPath.startsWith(href)}
                   >
+                    {sublink.label}
+                    {#if sublink.href === "/doctor" && $dataQualityIssueCount > 0}
+                      <span
+                        class="tag is-danger is-rounded is-small ml-2"
+                        title="{$dataQualityIssueCount} data quality issue(s)"
+                        >{$dataQualityIssueCount}</span
+                      >
+                    {/if}
+                  </a>
                 {:else}
                   <div class="nested has-dropdown navbar-item">
                     <a

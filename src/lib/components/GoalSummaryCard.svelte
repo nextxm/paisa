@@ -43,7 +43,7 @@
       {/if}
       <a
         class="secondary-link has-text-grey"
-        href="/more/goals/{goal.type}/{encodeURIComponent(goal.name)}"
+        href="/planning/goals/{goal.type}/{encodeURIComponent(goal.name)}"
       >
         <h4 class="is-size-4 has-text-grey">{goal.name}</h4>
       </a>

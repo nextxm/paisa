@@ -3,13 +3,16 @@
     {
       "account": "Assets:Equity:AAPL",
       "networth": {
-        "date": "2022-02-07T23:59:59.999999999Z",
+        "date": "2022-02-07T00:00:00Z",
         "investmentAmount": 10005.05,
         "withdrawalAmount": 0,
         "gainAmount": 20,
         "balanceAmount": 10025.05,
         "balanceUnits": 0,
-        "netInvestmentAmount": 10005.05
+        "netInvestmentAmount": 10005.05,
+        "contribution": 10005.05,
+        "fx_impact": 0,
+        "investment_return": 20
       },
       "xirr": 2.17,
       "postings": [
@@ -35,7 +38,11 @@
           "market_amount": 10025.05,
           "balance": 0
         }
-      ]
+      ],
+      "income_received": 0.0,
+      "price_appreciation": 20.0,
+      "total_return": 20.0,
+      "ttm_yield": 0.0
     }
   ]
 }

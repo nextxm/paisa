@@ -29,7 +29,7 @@ type ratePairKey struct {
 // rateCache holds pair-indexed btree structures for efficient GetRate lookups.
 // It is populated lazily on first use and reset by ClearRateCache.
 type rateCache struct {
-	sync.Once
+	loaded    bool
 	pairTrees map[ratePairKey]*btree.BTree
 }
 
@@ -39,7 +39,7 @@ var (
 )
 
 type priceCache struct {
-	sync.Once
+	loaded            bool
 	pricesTree        map[string]*btree.BTree
 	postingPricesTree map[string]*btree.BTree
 	dcPricesTree      map[string]*btree.BTree
@@ -91,6 +91,7 @@ func loadPriceCache(db *gorm.DB) {
 	pcache.pricesTree = pricesTree
 	pcache.postingPricesTree = postingPricesTree
 	pcache.dcPricesTree = dcPricesTree
+	pcache.loaded = true
 }
 
 // isDefaultCurrency reports whether quote matches the configured default
@@ -171,28 +172,52 @@ func synthesizeDefaultCurrencyPrices(db *gorm.DB, dc string, pricesTree, posting
 func ClearPriceCache() {
 	pcacheMu.Lock()
 	defer pcacheMu.Unlock()
-	pcache = priceCache{}
+	pcache.loaded = false
+	pcache.pricesTree = nil
+	pcache.postingPricesTree = nil
+	pcache.dcPricesTree = nil
 }
 
 func WarmCache(db *gorm.DB) {
 	go func() {
-		pcache.Do(func() { loadPriceCache(db) })
-		rcache.Do(func() { loadRateCache(db) })
+		pcacheMu.Lock()
+		if !pcache.loaded {
+			pcacheMu.Unlock()
+			loadPriceCache(db)
+		} else {
+			pcacheMu.Unlock()
+		}
+
+		rcacheMu.Lock()
+		if !rcache.loaded {
+			rcacheMu.Unlock()
+			loadRateCache(db)
+		} else {
+			rcacheMu.Unlock()
+		}
 	}()
 }
 
 func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
-	pcache.Do(func() { loadPriceCache(db) })
+	pcacheMu.Lock()
+	if !pcache.loaded {
+		pcacheMu.Unlock()
+		loadPriceCache(db)
+	} else {
+		pcacheMu.Unlock()
+	}
 
 	pcacheMu.RLock()
 	defer pcacheMu.RUnlock()
 
 	pt := pcache.dcPricesTree[commodity]
 	if pt == nil {
-		log.WithFields(log.Fields{
-			"commodity": commodity,
-			"date":      date.Format("2006-01-02"),
-		}).Warn("Price not found, using 0")
+		if !config.IsMissingPriceLoggingDisabled() {
+			log.WithFields(log.Fields{
+				"commodity": commodity,
+				"date":      date.Format("2006-01-02"),
+			}).Warn("Price not found, using 0")
+		}
 		return price.Price{}
 	}
 
@@ -206,10 +231,12 @@ func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
 		return pc
 	}
 
-	log.WithFields(log.Fields{
-		"commodity": commodity,
-		"date":      date.Format("2006-01-02"),
-	}).Warn("Price not found, using 0")
+	if !config.IsMissingPriceLoggingDisabled() {
+		log.WithFields(log.Fields{
+			"commodity": commodity,
+			"date":      date.Format("2006-01-02"),
+		}).Warn("Price not found, using 0")
+	}
 	return price.Price{}
 }
 
@@ -311,6 +338,7 @@ func loadRateCache(db *gorm.DB) {
 	rcacheMu.Lock()
 	defer rcacheMu.Unlock()
 	rcache.pairTrees = pairTrees
+	rcache.loaded = true
 }
 
 // ClearRateCache invalidates the pair-aware rate cache so it is rebuilt on the
@@ -318,5 +346,6 @@ func loadRateCache(db *gorm.DB) {
 func ClearRateCache() {
 	rcacheMu.Lock()
 	defer rcacheMu.Unlock()
-	rcache = rateCache{}
+	rcache.loaded = false
+	rcache.pairTrees = nil
 }

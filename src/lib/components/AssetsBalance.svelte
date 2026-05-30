@@ -22,7 +22,7 @@
     const parts = account.split(":");
     const name = parts[parts.length - 1];
     const padding = indent * 20;
-    return `<span style="padding-left: ${padding}px">${name}</span>`;
+    return `<span style="padding-left: ${padding}px"><a href="/accounts/${encodeURIComponent(account)}/transactions">${name}</a></span>`;
   }
 
   const columns: ColumnDefinition[] = $derived.by(() => {
@@ -39,7 +39,7 @@
           if (indent) {
             return accountName(account, cell.getData().indent);
           }
-          return account;
+          return `<a href="/accounts/${encodeURIComponent(account)}/transactions">${account}</a>`;
         },
         frozen: true
       },

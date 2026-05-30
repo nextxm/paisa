@@ -46,3 +46,13 @@ for full details.
 Clicking on any account balance widget on the dashboard navigates to
 `/accounts/[name]/transactions`, which shows a filtered history of all
 transactions that touch that account (or any sub-account below it).
+
+## FIRE Metrics
+
+The dashboard features a **FIRE Metrics** level indicator displaying key metrics to track your progress towards financial independence:
+
+- **Years to FIRE**: The projected number of years required to reach your target corpus using the "Expected" net worth projection curve.
+- **Target Corpus**: The total asset amount needed to support your annualized expenses based on your Safe Withdrawal Rate (SWR).
+- **FIRE Progress**: The percentage of the target corpus you have currently accumulated.
+
+These metrics are calculated dynamically using your historical income, expenses, and investment savings patterns. See [Assets – Projection (FIRE)](assets.md#projection-fire) for the exact calculation logic, formulas, and parameters.

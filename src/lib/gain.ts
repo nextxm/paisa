@@ -72,6 +72,7 @@ export function renderOverview(gains: Gain[]) {
 
   const getGainAmount = (g: Gain) => g.networth.gainAmount;
   const getWithdrawalAmount = (g: Gain) => g.networth.withdrawalAmount;
+  const getFXImpact = (g: Gain) => g.networth.fx_impact ?? 0;
 
   const getBalanceAmount = (g: Gain) => g.networth.balanceAmount;
   const yPos = (account: string) => y(restName(account)) ?? 0;
@@ -85,7 +86,7 @@ export function renderOverview(gains: Gain[]) {
   const xirrWidth = rem(250);
   const xirrTextWidth = rem(40);
   const xirrMargin = rem(20);
-  const textGroupWidth = rem(225);
+  const textGroupWidth = rem(300);
   const textGroupZero = xirrWidth + xirrTextWidth + xirrMargin;
 
   const x = d3.scaleLinear().range([textGroupZero + textGroupWidth, width]);
@@ -205,6 +206,16 @@ export function renderOverview(gains: Gain[]) {
     .attr("y", (g) => yPos(g.account) + y.bandwidth());
 
   textGroup
+    .append("text")
+    .text((g) => formatCurrency(getFXImpact(g)))
+    .attr("text-anchor", "end")
+    .style("fill", (g) => (getFXImpact(g) >= 0 ? z("gain") : z("loss")))
+    .attr("dx", "-3")
+    .attr("dy", "-3")
+    .attr("x", textGroupZero + textGroupWidth - rem(40))
+    .attr("y", (g) => yPos(g.account) + y.bandwidth());
+
+  textGroup
     .append("line")
     .classed("svg-grey-lightest", true)
     .attr("x1", 0)
@@ -306,6 +317,10 @@ export function renderOverview(gains: Gain[]) {
           [formatCurrency(current.withdrawalAmount), "has-text-weight-bold has-text-right"]
         ],
         ["Gain", [formatCurrency(current.gainAmount), "has-text-weight-bold has-text-right"]],
+        [
+          "FX Impact",
+          [formatCurrency(current.fx_impact ?? 0), "has-text-weight-bold has-text-right"]
+        ],
         ["Balance", [formatCurrency(current.balanceAmount), "has-text-weight-bold has-text-right"]],
         ["XIRR", [formatFloat(g.xirr), "has-text-weight-bold has-text-right"]]
       ]);
