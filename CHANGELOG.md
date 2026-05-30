@@ -4,6 +4,12 @@
 
 #### Features
 
+- **Harden Ledger Import route against invalid select-prop states** — Prevented runtime failures on Import page load when template/preset payloads are missing or select values are uninitialized.
+  - Normalized `templates` and `importPresets` in route load to always return arrays.
+  - Switched Import page `selectedTemplate`/`selectedPreset` state to null-safe defaults and guarded assignment from route data.
+  - Added null-safe selection rendering in template/preset selectors.
+  - Added regression coverage in `src/routes/(app)/load_functions.test.ts` for missing template/preset payloads.
+
 - **Improve dashboard first paint by deferring investment income fetch** — Reduced startup blocking on the home route.
   - `src/routes/(app)/+page.ts` now preloads only `/api/dashboard` in route `load`.
   - `/api/income/investment` is fetched after first paint from `onMount` as a background request.

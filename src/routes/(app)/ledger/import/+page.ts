@@ -8,9 +8,12 @@ export const load = (async () => {
     ajax("/api/import/presets")
   ]);
 
+  const templates = Array.isArray(templatesResult?.templates) ? templatesResult.templates : [];
+  const importPresets = Array.isArray(presetsResult?.presets) ? presetsResult.presets : [];
+
   return {
     accountTfIdf,
-    templates: templatesResult.templates,
-    importPresets: presetsResult.presets
+    templates,
+    importPresets
   };
 }) satisfies PageLoad;

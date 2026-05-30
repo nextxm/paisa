@@ -26,8 +26,10 @@
       floatingConfig={{ strategy: "fixed" }}
     >
       <div slot="selection" let:selection>
-        {selection.name}
-        <span class="tag is-small is-link invertable is-light">{selection.preset_type}</span>
+        {#if selection}
+          {selection.name}
+          <span class="tag is-small is-link invertable is-light">{selection.preset_type}</span>
+        {/if}
       </div>
       <div slot="item" let:item>
         <span class="name">{item.name}</span>

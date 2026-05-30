@@ -95,4 +95,19 @@ describe("route load functions", () => {
     ]);
     expect((data as any).importPresets[0].name).toEqual("Generic Bank CSV");
   });
+
+  test("ledger import page load tolerates missing templates and presets", async () => {
+    ajaxImpl = mock(async (route: string) => {
+      if (route === "/api/account/tf_idf") return { tf_idf: {}, index: { docs: {}, tokens: {} } };
+      if (route === "/api/templates") return {};
+      if (route === "/api/import/presets") return {};
+      return {};
+    });
+
+    const data = await importPage.load();
+
+    expect(ajaxImpl).toHaveBeenCalledTimes(3);
+    expect((data as any).templates).toEqual([]);
+    expect((data as any).importPresets).toEqual([]);
+  });
 });

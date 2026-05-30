@@ -30,7 +30,7 @@
   let { data: pageData }: { data: PageData } = $props();
 
   let templates: ImportTemplate[] = $state([]);
-  let selectedTemplate: ImportTemplate | undefined = $state();
+  let selectedTemplate: ImportTemplate | null = $state(null);
   let saveAsName: string = $state("");
   let preview = $state("");
   let parseErrorMessage: string | null = $state(null);
@@ -40,7 +40,7 @@
   let previewRows: ImportPreviewRow[] = $state([]);
   let includedPreviewRows: boolean[] = $state([]);
   let importPresets: ImportPreset[] = $state([]);
-  let selectedPreset: ImportPreset | undefined = $state();
+  let selectedPreset: ImportPreset | null = $state(null);
   let delimiter: string = $state(",");
   let options: { reverse: boolean; trim: boolean } = $state({ reverse: false, trim: true });
   let importSaving = $state(false);
@@ -52,8 +52,8 @@
   let previewEditor: EditorView | undefined = $state();
 
   $effect(() => {
-    templates = pageData.templates;
-    importPresets = pageData.importPresets;
+    templates = Array.isArray(pageData.templates) ? pageData.templates : [];
+    importPresets = Array.isArray(pageData.importPresets) ? pageData.importPresets : [];
   });
 
   $effect(() => {
@@ -329,7 +329,7 @@
     });
   }
 
-  function builtinNotAllowed(action: string, template: ImportTemplate | undefined) {
+  function builtinNotAllowed(action: string, template: ImportTemplate | null) {
     if (template?.template_type == "builtin") {
       return `Not allowed to ${action.toLowerCase()} builtin template`;
     }
@@ -452,10 +452,12 @@
                 }}
               >
                 <div slot="selection" let:selection>
-                  {selection.name}
-                  <span class="tag is-small is-link invertable is-light"
-                    >{selection.template_type}</span
-                  >
+                  {#if selection}
+                    {selection.name}
+                    <span class="tag is-small is-link invertable is-light"
+                      >{selection.template_type}</span
+                    >
+                  {/if}
                 </div>
                 <div slot="item" let:item>
                   <span class="name">{item.name}</span>
