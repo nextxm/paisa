@@ -22,18 +22,16 @@ describe("route load functions", () => {
     fetchConfigImpl = mock(async (..._args: any[]) => ({ config: {} as UserConfig }));
   });
 
-  test("dashboard page load prefetches dashboard and investment income", async () => {
+  test("dashboard page load prefetches only dashboard", async () => {
     ajaxImpl = mock(async (route: string) => {
       if (route === "/api/dashboard") return { dashboard: true };
-      if (route === "/api/income/investment") return { income: true };
       return {};
     });
 
     const data = await dashboardPage.load();
 
-    expect(ajaxImpl).toHaveBeenCalledTimes(2);
+    expect(ajaxImpl).toHaveBeenCalledTimes(1);
     expect((data as any).dashboard).toEqual({ dashboard: true });
-    expect((data as any).income).toEqual({ income: true });
   });
 
   test("goals page load prefetches config and goals", async () => {

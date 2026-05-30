@@ -2,13 +2,9 @@ import { ajax } from "$lib/utils";
 import type { PageLoad } from "./$types";
 
 export const load = (async () => {
-  const [dashboard, income] = await Promise.all([
-    ajax("/api/dashboard"),
-    ajax("/api/income/investment")
-  ]);
+  const dashboard = await ajax("/api/dashboard");
 
   return {
-    dashboard,
-    income
+    dashboard
   };
 }) satisfies PageLoad;

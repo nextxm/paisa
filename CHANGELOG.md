@@ -4,6 +4,11 @@
 
 #### Features
 
+- **Improve dashboard first paint by deferring investment income fetch** — Reduced startup blocking on the home route.
+  - `src/routes/(app)/+page.ts` now preloads only `/api/dashboard` in route `load`.
+  - `/api/income/investment` is fetched after first paint from `onMount` as a background request.
+  - Investment Income widget keeps placeholder values until the deferred request completes.
+
 - **Doctor page data-quality UX redesign for large journals** — Reworked the Doctor page to stay navigable with hundreds of findings.
   - Added a summary workspace with quick focus modes (All, Duplicates, Outliers) and visible per-section counts.
   - Replaced unbounded Diagnosis Findings rendering with search + pagination to prevent very large single-page lists.

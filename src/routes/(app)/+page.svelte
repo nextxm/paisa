@@ -46,6 +46,11 @@
   import BalanceCard from "$lib/components/BalanceCard.svelte";
   import RecentTransactionsWidget from "$lib/components/RecentTransactionsWidget.svelte";
 
+  type InvestmentIncomeSummary = {
+    ttm_dividend?: number;
+    ttm_interest?: number;
+  };
+
   let { data }: { data: PageData } = $props();
 
   let cashflowLegends: Legend[] = $state([]);
@@ -72,9 +77,9 @@
   let checkingBalances: Record<string, AssetBreakdown> = $derived(
     data.dashboard.checkingBalances.asset_breakdowns
   );
-  let investmentIncomeDividendTTM = $derived(data.income.ttm_dividend || 0);
-  let investmentIncomeInterestTTM = $derived(data.income.ttm_interest || 0);
-  let investmentIncomeLoading = $state(false);
+  let investmentIncomeDividendTTM = $state(0);
+  let investmentIncomeInterestTTM = $state(0);
+  let investmentIncomeLoading = $state(true);
   const widgetColumns: DashboardWidgetColumn[] = ["left", "right"];
   const leftWidgets = $derived(dashboardLayout.left);
   const rightWidgets = $derived(dashboardLayout.right);
@@ -112,6 +117,20 @@
   async function initDemo() {
     await ajax("/api/init", { method: "POST" });
     refresh();
+  }
+
+  async function loadInvestmentIncome() {
+    const route: string = "/api/income/investment";
+    try {
+      const response = (await ajax(route, { background: true })) as InvestmentIncomeSummary;
+      investmentIncomeDividendTTM = response.ttm_dividend || 0;
+      investmentIncomeInterestTTM = response.ttm_interest || 0;
+    } catch {
+      investmentIncomeDividendTTM = 0;
+      investmentIncomeInterestTTM = 0;
+    } finally {
+      investmentIncomeLoading = false;
+    }
   }
 
   function updateDashboardLayout(nextLayout: DashboardLayout) {
@@ -203,6 +222,8 @@
     );
     cashflowRenderer(cashFlows);
     cashflowLegends = legends;
+
+    void loadInvestmentIncome();
   });
 </script>
 
