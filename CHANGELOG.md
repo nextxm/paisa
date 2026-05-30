@@ -4,6 +4,11 @@
 
 #### Features
 
+- **Fix PWA manifest fetch under auth-proxy deployments** — Changed the manifest link to `/site.webmanifest` and added a compatibility manifest file for deployments where auth gateways or Nginx rules only exempt `site.webmanifest`.
+  - Updated app shell manifest href in `src/app.html`.
+  - Updated embedded static shell manifest href in `web/static/index.html`.
+  - Added `static/site.webmanifest` and `web/static/site.webmanifest`.
+
 - **Harden Ledger Import route against invalid select-prop states** — Prevented runtime failures on Import page load when template/preset payloads are missing or select values are uninitialized.
   - Normalized `templates` and `importPresets` in route load to always return arrays.
   - Switched Import page `selectedTemplate`/`selectedPreset` state to null-safe defaults and guarded assignment from route data.
