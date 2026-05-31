@@ -163,6 +163,7 @@
         { label: "Configuration", href: "/config", help: "config" },
         { label: "Sheets", href: "/sheets", help: "sheets", disablePreload: true },
         { label: "Doctor", href: "/doctor" },
+        { label: "Doctor V2", href: "/doctor-v2" },
         ...(USER_CONFIG.labs?.firefly_reconcile
           ? [{ label: "Reconciliation", href: "/reconciliation" }]
           : []),

@@ -279,6 +279,14 @@
       action: () => navigate("/more/doctor")
     },
     {
+      id: "doctor-v2",
+      label: "Doctor V2",
+      description: "More",
+      icon: "fa-kit-medical",
+      category: "Pages",
+      action: () => navigate("/more/doctor-v2")
+    },
+    {
       id: "logs",
       label: "Logs",
       description: "More",
