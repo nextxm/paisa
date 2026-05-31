@@ -30,25 +30,25 @@
 {#if response}
   <div class="drawdown-layout">
     <div class="columns is-multiline mb-2">
-      <div class="column is-4">
+      <div class="column is-6-mobile is-4-tablet is-3-desktop">
         <div class="metric-card">
           <div class="metric-label">Requested</div>
           <div class="metric-value">{formatCurrency(response.drawdown.requested_amount)}</div>
         </div>
       </div>
-      <div class="column is-4">
+      <div class="column is-6-mobile is-4-tablet is-3-desktop">
         <div class="metric-card">
           <div class="metric-label">Covered</div>
           <div class="metric-value">{formatCurrency(response.drawdown.recommended_amount)}</div>
         </div>
       </div>
-      <div class="column is-4">
+      <div class="column is-6-mobile is-4-tablet is-3-desktop">
         <div class="metric-card">
           <div class="metric-label">Estimated Tax</div>
           <div class="metric-value">{formatCurrency(totalTax())}</div>
         </div>
       </div>
-      <div class="column is-4">
+      <div class="column is-6-mobile is-4-tablet is-3-desktop">
         <div class="metric-card">
           <div class="metric-label">Uncovered</div>
           <div class="metric-value">{formatCurrency(response.drawdown.remaining_amount)}</div>
@@ -108,7 +108,7 @@
           <span class="tag is-light">After One-Time Drawdown</span>
         </div>
         <div class="columns is-multiline mb-1">
-          <div class="column is-3">
+          <div class="column is-6-mobile is-3-desktop">
             <div class="metric-card">
               <div class="metric-label">Baseline FIRE</div>
               <div class="metric-value">
@@ -116,7 +116,7 @@
               </div>
             </div>
           </div>
-          <div class="column is-3">
+          <div class="column is-6-mobile is-3-desktop">
             <div class="metric-card">
               <div class="metric-label">Post-Drawdown FIRE</div>
               <div class="metric-value">
@@ -124,7 +124,7 @@
               </div>
             </div>
           </div>
-          <div class="column is-3">
+          <div class="column is-6-mobile is-3-desktop">
             <div class="metric-card">
               <div class="metric-label">FIRE Probability Delta</div>
               <div class="metric-value">
@@ -132,7 +132,7 @@
               </div>
             </div>
           </div>
-          <div class="column is-3">
+          <div class="column is-6-mobile is-3-desktop">
             <div class="metric-card">
               <div class="metric-label">Total One-Time Outflow</div>
               <div class="metric-value">
