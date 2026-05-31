@@ -28,6 +28,42 @@ interface GoalSummary {
   priority: number;
 }
 
+interface RetirementGoalConfig {
+  name: string;
+  icon: string;
+  swr: number;
+  expenses: string[];
+  savings: string[];
+  yearly_expenses: number;
+  priority: number;
+}
+
+interface SavingsGoalConfig {
+  name: string;
+  icon: string;
+  target: number;
+  target_date: string;
+  rate: number;
+  payment_per_period: number;
+  accounts: string[];
+  priority: number;
+}
+
+interface LifeGoalConfig {
+  name: string;
+  icon: string;
+  type: "milestone" | "recurring";
+  target_amount: number;
+  target_date: string;
+  start_date: string;
+  end_date: string;
+  frequency: "monthly" | "quarterly" | "yearly";
+  inflation_rate?: number | null;
+  priority: number;
+  funded_by: string[];
+  monthly_allocation: number;
+}
+
 interface DoctorRuleConfig {
   enabled: "yes" | "no" | "";
   pattern: string[] | null;
@@ -66,7 +102,12 @@ interface UserConfig {
   financial_year_starting_month: number;
   amount_alignment_column: number;
   week_starting_day: number;
-  goals: Record<string, Array<GoalSummary>>;
+  goals: {
+    retirement: RetirementGoalConfig[];
+    savings: SavingsGoalConfig[];
+    life: LifeGoalConfig[];
+    [key: string]: any[];
+  };
   accounts: {
     name: string;
     icon: string;

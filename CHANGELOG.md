@@ -4,6 +4,12 @@
 
 #### Features
 
+- **Add Phase 3 life-goal support to the life projection engine** — Added config-backed milestone and recurring life goals, integrated them into Monte Carlo simulations, and surfaced probabilities in the planning UI.
+  - Extended `paisa.yaml` and `internal/config/schema.json` with `goals.life[]` for milestone and recurring goals, including optional per-goal inflation overrides and priority.
+  - Added `internal/projection/goals/goals.go` to expand configured life goals into simulation cashflows with focused unit coverage.
+  - Updated projection simulation responses and added `GET /api/projection/goals` so the frontend can render configured goals with probability scores.
+  - Added a new `/planning/life/goals` editor route and goal markers/probability cards on `/planning/life`.
+
 - **Fix /site.webmanifest fallback to SPA HTML in Go server mode** — Added an explicit static route for `/site.webmanifest` so manifest requests return JSON instead of `index.html`.
   - Updated Gin routing in `internal/server/server.go` to serve `web/static/site.webmanifest`.
   - Added integration coverage in `internal/server/integration_test.go` to assert `/site.webmanifest` is valid JSON and not HTML.

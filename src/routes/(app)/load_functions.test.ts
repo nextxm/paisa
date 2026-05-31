@@ -13,6 +13,7 @@ mock.module("$lib/config_client", () => ({
 
 const dashboardPage = await import("./+page");
 const goalsPage = await import("./planning/goals/+page");
+const lifeGoalsPage = await import("./planning/life/goals/+page");
 const networthPage = await import("./assets/networth/+page");
 const importPage = await import("./ledger/import/+page");
 
@@ -49,6 +50,17 @@ describe("route load functions", () => {
     expect(ajaxImpl).toHaveBeenCalledWith("/api/goals");
     expect((data as any).goals).toEqual([{ name: "Emergency", priority: 1 }]);
     expect((data as any).config.goals.savings).toEqual([]);
+  });
+
+  test("life goals page load normalizes missing life goals array", async () => {
+    fetchConfigImpl = mock(async () => ({
+      config: { goals: { retirement: [], savings: [] } } as unknown as UserConfig
+    }));
+
+    const data = await lifeGoalsPage.load();
+
+    expect(fetchConfigImpl).toHaveBeenCalledTimes(1);
+    expect((data as any).config.goals.life).toEqual([]);
   });
 
   test("networth page load prefetches timeline and currencies", async () => {
