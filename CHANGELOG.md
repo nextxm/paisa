@@ -4,6 +4,11 @@
 
 #### Features
 
+- **Add Doctor V2 triage workspace** — Added a parallel Doctor page with a clearer review flow for large diagnosis result sets.
+  - Added `/more/doctor-v2` with an overview workspace, priority queue, sticky section navigation, and separate focused sections for diagnosis rules, duplicate candidates, and outlier transactions.
+  - Added Doctor V2 helper logic and focused Bun coverage for queue ordering and filtering behavior.
+  - Exposed the new page from the More navigation, command palette, and the legacy Doctor page so both versions can be compared before replacing the original.
+
 - **Complete Phase 6 caching and polish for Life Projection** — Added simulation-level caching and navigational/mobile refinements across life-planning pages.
   - Added in-memory Monte Carlo result caching in `internal/projection/simulator` keyed by normalized simulation config to reduce repeated recomputation.
   - Wired simulation cache invalidation into `cache.Clear()` so `/api/sync` and price-refresh flows invalidate cached projection runs.

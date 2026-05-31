@@ -203,6 +203,14 @@
 
 <section class="section tab-doctor">
   <div class="container is-fluid">
+    <div class="notification is-light doctor-v2-banner">
+      <div>
+        <strong>Doctor V2 is available.</strong>
+        <p class="mb-0">Use the new triage-first layout for a less cluttered review flow.</p>
+      </div>
+      <a class="button is-dark is-small" href="/more/doctor-v2">Open Doctor V2</a>
+    </div>
+
     <div class="columns">
       <div class="column is-12 has-text-centered">
         <div>
@@ -571,6 +579,14 @@
 </section>
 
 <style>
+  .doctor-v2-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
   .doctor-summary-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -620,6 +636,11 @@
   }
 
   @media (max-width: 768px) {
+    .doctor-v2-banner {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
     .doctor-controls {
       position: static;
     }
