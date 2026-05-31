@@ -71,6 +71,28 @@ func TestBucketMatchesLotSupportsTaxCategoryAndHoldingPeriod(t *testing.T) {
 	}
 }
 
+func TestBucketMatchesLotSupportsExplicitAssignedAccounts(t *testing.T) {
+	now := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
+	lot := availableLot{
+		Posting:   posting.Posting{Account: "Assets:Equity:Index", Date: now.AddDate(-2, 0, 0)},
+		Commodity: config.Commodity{TaxCategory: config.Equity},
+		PriceDate: now,
+	}
+
+	bucket := DrawdownBucket{
+		Accounts:    []string{"Assets:Equity:Index"},
+		AccountGlob: "Assets:Debt:*",
+	}
+	if !bucketMatchesLot(lot, bucket) {
+		t.Fatal("expected explicit account assignment to match even when glob does not")
+	}
+
+	bucket.Accounts = []string{"Assets:Debt:Fund"}
+	if bucketMatchesLot(lot, bucket) {
+		t.Fatal("unexpected match for bucket without assigned account")
+	}
+}
+
 func TestOrderLotsByBucketsUsesBucketPriority(t *testing.T) {
 	now := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
 	lots := []availableLot{

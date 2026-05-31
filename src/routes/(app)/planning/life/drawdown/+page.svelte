@@ -6,12 +6,16 @@
   let amount = $state(500000);
   let buckets = $state<DrawdownBucket[]>([
     {
+      name: "Equity First",
+      accounts: [],
       account_glob: "Assets:Equity:*",
       tax_category: "",
       override_tax_category: "equity",
       holding_period_months: 12
     },
     {
+      name: "Fallback",
+      accounts: [],
       account_glob: "Assets:*",
       tax_category: "",
       override_tax_category: "",
@@ -21,7 +25,8 @@
   let response = $state<DrawdownResponse | null>(null);
   let loading = $state(true);
   let error = $state<string | null>(null);
-  let draggingIndex = $state<number | null>(null);
+  let draggingAccount = $state<string | null>(null);
+  let dragFromBucketIndex = $state<number | null>(null);
 
   const taxCategoryOptions = [
     { value: "", label: "Any" },
@@ -35,6 +40,10 @@
   function cleanBuckets(value: DrawdownBucket[]): DrawdownBucket[] {
     return value
       .map((bucket) => ({
+        name: bucket.name.trim(),
+        accounts: Array.from(
+          new Set(bucket.accounts.map((account) => account.trim()).filter(Boolean))
+        ),
         account_glob: bucket.account_glob.trim(),
         tax_category: bucket.tax_category,
         override_tax_category: bucket.override_tax_category,
@@ -43,6 +52,7 @@
       .filter(
         (bucket) =>
           bucket.account_glob !== "" ||
+          bucket.accounts.length > 0 ||
           bucket.tax_category !== "" ||
           bucket.holding_period_months > 0 ||
           bucket.override_tax_category !== ""
@@ -53,6 +63,8 @@
     buckets = [
       ...buckets,
       {
+        name: `Bucket ${buckets.length + 1}`,
+        accounts: [],
         account_glob: "Assets:*",
         tax_category: "",
         override_tax_category: "",
@@ -76,20 +88,298 @@
     void runDrawdown();
   }
 
-  function onDragStart(index: number) {
-    draggingIndex = index;
+  function onAccountDragStart(account: string, fromBucketIndex: number | null) {
+    draggingAccount = account;
+    dragFromBucketIndex = fromBucketIndex;
   }
 
-  function onDrop(index: number) {
-    if (draggingIndex === null || draggingIndex === index) {
-      draggingIndex = null;
+  function removeAccountFromAllBuckets(account: string) {
+    buckets = buckets.map((bucket) => ({
+      ...bucket,
+      accounts: bucket.accounts.filter((entry) => entry !== account)
+    }));
+  }
+
+  function dropAccountToBucket(targetBucketIndex: number) {
+    if (!draggingAccount) {
       return;
     }
+
     const copy = [...buckets];
-    const [dragged] = copy.splice(draggingIndex, 1);
-    copy.splice(index, 0, dragged);
+    for (let i = 0; i < copy.length; i++) {
+      copy[i] = {
+        ...copy[i],
+        accounts: copy[i].accounts.filter((account) => account !== draggingAccount)
+      };
+    }
+    copy[targetBucketIndex] = {
+      ...copy[targetBucketIndex],
+      accounts: [...copy[targetBucketIndex].accounts, draggingAccount]
+    };
     buckets = copy;
-    draggingIndex = null;
+
+    draggingAccount = null;
+    dragFromBucketIndex = null;
+  }
+
+  function dropAccountToUnassigned() {
+    if (!draggingAccount) {
+      return;
+    }
+    removeAccountFromAllBuckets(draggingAccount);
+    draggingAccount = null;
+    dragFromBucketIndex = null;
+  }
+
+  function clearBucketAccounts(index: number) {
+    buckets = buckets.map((bucket, currentIndex) =>
+      currentIndex === index
+        ? {
+            ...bucket,
+            accounts: []
+          }
+        : bucket
+    );
+  }
+
+  function unassignedAccounts(): string[] {
+    const allAccounts = response?.available_assets.map((asset) => asset.account) || [];
+    const assigned = new Set(buckets.flatMap((bucket) => bucket.accounts));
+    return allAccounts.filter((account) => !assigned.has(account));
+  }
+
+  function bucketAccounts(index: number): string[] {
+    const allAccounts = response?.available_assets.map((asset) => asset.account) || [];
+    const assigned = new Set(allAccounts);
+    return buckets[index].accounts.filter((account) => assigned.has(account));
+  }
+
+  function onAccountDragEnd() {
+    draggingAccount = null;
+    dragFromBucketIndex = null;
+  }
+
+  function dragSourceLabel(index: number | null): string {
+    if (index === null) {
+      return "Unassigned";
+    }
+    return buckets[index]?.name?.trim() || `Bucket ${index + 1}`;
+  }
+
+  function accountChipClass(isDragging: boolean): string {
+    return isDragging ? "asset-chip is-dragging" : "asset-chip";
+  }
+
+  function shouldShowAssignmentBoard(): boolean {
+    return !!response && response.available_assets.length > 0;
+  }
+
+  function availableAssets() {
+    return response?.available_assets || [];
+  }
+
+  function groupNameFromAccount(account: string): string {
+    const parts = account.split(":").filter(Boolean);
+    if (parts.length >= 3) {
+      return parts[1];
+    }
+    if (parts.length >= 2) {
+      return parts[0];
+    }
+    return "Other";
+  }
+
+  function titleCase(value: string): string {
+    return value
+      .split(/[_\s-]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(" ");
+  }
+
+  function resetBucketRuleFields(bucket: DrawdownBucket): DrawdownBucket {
+    return {
+      ...bucket,
+      account_glob: "",
+      tax_category: "",
+      holding_period_months: 0
+    };
+  }
+
+  function buildAutoBucketsFromGroups(groups: Map<string, string[]>): DrawdownBucket[] {
+    const sortedGroups = Array.from(groups.entries())
+      .filter(([, accounts]) => accounts.length > 0)
+      .sort((a, b) => a[0].localeCompare(b[0]));
+
+    if (sortedGroups.length === 0) {
+      return buckets;
+    }
+
+    return sortedGroups.map(([name, accounts], index) => {
+      const existing = buckets[index] || {
+        name,
+        accounts: [],
+        account_glob: "",
+        tax_category: "",
+        override_tax_category: "",
+        holding_period_months: 0
+      };
+      return {
+        ...resetBucketRuleFields(existing),
+        name,
+        accounts: [...accounts].sort((a, b) => a.localeCompare(b))
+      };
+    });
+  }
+
+  function autoGroupByAccountFamily() {
+    const assets = availableAssets();
+    if (assets.length === 0) {
+      return;
+    }
+
+    const groups = new Map<string, string[]>();
+    for (const asset of assets) {
+      const group = titleCase(groupNameFromAccount(asset.account));
+      const list = groups.get(group) || [];
+      list.push(asset.account);
+      groups.set(group, list);
+    }
+
+    buckets = buildAutoBucketsFromGroups(groups);
+    void runDrawdown();
+  }
+
+  function autoGroupByTaxCategory() {
+    const assets = availableAssets();
+    if (assets.length === 0) {
+      return;
+    }
+
+    const groups = new Map<string, string[]>();
+    for (const asset of assets) {
+      const key = asset.tax_category || "other";
+      const group = titleCase(key);
+      const list = groups.get(group) || [];
+      list.push(asset.account);
+      groups.set(group, list);
+    }
+
+    buckets = buildAutoBucketsFromGroups(groups).map((bucket) => {
+      const lower = bucket.name.toLowerCase().replace(/\s+/g, "_");
+      const override = taxCategoryOptions.find((option) => option.value === lower)?.value || "";
+      return {
+        ...bucket,
+        override_tax_category: override
+      };
+    });
+    void runDrawdown();
+  }
+
+  function matchesAccountGlob(account: string, glob: string): boolean {
+    if (!glob || glob === "*") {
+      return true;
+    }
+    if (glob.endsWith("*")) {
+      return account.startsWith(glob.slice(0, -1));
+    }
+    return account === glob;
+  }
+
+  function matchesBucketRule(
+    asset: { account: string; tax_category: string },
+    bucket: DrawdownBucket
+  ) {
+    if (bucket.tax_category !== "" && asset.tax_category !== bucket.tax_category) {
+      return false;
+    }
+    if (bucket.account_glob !== "" && !matchesAccountGlob(asset.account, bucket.account_glob)) {
+      return false;
+    }
+    return true;
+  }
+
+  function autoGroupByCurrentRules() {
+    const assets = availableAssets();
+    if (assets.length === 0 || buckets.length === 0) {
+      return;
+    }
+
+    const assigned = new Set<string>();
+    const nextBuckets = buckets.map((bucket) => ({
+      ...bucket,
+      accounts: [] as string[]
+    }));
+
+    for (let i = 0; i < nextBuckets.length; i++) {
+      const matches = assets
+        .filter((asset) => !assigned.has(asset.account) && matchesBucketRule(asset, nextBuckets[i]))
+        .map((asset) => asset.account)
+        .sort((a, b) => a.localeCompare(b));
+      nextBuckets[i].accounts = matches;
+      for (const account of matches) {
+        assigned.add(account);
+      }
+    }
+
+    buckets = nextBuckets;
+    void runDrawdown();
+  }
+
+  function accountFamilyGroupCount(): number {
+    const assets = availableAssets();
+    if (assets.length === 0) {
+      return 0;
+    }
+    const groups = new Set<string>();
+    for (const asset of assets) {
+      groups.add(titleCase(groupNameFromAccount(asset.account)));
+    }
+    return groups.size;
+  }
+
+  function taxCategoryGroupCount(): number {
+    const assets = availableAssets();
+    if (assets.length === 0) {
+      return 0;
+    }
+    const groups = new Set<string>();
+    for (const asset of assets) {
+      const key = asset.tax_category || "other";
+      groups.add(titleCase(key));
+    }
+    return groups.size;
+  }
+
+  function currentRulesGroupCount(): number {
+    const assets = availableAssets();
+    if (assets.length === 0 || buckets.length === 0) {
+      return 0;
+    }
+
+    const assigned = new Set<string>();
+    let matchedBuckets = 0;
+    for (const bucket of buckets) {
+      const matches = assets.filter(
+        (asset) => !assigned.has(asset.account) && matchesBucketRule(asset, bucket)
+      );
+      if (matches.length > 0) {
+        matchedBuckets++;
+      }
+      for (const asset of matches) {
+        assigned.add(asset.account);
+      }
+    }
+    return matchedBuckets;
+  }
+
+  function onBucketDrop(index: number) {
+    dropAccountToBucket(index);
+    void runDrawdown();
+  }
+
+  function onPoolDrop() {
+    dropAccountToUnassigned();
     void runDrawdown();
   }
 
@@ -161,16 +451,63 @@
             <button class="button is-small is-light" onclick={addBucket}>Add Bucket</button>
           </div>
 
+          {#if shouldShowAssignmentBoard()}
+            <div class="buttons mb-3">
+              <button class="button is-small is-light" onclick={autoGroupByAccountFamily}
+                >Auto-group: Account Family ({accountFamilyGroupCount()} buckets)</button
+              >
+              <button class="button is-small is-light" onclick={autoGroupByTaxCategory}
+                >Auto-group: Tax Category ({taxCategoryGroupCount()} buckets)</button
+              >
+              <button class="button is-small is-light" onclick={autoGroupByCurrentRules}
+                >Auto-group: Current Rules ({currentRulesGroupCount()} buckets)</button
+              >
+            </div>
+          {/if}
+
+          {#if shouldShowAssignmentBoard()}
+            <div
+              class="asset-pool mb-3"
+              role="list"
+              aria-label="Unassigned assets"
+              ondragover={(event) => event.preventDefault()}
+              ondrop={onPoolDrop}
+            >
+              <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+                <p class="bucket-subtitle mb-0">Unassigned Assets</p>
+                {#if draggingAccount}
+                  <span class="help is-size-7 mb-0"
+                    >Dragging from {dragSourceLabel(dragFromBucketIndex)}</span
+                  >
+                {/if}
+              </div>
+              <div class="asset-chip-list">
+                {#if unassignedAccounts().length === 0}
+                  <span class="asset-empty">All assets assigned to buckets</span>
+                {:else}
+                  {#each unassignedAccounts() as account (account)}
+                    <button
+                      class={accountChipClass(draggingAccount === account)}
+                      draggable="true"
+                      ondragstart={() => onAccountDragStart(account, null)}
+                      ondragend={onAccountDragEnd}
+                    >
+                      {account}
+                    </button>
+                  {/each}
+                {/if}
+              </div>
+            </div>
+          {/if}
+
           <div class="bucket-list">
             {#each buckets as bucket, index (`bucket-${index}`)}
               <div
                 class="bucket-card"
                 role="listitem"
                 aria-label={`Drawdown strategy bucket ${index + 1}`}
-                draggable="true"
-                ondragstart={() => onDragStart(index)}
                 ondragover={(event) => event.preventDefault()}
-                ondrop={() => onDrop(index)}
+                ondrop={() => onBucketDrop(index)}
               >
                 <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
                   <div class="bucket-title">Priority {index + 1}</div>
@@ -192,6 +529,47 @@
                     >
                   </div>
                 </div>
+
+                <div class="field">
+                  <label class="label is-size-7" for={`bucket-name-${index}`}>Bucket Name</label>
+                  <input
+                    id={`bucket-name-${index}`}
+                    class="input"
+                    placeholder={`Bucket ${index + 1}`}
+                    bind:value={bucket.name}
+                  />
+                </div>
+
+                {#if shouldShowAssignmentBoard()}
+                  <div class="field">
+                    <div
+                      class="is-flex is-justify-content-space-between is-align-items-center mb-2"
+                    >
+                      <p class="label is-size-7 mb-0">Assigned Assets</p>
+                      <button
+                        class="button is-small is-ghost"
+                        onclick={() => clearBucketAccounts(index)}
+                        disabled={bucketAccounts(index).length === 0}>Clear</button
+                      >
+                    </div>
+                    <div class="asset-chip-list">
+                      {#if bucketAccounts(index).length === 0}
+                        <span class="asset-empty">Drop assets here</span>
+                      {:else}
+                        {#each bucketAccounts(index) as account (account)}
+                          <button
+                            class={accountChipClass(draggingAccount === account)}
+                            draggable="true"
+                            ondragstart={() => onAccountDragStart(account, index)}
+                            ondragend={onAccountDragEnd}
+                          >
+                            {account}
+                          </button>
+                        {/each}
+                      {/if}
+                    </div>
+                  </div>
+                {/if}
 
                 <div class="field">
                   <label class="label is-size-7" for={`bucket-account-${index}`}>Account Glob</label
@@ -248,8 +626,8 @@
             {/each}
           </div>
           <p class="help mt-2">
-            Buckets are evaluated top-down. Use Match Tax Category as a filter and Apply Tax As as a
-            rule override for how the selected assets should be taxed in the drawdown simulation.
+            Buckets are evaluated top-down. Drag assets into named buckets for explicit assignment,
+            or use Account Glob + tax filters when you prefer rule-based matching.
           </p>
         </div>
       </div>
@@ -280,6 +658,48 @@
   .bucket-list {
     display: grid;
     gap: 0.75rem;
+  }
+
+  .asset-pool {
+    border: 1px solid var(--color-border, rgba(0, 0, 0, 0.12));
+    border-radius: 10px;
+    padding: 0.75rem;
+    background: var(--color-background-overlay, rgba(0, 0, 0, 0.02));
+  }
+
+  .bucket-subtitle {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-text-muted, rgba(0, 0, 0, 0.55));
+  }
+
+  .asset-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    min-height: 2rem;
+  }
+
+  .asset-chip {
+    border: 1px solid var(--color-border, rgba(0, 0, 0, 0.12));
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    background: var(--color-background-card, #fff);
+    font-size: 0.72rem;
+    line-height: 1.3;
+    color: var(--color-text, inherit);
+    cursor: grab;
+  }
+
+  .asset-chip.is-dragging {
+    opacity: 0.55;
+  }
+
+  .asset-empty {
+    font-size: 0.72rem;
+    color: var(--color-text-muted, rgba(0, 0, 0, 0.55));
   }
 
   .bucket-card {

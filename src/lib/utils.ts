@@ -273,6 +273,8 @@ export interface WhatIfResponse {
 }
 
 export interface DrawdownBucket {
+  name: string;
+  accounts: string[];
   account_glob: string;
   tax_category: "" | "debt" | "equity" | "equity65" | "equity35" | "unlisted_equity";
   override_tax_category: "" | "debt" | "equity" | "equity65" | "equity35" | "unlisted_equity";
@@ -299,7 +301,14 @@ export interface DrawdownRecommendation {
   effective_tax_rate: number;
 }
 
+export interface DrawdownAssetAccount {
+  account: string;
+  tax_category: "" | "debt" | "equity" | "equity65" | "equity35" | "unlisted_equity";
+}
+
 export interface DrawdownResponse {
+  available_accounts: string[];
+  available_assets: DrawdownAssetAccount[];
   drawdown: {
     requested_amount: number;
     recommended_amount: number;
