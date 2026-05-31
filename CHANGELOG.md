@@ -4,6 +4,12 @@
 
 #### Features
 
+- **Complete Phase 6 caching and polish for Life Projection** — Added simulation-level caching and navigational/mobile refinements across life-planning pages.
+  - Added in-memory Monte Carlo result caching in `internal/projection/simulator` keyed by normalized simulation config to reduce repeated recomputation.
+  - Wired simulation cache invalidation into `cache.Clear()` so `/api/sync` and price-refresh flows invalidate cached projection runs.
+  - Improved life-planning navigation by adding direct links between What-If, Goals, Drawdown, and the main Life Plan dashboard.
+  - Polished drawdown mobile responsiveness by adjusting metric-card column behavior for compact viewports.
+
 - **Complete Phase 5 tax-aware drawdown strategy** — Added a full drawdown strategy flow that optimizes withdrawal recommendations by ordered strategy buckets and estimated tax burden using FIFO lots and existing capital-gains logic.
   - Extended `internal/projection/drawdown` to honor bucket priority with `account_glob`, `tax_category`, and `holding_period_months` filters before tax-cost sorting.
   - Added focused unit coverage for bucket matching rules, strategy ordering, and deterministic optimization behavior.

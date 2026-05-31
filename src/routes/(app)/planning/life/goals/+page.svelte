@@ -117,6 +117,8 @@
       <button class="button is-light" onclick={() => addGoal("recurring")}
         >Add Recurring Goal</button
       >
+      <a class="button is-light" href="/planning/life/drawdown">Tax-Aware Drawdown</a>
+      <a class="button is-light" href="/planning/life/whatif">What-If Scenarios</a>
       <a class="button is-ghost" href="/planning/life">Back to Life Projection</a>
     </div>
 

@@ -4,6 +4,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/accounting"
 	"github.com/ananthakumaran/paisa/internal/model/transaction"
 	"github.com/ananthakumaran/paisa/internal/prediction"
+	"github.com/ananthakumaran/paisa/internal/projection/simulator"
 	"github.com/ananthakumaran/paisa/internal/service"
 )
 
@@ -14,4 +15,5 @@ func Clear() {
 	accounting.ClearCache()
 	prediction.ClearCache()
 	transaction.ClearCache()
+	simulator.ClearCache()
 }

@@ -1,9 +1,13 @@
 package simulator
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"math"
 	"math/rand"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -62,6 +66,18 @@ type SimulationResult struct {
 	MonthsProjected   int                       `json:"months_projected"`
 }
 
+var (
+	simulationCacheMu sync.RWMutex
+	simulationCache   = map[string]SimulationResult{}
+)
+
+// ClearCache resets cached simulation results. Called by global cache.Clear().
+func ClearCache() {
+	simulationCacheMu.Lock()
+	defer simulationCacheMu.Unlock()
+	simulationCache = map[string]SimulationResult{}
+}
+
 // DefaultConfig returns a SimulationConfig with sensible defaults.
 func DefaultConfig() SimulationConfig {
 	return SimulationConfig{
@@ -83,6 +99,11 @@ func Run(cfg SimulationConfig) SimulationResult {
 	}
 	if cfg.MonthsToProject <= 0 {
 		cfg.MonthsToProject = 360
+	}
+
+	cacheKey := simulationCacheKey(cfg)
+	if cached, ok := getCachedResult(cacheKey); ok {
+		return cached
 	}
 
 	// Pre-compute monthly parameters from annual rates
@@ -282,5 +303,62 @@ func Run(cfg SimulationConfig) SimulationResult {
 		return result.GoalProbabilities[i].GoalID < result.GoalProbabilities[j].GoalID
 	})
 
+	setCachedResult(cacheKey, result)
 	return result
+}
+
+func simulationCacheKey(cfg SimulationConfig) string {
+	normalized := cfg
+	if normalized.StartDate.IsZero() {
+		normalized.StartDate = time.Now().UTC()
+	}
+	normalized.StartDate = time.Date(
+		normalized.StartDate.Year(),
+		normalized.StartDate.Month(),
+		normalized.StartDate.Day(),
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+
+	payload, err := json.Marshal(normalized)
+	if err != nil {
+		return ""
+	}
+	digest := sha256.Sum256(payload)
+	return hex.EncodeToString(digest[:])
+}
+
+func getCachedResult(key string) (SimulationResult, bool) {
+	if key == "" {
+		return SimulationResult{}, false
+	}
+	simulationCacheMu.RLock()
+	defer simulationCacheMu.RUnlock()
+	result, ok := simulationCache[key]
+	if !ok {
+		return SimulationResult{}, false
+	}
+	return cloneSimulationResult(result), true
+}
+
+func setCachedResult(key string, result SimulationResult) {
+	if key == "" {
+		return
+	}
+	simulationCacheMu.Lock()
+	defer simulationCacheMu.Unlock()
+	simulationCache[key] = cloneSimulationResult(result)
+}
+
+func cloneSimulationResult(result SimulationResult) SimulationResult {
+	clone := result
+	clone.GoalProbabilities = append([]GoalProbability(nil), result.GoalProbabilities...)
+	clone.Bands = make(map[string][]MonthlyPoint, len(result.Bands))
+	for label, points := range result.Bands {
+		clone.Bands[label] = append([]MonthlyPoint(nil), points...)
+	}
+	return clone
 }

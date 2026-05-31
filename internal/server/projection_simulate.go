@@ -5,6 +5,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/projection/dna"
 	projectiongoals "github.com/ananthakumaran/paisa/internal/projection/goals"
 	"github.com/ananthakumaran/paisa/internal/projection/simulator"
+	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
@@ -41,6 +42,7 @@ func buildProjectionSimulationConfig(db *gorm.DB, req SimulateRequest) (dna.Fina
 	profile := dna.ExtractProfile(db)
 
 	cfg := simulator.DefaultConfig()
+	cfg.StartDate = utils.ToDate(utils.Now())
 	cfg.CurrentNetworth = profile.CurrentNetworth
 	cfg.MonthlyContrib = profile.MonthlyContribution
 	cfg.AnnualExpenses = profile.AnnualExpenses

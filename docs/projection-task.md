@@ -66,8 +66,14 @@ Current slice delivered:
 
 ## Phase 6: Caching & Polish
 
-- [ ] Simulation snapshot caching
-- [ ] Cache invalidation on sync
-- [ ] Navigation integration
-- [ ] Documentation
-- [ ] Mobile responsive polish
+- [x] Simulation snapshot caching
+- [x] Cache invalidation on sync
+- [x] Navigation integration
+- [x] Documentation
+- [x] Mobile responsive polish
+
+Phase 6 delivered:
+- Added Monte Carlo simulation result caching in `internal/projection/simulator` keyed by normalized simulation config.
+- Wired cache invalidation into global `cache.Clear()` so sync/price refresh clears simulation cache alongside other runtime caches.
+- Added cross-navigation buttons between `/planning/life`, `/planning/life/whatif`, `/planning/life/goals`, and `/planning/life/drawdown`.
+- Updated drawdown metric cards for improved mobile layout density and readability.

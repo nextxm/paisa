@@ -166,6 +166,8 @@
         <button class:is-loading={loading} class="button is-primary" onclick={runComparison}
           >Run Comparison</button
         >
+        <a class="button is-light" href="/planning/life/drawdown">Tax-Aware Drawdown</a>
+        <a class="button is-light" href="/planning/life/goals">Manage Goals</a>
         <a class="button is-light" href="/planning/life">Back to Life Plan</a>
       </div>
     </div>
