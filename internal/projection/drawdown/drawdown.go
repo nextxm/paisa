@@ -20,6 +20,7 @@ import (
 type DrawdownBucket struct {
 	AccountGlob         string                 `json:"account_glob"`
 	TaxCategory         config.TaxCategoryType `json:"tax_category"`
+	OverrideTaxCategory config.TaxCategoryType `json:"override_tax_category"`
 	HoldingPeriodMonths int                    `json:"holding_period_months"`
 }
 
@@ -116,6 +117,7 @@ type availableLot struct {
 	SortTaxRate      decimal.Decimal
 	SortTaxAmount    decimal.Decimal
 	HoldingDays      int
+	BucketIndex      int
 }
 
 func collectAvailableLots(db *gorm.DB, buckets []DrawdownBucket) []availableLot {
@@ -142,12 +144,27 @@ func collectAvailableLots(db *gorm.DB, buckets []DrawdownBucket) []availableLot 
 		if len(fifo) == 0 {
 			continue
 		}
-		commodity := c.FindByName(fifo[0].Commodity)
-		currentPrice := service.GetUnitPrice(db, commodity.Name, priceDate)
+		baseCommodity := c.FindByName(fifo[0].Commodity)
+		currentPrice := service.GetUnitPrice(db, baseCommodity.Name, priceDate)
 		if !currentPrice.Value.GreaterThan(decimal.Zero) {
 			continue
 		}
 		for _, lot := range fifo {
+			commodity := baseCommodity
+			bucketIndex := -1
+			if len(buckets) > 0 {
+				tentativeLot := availableLot{
+					Posting:   lot,
+					Commodity: commodity,
+					PriceDate: currentPrice.Date,
+				}
+				bucketIndex = firstMatchingBucketIndex(tentativeLot, buckets)
+				if bucketIndex < 0 {
+					continue
+				}
+				commodity.TaxCategory = applyBucketTaxCategoryOverride(commodity.TaxCategory, buckets[bucketIndex])
+			}
+
 			tax := taxation.EstimateSale(db, lot, commodity, lot.Quantity, currentPrice.Value, currentPrice.Date)
 			currentValue := currentPrice.Value.Mul(lot.Quantity)
 			lots = append(lots, availableLot{
@@ -158,6 +175,7 @@ func collectAvailableLots(db *gorm.DB, buckets []DrawdownBucket) []availableLot 
 				SortTaxRate:      effectiveTaxRate(tax, currentValue),
 				SortTaxAmount:    totalTaxAmount(tax),
 				HoldingDays:      int(currentPrice.Date.Sub(lot.Date).Hours() / 24),
+				BucketIndex:      bucketIndex,
 			})
 		}
 	}
@@ -185,9 +203,8 @@ func orderLotsByBuckets(lots []availableLot, buckets []DrawdownBucket) []availab
 
 	bucketed := make([][]availableLot, len(buckets))
 	for _, lot := range lots {
-		bucketIndex := firstMatchingBucketIndex(lot, buckets)
-		if bucketIndex >= 0 {
-			bucketed[bucketIndex] = append(bucketed[bucketIndex], lot)
+		if lot.BucketIndex >= 0 && lot.BucketIndex < len(buckets) {
+			bucketed[lot.BucketIndex] = append(bucketed[lot.BucketIndex], lot)
 		}
 	}
 
@@ -220,6 +237,13 @@ func bucketMatchesLot(lot availableLot, bucket DrawdownBucket) bool {
 		return false
 	}
 	return true
+}
+
+func applyBucketTaxCategoryOverride(category config.TaxCategoryType, bucket DrawdownBucket) config.TaxCategoryType {
+	if bucket.OverrideTaxCategory != "" {
+		return bucket.OverrideTaxCategory
+	}
+	return category
 }
 
 func effectiveTaxRate(tax taxation.Tax, amount decimal.Decimal) decimal.Decimal {

@@ -156,7 +156,7 @@
       class="is-flex is-justify-content-space-between is-align-items-flex-start mb-5 whatif-header"
     >
       <div>
-        <h1 class="title is-4 mb-2">What-If Scenarios</h1>
+        <h1 class="title is-4 is-spaced mb-2">What-If Scenarios</h1>
         <p class="subtitle is-6 has-text-grey mb-0">
           Compare your baseline plan against up to five alternate trajectories using the same
           goal-aware simulation engine.
