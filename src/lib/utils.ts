@@ -199,8 +199,27 @@ export interface SimulationMonthlyPoint {
 }
 
 export interface GoalProbability {
+  goal_id: string;
   name: string;
   month: number;
+  probability: number;
+}
+
+export interface ProjectionLifeGoal {
+  goal_id: string;
+  name: string;
+  icon: string;
+  type: "milestone" | "recurring";
+  target_amount: number;
+  target_date: string;
+  start_date: string;
+  end_date: string;
+  frequency: "monthly" | "quarterly" | "yearly" | "";
+  inflation_rate?: number | null;
+  priority: number;
+  funded_by: string[];
+  monthly_allocation: number;
+  cashflow_count: number;
   probability: number;
 }
 
@@ -219,6 +238,7 @@ export interface SimulationResult {
 export interface SimulationResponse {
   profile: FinancialProfile;
   simulation: SimulationResult;
+  goals: ProjectionLifeGoal[];
 }
 
 export interface CurrencyExposure {
@@ -852,6 +872,7 @@ export function ajax(route: "/api/networth"): Promise<{
 }>;
 export function ajax(route: "/api/networth/projection"): Promise<NetworthProjectionResponse>;
 export function ajax(route: "/api/projection/dna"): Promise<{ profile: FinancialProfile }>;
+export function ajax(route: "/api/projection/goals"): Promise<{ goals: ProjectionLifeGoal[] }>;
 export function ajax(
   route: "/api/projection/simulate",
   options?: RequestOptions

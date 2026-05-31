@@ -287,6 +287,13 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, result)
 	})
 
+	router.GET("/api/projection/goals", func(c *gin.Context) {
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetProjectionGoals(requestDB)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
+	})
+
 	router.GET("/api/assets/balance", func(c *gin.Context) {
 		asOfDate, ok := parseAsOfDate(c)
 		if !ok {

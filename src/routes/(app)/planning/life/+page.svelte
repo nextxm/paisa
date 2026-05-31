@@ -5,6 +5,7 @@
     formatCurrency,
     formatFloat,
     type FinancialProfile,
+    type ProjectionLifeGoal,
     type SimulationResponse,
     type SimulationMonthlyPoint
   } from "$lib/utils";
@@ -107,6 +108,13 @@
     // Parse dates
     const parseDate = (d: SimulationMonthlyPoint) => dayjs(d.date).toDate();
     const getValue = (d: SimulationMonthlyPoint) => d.balance_amount;
+    const bisect = d3.bisector((d: SimulationMonthlyPoint) => dayjs(d.date).toDate()).left;
+    const goalDate = (goal: ProjectionLifeGoal) => {
+      const rawDate = goal.target_date || goal.end_date || goal.start_date;
+      if (!rawDate) return null;
+      const parsed = dayjs(`${rawDate}-01`);
+      return parsed.isValid() ? parsed.toDate() : null;
+    };
 
     const allPoints = [
       ...bands["p10"],
@@ -257,6 +265,48 @@
       .attr("stroke", "white")
       .attr("stroke-width", 2);
 
+    const goalMarkers = (data.goals || [])
+      .map((goal) => ({ goal, date: goalDate(goal) }))
+      .filter((entry): entry is { goal: ProjectionLifeGoal; date: Date } => entry.date !== null)
+      .filter((entry) => entry.date >= xExtent[0] && entry.date <= xExtent[1]);
+
+    goalMarkers.forEach(({ goal, date }) => {
+      const idx = Math.min(Math.max(bisect(bands["p50"], date), 0), bands["p50"].length - 1);
+      const point = bands["p50"][idx];
+      const gx = x(date);
+      const gy = y(point.balance_amount);
+      const probabilityPct = Math.round(goal.probability * 100);
+
+      svg
+        .append("line")
+        .attr("x1", gx)
+        .attr("x2", gx)
+        .attr("y1", gy)
+        .attr("y2", height)
+        .attr("stroke", COLORS.secondary)
+        .attr("stroke-width", 1)
+        .attr("stroke-dasharray", "3,3")
+        .attr("opacity", 0.5);
+
+      svg
+        .append("circle")
+        .attr("cx", gx)
+        .attr("cy", gy)
+        .attr("r", 4)
+        .attr("fill", COLORS.secondary)
+        .attr("stroke", "white")
+        .attr("stroke-width", 1.5);
+
+      svg
+        .append("text")
+        .attr("x", Math.min(gx + 6, width - 6))
+        .attr("y", Math.max(gy - 8, 12))
+        .style("font-size", "10px")
+        .style("font-weight", "600")
+        .style("fill", COLORS.secondary)
+        .text(`${goal.name} ${probabilityPct}%`);
+    });
+
     // Legend
     const legendData = [
       { label: "P50 (Median)", color: COLORS.primary, dash: false },
@@ -306,9 +356,6 @@
       .style("pointer-events", "none")
       .style("opacity", 0)
       .style("z-index", "10");
-
-    const bisect = d3.bisector((d: SimulationMonthlyPoint) => dayjs(d.date).toDate()).left;
-
     svg
       .append("rect")
       .attr("width", width)
@@ -362,11 +409,16 @@
 <section class="section tab-life-projection">
   <div class="container is-fluid">
     <div class="mb-5">
-      <h1 class="title is-4 mb-1">Life Projection</h1>
-      <p class="subtitle is-6 has-text-grey">
-        Monte Carlo simulation using {iterations.toLocaleString()} scenarios to project your financial
-        future probabilistically
-      </p>
+      <div class="is-flex is-justify-content-space-between is-align-items-flex-start life-header">
+        <div>
+          <h1 class="title is-4 mb-1">Life Projection</h1>
+          <p class="subtitle is-6 has-text-grey">
+            Monte Carlo simulation using {iterations.toLocaleString()} scenarios to project your financial
+            future probabilistically
+          </p>
+        </div>
+        <a class="button is-light" href="/planning/life/goals">Manage Goals</a>
+      </div>
     </div>
 
     <div class="columns">
@@ -597,6 +649,41 @@
             </div>
           </div>
         {/if}
+
+        {#if simData?.goals?.length}
+          <div class="box">
+            <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+              <h3 class="title is-6 mb-0">Goal Probabilities</h3>
+              <span class="is-size-7 has-text-grey">Priority-funded in simulation order</span>
+            </div>
+            <div class="goal-list">
+              {#each simData.goals as goal (goal.goal_id)}
+                <div class="goal-card">
+                  <div>
+                    <div class="goal-name">{goal.name}</div>
+                    <div class="goal-meta">
+                      {#if goal.type === "milestone"}
+                        {formatCurrency(goal.target_amount)} by {goal.target_date}
+                      {:else}
+                        {formatCurrency(goal.monthly_allocation)}
+                        {goal.frequency} from {goal.start_date} to {goal.end_date}
+                      {/if}
+                    </div>
+                  </div>
+                  <div
+                    class="goal-probability {goal.probability >= 0.7
+                      ? 'has-text-success'
+                      : goal.probability >= 0.4
+                        ? 'has-text-warning-dark'
+                        : 'has-text-danger'}"
+                  >
+                    {formatFloat(goal.probability * 100)}%
+                  </div>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
       </div>
     </div>
 
@@ -710,8 +797,56 @@
     min-height: 420px;
   }
 
+  .life-header {
+    gap: 1rem;
+  }
+
+  .goal-list {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .goal-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background: var(--color-background-overlay, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+  }
+
+  .goal-name {
+    font-weight: 600;
+  }
+
+  .goal-meta {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-top: 0.1rem;
+  }
+
+  .goal-probability {
+    font-size: 1.1rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
   .progress {
     height: 0.5rem;
     border-radius: 999px;
+  }
+
+  @media (max-width: 768px) {
+    .life-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .goal-card {
+      align-items: flex-start;
+      flex-direction: column;
+    }
   }
 </style>

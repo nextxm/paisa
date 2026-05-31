@@ -77,6 +77,7 @@ type UserAccount struct {
 type Goals struct {
 	Retirement []RetirementGoal `json:"retirement" yaml:"retirement"`
 	Savings    []SavingsGoal    `json:"savings" yaml:"savings"`
+	Life       []LifeGoal       `json:"life" yaml:"life"`
 }
 
 type RetirementGoal struct {
@@ -98,6 +99,21 @@ type SavingsGoal struct {
 	PaymentPerPeriod float64  `json:"payment_per_period" yaml:"payment_per_period"`
 	Accounts         []string `json:"accounts" yaml:"accounts"`
 	Priority         int      `json:"priority" yaml:"priority"`
+}
+
+type LifeGoal struct {
+	Name          string   `json:"name" yaml:"name"`
+	Icon          string   `json:"icon" yaml:"icon"`
+	Type          string   `json:"type" yaml:"type"`
+	TargetAmount  float64  `json:"target_amount" yaml:"target_amount"`
+	TargetDate    string   `json:"target_date" yaml:"target_date"`
+	StartDate     string   `json:"start_date" yaml:"start_date"`
+	EndDate       string   `json:"end_date" yaml:"end_date"`
+	Frequency     string   `json:"frequency" yaml:"frequency"`
+	InflationRate *float64 `json:"inflation_rate" yaml:"inflation_rate"`
+	Priority      int      `json:"priority" yaml:"priority"`
+	FundedBy      []string `json:"funded_by" yaml:"funded_by"`
+	MonthlyAlloc  float64  `json:"monthly_allocation" yaml:"monthly_allocation"`
 }
 
 type ScheduleAL struct {
@@ -246,7 +262,7 @@ var defaultConfig = Config{
 	Commodities:                []Commodity{},
 	ImportTemplates:            []ImportTemplate{},
 	Accounts:                   []Account{},
-	Goals:                      Goals{Retirement: []RetirementGoal{}, Savings: []SavingsGoal{}},
+	Goals:                      Goals{Retirement: []RetirementGoal{}, Savings: []SavingsGoal{}, Life: []LifeGoal{}},
 	UserAccounts:               []UserAccount{},
 	CreditCards:                []CreditCard{},
 	Firefly:                    FireflyConfig{IgnoreAccounts: []string{}},

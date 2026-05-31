@@ -27,10 +27,12 @@ type SimulationConfig struct {
 
 // GoalCashflow represents a scheduled outflow for a goal at a specific month.
 type GoalCashflow struct {
+	GoalID        string          `json:"goal_id"`
 	Name          string          `json:"name"`
 	Month         int             `json:"month"`
 	Amount        decimal.Decimal `json:"amount"`
 	InflationRate decimal.Decimal `json:"inflation_rate"` // per-goal override; zero = use global
+	Priority      int             `json:"priority"`
 }
 
 // MonthlyPoint represents a single month's projected balance.
@@ -41,6 +43,7 @@ type MonthlyPoint struct {
 
 // GoalProbability holds the probability of meeting a specific goal.
 type GoalProbability struct {
+	GoalID      string  `json:"goal_id"`
 	Name        string  `json:"name"`
 	Month       int     `json:"month"`
 	Probability float64 `json:"probability"`
@@ -109,12 +112,15 @@ func Run(cfg SimulationConfig) SimulationResult {
 
 	// Pre-index goal outflows by month for fast lookup
 	type goalEntry struct {
+		goalID        string
 		name          string
 		amount        float64
 		inflationRate float64
+		priority      int
 	}
 	goalsByMonth := make(map[int][]goalEntry)
-	goalNames := make(map[string]bool)
+	goalNames := make(map[string]string)
+	goalLastMonth := make(map[string]int)
 	for _, g := range cfg.Goals {
 		ir, _ := g.InflationRate.Float64()
 		if ir == 0 {
@@ -123,11 +129,24 @@ func Run(cfg SimulationConfig) SimulationResult {
 			ir = ir / 100.0
 		}
 		goalsByMonth[g.Month] = append(goalsByMonth[g.Month], goalEntry{
+			goalID:        g.GoalID,
 			name:          g.Name,
 			amount:        g.Amount.InexactFloat64(),
 			inflationRate: ir,
+			priority:      g.Priority,
 		})
-		goalNames[g.Name] = true
+		goalNames[g.GoalID] = g.Name
+		if g.Month > goalLastMonth[g.GoalID] {
+			goalLastMonth[g.GoalID] = g.Month
+		}
+	}
+	for month := range goalsByMonth {
+		sort.Slice(goalsByMonth[month], func(i, j int) bool {
+			if goalsByMonth[month][i].priority != goalsByMonth[month][j].priority {
+				return goalsByMonth[month][i].priority > goalsByMonth[month][j].priority
+			}
+			return goalsByMonth[month][i].goalID < goalsByMonth[month][j].goalID
+		})
 	}
 
 	// Allocate storage: allBalances[iteration][month]
@@ -142,7 +161,7 @@ func Run(cfg SimulationConfig) SimulationResult {
 		balance := currentNW
 		contrib := monthlyContrib
 		fireMonth := -1
-		goalFunded := make(map[string]bool)
+		goalFailed := make(map[string]bool)
 
 		for m := 0; m < cfg.MonthsToProject; m++ {
 			// Sample monthly return from log-normal distribution
@@ -162,9 +181,10 @@ func Run(cfg SimulationConfig) SimulationResult {
 					yearsFromStart := float64(m) / 12.0
 					inflatedAmount := g.amount * math.Pow(1+g.inflationRate, yearsFromStart)
 					if balance >= inflatedAmount {
-						goalFunded[g.name] = true
+						balance -= inflatedAmount
+					} else {
+						goalFailed[g.goalID] = true
 					}
-					balance -= inflatedAmount
 				}
 			}
 
@@ -182,8 +202,10 @@ func Run(cfg SimulationConfig) SimulationResult {
 
 		allBalances[i] = balances
 		fireMonths[i] = fireMonth
-		for name := range goalFunded {
-			goalSuccessCount[name]++
+		for goalID := range goalNames {
+			if !goalFailed[goalID] {
+				goalSuccessCount[goalID]++
+			}
 		}
 	}
 
@@ -247,15 +269,17 @@ func Run(cfg SimulationConfig) SimulationResult {
 	}
 
 	// Goal probabilities
-	for name := range goalNames {
+	for goalID, name := range goalNames {
 		result.GoalProbabilities = append(result.GoalProbabilities, GoalProbability{
+			GoalID:      goalID,
 			Name:        name,
-			Probability: math.Round(float64(goalSuccessCount[name])/float64(cfg.Iterations)*1000) / 1000,
+			Month:       goalLastMonth[goalID],
+			Probability: math.Round(float64(goalSuccessCount[goalID])/float64(cfg.Iterations)*1000) / 1000,
 		})
 	}
 	// Sort for deterministic output
 	sort.Slice(result.GoalProbabilities, func(i, j int) bool {
-		return result.GoalProbabilities[i].Name < result.GoalProbabilities[j].Name
+		return result.GoalProbabilities[i].GoalID < result.GoalProbabilities[j].GoalID
 	})
 
 	return result
