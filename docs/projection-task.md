@@ -58,6 +58,11 @@
 - [ ] Tax impact estimation
 - [ ] Drawdown strategy UI
 
+Current slice delivered:
+- Added `internal/projection/drawdown/drawdown.go` with FIFO-lot recommendation ranking by estimated tax cost.
+- Added `POST /api/projection/drawdown` and initial backend coverage in `internal/server/integration_test.go`.
+- Added first-pass `/planning/life/drawdown` UI and `DrawdownStrategy.svelte` for reviewing recommendations.
+
 ## Phase 6: Caching & Polish
 
 - [ ] Simulation snapshot caching

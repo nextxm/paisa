@@ -5,6 +5,7 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/cii"
+	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/service"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/shopspring/decimal"
@@ -94,4 +95,11 @@ func Calculate(db *gorm.DB, quantity decimal.Decimal, commodity config.Commodity
 	}
 
 	return Tax{Gain: gain, Taxable: taxable, ShortTerm: shortTerm, LongTerm: longTerm, Slab: slab}
+}
+
+func EstimateSale(db *gorm.DB, lot posting.Posting, commodity config.Commodity, quantity decimal.Decimal, sellPrice decimal.Decimal, sellDate time.Time) Tax {
+	if quantity.IsZero() {
+		return Tax{}
+	}
+	return Calculate(db, quantity, commodity, lot.Price(), lot.Date, sellPrice, sellDate)
 }

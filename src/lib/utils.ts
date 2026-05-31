@@ -272,6 +272,48 @@ export interface WhatIfResponse {
   scenarios: WhatIfScenarioResult[];
 }
 
+export interface DrawdownBucket {
+  account_glob: string;
+  tax_category: string;
+  holding_period_months: number;
+}
+
+export interface DrawdownRecommendation {
+  account: string;
+  commodity: string;
+  tax_category: string;
+  units: number;
+  amount: number;
+  estimated_tax: {
+    gain: number;
+    taxable: number;
+    slab: number;
+    long_term: number;
+    short_term: number;
+  };
+  holding_period_days: number;
+  holding_period_months: number;
+  purchase_date: dayjs.Dayjs;
+  current_unit_price: number;
+  effective_tax_rate: number;
+}
+
+export interface DrawdownResponse {
+  drawdown: {
+    requested_amount: number;
+    recommended_amount: number;
+    remaining_amount: number;
+    total_estimated_tax: {
+      gain: number;
+      taxable: number;
+      slab: number;
+      long_term: number;
+      short_term: number;
+    };
+    recommendations: DrawdownRecommendation[];
+  };
+}
+
 export interface CurrencyExposure {
   currency: string;
   amount: number;
@@ -912,6 +954,10 @@ export function ajax(
   route: "/api/projection/whatif",
   options?: RequestOptions
 ): Promise<WhatIfResponse>;
+export function ajax(
+  route: "/api/projection/drawdown",
+  options?: RequestOptions
+): Promise<DrawdownResponse>;
 export function ajax(route: "/api/gain"): Promise<{
   gain_breakdown: Gain[];
 }>;

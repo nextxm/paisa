@@ -213,6 +213,23 @@ func TestIntegration_ProjectionWhatIfReturnsBaselineAndScenarios(t *testing.T) {
 	assert.Equal(t, "Increase SIP", firstName)
 }
 
+func TestIntegration_ProjectionDrawdownReturnsEnvelope(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+	router := Build(db, false)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/projection/drawdown", strings.NewReader(`{"amount": 250000}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	var payload map[string]json.RawMessage
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&payload))
+	_, ok := payload["drawdown"]
+	assert.True(t, ok, "response must contain drawdown key")
+}
+
 // ---------------------------------------------------------------------------
 // Error envelope contract integration tests
 // ---------------------------------------------------------------------------
