@@ -62,6 +62,7 @@ Current slice delivered:
 - Added `internal/projection/drawdown/drawdown.go` with ordered bucket strategy support (`account_glob`, `tax_category`, `holding_period_months`) and tax-aware FIFO lot ranking.
 - Added `POST /api/projection/drawdown` with backend tests validating sort behavior, bucket filtering, and priority ordering.
 - Added `/planning/life/drawdown` strategy editor with reorderable buckets and `DrawdownStrategy.svelte` output cards for withdrawal order + estimated tax impact.
+- Added deeper coupling: drawdown analysis now optionally runs baseline vs post-drawdown Monte Carlo simulation and returns impact deltas (FIRE probability and timeline impact).
 
 ## Phase 6: Caching & Polish
 

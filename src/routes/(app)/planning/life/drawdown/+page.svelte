@@ -85,7 +85,12 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount,
-          buckets: cleanBuckets(buckets)
+          buckets: cleanBuckets(buckets),
+          include_projection_impact: true,
+          baseline: {
+            months_to_project: 360,
+            iterations: 750
+          }
         })
       });
     } catch (exception) {

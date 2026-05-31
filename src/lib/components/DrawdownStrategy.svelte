@@ -21,6 +21,10 @@
       response.drawdown.total_estimated_tax.slab
     );
   }
+
+  function toPercent(value: number) {
+    return `${formatFloat(value * 100)}%`;
+  }
 </script>
 
 {#if response}
@@ -96,6 +100,49 @@
         {/each}
       </div>
     {/if}
+
+    {#if response.impact}
+      <div class="box impact-box mt-3">
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+          <h3 class="title is-6 mb-0">Projection Impact</h3>
+          <span class="tag is-light">After One-Time Drawdown</span>
+        </div>
+        <div class="columns is-multiline mb-1">
+          <div class="column is-3">
+            <div class="metric-card">
+              <div class="metric-label">Baseline FIRE</div>
+              <div class="metric-value">
+                {toPercent(response.impact.baseline.simulation.fire_probability)}
+              </div>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="metric-card">
+              <div class="metric-label">Post-Drawdown FIRE</div>
+              <div class="metric-value">
+                {toPercent(response.impact.post_drawdown.simulation.fire_probability)}
+              </div>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="metric-card">
+              <div class="metric-label">FIRE Probability Delta</div>
+              <div class="metric-value">
+                {toPercent(response.impact.delta.fire_probability)}
+              </div>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="metric-card">
+              <div class="metric-label">Total One-Time Outflow</div>
+              <div class="metric-value">
+                {formatCurrency(response.impact.drawdown_outflow.total)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -154,6 +201,10 @@
     display: grid;
     gap: 0.75rem;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .impact-box {
+    border: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
   }
 
   @media (max-width: 768px) {

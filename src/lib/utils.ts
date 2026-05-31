@@ -312,6 +312,32 @@ export interface DrawdownResponse {
     };
     recommendations: DrawdownRecommendation[];
   };
+  impact?: {
+    profile: FinancialProfile;
+    drawdown_outflow: {
+      withdrawal: number;
+      estimated_tax: {
+        gain: number;
+        taxable: number;
+        slab: number;
+        long_term: number;
+        short_term: number;
+      };
+      total: number;
+    };
+    baseline: {
+      simulation: SimulationResult;
+      goals: ProjectionLifeGoal[];
+    };
+    post_drawdown: {
+      simulation: SimulationResult;
+      goals: ProjectionLifeGoal[];
+    };
+    delta: {
+      fire_probability: number;
+      fire_year_p50: number;
+    };
+  };
 }
 
 export interface CurrencyExposure {

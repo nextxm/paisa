@@ -218,7 +218,11 @@ func TestIntegration_ProjectionDrawdownReturnsEnvelope(t *testing.T) {
 	db := openTestDB(t)
 	router := Build(db, false)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/projection/drawdown", strings.NewReader(`{"amount": 250000}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/projection/drawdown", strings.NewReader(`{
+		"amount": 250000,
+		"include_projection_impact": true,
+		"baseline": {"iterations": 10, "months_to_project": 24}
+	}`))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
@@ -228,6 +232,17 @@ func TestIntegration_ProjectionDrawdownReturnsEnvelope(t *testing.T) {
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&payload))
 	_, ok := payload["drawdown"]
 	assert.True(t, ok, "response must contain drawdown key")
+	_, hasImpact := payload["impact"]
+	assert.True(t, hasImpact, "response must contain impact key when requested")
+
+	var impact map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal(payload["impact"], &impact))
+	_, hasBaseline := impact["baseline"]
+	assert.True(t, hasBaseline)
+	_, hasPostDrawdown := impact["post_drawdown"]
+	assert.True(t, hasPostDrawdown)
+	_, hasDelta := impact["delta"]
+	assert.True(t, hasDelta)
 }
 
 // ---------------------------------------------------------------------------
