@@ -180,6 +180,39 @@ func TestIntegration_StaticAssets_SiteManifestReturnsJSON(t *testing.T) {
 	assert.NotContains(t, strings.ToLower(string(body)), "<!doctype html>", "manifest must not return HTML")
 }
 
+func TestIntegration_ProjectionWhatIfReturnsBaselineAndScenarios(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+	router := Build(db, false)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/projection/whatif", strings.NewReader(`{
+		"baseline": {"iterations": 10, "months_to_project": 24},
+		"scenarios": [
+			{"name": "Increase SIP", "overrides": {"monthly_contribution": 25000}},
+			{"name": "Lower Return", "overrides": {"expected_return": 6}}
+		]
+	}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	var payload map[string]json.RawMessage
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&payload))
+	_, hasProfile := payload["profile"]
+	assert.True(t, hasProfile)
+	_, hasBaseline := payload["baseline"]
+	assert.True(t, hasBaseline)
+
+	var scenarios []map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal(payload["scenarios"], &scenarios))
+	assert.Len(t, scenarios, 2)
+	var firstName string
+	require.NoError(t, json.Unmarshal(scenarios[0]["name"], &firstName))
+	assert.Equal(t, "Increase SIP", firstName)
+}
+
 // ---------------------------------------------------------------------------
 // Error envelope contract integration tests
 // ---------------------------------------------------------------------------

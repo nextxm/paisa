@@ -294,6 +294,20 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, result)
 	})
 
+	router.POST("/api/projection/whatif", func(c *gin.Context) {
+		var req WhatIfRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			req = WhatIfRequest{}
+		}
+		if len(req.Scenarios) > 5 {
+			req.Scenarios = req.Scenarios[:5]
+		}
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetProjectionWhatIf(requestDB, req)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
+	})
+
 	router.GET("/api/assets/balance", func(c *gin.Context) {
 		asOfDate, ok := parseAsOfDate(c)
 		if !ok {
