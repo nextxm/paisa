@@ -275,6 +275,18 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, result)
 	})
 
+	router.POST("/api/projection/simulate", func(c *gin.Context) {
+		var req SimulateRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			// If no body or invalid JSON, use defaults
+			req = SimulateRequest{}
+		}
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetProjectionSimulate(requestDB, req)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
+	})
+
 	router.GET("/api/assets/balance", func(c *gin.Context) {
 		asOfDate, ok := parseAsOfDate(c)
 		if !ok {
