@@ -5,8 +5,18 @@
 
   let amount = $state(500000);
   let buckets = $state<DrawdownBucket[]>([
-    { account_glob: "Assets:Equity:*", tax_category: "equity", holding_period_months: 12 },
-    { account_glob: "Assets:*", tax_category: "", holding_period_months: 0 }
+    {
+      account_glob: "Assets:Equity:*",
+      tax_category: "",
+      override_tax_category: "equity",
+      holding_period_months: 12
+    },
+    {
+      account_glob: "Assets:*",
+      tax_category: "",
+      override_tax_category: "",
+      holding_period_months: 0
+    }
   ]);
   let response = $state<DrawdownResponse | null>(null);
   let loading = $state(true);
@@ -27,20 +37,27 @@
       .map((bucket) => ({
         account_glob: bucket.account_glob.trim(),
         tax_category: bucket.tax_category,
+        override_tax_category: bucket.override_tax_category,
         holding_period_months: Math.max(0, Math.round(bucket.holding_period_months || 0))
       }))
       .filter(
         (bucket) =>
           bucket.account_glob !== "" ||
           bucket.tax_category !== "" ||
-          bucket.holding_period_months > 0
+          bucket.holding_period_months > 0 ||
+          bucket.override_tax_category !== ""
       );
   }
 
   function addBucket() {
     buckets = [
       ...buckets,
-      { account_glob: "Assets:*", tax_category: "", holding_period_months: 0 }
+      {
+        account_glob: "Assets:*",
+        tax_category: "",
+        override_tax_category: "",
+        holding_period_months: 0
+      }
     ];
   }
 
@@ -109,7 +126,7 @@
       class="is-flex is-justify-content-space-between is-align-items-flex-start mb-5 drawdown-header"
     >
       <div>
-        <h1 class="title is-4 mb-2">Tax-Aware Drawdown</h1>
+        <h1 class="title is-4 is-spaced mb-2">Tax-Aware Drawdown</h1>
         <p class="subtitle is-6 has-text-grey mb-0">
           Rank taxable holdings by estimated drawdown cost using current FIFO lots and today’s
           prices.
@@ -187,10 +204,28 @@
                   />
                 </div>
                 <div class="field">
-                  <label class="label is-size-7" for={`bucket-tax-${index}`}>Tax Category</label>
+                  <label class="label is-size-7" for={`bucket-tax-${index}`}
+                    >Match Tax Category</label
+                  >
                   <div class="select is-fullwidth">
                     <select id={`bucket-tax-${index}`} bind:value={bucket.tax_category}>
                       {#each taxCategoryOptions as option}
+                        <option value={option.value}>{option.label}</option>
+                      {/each}
+                    </select>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label is-size-7" for={`bucket-tax-override-${index}`}
+                    >Apply Tax As</label
+                  >
+                  <div class="select is-fullwidth">
+                    <select
+                      id={`bucket-tax-override-${index}`}
+                      bind:value={bucket.override_tax_category}
+                    >
+                      <option value="">Use Commodity Tax Category</option>
+                      {#each taxCategoryOptions.filter((option) => option.value !== "") as option}
                         <option value={option.value}>{option.label}</option>
                       {/each}
                     </select>
@@ -213,8 +248,8 @@
             {/each}
           </div>
           <p class="help mt-2">
-            Buckets are evaluated top-down. Reorder to model your preferred withdrawal strategy and
-            rerun analysis to compare tax impact.
+            Buckets are evaluated top-down. Use Match Tax Category as a filter and Apply Tax As as a
+            rule override for how the selected assets should be taxed in the drawdown simulation.
           </p>
         </div>
       </div>

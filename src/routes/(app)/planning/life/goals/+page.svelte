@@ -104,7 +104,7 @@
       class="is-flex is-justify-content-space-between is-align-items-flex-start mb-5 life-goals-header"
     >
       <div>
-        <h1 class="title is-4 mb-2">Life Goals</h1>
+        <h1 class="title is-4 is-spaced mb-2">Life Goals</h1>
         <p class="subtitle is-6 has-text-grey mb-0">
           Define one-off milestones and recurring outflows that feed the life projection simulation.
         </p>

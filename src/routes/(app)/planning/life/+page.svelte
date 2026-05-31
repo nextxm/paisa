@@ -411,7 +411,7 @@
     <div class="mb-5">
       <div class="is-flex is-justify-content-space-between is-align-items-flex-start life-header">
         <div>
-          <h1 class="title is-4 mb-1">Life Projection</h1>
+          <h1 class="title is-4 is-spaced mb-1">Life Projection</h1>
           <p class="subtitle is-6 has-text-grey">
             Monte Carlo simulation using {iterations.toLocaleString()} scenarios to project your financial
             future probabilistically

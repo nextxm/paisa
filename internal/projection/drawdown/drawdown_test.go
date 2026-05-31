@@ -82,6 +82,7 @@ func TestOrderLotsByBucketsUsesBucketPriority(t *testing.T) {
 			HoldingDays:      1095,
 			CurrentUnitPrice: decimal.NewFromInt(100),
 			PriceDate:        now,
+			BucketIndex:      1,
 		},
 		{
 			Posting:          posting.Posting{Account: "Assets:Debt:One", Date: now.AddDate(-1, 0, 0)},
@@ -91,6 +92,7 @@ func TestOrderLotsByBucketsUsesBucketPriority(t *testing.T) {
 			HoldingDays:      365,
 			CurrentUnitPrice: decimal.NewFromInt(100),
 			PriceDate:        now,
+			BucketIndex:      0,
 		},
 	}
 
@@ -122,6 +124,7 @@ func TestOrderLotsByBucketsDropsUnmatchedLotsWhenBucketsProvided(t *testing.T) {
 			HoldingDays:      730,
 			CurrentUnitPrice: decimal.NewFromInt(100),
 			PriceDate:        now,
+			BucketIndex:      0,
 		},
 		{
 			Posting:          posting.Posting{Account: "Assets:Debt:One", Date: now.AddDate(-2, 0, 0)},
@@ -131,6 +134,7 @@ func TestOrderLotsByBucketsDropsUnmatchedLotsWhenBucketsProvided(t *testing.T) {
 			HoldingDays:      730,
 			CurrentUnitPrice: decimal.NewFromInt(100),
 			PriceDate:        now,
+			BucketIndex:      -1,
 		},
 	}
 
@@ -140,5 +144,17 @@ func TestOrderLotsByBucketsDropsUnmatchedLotsWhenBucketsProvided(t *testing.T) {
 	}
 	if ordered[0].Posting.Account != "Assets:Equity:One" {
 		t.Fatalf("matched account = %s, want Assets:Equity:One", ordered[0].Posting.Account)
+	}
+}
+
+func TestApplyBucketTaxCategoryOverrideUsesOverrideWhenPresent(t *testing.T) {
+	original := config.Equity
+	bucket := DrawdownBucket{OverrideTaxCategory: config.Debt}
+	if got := applyBucketTaxCategoryOverride(original, bucket); got != config.Debt {
+		t.Fatalf("override category = %s, want debt", got)
+	}
+
+	if got := applyBucketTaxCategoryOverride(original, DrawdownBucket{}); got != original {
+		t.Fatalf("category without override = %s, want %s", got, original)
 	}
 }
