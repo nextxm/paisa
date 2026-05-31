@@ -46,11 +46,11 @@
 
 ## Phase 4: What-If Scenario Engine
 
-- [ ] Create `internal/projection/whatif/whatif.go`
-- [ ] Scenario comparison logic (baseline + overrides)
-- [ ] Pre-built scenario templates
-- [ ] API endpoint + handler
-- [ ] Scenario comparison UI with overlay charts
+- [x] Create `internal/projection/whatif/whatif.go`
+- [x] Scenario comparison logic (baseline + overrides)
+- [x] Pre-built scenario templates
+- [x] API endpoint + handler
+- [x] Scenario comparison UI with overlay charts
 
 ## Phase 5: Tax-Aware Drawdown
 

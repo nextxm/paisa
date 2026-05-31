@@ -241,6 +241,37 @@ export interface SimulationResponse {
   goals: ProjectionLifeGoal[];
 }
 
+export interface WhatIfScenarioOverrides {
+  iterations?: number;
+  months_to_project?: number;
+  monthly_contribution?: number;
+  contribution_growth_rate?: number;
+  expected_return?: number;
+  return_volatility?: number;
+  inflation_rate?: number;
+  swr?: number;
+}
+
+export interface WhatIfScenarioRequest {
+  name: string;
+  overrides: WhatIfScenarioOverrides;
+}
+
+export interface WhatIfScenarioResult {
+  name: string;
+  simulation: SimulationResult;
+  goals: ProjectionLifeGoal[];
+}
+
+export interface WhatIfResponse {
+  profile: FinancialProfile;
+  baseline: {
+    simulation: SimulationResult;
+    goals: ProjectionLifeGoal[];
+  };
+  scenarios: WhatIfScenarioResult[];
+}
+
 export interface CurrencyExposure {
   currency: string;
   amount: number;
@@ -877,6 +908,10 @@ export function ajax(
   route: "/api/projection/simulate",
   options?: RequestOptions
 ): Promise<SimulationResponse>;
+export function ajax(
+  route: "/api/projection/whatif",
+  options?: RequestOptions
+): Promise<WhatIfResponse>;
 export function ajax(route: "/api/gain"): Promise<{
   gain_breakdown: Gain[];
 }>;
