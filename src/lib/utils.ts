@@ -193,6 +193,34 @@ export interface FinancialProfile {
   price_months_covered: number;
 }
 
+export interface SimulationMonthlyPoint {
+  date: dayjs.Dayjs;
+  balance_amount: number;
+}
+
+export interface GoalProbability {
+  name: string;
+  month: number;
+  probability: number;
+}
+
+export interface SimulationResult {
+  bands: Record<string, SimulationMonthlyPoint[]>;
+  fire_probability: number;
+  fire_year_p50: number;
+  fire_year_p25: number;
+  fire_year_p75: number;
+  target_corpus: number;
+  goal_probabilities: GoalProbability[];
+  iterations: number;
+  months_projected: number;
+}
+
+export interface SimulationResponse {
+  profile: FinancialProfile;
+  simulation: SimulationResult;
+}
+
 export interface CurrencyExposure {
   currency: string;
   amount: number;
@@ -824,6 +852,10 @@ export function ajax(route: "/api/networth"): Promise<{
 }>;
 export function ajax(route: "/api/networth/projection"): Promise<NetworthProjectionResponse>;
 export function ajax(route: "/api/projection/dna"): Promise<{ profile: FinancialProfile }>;
+export function ajax(
+  route: "/api/projection/simulate",
+  options?: RequestOptions
+): Promise<SimulationResponse>;
 export function ajax(route: "/api/gain"): Promise<{
   gain_breakdown: Gain[];
 }>;

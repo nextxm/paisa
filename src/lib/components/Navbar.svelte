@@ -140,7 +140,8 @@
       href: "/planning",
       children: [
         { label: "Goals", href: "/goals", help: "goals" },
-        { label: "Projection", href: "/projection" }
+        { label: "Projection", href: "/projection" },
+        { label: "Life Plan", href: "/life" }
       ]
     },
     {
