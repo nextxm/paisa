@@ -84,6 +84,10 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.FileFromFS("/static/manifest.webmanifest", http.FS(web.Static))
 	})
 
+	router.GET("/site.webmanifest", func(c *gin.Context) {
+		c.FileFromFS("/static/site.webmanifest", http.FS(web.Static))
+	})
+
 	router.GET("/sw.js", func(c *gin.Context) {
 		c.FileFromFS("/static/sw.js", http.FS(web.Static))
 	})
@@ -260,6 +264,13 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		}
 		requestDB, telemetry := beginRequestTelemetry(db)
 		result := GetNetworthProjection(requestDB, req)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
+	})
+
+	router.GET("/api/projection/dna", func(c *gin.Context) {
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetFinancialDNA(requestDB)
 		telemetry.writeHeaders(c)
 		c.JSON(200, result)
 	})

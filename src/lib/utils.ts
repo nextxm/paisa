@@ -178,6 +178,21 @@ export interface NetworthProjectionResponse {
   optimistic_cagr: number;
 }
 
+export interface FinancialProfile {
+  current_networth: number;
+  monthly_contribution: number;
+  savings_rate: number;
+  annual_expenses: number;
+  annual_income: number;
+  income_growth_rate: number;
+  expense_growth_rate: number;
+  historical_return: number;
+  return_volatility: number;
+  income_years_covered: number;
+  expense_years_covered: number;
+  price_months_covered: number;
+}
+
 export interface CurrencyExposure {
   currency: string;
   amount: number;
@@ -808,6 +823,7 @@ export function ajax(route: "/api/networth"): Promise<{
   xirr: number;
 }>;
 export function ajax(route: "/api/networth/projection"): Promise<NetworthProjectionResponse>;
+export function ajax(route: "/api/projection/dna"): Promise<{ profile: FinancialProfile }>;
 export function ajax(route: "/api/gain"): Promise<{
   gain_breakdown: Gain[];
 }>;
