@@ -18,6 +18,8 @@ import (
 )
 
 type DrawdownBucket struct {
+	Name                string                 `json:"name"`
+	Accounts            []string               `json:"accounts"`
 	AccountGlob         string                 `json:"account_glob"`
 	TaxCategory         config.TaxCategoryType `json:"tax_category"`
 	OverrideTaxCategory config.TaxCategoryType `json:"override_tax_category"`
@@ -44,6 +46,11 @@ type Analysis struct {
 	RemainingAmount   decimal.Decimal  `json:"remaining_amount"`
 	TotalEstimatedTax taxation.Tax     `json:"total_estimated_tax"`
 	Recommendations   []Recommendation `json:"recommendations"`
+}
+
+type AssetAccount struct {
+	Account     string                 `json:"account"`
+	TaxCategory config.TaxCategoryType `json:"tax_category"`
 }
 
 func Analyze(db *gorm.DB, amount decimal.Decimal, buckets []DrawdownBucket) Analysis {
@@ -120,7 +127,36 @@ type availableLot struct {
 	BucketIndex      int
 }
 
-func collectAvailableLots(db *gorm.DB, buckets []DrawdownBucket) []availableLot {
+func AvailableAssetAccounts(db *gorm.DB) []string {
+	assets := AvailableAssetMetadata(db)
+	accounts := make([]string, 0, len(assets))
+	for _, asset := range assets {
+		accounts = append(accounts, asset.Account)
+	}
+	return accounts
+}
+
+func AvailableAssetMetadata(db *gorm.DB) []AssetAccount {
+	byAccount := supportedAssetPostingsByAccount(db)
+	assets := make([]AssetAccount, 0, len(byAccount))
+	for account, accountLots := range byAccount {
+		fifo := accounting.FIFO(accountLots)
+		if len(fifo) == 0 {
+			continue
+		}
+		commodity := c.FindByName(fifo[0].Commodity)
+		assets = append(assets, AssetAccount{
+			Account:     account,
+			TaxCategory: commodity.TaxCategory,
+		})
+	}
+	sort.Slice(assets, func(i, j int) bool {
+		return assets[i].Account < assets[j].Account
+	})
+	return assets
+}
+
+func supportedAssetPostingsByAccount(db *gorm.DB) map[string][]posting.Posting {
 	commodities := c.All()
 	eligible := make([]config.Commodity, 0, len(commodities))
 	for _, commodity := range commodities {
@@ -136,6 +172,12 @@ func collectAvailableLots(db *gorm.DB, buckets []DrawdownBucket) []availableLot 
 			byAccount[p.Account] = append(byAccount[p.Account], p)
 		}
 	}
+
+	return byAccount
+}
+
+func collectAvailableLots(db *gorm.DB, buckets []DrawdownBucket) []availableLot {
+	byAccount := supportedAssetPostingsByAccount(db)
 
 	priceDate := utils.EndOfToday()
 	lots := []availableLot{}
@@ -227,7 +269,11 @@ func firstMatchingBucketIndex(lot availableLot, buckets []DrawdownBucket) int {
 }
 
 func bucketMatchesLot(lot availableLot, bucket DrawdownBucket) bool {
-	if bucket.AccountGlob != "" && !globMatch(lot.Posting.Account, bucket.AccountGlob) {
+	if len(bucket.Accounts) > 0 {
+		if !containsAccount(bucket.Accounts, lot.Posting.Account) {
+			return false
+		}
+	} else if bucket.AccountGlob != "" && !globMatch(lot.Posting.Account, bucket.AccountGlob) {
 		return false
 	}
 	if bucket.TaxCategory != "" && lot.Commodity.TaxCategory != bucket.TaxCategory {
@@ -273,4 +319,13 @@ func globMatch(account, glob string) bool {
 		return strings.HasPrefix(account, strings.TrimSuffix(glob, "*"))
 	}
 	return account == glob
+}
+
+func containsAccount(accounts []string, account string) bool {
+	for _, entry := range accounts {
+		if entry == account {
+			return true
+		}
+	}
+	return false
 }

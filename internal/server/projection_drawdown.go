@@ -16,7 +16,12 @@ type DrawdownRequest struct {
 
 func GetProjectionDrawdown(db *gorm.DB, req DrawdownRequest) map[string]any {
 	analysis := projectiondrawdown.Analyze(db, decimal.NewFromFloat(req.Amount), req.Buckets)
-	response := map[string]any{"drawdown": analysis}
+	availableAssets := projectiondrawdown.AvailableAssetMetadata(db)
+	response := map[string]any{
+		"drawdown":           analysis,
+		"available_accounts": projectiondrawdown.AvailableAssetAccounts(db),
+		"available_assets":   availableAssets,
+	}
 
 	if !req.IncludeProjectionImpact {
 		return response

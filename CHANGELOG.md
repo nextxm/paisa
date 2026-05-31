@@ -6,8 +6,12 @@
 
 - **Add smart per-bucket tax applicability overrides for Life Drawdown** — Added strategy-level tax rules so users can decide how selected assets are taxed during drawdown simulations.
   - Extended drawdown buckets with an optional `override_tax_category` that applies tax treatment overrides to matching lots without changing global commodity configuration.
+  - Added named buckets and explicit account assignment (`accounts`) support so users can drag/drop asset accounts into strategy buckets for direct inclusion control.
   - Updated lot collection and ordering logic to preserve bucket priority and use bucket-applied tax categories for sale-tax estimation.
-  - Added Drawdown UI controls for "Match Tax Category" and "Apply Tax As" so users can filter and override tax treatment per bucket directly from planning.
+  - Added Drawdown UI controls for "Match Tax Category" and "Apply Tax As" plus an unassigned asset tray for drag/drop bucket assignment from planning.
+  - Added one-click auto-group actions to seed buckets by account family or tax category before fine-tuning with drag/drop.
+  - Added "Auto-group: Current Rules" to convert existing bucket rule filters into explicit per-bucket account assignments using bucket priority.
+  - Added preview bucket counts on all auto-group actions so users can see expected grouping size before applying.
   - Added focused backend test coverage for override behavior and bucket-priority ordering.
 
 - **Add Doctor V2 triage workspace** — Added a parallel Doctor page with a clearer review flow for large diagnosis result sets.

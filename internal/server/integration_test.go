@@ -232,6 +232,10 @@ func TestIntegration_ProjectionDrawdownReturnsEnvelope(t *testing.T) {
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&payload))
 	_, ok := payload["drawdown"]
 	assert.True(t, ok, "response must contain drawdown key")
+	_, hasAvailableAccounts := payload["available_accounts"]
+	assert.True(t, hasAvailableAccounts, "response must contain available_accounts key")
+	_, hasAvailableAssets := payload["available_assets"]
+	assert.True(t, hasAvailableAssets, "response must contain available_assets key")
 	_, hasImpact := payload["impact"]
 	assert.True(t, hasImpact, "response must contain impact key when requested")
 
