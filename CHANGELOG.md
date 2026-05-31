@@ -4,6 +4,11 @@
 
 #### Features
 
+- **Start Phase 5 tax-aware drawdown analysis** — Added an initial drawdown recommendation API and planning UI that rank taxable holdings by estimated current tax cost using FIFO lots and existing capital-gains rules.
+  - Added `internal/projection/drawdown` with account-level recommendation ranking based on estimated tax rate and holding period.
+  - Added `POST /api/projection/drawdown` and a first-pass `/planning/life/drawdown` page to inspect suggested withdrawal order.
+  - Reused the existing taxation engine so drawdown tax estimates stay aligned with harvest and capital gains behavior.
+
 - **Add Phase 4 what-if scenario comparisons for Life Plan** — Added a scenario comparison API and a dedicated planning UI for testing alternative trajectories against the goal-aware projection engine.
   - Added `internal/projection/whatif` to clone baseline simulation configs, apply scenario overrides, and return comparable Monte Carlo outputs.
   - Added `POST /api/projection/whatif` with baseline + up to five named scenarios using the same life-goal assumptions as the baseline simulation.
