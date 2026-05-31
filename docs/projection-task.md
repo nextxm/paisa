@@ -54,14 +54,14 @@
 
 ## Phase 5: Tax-Aware Drawdown
 
-- [ ] Drawdown optimizer
-- [ ] Tax impact estimation
-- [ ] Drawdown strategy UI
+- [x] Drawdown optimizer
+- [x] Tax impact estimation
+- [x] Drawdown strategy UI
 
 Current slice delivered:
-- Added `internal/projection/drawdown/drawdown.go` with FIFO-lot recommendation ranking by estimated tax cost.
-- Added `POST /api/projection/drawdown` and initial backend coverage in `internal/server/integration_test.go`.
-- Added first-pass `/planning/life/drawdown` UI and `DrawdownStrategy.svelte` for reviewing recommendations.
+- Added `internal/projection/drawdown/drawdown.go` with ordered bucket strategy support (`account_glob`, `tax_category`, `holding_period_months`) and tax-aware FIFO lot ranking.
+- Added `POST /api/projection/drawdown` with backend tests validating sort behavior, bucket filtering, and priority ordering.
+- Added `/planning/life/drawdown` strategy editor with reorderable buckets and `DrawdownStrategy.svelte` output cards for withdrawal order + estimated tax impact.
 
 ## Phase 6: Caching & Polish
 
