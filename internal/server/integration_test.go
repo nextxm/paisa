@@ -162,6 +162,24 @@ func TestIntegration_ReadonlyPolicy_ReadEndpointsUnaffected(t *testing.T) {
 	}
 }
 
+// TestIntegration_StaticAssets_SiteManifestReturnsJSON verifies that
+// /site.webmanifest is served as a static manifest file and does not fall
+// through to the SPA HTML fallback.
+func TestIntegration_StaticAssets_SiteManifestReturnsJSON(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+	router := Build(db, false)
+
+	req := httptest.NewRequest(http.MethodGet, "/site.webmanifest", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	body := rec.Body.Bytes()
+	assert.True(t, json.Valid(body), "site.webmanifest must be valid JSON")
+	assert.NotContains(t, strings.ToLower(string(body)), "<!doctype html>", "manifest must not return HTML")
+}
+
 // ---------------------------------------------------------------------------
 // Error envelope contract integration tests
 // ---------------------------------------------------------------------------

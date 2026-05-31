@@ -4,6 +4,10 @@
 
 #### Features
 
+- **Fix /site.webmanifest fallback to SPA HTML in Go server mode** — Added an explicit static route for `/site.webmanifest` so manifest requests return JSON instead of `index.html`.
+  - Updated Gin routing in `internal/server/server.go` to serve `web/static/site.webmanifest`.
+  - Added integration coverage in `internal/server/integration_test.go` to assert `/site.webmanifest` is valid JSON and not HTML.
+
 - **Fix PWA manifest fetch under auth-proxy deployments** — Changed the manifest link to `/site.webmanifest` and added a compatibility manifest file for deployments where auth gateways or Nginx rules only exempt `site.webmanifest`.
   - Updated app shell manifest href in `src/app.html`.
   - Updated embedded static shell manifest href in `web/static/index.html`.

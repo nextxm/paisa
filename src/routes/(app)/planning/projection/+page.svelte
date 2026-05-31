@@ -7,6 +7,7 @@
     ajax,
     formatCurrency,
     formatFloat,
+    type FinancialProfile,
     type Legend,
     type Networth,
     type NetworthProjectionResponse
@@ -20,6 +21,7 @@
   let legends: Legend[] = $state([]);
   let points: Networth[] = $state([]);
   let baseData: NetworthProjectionResponse | null = $state(null);
+  let dnaProfile: FinancialProfile | null = $state(null);
 
   let years = $state(15);
   let conservativeCagr = $state(6);
@@ -322,7 +324,16 @@
   });
 
   onMount(async () => {
-    baseData = (await ajax("/api/networth/projection")) as NetworthProjectionResponse;
+    const [projData, dnaData] = await Promise.all([
+      ajax("/api/networth/projection") as Promise<NetworthProjectionResponse>,
+      ajax("/api/projection/dna") as Promise<{ profile: FinancialProfile }>
+    ]);
+
+    baseData = projData;
+    if (dnaData) {
+      dnaProfile = dnaData.profile;
+    }
+
     if (baseData) {
       points = [
         {
@@ -498,6 +509,70 @@
         </div>
       </div>
     </div>
+
+    {#if dnaProfile}
+      <div class="box mt-5">
+        <div class="content mb-4">
+          <h3 class="title is-5 mb-2">Your Financial DNA</h3>
+          <p class="is-size-7 has-text-grey">
+            Parameters inferred from your ledger history. These feed into the projection engine and
+            can be used to calibrate the sliders above.
+          </p>
+        </div>
+        <div class="columns is-multiline">
+          <div class="column is-3">
+            <div class="dna-card">
+              <div class="dna-label">Annual Income</div>
+              <div class="dna-value">{formatCurrency(dnaProfile.annual_income)}</div>
+              <div class="dna-meta">
+                Growth: <span
+                  class={dnaProfile.income_growth_rate >= 0
+                    ? "has-text-success"
+                    : "has-text-danger"}>{formatFloat(dnaProfile.income_growth_rate)}%</span
+                > p.a.
+              </div>
+              <div class="dna-quality">{dnaProfile.income_years_covered} year(s) analyzed</div>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="dna-card">
+              <div class="dna-label">Annual Expenses</div>
+              <div class="dna-value">{formatCurrency(dnaProfile.annual_expenses)}</div>
+              <div class="dna-meta">
+                Growth: <span
+                  class={dnaProfile.expense_growth_rate >= 0
+                    ? "has-text-danger"
+                    : "has-text-success"}>{formatFloat(dnaProfile.expense_growth_rate)}%</span
+                > p.a.
+              </div>
+              <div class="dna-quality">{dnaProfile.expense_years_covered} year(s) analyzed</div>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="dna-card">
+              <div class="dna-label">Savings Rate</div>
+              <div class="dna-value">{formatFloat(dnaProfile.savings_rate)}%</div>
+              <div class="dna-meta">
+                {formatCurrency(dnaProfile.monthly_contribution)}/month
+              </div>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="dna-card">
+              <div class="dna-label">Historical Return</div>
+              <div class="dna-value has-text-success">
+                {formatFloat(dnaProfile.historical_return)}%
+              </div>
+              <div class="dna-meta">
+                Volatility: {formatFloat(dnaProfile.return_volatility)}%
+              </div>
+              <div class="dna-quality">{dnaProfile.price_months_covered} month(s) analyzed</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {/if}
+
     {#if projectionScenarioTables}
       <div class="box mt-5">
         <div class="content mb-4">
@@ -549,3 +624,35 @@
     {/if}
   </div>
 </section>
+
+<style>
+  .dna-card {
+    padding: 0.75rem;
+    border-radius: 6px;
+    background: var(--color-background-overlay, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+  }
+  .dna-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.6;
+    margin-bottom: 0.25rem;
+  }
+  .dna-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  .dna-meta {
+    font-size: 0.75rem;
+    opacity: 0.7;
+  }
+  .dna-quality {
+    font-size: 0.65rem;
+    opacity: 0.5;
+    margin-top: 0.25rem;
+    font-style: italic;
+  }
+</style>
