@@ -130,7 +130,7 @@ func collectAvailableLots(db *gorm.DB, buckets []DrawdownBucket) []availableLot 
 	postings := query.Init(db).Like("Assets:%").Commodities(eligible).All()
 	byAccount := map[string][]posting.Posting{}
 	for _, p := range postings {
-		if p.Quantity.GreaterThan(decimal.Zero) && matchesBucket(p.Account, buckets) {
+		if p.Quantity.GreaterThan(decimal.Zero) {
 			byAccount[p.Account] = append(byAccount[p.Account], p)
 		}
 	}
@@ -162,6 +162,10 @@ func collectAvailableLots(db *gorm.DB, buckets []DrawdownBucket) []availableLot 
 		}
 	}
 
+	return orderLotsByBuckets(lots, buckets)
+}
+
+func sortLotsByTaxCost(lots []availableLot) {
 	sort.Slice(lots, func(i, j int) bool {
 		if !lots[i].SortTaxRate.Equal(lots[j].SortTaxRate) {
 			return lots[i].SortTaxRate.LessThan(lots[j].SortTaxRate)
@@ -171,8 +175,51 @@ func collectAvailableLots(db *gorm.DB, buckets []DrawdownBucket) []availableLot 
 		}
 		return lots[i].HoldingDays > lots[j].HoldingDays
 	})
+}
 
-	return lots
+func orderLotsByBuckets(lots []availableLot, buckets []DrawdownBucket) []availableLot {
+	if len(buckets) == 0 {
+		sortLotsByTaxCost(lots)
+		return lots
+	}
+
+	bucketed := make([][]availableLot, len(buckets))
+	for _, lot := range lots {
+		bucketIndex := firstMatchingBucketIndex(lot, buckets)
+		if bucketIndex >= 0 {
+			bucketed[bucketIndex] = append(bucketed[bucketIndex], lot)
+		}
+	}
+
+	ordered := make([]availableLot, 0, len(lots))
+	for bucketIndex := range buckets {
+		sortLotsByTaxCost(bucketed[bucketIndex])
+		ordered = append(ordered, bucketed[bucketIndex]...)
+	}
+
+	return ordered
+}
+
+func firstMatchingBucketIndex(lot availableLot, buckets []DrawdownBucket) int {
+	for index, bucket := range buckets {
+		if bucketMatchesLot(lot, bucket) {
+			return index
+		}
+	}
+	return -1
+}
+
+func bucketMatchesLot(lot availableLot, bucket DrawdownBucket) bool {
+	if bucket.AccountGlob != "" && !globMatch(lot.Posting.Account, bucket.AccountGlob) {
+		return false
+	}
+	if bucket.TaxCategory != "" && lot.Commodity.TaxCategory != bucket.TaxCategory {
+		return false
+	}
+	if bucket.HoldingPeriodMonths > 0 && monthsBetween(lot.Posting.Date, lot.PriceDate) < bucket.HoldingPeriodMonths {
+		return false
+	}
+	return true
 }
 
 func effectiveTaxRate(tax taxation.Tax, amount decimal.Decimal) decimal.Decimal {
@@ -192,18 +239,6 @@ func monthsBetween(start, end time.Time) int {
 
 func isSupportedTaxCategory(category config.TaxCategoryType) bool {
 	return category == config.Debt || category == config.Equity || category == config.Equity65 || category == config.Equity35 || category == config.UnlistedEquity
-}
-
-func matchesBucket(account string, buckets []DrawdownBucket) bool {
-	if len(buckets) == 0 {
-		return true
-	}
-	for _, bucket := range buckets {
-		if bucket.AccountGlob != "" && globMatch(account, bucket.AccountGlob) {
-			return true
-		}
-	}
-	return false
 }
 
 func globMatch(account, glob string) bool {

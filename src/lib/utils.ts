@@ -274,7 +274,7 @@ export interface WhatIfResponse {
 
 export interface DrawdownBucket {
   account_glob: string;
-  tax_category: string;
+  tax_category: "" | "debt" | "equity" | "equity65" | "equity35" | "unlisted_equity";
   holding_period_months: number;
 }
 

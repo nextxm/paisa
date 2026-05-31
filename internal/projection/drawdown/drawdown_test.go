@@ -1,7 +1,6 @@
 package drawdown
 
 import (
-	"sort"
 	"testing"
 	"time"
 
@@ -19,12 +18,11 @@ func TestEffectiveTaxRateUsesTaxBurdenOverAmount(t *testing.T) {
 	}
 }
 
-func TestMatchesBucketSupportsPrefixGlob(t *testing.T) {
-	buckets := []DrawdownBucket{{AccountGlob: "Assets:Equity:*"}}
-	if !matchesBucket("Assets:Equity:Index", buckets) {
+func TestGlobMatchSupportsPrefixGlob(t *testing.T) {
+	if !globMatch("Assets:Equity:Index", "Assets:Equity:*") {
 		t.Fatal("expected prefix glob match")
 	}
-	if matchesBucket("Assets:Debt:Fund", buckets) {
+	if globMatch("Assets:Debt:Fund", "Assets:Equity:*") {
 		t.Fatal("unexpected match for non-prefix account")
 	}
 }
@@ -37,21 +35,110 @@ func TestSortPrefersLowerTaxRateThenLongerHolding(t *testing.T) {
 		{Posting: posting.Posting{Date: now.AddDate(-3, 0, 0)}, SortTaxRate: decimal.NewFromFloat(0.05), SortTaxAmount: decimal.NewFromInt(10), HoldingDays: 1095, Commodity: config.Commodity{TaxCategory: config.Equity}},
 	}
 
-	// mirror the production sort contract
-	sort.Slice(lots, func(i, j int) bool {
-		if !lots[i].SortTaxRate.Equal(lots[j].SortTaxRate) {
-			return lots[i].SortTaxRate.LessThan(lots[j].SortTaxRate)
-		}
-		if !lots[i].SortTaxAmount.Equal(lots[j].SortTaxAmount) {
-			return lots[i].SortTaxAmount.LessThan(lots[j].SortTaxAmount)
-		}
-		return lots[i].HoldingDays > lots[j].HoldingDays
-	})
+	sortLotsByTaxCost(lots)
 
 	if lots[0].HoldingDays != 1095 {
 		t.Fatalf("first lot holding days = %d, want 1095", lots[0].HoldingDays)
 	}
 	if !lots[2].SortTaxRate.Equal(decimal.NewFromFloat(0.10)) {
 		t.Fatalf("last lot tax rate = %s, want 0.10", lots[2].SortTaxRate)
+	}
+}
+
+func TestBucketMatchesLotSupportsTaxCategoryAndHoldingPeriod(t *testing.T) {
+	now := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
+	lot := availableLot{
+		Posting:          posting.Posting{Account: "Assets:Equity:Index", Date: now.AddDate(-2, 0, 0)},
+		Commodity:        config.Commodity{TaxCategory: config.Equity},
+		PriceDate:        now,
+		CurrentUnitPrice: decimal.NewFromInt(100),
+	}
+
+	if !bucketMatchesLot(lot, DrawdownBucket{TaxCategory: config.Equity}) {
+		t.Fatal("expected equity category to match")
+	}
+	if bucketMatchesLot(lot, DrawdownBucket{TaxCategory: config.Debt}) {
+		t.Fatal("unexpected category match for debt bucket")
+	}
+	if !bucketMatchesLot(lot, DrawdownBucket{HoldingPeriodMonths: 12}) {
+		t.Fatal("expected holding period >= 12 months to match")
+	}
+	if bucketMatchesLot(lot, DrawdownBucket{HoldingPeriodMonths: 36}) {
+		t.Fatal("unexpected match when holding period filter is not satisfied")
+	}
+	if bucketMatchesLot(lot, DrawdownBucket{AccountGlob: "Assets:Debt:*"}) {
+		t.Fatal("unexpected match for non-matching account glob")
+	}
+}
+
+func TestOrderLotsByBucketsUsesBucketPriority(t *testing.T) {
+	now := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
+	lots := []availableLot{
+		{
+			Posting:          posting.Posting{Account: "Assets:Equity:One", Date: now.AddDate(-3, 0, 0)},
+			Commodity:        config.Commodity{TaxCategory: config.Equity},
+			SortTaxRate:      decimal.NewFromFloat(0.01),
+			SortTaxAmount:    decimal.NewFromInt(1),
+			HoldingDays:      1095,
+			CurrentUnitPrice: decimal.NewFromInt(100),
+			PriceDate:        now,
+		},
+		{
+			Posting:          posting.Posting{Account: "Assets:Debt:One", Date: now.AddDate(-1, 0, 0)},
+			Commodity:        config.Commodity{TaxCategory: config.Debt},
+			SortTaxRate:      decimal.NewFromFloat(0.50),
+			SortTaxAmount:    decimal.NewFromInt(50),
+			HoldingDays:      365,
+			CurrentUnitPrice: decimal.NewFromInt(100),
+			PriceDate:        now,
+		},
+	}
+
+	buckets := []DrawdownBucket{
+		{TaxCategory: config.Debt},
+		{TaxCategory: config.Equity},
+	}
+
+	ordered := orderLotsByBuckets(lots, buckets)
+	if len(ordered) != 2 {
+		t.Fatalf("ordered lots length = %d, want 2", len(ordered))
+	}
+	if ordered[0].Commodity.TaxCategory != config.Debt {
+		t.Fatalf("first lot category = %s, want debt", ordered[0].Commodity.TaxCategory)
+	}
+	if ordered[1].Commodity.TaxCategory != config.Equity {
+		t.Fatalf("second lot category = %s, want equity", ordered[1].Commodity.TaxCategory)
+	}
+}
+
+func TestOrderLotsByBucketsDropsUnmatchedLotsWhenBucketsProvided(t *testing.T) {
+	now := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
+	lots := []availableLot{
+		{
+			Posting:          posting.Posting{Account: "Assets:Equity:One", Date: now.AddDate(-2, 0, 0)},
+			Commodity:        config.Commodity{TaxCategory: config.Equity},
+			SortTaxRate:      decimal.NewFromFloat(0.10),
+			SortTaxAmount:    decimal.NewFromInt(10),
+			HoldingDays:      730,
+			CurrentUnitPrice: decimal.NewFromInt(100),
+			PriceDate:        now,
+		},
+		{
+			Posting:          posting.Posting{Account: "Assets:Debt:One", Date: now.AddDate(-2, 0, 0)},
+			Commodity:        config.Commodity{TaxCategory: config.Debt},
+			SortTaxRate:      decimal.NewFromFloat(0.10),
+			SortTaxAmount:    decimal.NewFromInt(10),
+			HoldingDays:      730,
+			CurrentUnitPrice: decimal.NewFromInt(100),
+			PriceDate:        now,
+		},
+	}
+
+	ordered := orderLotsByBuckets(lots, []DrawdownBucket{{AccountGlob: "Assets:Equity:*"}})
+	if len(ordered) != 1 {
+		t.Fatalf("ordered lots length = %d, want 1", len(ordered))
+	}
+	if ordered[0].Posting.Account != "Assets:Equity:One" {
+		t.Fatalf("matched account = %s, want Assets:Equity:One", ordered[0].Posting.Account)
 	}
 }

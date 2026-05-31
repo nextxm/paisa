@@ -2,6 +2,25 @@
   import { formatCurrency, formatFloat, type DrawdownResponse } from "$lib/utils";
 
   let { response }: { response: DrawdownResponse | null } = $props();
+
+  function recommendationTaxTotal(
+    recommendation: DrawdownResponse["drawdown"]["recommendations"][number]
+  ) {
+    return (
+      recommendation.estimated_tax.short_term +
+      recommendation.estimated_tax.long_term +
+      recommendation.estimated_tax.slab
+    );
+  }
+
+  function totalTax() {
+    if (!response) return 0;
+    return (
+      response.drawdown.total_estimated_tax.short_term +
+      response.drawdown.total_estimated_tax.long_term +
+      response.drawdown.total_estimated_tax.slab
+    );
+  }
 </script>
 
 {#if response}
@@ -22,57 +41,61 @@
       <div class="column is-4">
         <div class="metric-card">
           <div class="metric-label">Estimated Tax</div>
-          <div class="metric-value">
-            {formatCurrency(
-              response.drawdown.total_estimated_tax.short_term +
-                response.drawdown.total_estimated_tax.long_term +
-                response.drawdown.total_estimated_tax.slab
-            )}
-          </div>
+          <div class="metric-value">{formatCurrency(totalTax())}</div>
+        </div>
+      </div>
+      <div class="column is-4">
+        <div class="metric-card">
+          <div class="metric-label">Uncovered</div>
+          <div class="metric-value">{formatCurrency(response.drawdown.remaining_amount)}</div>
         </div>
       </div>
     </div>
 
-    <div class="strategy-list">
-      {#each response.drawdown.recommendations as recommendation, index (`${recommendation.account}-${index}`)}
-        <div class="strategy-card">
-          <div class="strategy-header">
-            <div>
-              <div class="strategy-title">{index + 1}. {recommendation.account}</div>
-              <div class="strategy-subtitle">
-                {recommendation.commodity} · {recommendation.tax_category}
-              </div>
-            </div>
-            <div class="strategy-amount">{formatCurrency(recommendation.amount)}</div>
-          </div>
-
-          <div class="strategy-grid">
-            <div>
-              <div class="metric-label">Units</div>
-              <div>{formatFloat(recommendation.units)}</div>
-            </div>
-            <div>
-              <div class="metric-label">Holding Period</div>
-              <div>{recommendation.holding_period_months} months</div>
-            </div>
-            <div>
-              <div class="metric-label">Tax Rate</div>
-              <div>{formatFloat(recommendation.effective_tax_rate * 100)}%</div>
-            </div>
-            <div>
-              <div class="metric-label">Tax</div>
+    {#if response.drawdown.recommendations.length === 0}
+      <div class="notification is-warning is-light mb-0">
+        No eligible lots matched the current strategy buckets.
+      </div>
+    {:else}
+      <div class="strategy-list">
+        {#each response.drawdown.recommendations as recommendation, index (`${recommendation.account}-${index}`)}
+          <div class="strategy-card">
+            <div class="strategy-header">
               <div>
-                {formatCurrency(
-                  recommendation.estimated_tax.short_term +
-                    recommendation.estimated_tax.long_term +
-                    recommendation.estimated_tax.slab
-                )}
+                <div class="strategy-title">{index + 1}. {recommendation.account}</div>
+                <div class="strategy-subtitle">
+                  {recommendation.commodity} · {recommendation.tax_category}
+                </div>
+              </div>
+              <div class="strategy-amount">{formatCurrency(recommendation.amount)}</div>
+            </div>
+
+            <div class="strategy-grid">
+              <div>
+                <div class="metric-label">Units</div>
+                <div>{formatFloat(recommendation.units)}</div>
+              </div>
+              <div>
+                <div class="metric-label">Holding Period</div>
+                <div>{recommendation.holding_period_months} months</div>
+              </div>
+              <div>
+                <div class="metric-label">Purchase Date</div>
+                <div>{recommendation.purchase_date.format("YYYY-MM-DD")}</div>
+              </div>
+              <div>
+                <div class="metric-label">Tax Rate</div>
+                <div>{formatFloat(recommendation.effective_tax_rate * 100)}%</div>
+              </div>
+              <div>
+                <div class="metric-label">Tax</div>
+                <div>{formatCurrency(recommendationTaxTotal(recommendation))}</div>
               </div>
             </div>
           </div>
-        </div>
-      {/each}
-    </div>
+        {/each}
+      </div>
+    {/if}
   </div>
 {/if}
 
