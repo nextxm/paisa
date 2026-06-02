@@ -687,20 +687,52 @@
 </section>
 
 <style>
+  /* ── Light-mode tokens ─────────────────────────────────────────────────── */
   .doctor-v2-page {
-    --doctor-surface: rgba(255, 255, 255, 0.92);
-    --doctor-border: rgba(17, 24, 39, 0.08);
-    --doctor-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+    --dv2-panel-bg: rgba(255, 255, 255, 0.98);
+    --dv2-border: rgba(17, 24, 39, 0.08);
+    --dv2-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+    --dv2-kicker-color: #8c5f0a;
+    --dv2-text-muted: #5b6472;
+    --dv2-text-strong: #172033;
+    --dv2-text-body: #273244;
+    --dv2-nav-bg: rgba(255, 255, 255, 0.7);
+    --dv2-active-border: rgba(32, 99, 155, 0.35);
+    --dv2-active-bg: linear-gradient(135deg, rgba(206, 231, 255, 0.95), rgba(255, 255, 255, 0.92));
+    --dv2-pill-bg: rgba(17, 24, 39, 0.05);
+    --dv2-card-bg: rgba(255, 255, 255, 0.88);
+    --dv2-critical-card-bg: linear-gradient(180deg, rgba(255, 243, 244, 0.96), white);
+    --dv2-warning-card-bg: linear-gradient(180deg, rgba(255, 248, 234, 0.96), white);
+    --dv2-info-card-bg: linear-gradient(180deg, rgba(239, 248, 255, 0.96), white);
+    --dv2-success-card-bg: linear-gradient(180deg, rgba(240, 251, 244, 0.96), white);
+  }
+
+  /* ── Dark-mode token overrides ─────────────────────────────────────────── */
+  :global(html[data-theme="dark"]) .doctor-v2-page {
+    --dv2-panel-bg: hsl(215, 18%, 16%);
+    --dv2-border: rgba(255, 255, 255, 0.08);
+    --dv2-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+    --dv2-kicker-color: #e0a83a;
+    --dv2-text-muted: hsl(215, 10%, 55%);
+    --dv2-text-strong: hsl(0, 0%, 85%);
+    --dv2-text-body: hsl(0, 0%, 72%);
+    --dv2-nav-bg: hsl(215, 18%, 19%);
+    --dv2-active-border: rgba(100, 160, 220, 0.4);
+    --dv2-active-bg: linear-gradient(135deg, hsl(215, 35%, 23%), hsl(215, 18%, 20%));
+    --dv2-pill-bg: rgba(255, 255, 255, 0.07);
+    --dv2-card-bg: hsl(215, 18%, 19%);
+    --dv2-critical-card-bg: hsl(355, 18%, 18%);
+    --dv2-warning-card-bg: hsl(40, 15%, 18%);
+    --dv2-info-card-bg: hsl(210, 22%, 18%);
+    --dv2-success-card-bg: hsl(150, 15%, 18%);
   }
 
   .doctor-v2-hero,
   .doctor-v2-panel,
   .doctor-v2-sidebar-card {
-    border: 1px solid var(--doctor-border);
-    box-shadow: var(--doctor-shadow);
-    background:
-      radial-gradient(circle at top right, rgba(255, 212, 121, 0.18), transparent 30%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.98), var(--doctor-surface));
+    border: 1px solid var(--dv2-border);
+    box-shadow: var(--dv2-shadow);
+    background: var(--dv2-panel-bg);
   }
 
   .doctor-v2-hero {
@@ -717,7 +749,7 @@
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #8c5f0a;
+    color: var(--dv2-kicker-color);
     margin-bottom: 0.5rem;
   }
 
@@ -731,7 +763,7 @@
   .doctor-v2-level-row,
   .doctor-v2-pill,
   .doctor-v2-summary-card p:last-child {
-    color: #5b6472;
+    color: var(--dv2-text-muted);
   }
 
   .doctor-v2-hero-actions {
@@ -769,17 +801,17 @@
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    border: 1px solid rgba(17, 24, 39, 0.08);
+    border: 1px solid var(--dv2-border);
     border-radius: 0.9rem;
     padding: 0.8rem 0.9rem;
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--dv2-nav-bg);
     font-weight: 600;
     text-transform: capitalize;
   }
 
   .doctor-v2-nav-button.is-active {
-    border-color: rgba(32, 99, 155, 0.35);
-    background: linear-gradient(135deg, rgba(206, 231, 255, 0.95), rgba(255, 255, 255, 0.92));
+    border-color: var(--dv2-active-border);
+    background: var(--dv2-active-bg);
   }
 
   .doctor-v2-main {
@@ -802,7 +834,7 @@
     align-items: center;
     padding: 0.5rem 0.8rem;
     border-radius: 999px;
-    background: rgba(17, 24, 39, 0.05);
+    background: var(--dv2-pill-bg);
   }
 
   .doctor-v2-summary-grid {
@@ -816,27 +848,27 @@
     padding: 1rem;
     min-height: 164px;
     border: 1px solid transparent;
-    background: white;
+    background: var(--dv2-card-bg);
   }
 
   .doctor-v2-summary-card.is-critical {
     border-color: rgba(220, 53, 69, 0.18);
-    background: linear-gradient(180deg, rgba(255, 243, 244, 0.96), white);
+    background: var(--dv2-critical-card-bg);
   }
 
   .doctor-v2-summary-card.is-warning-tone {
     border-color: rgba(217, 142, 4, 0.2);
-    background: linear-gradient(180deg, rgba(255, 248, 234, 0.96), white);
+    background: var(--dv2-warning-card-bg);
   }
 
   .doctor-v2-summary-card.is-alert-tone {
     border-color: rgba(32, 99, 155, 0.18);
-    background: linear-gradient(180deg, rgba(239, 248, 255, 0.96), white);
+    background: var(--dv2-info-card-bg);
   }
 
   .doctor-v2-summary-card.is-calm-tone {
     border-color: rgba(33, 150, 83, 0.18);
-    background: linear-gradient(180deg, rgba(240, 251, 244, 0.96), white);
+    background: var(--dv2-success-card-bg);
   }
 
   .doctor-v2-queue,
@@ -851,10 +883,10 @@
   .doctor-v2-posting-card {
     width: 100%;
     text-align: left;
-    border: 1px solid rgba(17, 24, 39, 0.08);
+    border: 1px solid var(--dv2-border);
     border-radius: 1rem;
     padding: 1rem;
-    background: rgba(255, 255, 255, 0.88);
+    background: var(--dv2-card-bg);
     transition:
       transform 0.16s ease,
       box-shadow 0.16s ease,
@@ -875,7 +907,7 @@
   .doctor-v2-issue-title {
     font-size: 1rem;
     font-weight: 700;
-    color: #172033;
+    color: var(--dv2-text-strong);
     margin: 0.45rem 0 0.35rem;
   }
 
@@ -910,8 +942,8 @@
   .doctor-v2-issue-card,
   .doctor-v2-signal-card {
     border-radius: 1rem;
-    border: 1px solid rgba(17, 24, 39, 0.08);
-    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--dv2-border);
+    background: var(--dv2-card-bg);
     overflow: hidden;
   }
 
@@ -939,7 +971,7 @@
 
   .doctor-v2-issue-body {
     overflow-wrap: anywhere;
-    color: #273244;
+    color: var(--dv2-text-body);
     padding-top: 0;
   }
 
@@ -970,7 +1002,7 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #6b7280;
+    color: var(--dv2-text-muted);
     margin-bottom: 0.4rem;
   }
 
@@ -980,7 +1012,7 @@
   .doctor-v2-metric-value {
     font-size: 1.05rem;
     font-weight: 700;
-    color: #172033;
+    color: var(--dv2-text-strong);
   }
 
   .doctor-v2-outlier-card {
