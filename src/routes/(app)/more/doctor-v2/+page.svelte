@@ -68,12 +68,6 @@
   });
 
   let totalSignals = $derived(issues.length + duplicates.length + outliers.length);
-  let reviewCount = $derived(
-    (issueCountsByLevel.danger || 0) +
-      (issueCountsByLevel.warning || 0) +
-      filteredDuplicates.length +
-      filteredOutliers.length
-  );
 
   onMount(async () => {
     try {
@@ -204,7 +198,24 @@
   }
 
   function showSection(section: DoctorSection) {
-    return activeSection === "overview" || activeSection === section;
+    return activeSection === section;
+  }
+
+  function sectionLabel(section: DoctorSection) {
+    if (section === "overview") return "Overview";
+    if (section === "diagnosis") return "Diagnosis";
+    if (section === "duplicates") return "Duplicates";
+    return "Outliers";
+  }
+
+  function suggestedSection(): Exclude<DoctorSection, "overview"> {
+    if ((issueCountsByLevel.danger || 0) > 0) return "diagnosis";
+    if (duplicates.length > 0) return "duplicates";
+    return "outliers";
+  }
+
+  function focusSuggestedSection() {
+    jumpTo(suggestedSection());
   }
 
   function clampPage(page: number, pageCount: number) {
@@ -224,6 +235,7 @@
         </p>
       </div>
       <div class="doctor-v2-hero-actions">
+        <a class="button is-light" href="/more/doctor-v3">Open Doctor V3</a>
         <a class="button is-light" href="/more/doctor">Open legacy Doctor</a>
         <button class="button is-dark" onclick={() => jumpTo("overview")}>Back to overview</button>
       </div>
@@ -255,127 +267,81 @@
             </div>
           </div>
 
-          <div class="box doctor-v2-sidebar-card">
-            <p class="heading mb-2">At a glance</p>
-            <div class="doctor-v2-metric-stack">
-              <div>
-                <p class="doctor-v2-metric-value">{totalSignals}</p>
-                <p class="doctor-v2-metric-label">Total signals</p>
-              </div>
-              <div>
-                <p class="doctor-v2-metric-value">{reviewCount}</p>
-                <p class="doctor-v2-metric-label">Needs review right now</p>
-              </div>
-              <div>
-                <p class="doctor-v2-metric-value">{priorityQueue.length}</p>
-                <p class="doctor-v2-metric-label">Priority queue items</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="box doctor-v2-sidebar-card doctor-v2-guide">
-            <p class="heading mb-2">Recommended flow</p>
-            <p>1. Scan the queue and jump into the section that has the most urgent work.</p>
-            <p>2. Use focus mode so only one class of problem stays on screen at a time.</p>
-            <p>3. Dismiss false duplicate pairs as you review them to shrink the backlog.</p>
+          <div class="box doctor-v2-sidebar-card doctor-v2-focus-card">
+            <p class="heading mb-2">Current focus</p>
+            <p class="doctor-v2-metric-value mb-1">{sectionLabel(activeSection)}</p>
+            <p class="doctor-v2-metric-label mb-3">
+              {sectionCount(activeSection)} items in section
+            </p>
+            <button class="button is-small is-dark is-fullwidth" onclick={focusSuggestedSection}>
+              Open next suggested section
+            </button>
           </div>
         </aside>
 
         <div class="doctor-v2-main">
-          <section id="doctor-v2-overview" class="box doctor-v2-panel">
-            <div
-              class="is-flex is-justify-content-space-between is-align-items-flex-start is-flex-wrap-wrap gap-3 mb-4"
-            >
-              <div>
-                <p class="heading mb-2">Overview</p>
-                <h2 class="title is-4 mb-2">What deserves attention first</h2>
-                <p class="doctor-v2-muted mb-0">
-                  The queue below mixes rule violations with confidence-scored anomalies so you can
-                  start with the highest-value checks.
-                </p>
-              </div>
-              <div class="doctor-v2-pill-group">
-                <span class="doctor-v2-pill">
-                  <strong>{issueCountsByLevel.danger || 0}</strong>&nbsp;critical rules
-                </span>
-                <span class="doctor-v2-pill">
-                  <strong>{duplicates.length}</strong>&nbsp;duplicate pairs
-                </span>
-                <span class="doctor-v2-pill">
-                  <strong>{outliers.length}</strong>&nbsp;outliers
-                </span>
-              </div>
-            </div>
-
-            <div class="doctor-v2-summary-grid mb-5">
-              <article class="doctor-v2-summary-card is-critical">
-                <p class="heading">Critical rules</p>
-                <p class="title is-3">{issueCountsByLevel.danger || 0}</p>
-                <p>Ledger consistency checks that likely need direct action.</p>
-              </article>
-              <article class="doctor-v2-summary-card is-warning-tone">
-                <p class="heading">Duplicate candidates</p>
-                <p class="title is-3">{duplicates.length}</p>
-                <p>Pairs that look like repeated entries and can be dismissed if intentional.</p>
-              </article>
-              <article class="doctor-v2-summary-card is-alert-tone">
-                <p class="heading">Outlier transactions</p>
-                <p class="title is-3">{outliers.length}</p>
-                <p>Transactions that materially deviate from the usual pattern for an account.</p>
-              </article>
-              <article class="doctor-v2-summary-card is-calm-tone">
-                <p class="heading">Filtered review set</p>
-                <p class="title is-3">{reviewCount}</p>
-                <p>The items currently in play after confidence filters are applied.</p>
-              </article>
-            </div>
-
-            <div class="columns is-variable is-5">
-              <div class="column is-7-desktop">
-                <h3 class="title is-5 mb-3">Priority queue</h3>
-                {#if priorityQueue.length === 0}
-                  <div class="notification is-success is-light mb-0">
-                    Doctor V2 has nothing urgent to review.
-                  </div>
-                {:else}
-                  <div class="doctor-v2-queue">
-                    {#each priorityQueue as item}
-                      <button class="doctor-v2-queue-item" onclick={() => jumpTo(item.section)}>
-                        <div class="doctor-v2-queue-main">
-                          <span
-                            class="tag {item.tone === 'danger'
-                              ? 'is-danger'
-                              : item.tone === 'warning'
-                                ? 'is-warning'
-                                : item.tone === 'success'
-                                  ? 'is-success'
-                                  : 'is-info'} is-light">{item.section}</span
-                          >
-                          <p class="doctor-v2-queue-title">{item.title}</p>
-                          <p class="doctor-v2-queue-subtitle">{item.subtitle || item.meta}</p>
-                        </div>
-                        <p class="doctor-v2-queue-meta">{item.meta}</p>
-                      </button>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-
-              <div class="column is-5-desktop">
-                <h3 class="title is-5 mb-3">Rule distribution</h3>
-                <div class="doctor-v2-level-list">
-                  {#each Object.entries(levelLabels) as [level, label]}
-                    <div class="doctor-v2-level-row">
-                      <div>
-                        <span class="tag {issueClass(level)} is-light">{label}</span>
-                      </div>
-                      <strong>{issueCountsByLevel[level] || 0}</strong>
-                    </div>
-                  {/each}
+          {#if activeSection === "overview"}
+            <section id="doctor-v2-overview" class="box doctor-v2-panel">
+              <div
+                class="is-flex is-justify-content-space-between is-align-items-flex-start is-flex-wrap-wrap gap-3 mb-4"
+              >
+                <div>
+                  <p class="heading mb-2">Overview</p>
+                  <h2 class="title is-4 mb-2">What deserves attention first</h2>
+                  <p class="doctor-v2-muted mb-0">
+                    Focus on one section at a time. Start with the suggested section below.
+                  </p>
+                </div>
+                <div class="doctor-v2-pill-group doctor-v2-pill-group--compact">
+                  <button
+                    class="doctor-v2-pill doctor-v2-pill-button"
+                    onclick={() => jumpTo("diagnosis")}
+                  >
+                    <strong>{issueCountsByLevel.danger || 0}</strong>&nbsp;critical rules
+                  </button>
+                  <button
+                    class="doctor-v2-pill doctor-v2-pill-button"
+                    onclick={() => jumpTo("duplicates")}
+                  >
+                    <strong>{duplicates.length}</strong>&nbsp;duplicate pairs
+                  </button>
+                  <button
+                    class="doctor-v2-pill doctor-v2-pill-button"
+                    onclick={() => jumpTo("outliers")}
+                  >
+                    <strong>{outliers.length}</strong>&nbsp;outliers
+                  </button>
                 </div>
               </div>
-            </div>
-          </section>
+
+              <h3 class="title is-5 mb-3">Priority queue</h3>
+              {#if priorityQueue.length === 0}
+                <div class="notification is-success is-light mb-0">
+                  Doctor V2 has nothing urgent to review.
+                </div>
+              {:else}
+                <div class="doctor-v2-queue">
+                  {#each priorityQueue as item}
+                    <button class="doctor-v2-queue-item" onclick={() => jumpTo(item.section)}>
+                      <div class="doctor-v2-queue-main">
+                        <span
+                          class="tag {item.tone === 'danger'
+                            ? 'is-danger'
+                            : item.tone === 'warning'
+                              ? 'is-warning'
+                              : item.tone === 'success'
+                                ? 'is-success'
+                                : 'is-info'} is-light">{item.section}</span
+                        >
+                        <p class="doctor-v2-queue-title">{item.title}</p>
+                        <p class="doctor-v2-queue-subtitle">{item.subtitle || item.meta}</p>
+                      </div>
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+            </section>
+          {/if}
 
           {#if showSection("diagnosis")}
             <section id="doctor-v2-diagnosis" class="box doctor-v2-panel">
@@ -829,12 +795,28 @@
     gap: 0.75rem;
   }
 
+  .doctor-v2-pill-group--compact {
+    justify-content: flex-end;
+  }
+
   .doctor-v2-pill {
     display: inline-flex;
     align-items: center;
     padding: 0.5rem 0.8rem;
     border-radius: 999px;
     background: var(--dv2-pill-bg);
+  }
+
+  .doctor-v2-pill-button {
+    border: 1px solid var(--dv2-border);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .doctor-v2-pill-button:hover {
+    border-color: var(--dv2-active-border);
+    background: var(--dv2-active-bg);
   }
 
   .doctor-v2-summary-grid {
@@ -1028,6 +1010,11 @@
   .doctor-v2-metric-stack {
     display: grid;
     gap: 1rem;
+  }
+
+  .doctor-v2-focus-card {
+    display: grid;
+    gap: 0.45rem;
   }
 
   .doctor-v2-guide {

@@ -193,10 +193,13 @@
   <div class="container is-fluid">
     <div class="notification is-light doctor-v2-banner">
       <div>
-        <strong>Doctor V2 is available.</strong>
-        <p class="mb-0">Use the new triage-first layout for a less cluttered review flow.</p>
+        <strong>Doctor V2 and V3 are available.</strong>
+        <p class="mb-0">Try V3 for a strict one-section-at-a-time triage flow.</p>
       </div>
-      <a class="button is-dark is-small" href="/more/doctor-v2">Open Doctor V2</a>
+      <div class="buttons are-small mb-0">
+        <a class="button is-light" href="/more/doctor-v2">Open Doctor V2</a>
+        <a class="button is-dark" href="/more/doctor-v3">Open Doctor V3</a>
+      </div>
     </div>
 
     <div class="columns">
