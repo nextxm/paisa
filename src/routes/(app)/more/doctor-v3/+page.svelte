@@ -1,18 +1,27 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import COLORS from "$lib/colors";
-  import {
-    buildPriorityQueue,
-    countIssuesByLevel,
-    filterDuplicatePairs,
-    filterIssues,
-    filterOutliers,
-    issueTone,
-    type DoctorSection
-  } from "$lib/doctor_v2";
+  import { issueTone } from "$lib/doctor_v2";
   import { ajax, formatCurrency } from "$lib/utils";
   import type { DuplicatePair, Issue, OutlierTransaction, Posting } from "$lib/utils";
   import { dataQualityIssueCount } from "../../../../store";
+
+  type TriageKind = "diagnosis" | "duplicates" | "outliers";
+  type FocusKind = "all" | TriageKind;
+  type ReviewMode = "cards" | "focus";
+
+  type TriageItem = {
+    id: string;
+    kind: TriageKind;
+    score: number;
+    title: string;
+    subtitle: string;
+    searchable: string;
+    confidence: number;
+    issue?: Issue;
+    pair?: DuplicatePair;
+    outlier?: OutlierTransaction;
+  };
 
   let loading = $state(true);
   let loadError = $state("");
@@ -20,48 +29,182 @@
   let issues: Issue[] = $state([]);
   let duplicates: DuplicatePair[] = $state([]);
   let outliers: OutlierTransaction[] = $state([]);
+
   let suppressLoading: Record<string, boolean> = $state({});
 
-  let activeSection: DoctorSection = $state("overview");
-  let issueSearchText = $state("");
-  let signalSearchText = $state("");
+  let reviewMode: ReviewMode = $state("cards");
+  let focusKind: FocusKind = $state("all");
+  let queryText = $state("");
   let minConfidence = $state(0.5);
-  let issuePage = $state(1);
-  let duplicatePage = $state(1);
-  let outlierPage = $state(1);
-
-  const pageSize = 6;
-
-  let issueCountsByLevel = $derived(countIssuesByLevel(issues));
-  let filteredIssues = $derived(filterIssues(issues, issueSearchText));
-  let filteredDuplicates = $derived(
-    filterDuplicatePairs(duplicates, signalSearchText, minConfidence)
-  );
-  let filteredOutliers = $derived(filterOutliers(outliers, signalSearchText, minConfidence));
-  let priorityQueue = $derived(buildPriorityQueue(issues, duplicates, outliers).slice(0, 8));
-
-  let issuePageCount = $derived(Math.max(1, Math.ceil(filteredIssues.length / pageSize)));
-  let duplicatePageCount = $derived(Math.max(1, Math.ceil(filteredDuplicates.length / pageSize)));
-  let outlierPageCount = $derived(Math.max(1, Math.ceil(filteredOutliers.length / pageSize)));
-
-  let pagedIssues = $derived.by(() => {
-    const start = (issuePage - 1) * pageSize;
-    return filteredIssues.slice(start, start + pageSize);
-  });
-
-  let pagedDuplicates = $derived.by(() => {
-    const start = (duplicatePage - 1) * pageSize;
-    return filteredDuplicates.slice(start, start + pageSize);
-  });
-
-  let pagedOutliers = $derived.by(() => {
-    const start = (outlierPage - 1) * pageSize;
-    return filteredOutliers.slice(start, start + pageSize);
-  });
+  let accountFilter = $state("");
+  let dateFrom = $state("");
+  let dateTo = $state("");
+  let amountMinText = $state("");
+  let amountMaxText = $state("");
+  let currentIndex = $state(0);
 
   let totalSignals = $derived(issues.length + duplicates.length + outliers.length);
 
-  onMount(async () => {
+  let triageItems = $derived.by(() => {
+    const rows: TriageItem[] = [];
+
+    issues.forEach((issue, index) => {
+      const tone = issueTone(issue.level);
+      const toneWeight =
+        tone === "danger" ? 320 : tone === "warning" ? 220 : tone === "success" ? 100 : 140;
+
+      rows.push({
+        id: `issue-${index}`,
+        kind: "diagnosis",
+        score: toneWeight - index,
+        title: issue.summary,
+        subtitle: issue.level,
+        searchable: [issue.summary, issue.level, issue.description, issue.details]
+          .join(" ")
+          .toLowerCase(),
+        confidence:
+          tone === "danger" ? 0.95 : tone === "warning" ? 0.75 : tone === "success" ? 0.4 : 0.55,
+        issue
+      });
+    });
+
+    duplicates.forEach((pair, index) => {
+      rows.push({
+        id: `duplicate-${pair.posting1.id}-${pair.posting2.id}`,
+        kind: "duplicates",
+        score: 150 + Math.round(pair.confidence * 100) - index,
+        title: pair.posting1.payee || pair.posting2.payee || "Potential duplicate",
+        subtitle: `${pair.posting1.account} and ${pair.posting2.account}`,
+        searchable: [
+          pair.reason,
+          pair.posting1.payee,
+          pair.posting1.account,
+          pair.posting1.date,
+          String(pair.posting1.amount),
+          pair.posting2.payee,
+          pair.posting2.account,
+          pair.posting2.date,
+          String(pair.posting2.amount)
+        ]
+          .join(" ")
+          .toLowerCase(),
+        confidence: pair.confidence,
+        pair
+      });
+    });
+
+    outliers.forEach((outlier, index) => {
+      rows.push({
+        id: `outlier-${outlier.posting.id}`,
+        kind: "outliers",
+        score: 130 + Math.round(outlier.confidence * 100) - index,
+        title: outlier.posting.payee || "Outlier transaction",
+        subtitle: outlier.posting.account,
+        searchable: [
+          outlier.posting.payee,
+          outlier.posting.account,
+          outlier.posting.date,
+          String(outlier.posting.amount)
+        ]
+          .join(" ")
+          .toLowerCase(),
+        confidence: outlier.confidence,
+        outlier
+      });
+    });
+
+    return rows.sort((left, right) => right.score - left.score);
+  });
+
+  let accountSuggestions = $derived.by(() => {
+    const counts = new Map<string, number>();
+
+    const bump = (account: string) => {
+      if (!account) return;
+      counts.set(account, (counts.get(account) || 0) + 1);
+    };
+
+    duplicates.forEach((pair) => {
+      bump(pair.posting1.account);
+      bump(pair.posting2.account);
+    });
+
+    outliers.forEach((outlier) => bump(outlier.posting.account));
+
+    return [...counts.entries()]
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 8)
+      .map(([account]) => account);
+  });
+
+  let visibleItems = $derived.by(() => {
+    const q = queryText.trim().toLowerCase();
+    const accountQuery = accountFilter.trim().toLowerCase();
+    const minAmount = parseNumberFilter(amountMinText);
+    const maxAmount = parseNumberFilter(amountMaxText);
+    const hasTxnFilters =
+      accountQuery.length > 0 ||
+      dateFrom.length > 0 ||
+      dateTo.length > 0 ||
+      minAmount !== null ||
+      maxAmount !== null;
+
+    return triageItems.filter((item) => {
+      if (focusKind !== "all" && item.kind !== focusKind) return false;
+      if (item.kind !== "diagnosis" && item.confidence < minConfidence) return false;
+      if (q && !item.searchable.includes(q)) return false;
+
+      if (!hasTxnFilters) return true;
+
+      const postings = postingsForItem(item);
+      if (postings.length === 0) return false;
+
+      return postings.some((posting) =>
+        postingMatchesFilters(posting, accountQuery, dateFrom, dateTo, minAmount, maxAmount)
+      );
+    });
+  });
+
+  let currentItem = $derived(visibleItems[currentIndex] || null);
+  let progressCount = $derived(visibleItems.length === 0 ? 0 : currentIndex + 1);
+  let progressPercent = $derived(
+    visibleItems.length === 0 ? 0 : Math.round((progressCount / visibleItems.length) * 100)
+  );
+
+  let counts = $derived({
+    all: totalSignals,
+    diagnosis: issues.length,
+    duplicates: duplicates.length,
+    outliers: outliers.length
+  });
+
+  onMount(() => {
+    const keyHandler = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tagName = target?.tagName?.toLowerCase() || "";
+      const isInput = tagName === "input" || tagName === "select" || tagName === "textarea";
+      if (isInput) return;
+
+      if (event.key === "j") {
+        event.preventDefault();
+        moveNext();
+      }
+      if (event.key === "k") {
+        event.preventDefault();
+        movePrevious();
+      }
+    };
+
+    window.addEventListener("keydown", keyHandler);
+
+    void loadData();
+
+    return () => {
+      window.removeEventListener("keydown", keyHandler);
+    };
+  });
+
+  async function loadData() {
     try {
       const [diagnosis, dataQuality] = await Promise.all([
         ajax("/api/diagnosis"),
@@ -71,47 +214,167 @@
       issues = diagnosis.issues || [];
       duplicates = dataQuality.duplicates || [];
       outliers = dataQuality.outliers || [];
+      syncIssueBadge();
     } catch (error) {
       console.error(error);
       loadError = "Doctor V3 could not load diagnosis data.";
     } finally {
       loading = false;
     }
-  });
+  }
 
   $effect(() => {
+    const maxIndex = Math.max(visibleItems.length - 1, 0);
+    if (currentIndex > maxIndex) currentIndex = maxIndex;
+  });
+
+  function syncIssueBadge() {
     dataQualityIssueCount.set(duplicates.length + outliers.length);
-  });
-
-  $effect(() => {
-    issuePage = clampPage(issuePage, issuePageCount);
-    duplicatePage = clampPage(duplicatePage, duplicatePageCount);
-    outlierPage = clampPage(outlierPage, outlierPageCount);
-  });
-
-  function clampPage(page: number, pageCount: number) {
-    return Math.min(Math.max(page, 1), Math.max(pageCount, 1));
   }
 
-  function sectionCount(section: DoctorSection) {
-    if (section === "diagnosis") return filteredIssues.length;
-    if (section === "duplicates") return filteredDuplicates.length;
-    if (section === "outliers") return filteredOutliers.length;
-    return totalSignals;
+  function setReviewMode(mode: ReviewMode) {
+    reviewMode = mode;
   }
 
-  function setSection(section: DoctorSection) {
-    activeSection = section;
+  function setFocusKind(next: FocusKind) {
+    focusKind = next;
+    currentIndex = 0;
   }
 
-  function nextSuggestedSection(): Exclude<DoctorSection, "overview"> {
-    if ((issueCountsByLevel.danger || 0) > 0) return "diagnosis";
-    if (filteredDuplicates.length > 0) return "duplicates";
-    return "outliers";
+  function updateQueryText(event: Event) {
+    queryText = (event.currentTarget as HTMLInputElement).value;
+    currentIndex = 0;
   }
 
-  function startTriage() {
-    setSection(nextSuggestedSection());
+  function updateMinConfidence(event: Event) {
+    minConfidence = Number((event.currentTarget as HTMLSelectElement).value) || 0;
+    currentIndex = 0;
+  }
+
+  function updateAccountFilter(event: Event) {
+    accountFilter = (event.currentTarget as HTMLInputElement).value;
+    currentIndex = 0;
+  }
+
+  function updateDateFrom(event: Event) {
+    dateFrom = (event.currentTarget as HTMLInputElement).value;
+    currentIndex = 0;
+  }
+
+  function updateDateTo(event: Event) {
+    dateTo = (event.currentTarget as HTMLInputElement).value;
+    currentIndex = 0;
+  }
+
+  function updateAmountMin(event: Event) {
+    amountMinText = (event.currentTarget as HTMLInputElement).value;
+    currentIndex = 0;
+  }
+
+  function updateAmountMax(event: Event) {
+    amountMaxText = (event.currentTarget as HTMLInputElement).value;
+    currentIndex = 0;
+  }
+
+  function useAccountChip(account: string) {
+    accountFilter = account;
+    currentIndex = 0;
+  }
+
+  function clearQuickFilters() {
+    accountFilter = "";
+    dateFrom = "";
+    dateTo = "";
+    amountMinText = "";
+    amountMaxText = "";
+    currentIndex = 0;
+  }
+
+  function movePrevious() {
+    if (currentIndex > 0) currentIndex -= 1;
+  }
+
+  function moveNext() {
+    if (currentIndex < visibleItems.length - 1) currentIndex += 1;
+  }
+
+  function inspectItem(index: number) {
+    currentIndex = Math.max(0, Math.min(index, visibleItems.length - 1));
+    reviewMode = "focus";
+  }
+
+  function jumpToItem(index: number) {
+    currentIndex = Math.max(0, Math.min(index, visibleItems.length - 1));
+  }
+
+  function openKind(kind: TriageKind) {
+    setFocusKind(kind);
+  }
+
+  function postingsForItem(item: TriageItem): Posting[] {
+    if (item.pair) return [item.pair.posting1, item.pair.posting2];
+    if (item.outlier) return [item.outlier.posting];
+    return [];
+  }
+
+  function postingMatchesFilters(
+    posting: Posting,
+    accountQuery: string,
+    fromDate: string,
+    toDate: string,
+    minAmount: number | null,
+    maxAmount: number | null
+  ) {
+    if (accountQuery && !posting.account.toLowerCase().includes(accountQuery)) return false;
+
+    const normalizedDate = normalizeDate(posting.date);
+    if (fromDate && (!normalizedDate || normalizedDate < fromDate)) return false;
+    if (toDate && (!normalizedDate || normalizedDate > toDate)) return false;
+
+    const amountAbs = Math.abs(Number(posting.amount));
+    if (minAmount !== null && (!Number.isFinite(amountAbs) || amountAbs < minAmount)) return false;
+    if (maxAmount !== null && (!Number.isFinite(amountAbs) || amountAbs > maxAmount)) return false;
+
+    return true;
+  }
+
+  function normalizeDate(value: unknown) {
+    if (!value) return "";
+
+    if (typeof value === "string") {
+      return value.slice(0, 10);
+    }
+
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      "format" in value &&
+      typeof (value as { format?: unknown }).format === "function"
+    ) {
+      return (value as { format: (pattern: string) => string }).format("YYYY-MM-DD");
+    }
+
+    return String(value).slice(0, 10);
+  }
+
+  function parseNumberFilter(value: string) {
+    if (!value.trim()) return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function pairKey(pair: DuplicatePair) {
+    return `${pair.posting1.id}-${pair.posting2.id}`;
+  }
+
+  function ledgerHref(posting: Posting) {
+    return `/ledger/editor/${encodeURIComponent(posting.file_name)}#${posting.transaction_begin_line}`;
+  }
+
+  function primaryPosting(item: TriageItem) {
+    if (item.pair) return item.pair.posting1;
+    if (item.outlier) return item.outlier.posting;
+    return null;
   }
 
   function pct(confidence: number) {
@@ -124,25 +387,17 @@
     return COLORS.gainText;
   }
 
-  function issueClass(level: string) {
+  function severityLabel(level: string) {
     const tone = issueTone(level);
-    if (tone === "danger") return "is-danger";
-    if (tone === "warning") return "is-warning";
-    if (tone === "success") return "is-success";
-    return "is-info";
+    if (tone === "danger") return "critical";
+    if (tone === "warning") return "warning";
+    if (tone === "success") return "ok";
+    return "info";
   }
 
-  function pairKey(pair: DuplicatePair) {
-    return `${pair.posting1.id}-${pair.posting2.id}`;
-  }
-
-  function ledgerHref(posting: Posting) {
-    return `/ledger/editor/${encodeURIComponent(posting.file_name)}#${posting.transaction_begin_line}`;
-  }
-
-  async function suppress(pair: DuplicatePair) {
+  async function suppressDuplicate(pair: DuplicatePair) {
     const key = pairKey(pair);
-    suppressLoading[key] = true;
+    suppressLoading = { ...suppressLoading, [key]: true };
 
     try {
       await ajax("/api/diagnosis/duplicates/suppress", {
@@ -159,40 +414,24 @@
             candidate.posting1.id === pair.posting1.id && candidate.posting2.id === pair.posting2.id
           )
       );
+      syncIssueBadge();
     } finally {
-      suppressLoading[key] = false;
+      suppressLoading = { ...suppressLoading, [key]: false };
     }
-  }
-
-  function updateIssueSearchText(event: Event) {
-    issueSearchText = (event.currentTarget as HTMLInputElement).value;
-    issuePage = 1;
-  }
-
-  function updateSignalSearchText(event: Event) {
-    signalSearchText = (event.currentTarget as HTMLInputElement).value;
-    duplicatePage = 1;
-    outlierPage = 1;
-  }
-
-  function updateMinConfidence(event: Event) {
-    minConfidence = Number((event.currentTarget as HTMLSelectElement).value) || 0;
-    duplicatePage = 1;
-    outlierPage = 1;
   }
 </script>
 
 <section class="section doctor-v3-page">
   <div class="container is-fluid">
-    <header class="box doctor-v3-hero">
+    <header class="doctor-v3-hero box">
       <div>
-        <p class="doctor-v3-kicker">Doctor V3</p>
-        <h1 class="title is-3 mb-2">One section at a time</h1>
-        <p class="subtitle is-6 doctor-v3-subtitle mb-0">
-          Pick a lane, clear it, then move to the next. No split attention.
+        <p class="doctor-v3-kicker">Doctor V3 Triage Studio</p>
+        <h1 class="title is-2 mb-2">Fast triage with quick slicing</h1>
+        <p class="subtitle is-6 mb-0 doctor-v3-subtitle">
+          Filter by account, date, and amount, then review as cards or deep focus mode.
         </p>
       </div>
-      <div class="doctor-v3-hero-actions">
+      <div class="doctor-v3-actions">
         <a class="button is-light" href="/more/doctor-v2">Open Doctor V2</a>
         <a class="button is-light" href="/more/doctor">Open legacy Doctor</a>
       </div>
@@ -201,249 +440,313 @@
     {#if loading}
       <div class="box has-text-centered py-6">
         <progress class="progress is-small is-dark" max="100">Loading</progress>
-        <p class="has-text-grey mb-0">Loading diagnosis and data quality results...</p>
+        <p class="has-text-grey mb-0">Building your triage queue...</p>
       </div>
     {:else if loadError}
       <div class="notification is-danger is-light">{loadError}</div>
     {:else}
-      <div class="doctor-v3-nav box mb-4">
-        <button class="button is-dark" onclick={startTriage}>Start with suggested section</button>
-        <button
-          class="button"
-          class:is-link={activeSection === "overview"}
-          onclick={() => setSection("overview")}>Overview ({sectionCount("overview")})</button
-        >
-        <button
-          class="button"
-          class:is-link={activeSection === "diagnosis"}
-          onclick={() => setSection("diagnosis")}>Diagnosis ({sectionCount("diagnosis")})</button
-        >
-        <button
-          class="button"
-          class:is-link={activeSection === "duplicates"}
-          onclick={() => setSection("duplicates")}>Duplicates ({sectionCount("duplicates")})</button
-        >
-        <button
-          class="button"
-          class:is-link={activeSection === "outliers"}
-          onclick={() => setSection("outliers")}>Outliers ({sectionCount("outliers")})</button
-        >
-      </div>
-
-      {#if activeSection === "overview"}
-        <section class="box doctor-v3-panel">
-          <h2 class="title is-4 mb-3">Priority queue</h2>
-          {#if priorityQueue.length === 0}
-            <div class="notification is-success is-light mb-0">No urgent items found.</div>
-          {:else}
-            <div class="doctor-v3-list">
-              {#each priorityQueue as item}
-                <button class="doctor-v3-queue-item" onclick={() => setSection(item.section)}>
-                  <span
-                    class="tag {item.tone === 'danger'
-                      ? 'is-danger'
-                      : item.tone === 'warning'
-                        ? 'is-warning'
-                        : item.tone === 'success'
-                          ? 'is-success'
-                          : 'is-info'} is-light">{item.section}</span
-                  >
-                  <strong>{item.title}</strong>
-                  <span>{item.meta}</span>
-                </button>
-              {/each}
-            </div>
-          {/if}
-        </section>
-      {/if}
-
-      {#if activeSection === "diagnosis"}
-        <section class="box doctor-v3-panel">
-          <div class="doctor-v3-headline">
-            <h2 class="title is-4 mb-0">Diagnosis</h2>
-            <span class="tag is-dark">{filteredIssues.length} items</span>
+      <section class="box doctor-v3-controls mb-4">
+        <div class="doctor-v3-top-row">
+          <div class="doctor-v3-segment">
+            <button
+              class="button"
+              class:is-dark={focusKind === "all"}
+              onclick={() => setFocusKind("all")}>All ({counts.all})</button
+            >
+            <button
+              class="button"
+              class:is-dark={focusKind === "diagnosis"}
+              onclick={() => setFocusKind("diagnosis")}>Diagnosis ({counts.diagnosis})</button
+            >
+            <button
+              class="button"
+              class:is-dark={focusKind === "duplicates"}
+              onclick={() => setFocusKind("duplicates")}>Duplicates ({counts.duplicates})</button
+            >
+            <button
+              class="button"
+              class:is-dark={focusKind === "outliers"}
+              onclick={() => setFocusKind("outliers")}>Outliers ({counts.outliers})</button
+            >
           </div>
-          <div class="doctor-v3-toolbar mb-4">
+
+          <div class="doctor-v3-segment">
+            <button
+              class="button"
+              class:is-dark={reviewMode === "cards"}
+              onclick={() => setReviewMode("cards")}>Cards View</button
+            >
+            <button
+              class="button"
+              class:is-dark={reviewMode === "focus"}
+              onclick={() => setReviewMode("focus")}>Focus View</button
+            >
+          </div>
+        </div>
+
+        <div class="doctor-v3-input-grid">
+          <label class="doctor-v3-field">
+            <span>Search</span>
             <input
               class="input"
               type="text"
-              placeholder="Search diagnosis findings"
-              value={issueSearchText}
-              oninput={updateIssueSearchText}
+              placeholder="Payee, reason, account, diagnosis text"
+              value={queryText}
+              oninput={updateQueryText}
             />
-          </div>
+          </label>
 
-          {#if filteredIssues.length === 0}
-            <p class="has-text-grey mb-0">No diagnosis findings for this filter.</p>
-          {:else}
-            <div class="doctor-v3-pager mb-3">
-              <button
-                class="button is-small"
-                disabled={issuePage === 1}
-                onclick={() => (issuePage = Math.max(1, issuePage - 1))}>Previous</button
-              >
-              <span>Page {issuePage} of {issuePageCount}</span>
-              <button
-                class="button is-small"
-                disabled={issuePage === issuePageCount}
-                onclick={() => (issuePage = Math.min(issuePageCount, issuePage + 1))}>Next</button
-              >
-            </div>
-            <div class="doctor-v3-list">
-              {#each pagedIssues as issue}
-                <article class="doctor-v3-card {issueClass(issue.level)}">
-                  <div class="doctor-v3-card-title">
-                    <span class="tag {issueClass(issue.level)} is-light"
-                      >{issueTone(issue.level)}</span
-                    >
-                    <strong>{issue.summary}</strong>
-                  </div>
-                  <div class="doctor-v3-card-body">
-                    {@html `${issue.description}<br/><br/>${issue.details}`}
-                  </div>
-                </article>
-              {/each}
-            </div>
-          {/if}
-        </section>
-      {/if}
-
-      {#if activeSection === "duplicates"}
-        <section class="box doctor-v3-panel">
-          <div class="doctor-v3-headline">
-            <h2 class="title is-4 mb-0">Duplicates</h2>
-            <span class="tag is-warning">{filteredDuplicates.length} items</span>
-          </div>
-          <div class="doctor-v3-toolbar doctor-v3-toolbar-grid mb-4">
-            <input
-              class="input"
-              type="text"
-              placeholder="Search payee/account/reason"
-              value={signalSearchText}
-              oninput={updateSignalSearchText}
-            />
+          <label class="doctor-v3-field">
+            <span>Min confidence</span>
             <div class="select is-fullwidth">
               <select value={minConfidence} onchange={updateMinConfidence}>
                 <option value="0">All confidence</option>
-                <option value="0.5">50%+</option>
-                <option value="0.8">80%+</option>
+                <option value="0.5">50% and above</option>
+                <option value="0.8">80% and above</option>
               </select>
             </div>
+          </label>
+
+          <label class="doctor-v3-field">
+            <span>Account contains</span>
+            <input
+              class="input"
+              type="text"
+              list="doctor-v3-account-options"
+              placeholder="Expenses:Food or Assets:Bank"
+              value={accountFilter}
+              oninput={updateAccountFilter}
+            />
+          </label>
+
+          <label class="doctor-v3-field">
+            <span>Date from</span>
+            <input class="input" type="date" value={dateFrom} oninput={updateDateFrom} />
+          </label>
+
+          <label class="doctor-v3-field">
+            <span>Date to</span>
+            <input class="input" type="date" value={dateTo} oninput={updateDateTo} />
+          </label>
+
+          <label class="doctor-v3-field">
+            <span>Amount min (abs)</span>
+            <input
+              class="input"
+              type="number"
+              step="0.01"
+              placeholder="0"
+              value={amountMinText}
+              oninput={updateAmountMin}
+            />
+          </label>
+
+          <label class="doctor-v3-field">
+            <span>Amount max (abs)</span>
+            <input
+              class="input"
+              type="number"
+              step="0.01"
+              placeholder="100000"
+              value={amountMaxText}
+              oninput={updateAmountMax}
+            />
+          </label>
+
+          <div class="doctor-v3-progress">
+            <p class="mb-1">In queue: <strong>{visibleItems.length}</strong></p>
+            <p class="mb-2">
+              Current: <strong>{progressCount}</strong> / {visibleItems.length || 0}
+            </p>
+            <progress class="progress is-info mb-0" max="100" value={progressPercent}
+              >{progressPercent}%</progress
+            >
+            <button class="button is-small is-light mt-2" onclick={clearQuickFilters}
+              >Clear quick filters</button
+            >
           </div>
+        </div>
 
-          {#if filteredDuplicates.length === 0}
-            <p class="has-text-grey mb-0">No duplicate candidates for this filter.</p>
-          {:else}
-            <div class="doctor-v3-pager mb-3">
-              <button
-                class="button is-small"
-                disabled={duplicatePage === 1}
-                onclick={() => (duplicatePage = Math.max(1, duplicatePage - 1))}>Previous</button
-              >
-              <span>Page {duplicatePage} of {duplicatePageCount}</span>
-              <button
-                class="button is-small"
-                disabled={duplicatePage === duplicatePageCount}
-                onclick={() => (duplicatePage = Math.min(duplicatePageCount, duplicatePage + 1))}
-                >Next</button
-              >
-            </div>
+        <div class="doctor-v3-account-chips">
+          {#each accountSuggestions as account}
+            <button class="tag is-light doctor-v3-chip" onclick={() => useAccountChip(account)}
+              >{account}</button
+            >
+          {/each}
+        </div>
 
-            <div class="doctor-v3-list">
-              {#each pagedDuplicates as pair}
-                {@const key = pairKey(pair)}
-                <article class="doctor-v3-card">
-                  <div class="doctor-v3-card-title">
-                    <span class="tag is-warning is-light">Duplicate</span>
-                    <strong>{pair.posting1.payee || pair.posting2.payee}</strong>
-                    <span
-                      class="tag is-rounded"
-                      style={`background-color: ${confidenceColor(pair.confidence)}; color: white`}
-                      >{pct(pair.confidence)}%</span
-                    >
-                  </div>
+        <datalist id="doctor-v3-account-options">
+          {#each accountSuggestions as account}
+            <option value={account}></option>
+          {/each}
+        </datalist>
+      </section>
 
-                  <p class="doctor-v3-card-meta">{@html pair.reason}</p>
+      {#if visibleItems.length === 0}
+        <div class="notification is-success is-light">
+          <strong>Queue clear.</strong> No items match your current filters.
+        </div>
+      {:else if reviewMode === "cards"}
+        <section class="doctor-v3-cardwall">
+          {#each visibleItems.slice(0, 48) as item, index}
+            {@const posting = primaryPosting(item)}
+            <article class="box doctor-v3-tile">
+              <div class="doctor-v3-tile-head">
+                <span class="tag is-light">{item.kind}</span>
+                <span
+                  class="tag is-rounded doctor-v3-confidence"
+                  style={`background-color: ${confidenceColor(item.confidence)}`}
+                  >{pct(item.confidence)}%</span
+                >
+              </div>
 
-                  <div class="doctor-v3-dual">
-                    <a class="doctor-v3-mini" href={ledgerHref(pair.posting1)}>
-                      <p>{pair.posting1.date}</p>
-                      <strong>{pair.posting1.payee}</strong>
-                      <span>{pair.posting1.account}</span>
-                      <strong>{formatCurrency(pair.posting1.amount)}</strong>
-                    </a>
-                    <a class="doctor-v3-mini" href={ledgerHref(pair.posting2)}>
-                      <p>{pair.posting2.date}</p>
-                      <strong>{pair.posting2.payee}</strong>
-                      <span>{pair.posting2.account}</span>
-                      <strong>{formatCurrency(pair.posting2.amount)}</strong>
-                    </a>
-                  </div>
+              <h3 class="title is-6 mb-1">{item.title}</h3>
+              <p class="doctor-v3-subtitle mb-3">{item.subtitle}</p>
 
-                  <div>
-                    <button
-                      class="button is-small is-light"
-                      class:is-loading={suppressLoading[key]}
-                      onclick={() => suppress(pair)}>Dismiss pair</button
-                    >
-                  </div>
-                </article>
+              {#if posting}
+                <p class="doctor-v3-subtitle mb-3">
+                  {posting.date} · {posting.account} · {formatCurrency(posting.amount)}
+                </p>
+              {/if}
+
+              <div class="doctor-v3-actions-row">
+                <button class="button is-small is-light" onclick={() => inspectItem(index)}
+                  >Inspect in focus</button
+                >
+                {#if posting}
+                  <a class="button is-small is-light" href={ledgerHref(posting)}>Open in ledger</a>
+                {/if}
+              </div>
+            </article>
+          {/each}
+        </section>
+      {:else}
+        <div class="doctor-v3-workspace">
+          <aside class="box doctor-v3-rail">
+            <h2 class="title is-6 mb-3">Queue</h2>
+            <div class="doctor-v3-rail-list">
+              {#each visibleItems.slice(0, 24) as item, index}
+                <button
+                  class="doctor-v3-rail-item"
+                  class:is-active={index === currentIndex}
+                  onclick={() => jumpToItem(index)}
+                >
+                  <span class="tag is-light">{item.kind}</span>
+                  <strong>{item.title}</strong>
+                  <span class="doctor-v3-rail-subtitle">{item.subtitle}</span>
+                </button>
               {/each}
             </div>
-          {/if}
-        </section>
-      {/if}
+            {#if visibleItems.length > 24}
+              <p class="has-text-grey is-size-7 mt-2 mb-0">
+                Showing top 24 ranked items. Use filters to narrow further.
+              </p>
+            {/if}
+          </aside>
 
-      {#if activeSection === "outliers"}
-        <section class="box doctor-v3-panel">
-          <div class="doctor-v3-headline">
-            <h2 class="title is-4 mb-0">Outliers</h2>
-            <span class="tag is-danger">{filteredOutliers.length} items</span>
-          </div>
-
-          {#if filteredOutliers.length === 0}
-            <p class="has-text-grey mb-0">No outliers for this filter.</p>
-          {:else}
-            <div class="doctor-v3-pager mb-3">
-              <button
-                class="button is-small"
-                disabled={outlierPage === 1}
-                onclick={() => (outlierPage = Math.max(1, outlierPage - 1))}>Previous</button
-              >
-              <span>Page {outlierPage} of {outlierPageCount}</span>
-              <button
-                class="button is-small"
-                disabled={outlierPage === outlierPageCount}
-                onclick={() => (outlierPage = Math.min(outlierPageCount, outlierPage + 1))}
-                >Next</button
-              >
+          <section class="box doctor-v3-focus">
+            <div class="doctor-v3-focus-head">
+              <div>
+                <p class="doctor-v3-focus-kind mb-1">{currentItem?.kind}</p>
+                <h2 class="title is-4 mb-1">{currentItem?.title}</h2>
+                <p class="doctor-v3-subtitle mb-0">{currentItem?.subtitle}</p>
+              </div>
+              {#if currentItem}
+                <span
+                  class="tag is-rounded doctor-v3-confidence"
+                  style={`background-color: ${confidenceColor(currentItem.confidence)}`}
+                  >{pct(currentItem.confidence)}%</span
+                >
+              {/if}
             </div>
 
-            <div class="doctor-v3-list">
-              {#each pagedOutliers as outlier}
-                <a class="doctor-v3-card" href={ledgerHref(outlier.posting)}>
-                  <div class="doctor-v3-card-title">
-                    <span class="tag is-danger is-light">Outlier</span>
-                    <strong>{outlier.posting.payee}</strong>
-                    <span
-                      class="tag is-rounded"
-                      style={`background-color: ${confidenceColor(outlier.confidence)}; color: white`}
-                      >{pct(outlier.confidence)}%</span
-                    >
-                  </div>
-                  <p class="doctor-v3-card-meta">
-                    {outlier.posting.date} · {outlier.posting.account}
-                  </p>
-                  <strong class="doctor-v3-amount">{formatCurrency(outlier.posting.amount)}</strong>
-                  <p class="doctor-v3-card-meta">
-                    {outlier.sigma.toFixed(1)}σ · mean {formatCurrency(outlier.mean)} · std dev
-                    {formatCurrency(outlier.std_dev)}
-                  </p>
+            {#if currentItem?.kind === "diagnosis" && currentItem.issue}
+              <article class="doctor-v3-detail">
+                <div class="doctor-v3-inline-tags mb-3">
+                  <span class="tag is-dark">{severityLabel(currentItem.issue.level)}</span>
+                  <button class="button is-small is-light" onclick={() => openKind("diagnosis")}
+                    >Show diagnosis only</button
+                  >
+                </div>
+                <div class="doctor-v3-rich-copy">
+                  {@html `${currentItem.issue.description}<br/><br/>${currentItem.issue.details}`}
+                </div>
+              </article>
+            {/if}
+
+            {#if currentItem?.kind === "duplicates" && currentItem.pair}
+              {@const key = pairKey(currentItem.pair)}
+              <article class="doctor-v3-detail">
+                <div class="doctor-v3-inline-tags mb-3">
+                  <span class="tag is-warning is-light">Potential duplicate</span>
+                  <button class="button is-small is-light" onclick={() => openKind("duplicates")}
+                    >Show duplicates only</button
+                  >
+                </div>
+
+                <p class="doctor-v3-reason mb-3">{@html currentItem.pair.reason}</p>
+
+                <div class="doctor-v3-compare">
+                  <a class="doctor-v3-posting" href={ledgerHref(currentItem.pair.posting1)}>
+                    <p>{currentItem.pair.posting1.date}</p>
+                    <strong>{currentItem.pair.posting1.payee}</strong>
+                    <span>{currentItem.pair.posting1.account}</span>
+                    <strong>{formatCurrency(currentItem.pair.posting1.amount)}</strong>
+                  </a>
+                  <a class="doctor-v3-posting" href={ledgerHref(currentItem.pair.posting2)}>
+                    <p>{currentItem.pair.posting2.date}</p>
+                    <strong>{currentItem.pair.posting2.payee}</strong>
+                    <span>{currentItem.pair.posting2.account}</span>
+                    <strong>{formatCurrency(currentItem.pair.posting2.amount)}</strong>
+                  </a>
+                </div>
+
+                <div class="doctor-v3-actions-row mt-3">
+                  <button
+                    class="button is-small is-light"
+                    class:is-loading={suppressLoading[key]}
+                    onclick={() => suppressDuplicate(currentItem.pair!)}>Dismiss pair</button
+                  >
+                </div>
+              </article>
+            {/if}
+
+            {#if currentItem?.kind === "outliers" && currentItem.outlier}
+              <article class="doctor-v3-detail">
+                <div class="doctor-v3-inline-tags mb-3">
+                  <span class="tag is-danger is-light">Outlier</span>
+                  <button class="button is-small is-light" onclick={() => openKind("outliers")}
+                    >Show outliers only</button
+                  >
+                </div>
+
+                <a class="doctor-v3-posting" href={ledgerHref(currentItem.outlier.posting)}>
+                  <p>{currentItem.outlier.posting.date}</p>
+                  <strong>{currentItem.outlier.posting.payee}</strong>
+                  <span>{currentItem.outlier.posting.account}</span>
+                  <strong>{formatCurrency(currentItem.outlier.posting.amount)}</strong>
                 </a>
-              {/each}
-            </div>
-          {/if}
-        </section>
+
+                <p class="doctor-v3-math mt-3 mb-0">
+                  {currentItem.outlier.sigma.toFixed(1)}sigma from mean · mean {formatCurrency(
+                    currentItem.outlier.mean
+                  )} · std dev {formatCurrency(currentItem.outlier.std_dev)}
+                </p>
+              </article>
+            {/if}
+
+            <footer class="doctor-v3-nav-row">
+              <button class="button" disabled={currentIndex === 0} onclick={movePrevious}
+                >Previous (k)</button
+              >
+              <button
+                class="button is-dark"
+                disabled={currentIndex >= visibleItems.length - 1}
+                onclick={moveNext}>Next (j)</button
+              >
+            </footer>
+          </section>
+        </div>
       {/if}
     {/if}
   </div>
@@ -451,145 +754,308 @@
 
 <style>
   .doctor-v3-page {
-    --dv3-bg: hsl(215, 18%, 15%);
-    --dv3-border: rgba(255, 255, 255, 0.09);
-    --dv3-muted: hsl(215, 9%, 62%);
-    --dv3-strong: hsl(0, 0%, 92%);
-    --dv3-card: hsl(215, 18%, 19%);
-    --dv3-soft: hsl(215, 16%, 22%);
+    --dv3-bg: hsl(41, 73%, 95%);
+    --dv3-surface: hsla(37, 63%, 99%, 0.88);
+    --dv3-border: hsl(35, 36%, 78%);
+    --dv3-accent: hsl(18, 74%, 42%);
+    --dv3-accent-soft: hsl(18, 82%, 93%);
+    --dv3-text: hsl(214, 23%, 18%);
+    --dv3-muted: hsl(216, 12%, 40%);
+    --dv3-shadow: 0 10px 24px hsla(18, 58%, 45%, 0.1);
+    font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+    background:
+      radial-gradient(circle at 92% -10%, hsl(15, 88%, 86%), transparent 34%),
+      radial-gradient(circle at 0% 112%, hsl(44, 100%, 84%), transparent 38%), var(--dv3-bg);
+  }
+
+  :global(.doctor-v3-page .title),
+  :global(.doctor-v3-page .subtitle),
+  :global(.doctor-v3-page p),
+  :global(.doctor-v3-page strong),
+  :global(.doctor-v3-page span),
+  :global(.doctor-v3-page label) {
+    color: var(--dv3-text);
   }
 
   .doctor-v3-hero,
-  .doctor-v3-nav,
-  .doctor-v3-panel {
-    background: var(--dv3-bg);
+  .doctor-v3-controls,
+  .doctor-v3-rail,
+  .doctor-v3-focus,
+  .doctor-v3-tile {
+    background: var(--dv3-surface);
     border: 1px solid var(--dv3-border);
+    box-shadow: var(--dv3-shadow);
+    backdrop-filter: blur(4px);
   }
 
   .doctor-v3-hero {
     display: flex;
     justify-content: space-between;
-    gap: 1rem;
     align-items: flex-end;
+    gap: 1rem;
     margin-bottom: 1rem;
   }
 
   .doctor-v3-kicker {
-    font-size: 0.78rem;
-    letter-spacing: 0.12em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.6rem;
+    padding: 0.27rem 0.6rem;
+    border-radius: 999px;
     text-transform: uppercase;
-    color: #e0a83a;
+    letter-spacing: 0.1em;
     font-weight: 700;
-    margin-bottom: 0.5rem;
+    font-size: 0.73rem;
+    color: var(--dv3-accent);
+    background: var(--dv3-accent-soft);
   }
 
   .doctor-v3-subtitle,
-  .doctor-v3-card-meta,
-  .doctor-v3-mini span,
-  .doctor-v3-mini p {
+  .doctor-v3-rail-subtitle,
+  .doctor-v3-reason,
+  .doctor-v3-math {
     color: var(--dv3-muted);
   }
 
-  .doctor-v3-hero-actions,
-  .doctor-v3-nav {
+  .doctor-v3-actions {
     display: flex;
-    gap: 0.6rem;
     flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+
+  .doctor-v3-controls {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .doctor-v3-top-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .doctor-v3-segment {
+    display: flex;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+
+  .doctor-v3-input-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.7rem;
+    align-items: end;
+  }
+
+  .doctor-v3-field {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .doctor-v3-field span {
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--dv3-muted);
+    font-weight: 700;
+  }
+
+  .doctor-v3-progress {
+    padding: 0.65rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--dv3-border);
+    background: hsl(0, 0%, 100%);
+  }
+
+  .doctor-v3-account-chips {
+    display: flex;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+
+  .doctor-v3-chip {
+    cursor: pointer;
+    border: 1px solid var(--dv3-border);
+  }
+
+  .doctor-v3-cardwall {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.8rem;
+  }
+
+  .doctor-v3-tile {
+    display: grid;
+    gap: 0.6rem;
+    transition:
+      transform 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .doctor-v3-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 26px hsla(18, 58%, 45%, 0.15);
+  }
+
+  .doctor-v3-tile-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.7rem;
     align-items: center;
   }
 
-  .doctor-v3-nav {
-    padding: 0.75rem;
+  .doctor-v3-workspace {
+    display: grid;
+    grid-template-columns: minmax(230px, 320px) minmax(0, 1fr);
+    gap: 0.9rem;
   }
 
-  .doctor-v3-panel {
-    padding: 1rem;
+  .doctor-v3-rail-list {
+    display: grid;
+    gap: 0.5rem;
+    max-height: 65vh;
+    overflow: auto;
+    padding-right: 0.1rem;
   }
 
-  .doctor-v3-headline {
+  .doctor-v3-rail-item {
+    display: grid;
+    gap: 0.3rem;
+    text-align: left;
+    border-radius: 0.8rem;
+    padding: 0.65rem;
+    border: 1px solid var(--dv3-border);
+    background: hsl(0, 0%, 100%);
+    cursor: pointer;
+    transition:
+      border-color 120ms ease,
+      transform 120ms ease;
+  }
+
+  .doctor-v3-rail-item:hover {
+    transform: translateX(1px);
+  }
+
+  .doctor-v3-rail-item.is-active {
+    border-color: var(--dv3-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--dv3-accent) 22%, transparent);
+  }
+
+  .doctor-v3-focus {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .doctor-v3-focus-head {
     display: flex;
     justify-content: space-between;
     gap: 1rem;
-    align-items: center;
-    margin-bottom: 0.85rem;
+    align-items: flex-start;
   }
 
-  .doctor-v3-toolbar {
-    display: grid;
-    gap: 0.75rem;
+  .doctor-v3-focus-kind {
+    font-size: 0.74rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--dv3-accent);
   }
 
-  .doctor-v3-toolbar-grid {
-    grid-template-columns: minmax(0, 1fr) 180px;
+  .doctor-v3-confidence {
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    min-width: 3.8rem;
+    justify-content: center;
   }
 
-  .doctor-v3-list {
-    display: grid;
-    gap: 0.75rem;
-  }
-
-  .doctor-v3-queue-item,
-  .doctor-v3-card,
-  .doctor-v3-mini {
-    width: 100%;
+  .doctor-v3-detail {
     border: 1px solid var(--dv3-border);
-    background: var(--dv3-card);
-    border-radius: 0.9rem;
-    padding: 0.9rem;
-    text-align: left;
-    color: inherit;
-    text-decoration: none;
+    border-radius: 0.95rem;
+    background: hsl(0, 0%, 100%);
+    padding: 0.85rem;
   }
 
-  .doctor-v3-card {
-    display: grid;
-    gap: 0.7rem;
-  }
-
-  .doctor-v3-card-title {
+  .doctor-v3-inline-tags {
     display: flex;
+    gap: 0.45rem;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.6rem;
+  }
+
+  .doctor-v3-rich-copy {
+    color: var(--dv3-text);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .doctor-v3-compare {
+    display: grid;
+    gap: 0.55rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .doctor-v3-posting {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.75rem;
+    text-decoration: none;
+    border-radius: 0.75rem;
+    border: 1px solid var(--dv3-border);
+    background: hsl(34, 68%, 98%);
+  }
+
+  .doctor-v3-actions-row {
+    display: flex;
+    gap: 0.5rem;
     flex-wrap: wrap;
   }
 
-  .doctor-v3-card-body {
-    overflow-wrap: anywhere;
-    color: var(--dv3-strong);
-  }
-
-  .doctor-v3-dual {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.6rem;
-  }
-
-  .doctor-v3-mini {
-    display: grid;
-    gap: 0.2rem;
-    background: var(--dv3-soft);
-  }
-
-  .doctor-v3-amount {
-    font-size: 1.25rem;
-  }
-
-  .doctor-v3-pager {
+  .doctor-v3-nav-row {
     display: flex;
-    align-items: center;
+    justify-content: space-between;
     gap: 0.7rem;
+    align-items: center;
+    margin-top: 0.25rem;
   }
 
-  @media (max-width: 860px) {
+  @media (max-width: 1260px) {
+    .doctor-v3-input-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .doctor-v3-cardwall {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 1080px) {
+    .doctor-v3-input-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .doctor-v3-workspace {
+      grid-template-columns: 1fr;
+    }
+
+    .doctor-v3-rail-list {
+      max-height: 35vh;
+    }
+
     .doctor-v3-hero,
-    .doctor-v3-headline,
-    .doctor-v3-pager {
+    .doctor-v3-focus-head,
+    .doctor-v3-nav-row {
       flex-direction: column;
       align-items: flex-start;
     }
+  }
 
-    .doctor-v3-dual,
-    .doctor-v3-toolbar-grid {
+  @media (max-width: 760px) {
+    .doctor-v3-input-grid,
+    .doctor-v3-cardwall,
+    .doctor-v3-compare {
       grid-template-columns: 1fr;
     }
   }

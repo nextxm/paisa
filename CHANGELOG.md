@@ -16,7 +16,10 @@
 
 - **Add Doctor V2 triage workspace** — Added a parallel Doctor page with a clearer review flow for large diagnosis result sets.
   - Added `/more/doctor-v2` with a queue-first overview, compact findings cards, and single-focus duplicate/outlier review modes.
-  - Added `/more/doctor-v3` as a clean rewrite with strict one-section-at-a-time triage to reduce layout noise and decision overload.
+  - Reimagined `/more/doctor-v3` as a ranked single-item triage studio with keyboard navigation and a focused queue rail, replacing the section-dashboard pattern.
+  - Added quick filters in Doctor V3 for account, date range, and amount range (absolute) with account chips for faster narrowing of duplicate/outlier queues.
+  - Added a multi-card review mode and refreshed visual styling in Doctor V3 so users can scan many findings at once instead of single-item-only review.
+  - Removed loop-prone state synchronization in Doctor V3 that could trigger constant refresh-like rerender churn during review.
   - Added Doctor V2 helper logic and focused Bun coverage for queue ordering and filtering behavior.
   - Exposed the new page from the More navigation, command palette, and the legacy Doctor page so both versions can be compared before replacing the original.
 
