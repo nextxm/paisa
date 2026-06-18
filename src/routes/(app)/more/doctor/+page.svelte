@@ -1,6 +1,16 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import COLORS from "$lib/colors";
+  import {
+    buildPriorityQueue,
+    countIssuesByLevel,
+    filterDuplicatePairs,
+    filterIssues,
+    filterOutliers,
+    issueTone,
+    normalizeDoctorQuery,
+    type DoctorPriorityItem
+  } from "$lib/doctor_v2";
   import { ajax, formatCurrency } from "$lib/utils";
   import type { DuplicatePair, OutlierTransaction, Issue } from "$lib/utils";
   import { dataQualityIssueCount } from "../../../../store";
@@ -19,16 +29,9 @@
   let duplicatePage = $state(1);
   let outlierPage = $state(1);
 
-  let filteredIssues = $derived.by(() => {
-    const q = normalize(issueSearchText);
-    if (!q) return issues;
-    return issues.filter((issue) => {
-      const haystack = [issue.level, issue.summary, issue.description, issue.details]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  });
+  let issueCounts = $derived(countIssuesByLevel(issues));
+  let filteredIssues = $derived(filterIssues(issues, issueSearchText));
+  let priorityQueue = $derived(buildPriorityQueue(issues, duplicates, outliers).slice(0, 6));
 
   let issuePageCount = $derived(Math.max(1, Math.ceil(filteredIssues.length / issuePageSize)));
 
@@ -37,20 +40,14 @@
     return filteredIssues.slice(start, start + issuePageSize);
   });
 
-  let filteredDuplicates = $derived.by(() =>
-    duplicates.filter(
-      (pair) => pair.confidence >= minConfidence && matchesDuplicateQuery(pair, searchText)
-    )
-  );
+  let filteredDuplicates = $derived(filterDuplicatePairs(duplicates, searchText, minConfidence));
 
-  let filteredOutliers = $derived.by(() =>
-    outliers.filter(
-      (outlier) => outlier.confidence >= minConfidence && matchesOutlierQuery(outlier, searchText)
-    )
-  );
+  let filteredOutliers = $derived(filterOutliers(outliers, searchText, minConfidence));
 
   let duplicatePageCount = $derived(Math.max(1, Math.ceil(filteredDuplicates.length / pageSize)));
   let outlierPageCount = $derived(Math.max(1, Math.ceil(filteredOutliers.length / pageSize)));
+
+  let visibleQueue = $derived(priorityQueue);
 
   let pagedDuplicates = $derived.by(() => {
     const start = (duplicatePage - 1) * pageSize;
@@ -123,43 +120,6 @@
     return Math.round(confidence * 100);
   }
 
-  function normalize(value: string) {
-    return value.trim().toLowerCase();
-  }
-
-  function matchesDuplicateQuery(pair: DuplicatePair, q: string) {
-    const query = normalize(q);
-    if (!query) return true;
-    const haystack = [
-      pair.reason,
-      pair.posting1.date,
-      pair.posting1.payee,
-      pair.posting1.account,
-      String(pair.posting1.amount),
-      pair.posting2.date,
-      pair.posting2.payee,
-      pair.posting2.account,
-      String(pair.posting2.amount)
-    ]
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(query);
-  }
-
-  function matchesOutlierQuery(outlier: OutlierTransaction, q: string) {
-    const query = normalize(q);
-    if (!query) return true;
-    const haystack = [
-      outlier.posting.date,
-      outlier.posting.payee,
-      outlier.posting.account,
-      String(outlier.posting.amount)
-    ]
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(query);
-  }
-
   function applyFilters() {
     duplicatePage = 1;
     outlierPage = 1;
@@ -199,6 +159,34 @@
     if (confidence >= 0.5) return "#e6a817";
     return COLORS.gainText;
   }
+
+  function toneColor(level: string) {
+    const tone = issueTone(level);
+    if (tone === "danger") return COLORS.lossText;
+    if (tone === "warning") return "#e6a817";
+    if (tone === "success") return COLORS.gainText;
+    return "#4a90e2";
+  }
+
+  function queueBadgeColor(tone: string) {
+    if (tone === "danger") return COLORS.lossText;
+    if (tone === "warning") return "#e6a817";
+    if (tone === "success") return COLORS.gainText;
+    return "#4a90e2";
+  }
+
+  function toneClass(item: DoctorPriorityItem) {
+    if (item.tone === "danger") return "is-danger";
+    if (item.tone === "warning") return "is-warning";
+    if (item.tone === "success") return "is-success";
+    return "is-info";
+  }
+
+  function snippet(value: string, limit = 150) {
+    const text = normalizeDoctorQuery(value.replace(/<[^>]+>/g, " "));
+    if (text.length <= limit) return text;
+    return `${text.slice(0, limit - 1)}…`;
+  }
 </script>
 
 <section class="section tab-doctor">
@@ -225,11 +213,43 @@
 
     <section class="mb-5">
       <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
-        <h2 class="title is-5 mb-0">Diagnosis Findings</h2>
+        <h2 class="title is-5 mb-0">Priority queue</h2>
+        {#if visibleQueue.length > 0}
+          <span class="tag is-light is-rounded">{visibleQueue.length} items shown</span>
+        {/if}
+      </div>
+
+      {#if visibleQueue.length === 0}
+        <p class="has-text-grey mb-0">No items in the current review queue.</p>
+      {:else}
+        <div class="doctor-queue-grid mb-5">
+          {#each visibleQueue as item}
+            <article class="box doctor-queue-card">
+              <div class="is-flex is-justify-content-space-between is-align-items-start mb-2 gap-2">
+                <div>
+                  <span
+                    class="tag is-light is-rounded"
+                    style="background-color: {queueBadgeColor(item.tone)}; color: white"
+                  >
+                    {item.section}
+                  </span>
+                  <p class="doctor-queue-title mt-2">{item.title}</p>
+                </div>
+                <span class="tag is-rounded doctor-score-tag">{Math.round(item.score)} score</span>
+              </div>
+              <p class="is-size-7 has-text-grey">{item.subtitle}</p>
+              <p class="doctor-queue-meta">{item.meta}</p>
+            </article>
+          {/each}
+        </div>
+      {/if}
+    </section>
+
+    <section class="mb-5">
+      <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+        <h2 class="title is-5 mb-0">Diagnosis findings</h2>
         {#if issues.length > 0}
-          <span class="tag is-info is-light is-rounded"
-            >{filteredIssues.length} / {issues.length} shown</span
-          >
+          <span class="tag is-info is-light is-rounded">{issueCounts.danger || 0} critical</span>
         {/if}
       </div>
 
@@ -286,18 +306,27 @@
           </button>
         </div>
 
-        <div class="columns is-flex-wrap-wrap">
+        <div class="doctor-issue-list">
           {#each pagedIssues as issue}
-            <div class="column is-6">
-              <article class="message invertable is-{issue.level}">
-                <div class="message-header">
-                  <p>{issue.summary}</p>
+            <details class="box doctor-issue-card" open={issue.level === "danger"}>
+              <summary class="doctor-issue-summary">
+                <span
+                  class="tag is-rounded issue-tone"
+                  style="background-color: {toneColor(issue.level)}; color: white"
+                >
+                  {issueTone(issue.level)}
+                </span>
+                <div class="doctor-issue-summary-copy">
+                  <p class="doctor-issue-title">{issue.summary}</p>
+                  <p class="is-size-7 has-text-grey">
+                    {snippet(issue.description || issue.details)}
+                  </p>
                 </div>
-                <div class="message-body issue-details">
-                  {@html `${issue.description} <br/> <br/> ${issue.details}`}
-                </div>
-              </article>
-            </div>
+              </summary>
+              <div class="doctor-issue-body issue-details">
+                {@html `${issue.description} <br/> <br/> ${issue.details}`}
+              </div>
+            </details>
           {/each}
         </div>
       {/if}
@@ -401,7 +430,7 @@
     </div>
 
     <!-- Duplicate Pairs -->
-    {#if activeView !== "outliers"}
+    {#if activeView === "duplicates"}
       <section id="doctor-duplicates" class="mb-5">
         <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
           <h3 class="title is-6 mb-0">Potential Duplicates</h3>
@@ -505,7 +534,7 @@
     {/if}
 
     <!-- Outlier Transactions -->
-    {#if activeView !== "duplicates"}
+    {#if activeView === "outliers"}
       <section id="doctor-outliers">
         <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
           <h3 class="title is-6 mb-0">Outlier Transactions</h3>
@@ -611,6 +640,85 @@
     box-shadow: 0 0 0 1px #3273dc inset;
   }
 
+  .doctor-queue-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .doctor-queue-card {
+    min-height: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition:
+      transform 0.18s ease,
+      border-color 0.18s ease;
+  }
+
+  .doctor-queue-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+
+  .doctor-queue-title {
+    font-weight: 700;
+    line-height: 1.15;
+  }
+
+  .doctor-queue-meta {
+    margin-top: 0.6rem;
+    color: #9ca3af;
+    font-size: 0.88rem;
+  }
+
+  .doctor-issue-list {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .doctor-issue-card {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.85rem;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .doctor-issue-summary {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    cursor: pointer;
+    padding: 1rem;
+    list-style: none;
+  }
+
+  .doctor-issue-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .doctor-issue-summary-copy {
+    min-width: 0;
+  }
+
+  .doctor-issue-title {
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0.2rem;
+  }
+
+  .doctor-issue-body {
+    padding: 0 1rem 1rem 1rem;
+    overflow-wrap: anywhere;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .issue-tone {
+    flex-shrink: 0;
+  }
+
+  .doctor-score-tag {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
   .doctor-controls {
     position: sticky;
     top: 0.75rem;
@@ -631,14 +739,18 @@
     gap: 0.75rem;
   }
 
-  .issue-details {
-    overflow-wrap: anywhere;
-  }
-
   @media (max-width: 768px) {
     .doctor-v2-banner {
       flex-direction: column;
       align-items: flex-start;
+    }
+
+    .doctor-queue-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .doctor-issue-summary {
+      flex-direction: column;
     }
 
     .doctor-controls {

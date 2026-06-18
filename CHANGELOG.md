@@ -15,7 +15,7 @@
   - Added focused backend test coverage for override behavior and bucket-priority ordering.
 
 - **Add Doctor V2 triage workspace** — Added a parallel Doctor page with a clearer review flow for large diagnosis result sets.
-  - Added `/more/doctor-v2` with an overview workspace, priority queue, sticky section navigation, and separate focused sections for diagnosis rules, duplicate candidates, and outlier transactions.
+  - Added `/more/doctor-v2` with a queue-first overview, compact findings cards, and single-focus duplicate/outlier review modes.
   - Added Doctor V2 helper logic and focused Bun coverage for queue ordering and filtering behavior.
   - Exposed the new page from the More navigation, command palette, and the legacy Doctor page so both versions can be compared before replacing the original.
 
