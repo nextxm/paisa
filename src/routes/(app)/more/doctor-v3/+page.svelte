@@ -722,7 +722,8 @@
                     >Inspect in focus</button
                   >
                   {#if posting}
-                    <a class="button is-small is-light" href={ledgerHref(posting)}>Open in ledger</a>
+                    <a class="button is-small is-light" href={ledgerHref(posting)}>Open in ledger</a
+                    >
                   {/if}
                 </div>
               </article>
@@ -762,7 +763,9 @@
                         >Inspect in focus</button
                       >
                       {#if posting}
-                        <a class="button is-small is-light" href={ledgerHref(posting)}>Open in ledger</a>
+                        <a class="button is-small is-light" href={ledgerHref(posting)}
+                          >Open in ledger</a
+                        >
                       {/if}
                     </div>
                   </article>
@@ -1104,7 +1107,9 @@
     padding: 1rem;
     border-radius: 1rem;
     background: hsl(0, 0%, 100%);
-    transition: transform 180ms ease, box-shadow 180ms ease;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease;
   }
 
   .doctor-v3-tile:hover {
@@ -1147,7 +1152,10 @@
     border: 1px solid var(--dv3-border);
     background: hsl(0, 0%, 100%);
     cursor: pointer;
-    transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+    transition:
+      border-color 120ms ease,
+      transform 120ms ease,
+      box-shadow 120ms ease;
   }
 
   .doctor-v3-rail-item:hover {
