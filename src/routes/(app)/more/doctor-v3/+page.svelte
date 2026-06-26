@@ -9,6 +9,7 @@
   type TriageKind = "diagnosis" | "duplicates" | "outliers";
   type FocusKind = "all" | TriageKind;
   type ReviewMode = "cards" | "focus";
+  type GroupBy = "none" | "type" | "account" | "year" | "month";
 
   type TriageItem = {
     id: string;
@@ -34,6 +35,8 @@
 
   let reviewMode: ReviewMode = $state("cards");
   let focusKind: FocusKind = $state("all");
+  let groupBy: GroupBy = $state("none");
+  let groupFilterValue = $state("");
   let queryText = $state("");
   let minConfidence = $state(0.5);
   let accountFilter = $state("");
@@ -154,7 +157,12 @@
       if (item.kind !== "diagnosis" && item.confidence < minConfidence) return false;
       if (q && !item.searchable.includes(q)) return false;
 
-      if (!hasTxnFilters) return true;
+      if (!hasTxnFilters && !groupFilterValue) return true;
+
+      if (groupBy !== "none" && groupFilterValue) {
+        const groupKey = itemGroupKey(item, groupBy);
+        if (groupKey !== groupFilterValue) return false;
+      }
 
       const postings = postingsForItem(item);
       if (postings.length === 0) return false;
@@ -163,6 +171,41 @@
         postingMatchesFilters(posting, accountQuery, dateFrom, dateTo, minAmount, maxAmount)
       );
     });
+  });
+
+  let groupFilterOptions = $derived.by(() => {
+    if (groupBy === "none") return [];
+
+    const groups = new Set<string>();
+    visibleItems.forEach((item) => groups.add(itemGroupKey(item, groupBy)));
+    return [...groups].sort((a, b) => a.localeCompare(b));
+  });
+
+  type GroupedItems = { group: string; items: TriageItem[] }[];
+
+  let visibleGroups: GroupedItems = $derived.by(() => {
+    if (groupBy === "none") return [];
+
+    const groups = new Map<string, TriageItem[]>();
+    for (const item of visibleItems) {
+      const key = itemGroupKey(item, groupBy);
+      const group = key || "Unassigned";
+      if (!groups.has(group)) groups.set(group, []);
+      groups.get(group)!.push(item);
+    }
+
+    const entries = [...groups.entries()];
+
+    if (groupBy === "month" || groupBy === "year") {
+      entries.sort(([a], [b]) => b.localeCompare(a));
+    } else if (groupBy === "account") {
+      entries.sort(([a], [b]) => a.localeCompare(b));
+    } else if (groupBy === "type") {
+      const order: Record<string, number> = { diagnosis: 0, duplicates: 1, outliers: 2 };
+      entries.sort(([a], [b]) => (order[a] ?? 3) - (order[b] ?? 3));
+    }
+
+    return entries.map(([group, items]) => ({ group, items }));
   });
 
   let currentItem = $derived(visibleItems[currentIndex] || null);
@@ -363,6 +406,43 @@
     return Number.isFinite(parsed) ? parsed : null;
   }
 
+  function itemGroupKey(item: TriageItem, by: GroupBy) {
+    if (by === "type") {
+      if (item.kind === "diagnosis") return "Diagnosis";
+      if (item.kind === "duplicates") return "Duplicates";
+      return "Outliers";
+    }
+
+    const posting = primaryPosting(item);
+    if (!posting) return "Unassigned";
+
+    if (by === "account") return posting.account;
+    const normalizedDate = normalizeDate(posting.date);
+    if (by === "year") return normalizedDate.slice(0, 4);
+    if (by === "month") return normalizedDate.slice(0, 7);
+
+    return "Unassigned";
+  }
+
+  function updateGroupBy(event: Event) {
+    groupBy = (event.currentTarget as HTMLSelectElement).value as GroupBy;
+    groupFilterValue = "";
+    currentIndex = 0;
+  }
+
+  function updateGroupFilter(event: Event) {
+    groupFilterValue = (event.currentTarget as HTMLSelectElement).value;
+    currentIndex = 0;
+  }
+
+  function groupFilterLabel() {
+    if (groupBy === "type") return "Type";
+    if (groupBy === "account") return "Account";
+    if (groupBy === "year") return "Year";
+    if (groupBy === "month") return "Month";
+    return "Group";
+  }
+
   function pairKey(pair: DuplicatePair) {
     return `${pair.posting1.id}-${pair.posting2.id}`;
   }
@@ -553,6 +633,33 @@
             />
           </label>
 
+          <label class="doctor-v3-field">
+            <span>Group by</span>
+            <div class="select is-fullwidth">
+              <select bind:value={groupBy} onchange={updateGroupBy}>
+                <option value="none">None</option>
+                <option value="type">Type</option>
+                <option value="account">Account</option>
+                <option value="year">Year</option>
+                <option value="month">Month</option>
+              </select>
+            </div>
+          </label>
+
+          {#if groupBy !== "none"}
+            <label class="doctor-v3-field">
+              <span>Filter {groupFilterLabel()}</span>
+              <div class="select is-fullwidth">
+                <select value={groupFilterValue} onchange={updateGroupFilter}>
+                  <option value="">All {groupFilterLabel()}</option>
+                  {#each groupFilterOptions as option}
+                    <option value={option}>{option}</option>
+                  {/each}
+                </select>
+              </div>
+            </label>
+          {/if}
+
           <div class="doctor-v3-progress">
             <p class="mb-1">In queue: <strong>{visibleItems.length}</strong></p>
             <p class="mb-2">
@@ -587,39 +694,83 @@
           <strong>Queue clear.</strong> No items match your current filters.
         </div>
       {:else if reviewMode === "cards"}
-        <section class="doctor-v3-cardwall">
-          {#each visibleItems.slice(0, 48) as item, index}
-            {@const posting = primaryPosting(item)}
-            <article class="box doctor-v3-tile">
-              <div class="doctor-v3-tile-head">
-                <span class="tag is-light">{item.kind}</span>
-                <span
-                  class="tag is-rounded doctor-v3-confidence"
-                  style={`background-color: ${confidenceColor(item.confidence)}`}
-                  >{pct(item.confidence)}%</span
-                >
-              </div>
+        {#if groupBy === "none"}
+          <section class="doctor-v3-cardwall">
+            {#each visibleItems.slice(0, 48) as item, index}
+              {@const posting = primaryPosting(item)}
+              <article class="box doctor-v3-tile">
+                <div class="doctor-v3-tile-head">
+                  <span class="tag is-light">{item.kind}</span>
+                  <span
+                    class="tag is-rounded doctor-v3-confidence"
+                    style={`background-color: ${confidenceColor(item.confidence)}`}
+                    >{pct(item.confidence)}%</span
+                  >
+                </div>
 
-              <h3 class="title is-6 mb-1">{item.title}</h3>
-              <p class="doctor-v3-subtitle mb-3">{item.subtitle}</p>
+                <h3 class="title is-6 mb-1">{item.title}</h3>
+                <p class="doctor-v3-subtitle mb-3">{item.subtitle}</p>
 
-              {#if posting}
-                <p class="doctor-v3-subtitle mb-3">
-                  {posting.date} · {posting.account} · {formatCurrency(posting.amount)}
-                </p>
-              {/if}
-
-              <div class="doctor-v3-actions-row">
-                <button class="button is-small is-light" onclick={() => inspectItem(index)}
-                  >Inspect in focus</button
-                >
                 {#if posting}
-                  <a class="button is-small is-light" href={ledgerHref(posting)}>Open in ledger</a>
+                  <p class="doctor-v3-subtitle mb-3">
+                    {posting.date} · {posting.account} · {formatCurrency(posting.amount)}
+                  </p>
                 {/if}
+
+                <div class="doctor-v3-actions-row">
+                  <button class="button is-small is-light" onclick={() => inspectItem(index)}
+                    >Inspect in focus</button
+                  >
+                  {#if posting}
+                    <a class="button is-small is-light" href={ledgerHref(posting)}>Open in ledger</a>
+                  {/if}
+                </div>
+              </article>
+            {/each}
+          </section>
+        {:else}
+          {#each visibleGroups as group}
+            <div class="doctor-v3-group">
+              <div class="doctor-v3-group-header">
+                <div>{group.group}</div>
+                <span class="tag is-light">{group.items.length}</span>
               </div>
-            </article>
+              <section class="doctor-v3-cardwall doctor-v3-group-cards">
+                {#each group.items.slice(0, 48) as item, index}
+                  {@const posting = primaryPosting(item)}
+                  <article class="box doctor-v3-tile">
+                    <div class="doctor-v3-tile-head">
+                      <span class="tag is-light">{item.kind}</span>
+                      <span
+                        class="tag is-rounded doctor-v3-confidence"
+                        style={`background-color: ${confidenceColor(item.confidence)}`}
+                        >{pct(item.confidence)}%</span
+                      >
+                    </div>
+
+                    <h3 class="title is-6 mb-1">{item.title}</h3>
+                    <p class="doctor-v3-subtitle mb-3">{item.subtitle}</p>
+
+                    {#if posting}
+                      <p class="doctor-v3-subtitle mb-3">
+                        {posting.date} · {posting.account} · {formatCurrency(posting.amount)}
+                      </p>
+                    {/if}
+
+                    <div class="doctor-v3-actions-row">
+                      <button class="button is-small is-light" onclick={() => inspectItem(index)}
+                        >Inspect in focus</button
+                      >
+                      {#if posting}
+                        <a class="button is-small is-light" href={ledgerHref(posting)}>Open in ledger</a>
+                      {/if}
+                    </div>
+                  </article>
+                {/each}
+              </section>
+            </div>
           {/each}
-        </section>
+        {/if}
       {:else}
         <div class="doctor-v3-workspace">
           <aside class="box doctor-v3-rail">
@@ -755,17 +906,18 @@
 <style>
   .doctor-v3-page {
     --dv3-bg: hsl(41, 73%, 95%);
-    --dv3-surface: hsla(37, 63%, 99%, 0.88);
+    --dv3-surface: hsla(37, 63%, 99%, 0.98);
     --dv3-border: hsl(35, 36%, 78%);
     --dv3-accent: hsl(18, 74%, 42%);
     --dv3-accent-soft: hsl(18, 82%, 93%);
     --dv3-text: hsl(214, 23%, 18%);
     --dv3-muted: hsl(216, 12%, 40%);
-    --dv3-shadow: 0 10px 24px hsla(18, 58%, 45%, 0.1);
+    --dv3-shadow: 0 14px 30px hsla(18, 58%, 45%, 0.12);
     font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
     background:
       radial-gradient(circle at 92% -10%, hsl(15, 88%, 86%), transparent 34%),
       radial-gradient(circle at 0% 112%, hsl(44, 100%, 84%), transparent 38%), var(--dv3-bg);
+    padding: 2rem 0 3rem;
   }
 
   :global(.doctor-v3-page .title),
@@ -777,22 +929,63 @@
     color: var(--dv3-text);
   }
 
+  .doctor-v3-page .container.is-fluid {
+    max-width: 1280px;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .doctor-v3-page .box,
+  .doctor-v3-page .notification,
+  .doctor-v3-page .doctor-v3-progress {
+    background: var(--dv3-surface);
+    border-color: var(--dv3-border);
+    color: var(--dv3-text);
+  }
+
+  .doctor-v3-page .box {
+    box-shadow: var(--dv3-shadow);
+  }
+
+  .doctor-v3-page .button.is-light {
+    background-color: hsl(0, 0%, 100%);
+    color: var(--dv3-text);
+    border-color: var(--dv3-border);
+  }
+
+  .doctor-v3-page .button.is-dark {
+    background-color: var(--dv3-text);
+    color: white;
+    border-color: transparent;
+  }
+
+  .doctor-v3-page input,
+  .doctor-v3-page select {
+    background: hsl(0, 0%, 100%);
+    color: var(--dv3-text);
+    border: 1px solid var(--dv3-border);
+  }
+
+  .doctor-v3-page input::placeholder {
+    color: var(--dv3-muted);
+  }
+
   .doctor-v3-hero,
   .doctor-v3-controls,
   .doctor-v3-rail,
   .doctor-v3-focus,
   .doctor-v3-tile {
-    background: var(--dv3-surface);
     border: 1px solid var(--dv3-border);
     box-shadow: var(--dv3-shadow);
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
   }
 
   .doctor-v3-hero {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: 1rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.2rem 1.3rem;
     margin-bottom: 1rem;
   }
 
@@ -800,52 +993,48 @@
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-    margin-bottom: 0.6rem;
-    padding: 0.27rem 0.6rem;
+    margin-bottom: 0.65rem;
+    padding: 0.32rem 0.7rem;
     border-radius: 999px;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
     font-weight: 700;
-    font-size: 0.73rem;
+    font-size: 0.74rem;
     color: var(--dv3-accent);
     background: var(--dv3-accent-soft);
   }
 
-  .doctor-v3-subtitle,
-  .doctor-v3-rail-subtitle,
-  .doctor-v3-reason,
-  .doctor-v3-math {
-    color: var(--dv3-muted);
-  }
-
   .doctor-v3-actions {
     display: flex;
+    justify-content: flex-end;
     flex-wrap: wrap;
-    gap: 0.55rem;
+    gap: 0.75rem;
   }
 
   .doctor-v3-controls {
     display: grid;
-    gap: 0.85rem;
+    gap: 1rem;
+    padding: 1.2rem 1.25rem;
   }
 
   .doctor-v3-top-row {
     display: flex;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: 1rem;
     flex-wrap: wrap;
+    align-items: center;
   }
 
   .doctor-v3-segment {
     display: flex;
-    gap: 0.45rem;
+    gap: 0.6rem;
     flex-wrap: wrap;
   }
 
   .doctor-v3-input-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.7rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
     align-items: end;
   }
 
@@ -856,96 +1045,125 @@
 
   .doctor-v3-field span {
     font-size: 0.76rem;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--dv3-muted);
     font-weight: 700;
   }
 
   .doctor-v3-progress {
-    padding: 0.65rem;
-    border-radius: 0.75rem;
-    border: 1px solid var(--dv3-border);
-    background: hsl(0, 0%, 100%);
+    padding: 1rem;
+    border-radius: 1rem;
+    background: hsla(0, 0%, 100%, 0.88);
+    min-width: 220px;
   }
 
   .doctor-v3-account-chips {
     display: flex;
-    gap: 0.45rem;
     flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .doctor-v3-chip {
     cursor: pointer;
     border: 1px solid var(--dv3-border);
+    background: hsl(0, 0%, 100%);
+    color: var(--dv3-text);
   }
 
   .doctor-v3-cardwall {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.8rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  .doctor-v3-group {
+    margin-bottom: 1.6rem;
+  }
+
+  .doctor-v3-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: 1rem;
+    background: hsl(0, 0%, 100%);
+    border: 1px solid var(--dv3-border);
+    box-shadow: 0 6px 16px hsla(214, 23%, 18%, 0.06);
+    margin-bottom: 0.9rem;
+  }
+
+  .doctor-v3-group-cards {
+    gap: 0.95rem;
   }
 
   .doctor-v3-tile {
     display: grid;
-    gap: 0.6rem;
-    transition:
-      transform 150ms ease,
-      box-shadow 150ms ease;
+    gap: 0.85rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: hsl(0, 0%, 100%);
+    transition: transform 180ms ease, box-shadow 180ms ease;
   }
 
   .doctor-v3-tile:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 14px 26px hsla(18, 58%, 45%, 0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 18px 34px hsla(18, 58%, 45%, 0.14);
   }
 
   .doctor-v3-tile-head {
     display: flex;
     justify-content: space-between;
-    gap: 0.7rem;
+    gap: 0.85rem;
     align-items: center;
   }
 
   .doctor-v3-workspace {
     display: grid;
-    grid-template-columns: minmax(230px, 320px) minmax(0, 1fr);
-    gap: 0.9rem;
+    grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .doctor-v3-rail {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
   }
 
   .doctor-v3-rail-list {
     display: grid;
-    gap: 0.5rem;
-    max-height: 65vh;
+    gap: 0.7rem;
+    max-height: 70vh;
     overflow: auto;
-    padding-right: 0.1rem;
+    padding-right: 0.2rem;
   }
 
   .doctor-v3-rail-item {
     display: grid;
-    gap: 0.3rem;
-    text-align: left;
-    border-radius: 0.8rem;
-    padding: 0.65rem;
+    gap: 0.35rem;
+    border-radius: 1rem;
+    padding: 1rem;
     border: 1px solid var(--dv3-border);
     background: hsl(0, 0%, 100%);
     cursor: pointer;
-    transition:
-      border-color 120ms ease,
-      transform 120ms ease;
+    transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
   }
 
   .doctor-v3-rail-item:hover {
     transform: translateX(1px);
+    box-shadow: 0 8px 20px hsla(214, 23%, 18%, 0.08);
   }
 
   .doctor-v3-rail-item.is-active {
     border-color: var(--dv3-accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--dv3-accent) 22%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--dv3-accent) 20%, transparent);
   }
 
   .doctor-v3-focus {
     display: grid;
-    gap: 0.9rem;
+    gap: 1rem;
+    padding: 1rem;
   }
 
   .doctor-v3-focus-head {
@@ -973,75 +1191,61 @@
 
   .doctor-v3-detail {
     border: 1px solid var(--dv3-border);
-    border-radius: 0.95rem;
+    border-radius: 1rem;
     background: hsl(0, 0%, 100%);
-    padding: 0.85rem;
+    padding: 1rem;
   }
 
   .doctor-v3-inline-tags {
     display: flex;
-    gap: 0.45rem;
+    gap: 0.5rem;
     flex-wrap: wrap;
     align-items: center;
   }
 
   .doctor-v3-rich-copy {
     color: var(--dv3-text);
-    line-height: 1.45;
+    line-height: 1.55;
     overflow-wrap: anywhere;
   }
 
   .doctor-v3-compare {
     display: grid;
-    gap: 0.55rem;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   }
 
   .doctor-v3-posting {
     display: grid;
-    gap: 0.2rem;
-    padding: 0.75rem;
+    gap: 0.35rem;
+    padding: 0.95rem;
     text-decoration: none;
-    border-radius: 0.75rem;
+    border-radius: 0.95rem;
     border: 1px solid var(--dv3-border);
     background: hsl(34, 68%, 98%);
   }
 
   .doctor-v3-actions-row {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.7rem;
     flex-wrap: wrap;
   }
 
   .doctor-v3-nav-row {
     display: flex;
     justify-content: space-between;
-    gap: 0.7rem;
+    gap: 0.75rem;
     align-items: center;
     margin-top: 0.25rem;
   }
 
-  @media (max-width: 1260px) {
-    .doctor-v3-input-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .doctor-v3-cardwall {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
   @media (max-width: 1080px) {
-    .doctor-v3-input-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
     .doctor-v3-workspace {
       grid-template-columns: 1fr;
     }
 
     .doctor-v3-rail-list {
-      max-height: 35vh;
+      max-height: 38vh;
     }
 
     .doctor-v3-hero,
@@ -1056,6 +1260,10 @@
     .doctor-v3-input-grid,
     .doctor-v3-cardwall,
     .doctor-v3-compare {
+      grid-template-columns: 1fr;
+    }
+
+    .doctor-v3-hero {
       grid-template-columns: 1fr;
     }
   }
