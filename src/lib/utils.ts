@@ -2,7 +2,6 @@ import dayjs from "dayjs";
 import _ from "lodash";
 import * as d3 from "d3";
 import { loading } from "../store";
-import type { JSONSchema7 } from "json-schema";
 import { get } from "svelte/store";
 import { obscure } from "../persisted_store";
 import { error } from "@sveltejs/kit";
@@ -37,6 +36,7 @@ export interface Posting {
   commodity: string;
   quantity: number;
   amount: number;
+  original_amount: number;
   status: string;
   tag_recurring: string;
   transaction_begin_line: number;
@@ -138,9 +138,222 @@ export interface Networth {
   investmentAmount: number;
   withdrawalAmount: number;
   gainAmount: number;
+  contribution: number;
+  investment_return: number;
+  fx_impact: number;
   balanceAmount: number;
   balanceUnits: number;
   netInvestmentAmount: number;
+}
+
+export interface NetworthProjectionPoint {
+  date: dayjs.Dayjs;
+  balanceAmount: number;
+}
+
+export interface NetworthProjectionMilestone {
+  label: string;
+  date: dayjs.Dayjs;
+  amount: number;
+}
+
+export interface NetworthProjectionResponse {
+  current_networth: number;
+  savings_rate: number;
+  monthly_contribution: number;
+  derived_contribution: number;
+  annual_expenses: number;
+  swr: number;
+  target_corpus: number;
+  years_to_fire: number | null;
+  fire_progress_percent: number;
+  projection: {
+    conservative: NetworthProjectionPoint[];
+    expected: NetworthProjectionPoint[];
+    optimistic: NetworthProjectionPoint[];
+  };
+  milestones: NetworthProjectionMilestone[];
+  conservative_cagr: number;
+  expected_cagr: number;
+  optimistic_cagr: number;
+}
+
+export interface FinancialProfile {
+  current_networth: number;
+  monthly_contribution: number;
+  savings_rate: number;
+  annual_expenses: number;
+  annual_income: number;
+  income_growth_rate: number;
+  expense_growth_rate: number;
+  historical_return: number;
+  return_volatility: number;
+  income_years_covered: number;
+  expense_years_covered: number;
+  price_months_covered: number;
+}
+
+export interface SimulationMonthlyPoint {
+  date: dayjs.Dayjs;
+  balance_amount: number;
+}
+
+export interface GoalProbability {
+  goal_id: string;
+  name: string;
+  month: number;
+  probability: number;
+}
+
+export interface ProjectionLifeGoal {
+  goal_id: string;
+  name: string;
+  icon: string;
+  type: "milestone" | "recurring";
+  target_amount: number;
+  target_date: string;
+  start_date: string;
+  end_date: string;
+  frequency: "monthly" | "quarterly" | "yearly" | "";
+  inflation_rate?: number | null;
+  priority: number;
+  funded_by: string[];
+  monthly_allocation: number;
+  cashflow_count: number;
+  probability: number;
+}
+
+export interface SimulationResult {
+  bands: Record<string, SimulationMonthlyPoint[]>;
+  fire_probability: number;
+  fire_year_p50: number;
+  fire_year_p25: number;
+  fire_year_p75: number;
+  target_corpus: number;
+  goal_probabilities: GoalProbability[];
+  iterations: number;
+  months_projected: number;
+}
+
+export interface SimulationResponse {
+  profile: FinancialProfile;
+  simulation: SimulationResult;
+  goals: ProjectionLifeGoal[];
+}
+
+export interface WhatIfScenarioOverrides {
+  iterations?: number;
+  months_to_project?: number;
+  monthly_contribution?: number;
+  contribution_growth_rate?: number;
+  expected_return?: number;
+  return_volatility?: number;
+  inflation_rate?: number;
+  swr?: number;
+}
+
+export interface WhatIfScenarioRequest {
+  name: string;
+  overrides: WhatIfScenarioOverrides;
+}
+
+export interface WhatIfScenarioResult {
+  name: string;
+  simulation: SimulationResult;
+  goals: ProjectionLifeGoal[];
+}
+
+export interface WhatIfResponse {
+  profile: FinancialProfile;
+  baseline: {
+    simulation: SimulationResult;
+    goals: ProjectionLifeGoal[];
+  };
+  scenarios: WhatIfScenarioResult[];
+}
+
+export interface DrawdownBucket {
+  name: string;
+  accounts: string[];
+  account_glob: string;
+  tax_category: "" | "debt" | "equity" | "equity65" | "equity35" | "unlisted_equity";
+  override_tax_category: "" | "debt" | "equity" | "equity65" | "equity35" | "unlisted_equity";
+  holding_period_months: number;
+}
+
+export interface DrawdownRecommendation {
+  account: string;
+  commodity: string;
+  tax_category: string;
+  units: number;
+  amount: number;
+  estimated_tax: {
+    gain: number;
+    taxable: number;
+    slab: number;
+    long_term: number;
+    short_term: number;
+  };
+  holding_period_days: number;
+  holding_period_months: number;
+  purchase_date: dayjs.Dayjs;
+  current_unit_price: number;
+  effective_tax_rate: number;
+}
+
+export interface DrawdownAssetAccount {
+  account: string;
+  tax_category: "" | "debt" | "equity" | "equity65" | "equity35" | "unlisted_equity";
+}
+
+export interface DrawdownResponse {
+  available_accounts: string[];
+  available_assets: DrawdownAssetAccount[];
+  drawdown: {
+    requested_amount: number;
+    recommended_amount: number;
+    remaining_amount: number;
+    total_estimated_tax: {
+      gain: number;
+      taxable: number;
+      slab: number;
+      long_term: number;
+      short_term: number;
+    };
+    recommendations: DrawdownRecommendation[];
+  };
+  impact?: {
+    profile: FinancialProfile;
+    drawdown_outflow: {
+      withdrawal: number;
+      estimated_tax: {
+        gain: number;
+        taxable: number;
+        slab: number;
+        long_term: number;
+        short_term: number;
+      };
+      total: number;
+    };
+    baseline: {
+      simulation: SimulationResult;
+      goals: ProjectionLifeGoal[];
+    };
+    post_drawdown: {
+      simulation: SimulationResult;
+      goals: ProjectionLifeGoal[];
+    };
+    delta: {
+      fire_probability: number;
+      fire_year_p50: number;
+    };
+  };
+}
+
+export interface CurrencyExposure {
+  currency: string;
+  amount: number;
+  percentage: number;
 }
 
 export interface Gain {
@@ -148,6 +361,10 @@ export interface Gain {
   networth: Networth;
   xirr: number;
   postings: Posting[];
+  income_received: number;
+  price_appreciation: number;
+  total_return: number;
+  ttm_yield: number;
 }
 
 export interface AccountGain {
@@ -155,6 +372,10 @@ export interface AccountGain {
   networthTimeline: Networth[];
   xirr: number;
   postings: Posting[];
+  income_received: number;
+  price_appreciation: number;
+  total_return: number;
+  ttm_yield: number;
 }
 
 export interface InterestOverview {
@@ -281,6 +502,25 @@ export interface IncomeYearlyCard {
   net_income: number;
 }
 
+export interface InvestmentIncomeHolding {
+  type: string;
+  holding: string;
+  postings: Posting[];
+  total_income: number;
+  ttm_income: number;
+  ttm_yield: number;
+  current_balance: number;
+  yearly_income: Record<string, number>;
+}
+
+export interface InvestmentIncomeTimelinePoint {
+  date: dayjs.Dayjs;
+  dividend: number;
+  interest: number;
+  distribution: number;
+  total: number;
+}
+
 export interface YoYSeries {
   month: Record<string, number>;
   total: number;
@@ -339,6 +579,21 @@ export interface Issue {
   summary: string;
   description: string;
   details: string;
+}
+
+export interface DuplicatePair {
+  posting1: Posting;
+  posting2: Posting;
+  confidence: number;
+  reason: string;
+}
+
+export interface OutlierTransaction {
+  posting: Posting;
+  mean: number;
+  std_dev: number;
+  sigma: number;
+  confidence: number;
 }
 
 export interface ScheduleALSection {
@@ -643,6 +898,19 @@ export interface SankeyResponse {
   meta: SankeyMeta;
 }
 
+export interface DailyExpenseDay {
+  date: dayjs.Dayjs;
+  total: number;
+  by_category?: Record<string, number>;
+}
+
+export interface DailyExpenseResponse {
+  from_date: dayjs.Dayjs;
+  to_date: dayjs.Dayjs;
+  categories: string[];
+  days: DailyExpenseDay[];
+}
+
 export interface ReconcileItem {
   firefly_account: string;
   paisa_account: string;
@@ -665,19 +933,6 @@ type RequestOptions = RequestInit & {
   background?: boolean;
 };
 
-type ConfigResponse = {
-  config: UserConfig;
-  schema: JSONSchema7;
-  now: dayjs.Dayjs;
-  accounts: string[];
-  last_price_update: string;
-  is_journal_dirty: boolean;
-};
-
-export function ajax(
-  route: "/api/config",
-  options?: RequestOptions & { method?: "GET" | undefined }
-): Promise<ConfigResponse>;
 export function ajax(
   route: "/api/config/provider-debug-http",
   options?: RequestOptions
@@ -690,6 +945,9 @@ export function ajax(route: "/api/schedule_al"): Promise<{
   schedule_als: Record<string, ScheduleAL>;
 }>;
 export function ajax(route: "/api/diagnosis"): Promise<{ issues: Issue[] }>;
+export function ajax(
+  route: "/api/diagnosis/duplicates"
+): Promise<{ duplicates: DuplicatePair[]; outliers: OutlierTransaction[] }>;
 export function ajax(route: "/api/logs"): Promise<{ logs: Log[] }>;
 export function ajax(
   route: "/api/investment"
@@ -721,6 +979,21 @@ export function ajax(route: "/api/networth"): Promise<{
   networthTimeline: Networth[];
   xirr: number;
 }>;
+export function ajax(route: "/api/networth/projection"): Promise<NetworthProjectionResponse>;
+export function ajax(route: "/api/projection/dna"): Promise<{ profile: FinancialProfile }>;
+export function ajax(route: "/api/projection/goals"): Promise<{ goals: ProjectionLifeGoal[] }>;
+export function ajax(
+  route: "/api/projection/simulate",
+  options?: RequestOptions
+): Promise<SimulationResponse>;
+export function ajax(
+  route: "/api/projection/whatif",
+  options?: RequestOptions
+): Promise<WhatIfResponse>;
+export function ajax(
+  route: "/api/projection/drawdown",
+  options?: RequestOptions
+): Promise<DrawdownResponse>;
 export function ajax(route: "/api/gain"): Promise<{
   gain_breakdown: Gain[];
 }>;
@@ -752,12 +1025,23 @@ export function ajax(route: "/api/allocation"): Promise<{
   aggregates_timeline: { [key: string]: Aggregate }[];
   allocation_targets: AllocationTarget[];
 }>;
+export function ajax(route: "/api/currency-exposure"): Promise<{
+  currency_exposure: CurrencyExposure[];
+}>;
 export function ajax(route: "/api/portfolio_allocation"): Promise<PortfolioAllocation>;
 export function ajax(route: "/api/income"): Promise<{
   income_timeline: Income[];
   tax_timeline: Tax[];
   yearly_cards: IncomeYearlyCard[];
   multi_year: Record<string, YoYSeries>;
+}>;
+export function ajax(route: "/api/income/investment"): Promise<{
+  income_by_type: Record<string, InvestmentIncomeHolding[]>;
+  holdings: InvestmentIncomeHolding[];
+  timeline: InvestmentIncomeTimelinePoint[];
+  ttm_total: number;
+  ttm_dividend: number;
+  ttm_interest: number;
 }>;
 export function ajax(route: "/api/expense"): Promise<{
   expenses: Posting[];
@@ -777,6 +1061,7 @@ export function ajax(route: "/api/expense"): Promise<{
   };
   graph: { [key: string]: Graph };
 }>;
+export function ajax(route: "/api/expense/daily"): Promise<DailyExpenseResponse>;
 
 export function ajax(route: "/api/budget"): Promise<{
   budgetsByMonth: { [key: string]: Budget };
@@ -917,6 +1202,11 @@ export function ajax(
 export function ajax(route: "/api/sync", options?: RequestOptions): Promise<{ job_id: string }>;
 
 export function ajax(
+  route: "/api/jobs/clear",
+  options?: RequestOptions
+): Promise<{ success: boolean }>;
+
+export function ajax(
   route: "/api/jobs/:id",
   options?: RequestOptions,
   params?: Record<string, string>
@@ -942,13 +1232,6 @@ export function ajax(
   options?: RequestOptions
 ): Promise<{ completions: AutoCompleteItem[] }>;
 export function ajax(route: "/api/init", options?: RequestOptions): Promise<any>;
-
-export function ajax(
-  route: "/api/config",
-  options: RequestOptions & { method: "POST" }
-): Promise<{ success: boolean; error?: string }>;
-
-export function ajax(route: "/api/ping"): Promise<{ success: boolean; error?: string }>;
 
 // Generic overload for dynamically constructed routes (e.g. with query params).
 export function ajax(route: string, options?: RequestOptions): Promise<any>;
@@ -987,7 +1270,7 @@ export async function ajax(
   }
 
   if (!response.ok) {
-    if (response.status == 401 && route != "/api/ping") {
+    if (response.status == 401) {
       logout();
       await goto("/login");
       error(401, "Unauthorized");

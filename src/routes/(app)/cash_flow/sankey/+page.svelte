@@ -173,6 +173,10 @@
       </div>
     {/if}
 
+    <p class="has-text-grey is-size-7 mb-3">
+      Money Flow shows end-to-end movement across income, asset/liability, and expense accounts.
+    </p>
+
     <div class="columns">
       <div class="column is-12">
         <div class="box overflow-x-auto">

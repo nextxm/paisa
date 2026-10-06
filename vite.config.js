@@ -118,7 +118,9 @@ const config = {
         cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff}"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
-        navigateFallback: "/",
+        // Bind navigation fallback to a concrete, explicitly precached shell.
+        navigateFallback: "/index.html",
+        additionalManifestEntries: [{ url: "index.html", revision: null }],
         navigateFallbackAllowlist: [/^(?!\/_app\/immutable).*$/],
         runtimeCaching: [
           {
@@ -138,13 +140,16 @@ const config = {
         ]
       },
       devOptions: {
-        enabled: true
+        enabled: false
       }
     })
   ],
   server: {
     proxy: {
       "/api": {
+        target: "http://localhost:7500"
+      },
+      "/connect": {
         target: "http://localhost:7500"
       }
     },
@@ -163,6 +168,9 @@ const config = {
       "@egjs/svelte-grid",
       "svelte-floating-ui"
     ]
+  },
+  ssr: {
+    noExternal: []
   }
 };
 

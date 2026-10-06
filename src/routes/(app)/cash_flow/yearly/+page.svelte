@@ -3,9 +3,8 @@
   import _ from "lodash";
   import { renderFlow } from "$lib/cash_flow";
   import { ajax, depth, firstName, rem, type Graph, type Legend, type Posting } from "$lib/utils";
-  import { dateMin, year } from "../../../../store";
+  import { dateMin, year, setCashflowDepthAllowed } from "../../../../store";
   import {
-    setCashflowDepthAllowed,
     cashflowExpenseDepth,
     cashflowIncomeDepth,
     cashflowShowTransfers

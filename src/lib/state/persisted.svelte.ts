@@ -1,13 +1,16 @@
 import { fromStore } from "svelte/store";
 import {
   obscure,
-  cashflowExpenseDepthAllowed,
   cashflowExpenseDepth,
-  cashflowIncomeDepthAllowed,
   cashflowIncomeDepth,
   cashflowShowTransfers,
   sankeyPeriod,
-  sankeyRefDate
+  sankeyRefDate,
+  editorLeftWidth,
+  editorRightWidth,
+  editorLeftCollapsed,
+  editorRightCollapsed,
+  configSidebarCollapsed
 } from "../../persisted_store";
 
 /**
@@ -18,13 +21,16 @@ import {
  */
 class PersistedState {
   readonly obscure = fromStore(obscure);
-  readonly cashflowExpenseDepthAllowed = fromStore(cashflowExpenseDepthAllowed);
   readonly cashflowExpenseDepth = fromStore(cashflowExpenseDepth);
-  readonly cashflowIncomeDepthAllowed = fromStore(cashflowIncomeDepthAllowed);
   readonly cashflowIncomeDepth = fromStore(cashflowIncomeDepth);
   readonly cashflowShowTransfers = fromStore(cashflowShowTransfers);
   readonly sankeyPeriod = fromStore(sankeyPeriod);
   readonly sankeyRefDate = fromStore(sankeyRefDate);
+  readonly editorLeftWidth = fromStore(editorLeftWidth);
+  readonly editorRightWidth = fromStore(editorRightWidth);
+  readonly editorLeftCollapsed = fromStore(editorLeftCollapsed);
+  readonly editorRightCollapsed = fromStore(editorRightCollapsed);
+  readonly configSidebarCollapsed = fromStore(configSidebarCollapsed);
 }
 
 export const persistedState = new PersistedState();

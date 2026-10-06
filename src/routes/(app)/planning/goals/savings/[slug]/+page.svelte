@@ -1,23 +1,31 @@
 <script lang="ts">
   import COLORS from "$lib/colors";
   import {
-    ajax,
     formatCurrency,
     formatFloat,
     isMobile,
-    type AssetBreakdown,
+    type Forecast,
     type Point,
-    type Posting
+    type Posting,
+    type AssetBreakdown
   } from "$lib/utils";
   import { onMount, tick, onDestroy } from "svelte";
   import ARIMAPromise from "arima/async";
-  import { forecast, renderProgress, findBreakPoints, renderInvestmentTimeline } from "$lib/goals";
+  import {
+    forecast,
+    renderProgress,
+    findBreakPoints,
+    project,
+    solvePMTOrNper,
+    renderInvestmentTimeline
+  } from "$lib/goals";
+  import _ from "lodash";
   import LevelItem from "$lib/components/LevelItem.svelte";
   import type { PageData } from "./$types";
-  import { iconGlyph } from "$lib/icon";
-  import _ from "lodash";
-  import PostingGroup from "$lib/components/PostingGroup.svelte";
   import PostingCard from "$lib/components/PostingCard.svelte";
+  import PostingGroup from "$lib/components/PostingGroup.svelte";
+  import { iconGlyph } from "$lib/icon";
+  import dayjs from "dayjs";
   import ProgressWithBreakpoints from "$lib/components/ProgressWithBreakpoints.svelte";
   import AssetsBalance from "$lib/components/AssetsBalance.svelte";
   import BoxLabel from "$lib/components/BoxLabel.svelte";
@@ -26,18 +34,19 @@
 
   let svg: Element;
   let investmentTimelineSvg: Element;
+  let targetDateObject: dayjs.Dayjs = $state(null);
   let savingsTotal = $state(0);
   let investmentTotal = $state(0);
   let gainTotal = $state(0);
-  let icon = $state("");
-  let name = $state("");
   let targetSavings = $state(0);
-  let swr = $state(0);
+  let pmt = $state(0);
   let xirr = $state(0);
-  let yearlyExpense = $state(0);
+  let rate = $state(0);
+  let paymentPerPeriod = $state(0);
+  let targetDate = $state("");
+  let name = $state("");
+  let icon = $state("");
   let progressPercent = $state(0);
-  let savingsX = $state(0);
-  let targetX = $state(0);
   let breakPoints: Point[] = $state([]);
   let savingsTimeline: Point[] = $state([]);
   let postings: Posting[] = $state([]);
@@ -55,15 +64,16 @@
       investmentTotal,
       gainTotal,
       savingsTimeline,
-      yearlyExpense,
-      swr,
-      xirr,
+      target: targetSavings,
+      rate,
+      targetDate,
+      postings,
       icon,
       name,
-      postings,
+      xirr,
+      paymentPerPeriod,
       balances
-    } = await ajax("/api/goals/retirement/:name", null, data));
-    targetSavings = yearlyExpense * (100 / swr);
+    } = data.goal);
 
     latestPostings = _.chain(postings)
       .sortBy((p) => p.date)
@@ -71,25 +81,34 @@
       .take(100)
       .value();
 
-    if (yearlyExpense > 0) {
+    if (targetSavings != 0) {
       progressPercent = (savingsTotal / targetSavings) * 100;
-      savingsX = savingsTotal / yearlyExpense;
-      targetX = targetSavings / yearlyExpense;
     }
 
-    if (targetX <= 0 || savingsX <= 0 || yearlyExpense <= 0) {
-      return;
+    ({ pmt, targetDate } = solvePMTOrNper(
+      targetSavings,
+      rate,
+      savingsTotal,
+      paymentPerPeriod,
+      targetDate
+    ));
+
+    let predictionsTimeline: Forecast[] = [];
+    targetDateObject = dayjs(targetDate, "YYYY-MM-DD", true);
+    if (targetDateObject.isValid()) {
+      predictionsTimeline = project(targetSavings, rate, targetDateObject, pmt, savingsTotal);
+    } else if (savingsTotal < targetSavings) {
+      const ARIMA = await ARIMAPromise;
+      predictionsTimeline = forecast(savingsTimeline, targetSavings, ARIMA);
     }
 
-    const ARIMA = await ARIMAPromise;
-    const predictionsTimeline = forecast(savingsTimeline, targetSavings, ARIMA);
     await tick();
     breakPoints = findBreakPoints(savingsTimeline.concat(predictionsTimeline), targetSavings);
     destroyCallback = renderProgress(savingsTimeline, predictionsTimeline, breakPoints, svg, {
       targetSavings
     });
 
-    renderInvestmentTimeline(postings, investmentTimelineSvg, 0);
+    renderInvestmentTimeline(postings, investmentTimelineSvg, pmt);
   });
 </script>
 
@@ -101,30 +120,31 @@
         title="Net Investment"
         value={formatCurrency(investmentTotal)}
         color={COLORS.secondary}
-        subtitle={`<b>${formatCurrency(gainTotal)}</b> ${
-          gainTotal >= 0 ? "gain" : "loss"
-        } at <b>${formatFloat(xirr)}</b> XIRR`}
+        subtitle={`<b>${formatCurrency(gainTotal)}</b> ${gainTotal >= 0 ? "gain" : "loss"}`}
       />
 
       <LevelItem
         title="Current Savings"
         value={formatCurrency(savingsTotal)}
         color={COLORS.gainText}
-        subtitle="{formatFloat(savingsX, 0)}x times Yearly Expenses"
-      />
-      <LevelItem
-        title="Yearly Expenses"
-        color={COLORS.lossText}
-        value={formatCurrency(yearlyExpense)}
+        subtitle={`<b>${formatFloat(xirr)}</b> XIRR`}
       />
 
       <LevelItem
         title="Target Savings"
         value={formatCurrency(targetSavings)}
         color={COLORS.primary}
-        subtitle="{formatFloat(targetX, 0)}x times Yearly Expenses"
+        subtitle={targetDateObject?.isValid() ? targetDateObject.format("DD MMM YYYY") : null}
       />
-      <LevelItem title="SWR" value={formatFloat(swr)} />
+
+      {#if pmt > 0}
+        <LevelItem
+          title="Monthly Investment needed"
+          value={formatCurrency(pmt)}
+          color={COLORS.secondary}
+          subtitle={rate > 0 ? `Expected <b>${formatFloat(rate, 2)}</b> rate of return` : null}
+        />
+      {/if}
     </nav>
   </div>
 </section>

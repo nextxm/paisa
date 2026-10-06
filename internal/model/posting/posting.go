@@ -1,9 +1,16 @@
 package posting
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"sort"
 	"strings"
 	"time"
 
+	dbutil "github.com/ananthakumaran/paisa/internal/db"
+	sqlcdb "github.com/ananthakumaran/paisa/internal/db/sqlc"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
@@ -31,6 +38,7 @@ type Posting struct {
 	Commodity            string          `json:"commodity"`
 	Quantity             decimal.Decimal `json:"quantity"`
 	Amount               decimal.Decimal `json:"amount"`
+	OriginalAmount       decimal.Decimal `json:"original_amount"`
 	Status               string          `json:"status"`
 	TagRecurring         string          `json:"tag_recurring"`
 	TagPeriod            string          `json:"tag_period"`
@@ -40,11 +48,25 @@ type Posting struct {
 	Forecast             bool            `json:"forecast"`
 	Note                 string          `json:"note"`
 	TransactionNote      string          `json:"transaction_note"`
+	// TransactionHash is a SHA-256 content hash of all postings that belong to
+	// the same transaction.  It is identical for every posting row in the same
+	// transaction and is used by DeltaUpsert to skip unchanged transactions.
+	TransactionHash string `gorm:"index" json:"-"`
 
 	MarketAmount decimal.Decimal `gorm:"-:all" json:"market_amount"`
 	Balance      decimal.Decimal `gorm:"-:all" json:"balance"`
 
 	behaviours []string `gorm:"-:all"`
+}
+
+// PreserveOriginalAmount sets the OriginalAmount field to match Amount if it
+// is currently zero. This should be called on postings loaded from the
+// database or parsed from ledger files to ensure the field is always
+// populated for the frontend.
+func (p *Posting) PreserveOriginalAmount() {
+	if p.OriginalAmount.IsZero() {
+		p.OriginalAmount = p.Amount
+	}
 }
 
 func (p Posting) GroupDate() time.Time {
@@ -113,12 +135,192 @@ func (p Posting) HasBehaviour(behaviour string) bool {
 	return false
 }
 
-func UpsertAll(db *gorm.DB, postings []*Posting) error {
-	const batchSize = 500
+// contentHash computes a deterministic SHA-256 digest of the stable fields
+// that make up a single posting.  It is called once per posting; callers
+// accumulate the digests of all postings in a transaction and combine them
+// (via ComputeTransactionHash) into a single per-transaction hash.
+func contentHash(p *Posting) string {
+	h := sha256.New()
+	fmt.Fprintf(h, "%s|%s|%s|%s|%s|%s|%s|%s|%d|%d|%v|%s|%s",
+		p.TransactionID,
+		p.Date.Format("2006-01-02"),
+		p.Payee,
+		p.Account,
+		p.Commodity,
+		p.Quantity.String(),
+		p.Amount.String(),
+		p.Status,
+		p.TransactionBeginLine,
+		p.TransactionEndLine,
+		p.Forecast,
+		p.Note,
+		p.TransactionNote,
+	)
+	return hex.EncodeToString(h.Sum(nil))
+}
 
+// ComputeTransactionHash returns a deterministic hash representing the full set
+// of postings in a single transaction.  The postings are sorted by account name
+// before hashing so that re-ordering within a transaction does not produce a
+// spurious "changed" signal.
+func ComputeTransactionHash(postings []*Posting) string {
+	// Sort a copy by account to get a stable order within the transaction.
+	sorted := make([]*Posting, len(postings))
+	copy(sorted, postings)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].Account < sorted[j].Account
+	})
+	h := sha256.New()
+	for _, p := range sorted {
+		fmt.Fprintf(h, "%s;", contentHash(p))
+	}
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// StampTransactionHash groups postings by TransactionID, computes
+// ComputeTransactionHash for each group, and sets the TransactionHash field
+// on every posting row.  This must be called before persisting postings to the
+// database.
+func StampTransactionHash(postings []*Posting) {
+	groups := make(map[string][]*Posting, len(postings))
+	for _, p := range postings {
+		groups[p.TransactionID] = append(groups[p.TransactionID], p)
+	}
+	for _, group := range groups {
+		hash := ComputeTransactionHash(group)
+		for _, p := range group {
+			p.TransactionHash = hash
+		}
+	}
+}
+
+func insertPostingParams(p *Posting) sqlcdb.InsertPostingParams {
+	return sqlcdb.InsertPostingParams{
+		TransactionID:        dbutil.NullString(p.TransactionID),
+		Date:                 dbutil.NullTime(p.Date),
+		Payee:                dbutil.NullString(p.Payee),
+		Account:              dbutil.NullString(p.Account),
+		Commodity:            dbutil.NullString(p.Commodity),
+		Quantity:             p.Quantity,
+		Amount:               p.Amount,
+		OriginalAmount:       p.OriginalAmount,
+		Status:               dbutil.NullString(p.Status),
+		TagRecurring:         dbutil.NullString(p.TagRecurring),
+		TagPeriod:            dbutil.NullString(p.TagPeriod),
+		TransactionBeginLine: dbutil.NullInt64(int64(p.TransactionBeginLine)),
+		TransactionEndLine:   dbutil.NullInt64(int64(p.TransactionEndLine)),
+		FileName:             dbutil.NullString(p.FileName),
+		Forecast:             dbutil.NullBool(p.Forecast),
+		Note:                 dbutil.NullString(p.Note),
+		TransactionNote:      dbutil.NullString(p.TransactionNote),
+		TransactionHash:      dbutil.NullString(p.TransactionHash),
+	}
+}
+
+// DeltaUpsert performs an incremental update of the postings table.
+// It stamps a per-transaction content hash on every new posting, then:
+//   - Deletes rows for transaction IDs that are no longer present.
+//   - Inserts rows for brand-new transaction IDs.
+//   - Replaces (delete + insert) rows for transaction IDs whose content hash
+//     changed since the last sync.
+//   - Skips posting rows whose transaction hash is identical to what is
+//     already stored, avoiding unnecessary I/O for unchanged transactions.
+//
+// The whole operation runs inside a single SQLite transaction so the postings
+// table is never in a partially-updated state.
+func DeltaUpsert(db *gorm.DB, newPostings []*Posting) (added, updated, removed, unchanged int, err error) {
+	// Stamp per-transaction hashes before any DB work.
+	StampTransactionHash(newPostings)
+
+	// Group incoming postings by TransactionID.
+	newGroups := make(map[string][]*Posting, len(newPostings))
+	for _, p := range newPostings {
+		newGroups[p.TransactionID] = append(newGroups[p.TransactionID], p)
+	}
+
+	// Load existing (transaction_id, transaction_hash) pairs.
+	rows, err2 := dbutil.Queries(db).ListPostingTransactionHashes(context.Background())
+	if err2 != nil {
+		err = err2
+		return
+	}
+
+	existing := make(map[string]string, len(rows))
+	for _, r := range rows {
+		existing[r.TransactionID.String] = r.TransactionHash.String
+	}
+
+	// Classify each existing transaction.
+	var txIDsToDelete []string
+	for txID := range existing {
+		if _, ok := newGroups[txID]; !ok {
+			txIDsToDelete = append(txIDsToDelete, txID)
+			removed++
+		}
+	}
+
+	// Classify each incoming transaction.
+	// We use a separate "to-insert" set here so that we can then collect
+	// postings in the original journal order (iterating newPostings rather
+	// than the newGroups map), ensuring consistent SQLite rowid assignment
+	// and deterministic ordering for all downstream queries.
+	txIDsToInsert := make(map[string]bool)
+	for txID, group := range newGroups {
+		existingHash, inDB := existing[txID]
+		switch {
+		case !inDB:
+			// Brand new transaction.
+			added++
+			txIDsToInsert[txID] = true
+		case group[0].TransactionHash != existingHash:
+			// Transaction content changed — delete old rows, insert new ones.
+			updated++
+			txIDsToDelete = append(txIDsToDelete, txID)
+			txIDsToInsert[txID] = true
+		default:
+			unchanged++
+		}
+	}
+
+	// Collect postings to insert in their original journal order.  Walking
+	// the input slice (not the map) guarantees a repeatable insertion
+	// sequence that matches what UpsertAll produces for the same input.
+	var postingsToInsert []*Posting
+	for _, p := range newPostings {
+		if txIDsToInsert[p.TransactionID] {
+			postingsToInsert = append(postingsToInsert, p)
+		}
+	}
+
+	err = db.Transaction(func(tx *gorm.DB) error {
+		queries := dbutil.Queries(tx)
+		if len(txIDsToDelete) > 0 {
+			for _, txID := range txIDsToDelete {
+				if e := queries.DeletePostingsByTransactionID(context.Background(), dbutil.NullString(txID)); e != nil {
+					return e
+				}
+			}
+		}
+		if len(postingsToInsert) > 0 {
+			for _, posting := range postingsToInsert {
+				if e := queries.InsertPosting(context.Background(), insertPostingParams(posting)); e != nil {
+					return e
+				}
+			}
+		}
+		return nil
+	})
+	return
+}
+
+// UpsertAll replaces the entire postings table with the supplied rows.  It
+// wraps the operation in a transaction so the table is never partially written.
+// Use DeltaUpsert for incremental syncs; UpsertAll is provided for contexts
+// (such as tests) that need a complete replace.
+func UpsertAll(db *gorm.DB, postings []*Posting) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		err := tx.Exec("DELETE FROM postings").Error
-		if err != nil {
+		queries := dbutil.Queries(tx)
+		if err := queries.DeleteAllPostings(context.Background()); err != nil {
 			return err
 		}
 
@@ -126,7 +328,12 @@ func UpsertAll(db *gorm.DB, postings []*Posting) error {
 			return nil
 		}
 
-		return tx.CreateInBatches(postings, batchSize).Error
+		for _, posting := range postings {
+			if err := queries.InsertPosting(context.Background(), insertPostingParams(posting)); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 

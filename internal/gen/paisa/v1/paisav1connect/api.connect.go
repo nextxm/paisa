@@ -45,6 +45,11 @@ const (
 	// PaisaServiceGetAccountTreeProcedure is the fully-qualified name of the PaisaService's
 	// GetAccountTree RPC.
 	PaisaServiceGetAccountTreeProcedure = "/paisa.v1.PaisaService/GetAccountTree"
+	// PaisaServiceGetConfigProcedure is the fully-qualified name of the PaisaService's GetConfig RPC.
+	PaisaServiceGetConfigProcedure = "/paisa.v1.PaisaService/GetConfig"
+	// PaisaServiceUpdateConfigProcedure is the fully-qualified name of the PaisaService's UpdateConfig
+	// RPC.
+	PaisaServiceUpdateConfigProcedure = "/paisa.v1.PaisaService/UpdateConfig"
 )
 
 // PaisaServiceClient is a client for the paisa.v1.PaisaService service.
@@ -52,6 +57,10 @@ type PaisaServiceClient interface {
 	// GetAccountTree returns the full hierarchical account tree derived from
 	// all postings currently stored in the database.
 	GetAccountTree(context.Context, *connect.Request[v1.GetAccountTreeRequest]) (*connect.Response[v1.GetAccountTreeResponse], error)
+	// GetConfig returns runtime config and schema payloads used by the app shell.
+	GetConfig(context.Context, *connect.Request[v1.GetConfigRequest]) (*connect.Response[v1.GetConfigResponse], error)
+	// UpdateConfig persists a full config payload.
+	UpdateConfig(context.Context, *connect.Request[v1.UpdateConfigRequest]) (*connect.Response[v1.UpdateConfigResponse], error)
 }
 
 // NewPaisaServiceClient constructs a client for the paisa.v1.PaisaService service. By default, it
@@ -71,12 +80,26 @@ func NewPaisaServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(paisaServiceMethods.ByName("GetAccountTree")),
 			connect.WithClientOptions(opts...),
 		),
+		getConfig: connect.NewClient[v1.GetConfigRequest, v1.GetConfigResponse](
+			httpClient,
+			baseURL+PaisaServiceGetConfigProcedure,
+			connect.WithSchema(paisaServiceMethods.ByName("GetConfig")),
+			connect.WithClientOptions(opts...),
+		),
+		updateConfig: connect.NewClient[v1.UpdateConfigRequest, v1.UpdateConfigResponse](
+			httpClient,
+			baseURL+PaisaServiceUpdateConfigProcedure,
+			connect.WithSchema(paisaServiceMethods.ByName("UpdateConfig")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // paisaServiceClient implements PaisaServiceClient.
 type paisaServiceClient struct {
 	getAccountTree *connect.Client[v1.GetAccountTreeRequest, v1.GetAccountTreeResponse]
+	getConfig      *connect.Client[v1.GetConfigRequest, v1.GetConfigResponse]
+	updateConfig   *connect.Client[v1.UpdateConfigRequest, v1.UpdateConfigResponse]
 }
 
 // GetAccountTree calls paisa.v1.PaisaService.GetAccountTree.
@@ -84,11 +107,25 @@ func (c *paisaServiceClient) GetAccountTree(ctx context.Context, req *connect.Re
 	return c.getAccountTree.CallUnary(ctx, req)
 }
 
+// GetConfig calls paisa.v1.PaisaService.GetConfig.
+func (c *paisaServiceClient) GetConfig(ctx context.Context, req *connect.Request[v1.GetConfigRequest]) (*connect.Response[v1.GetConfigResponse], error) {
+	return c.getConfig.CallUnary(ctx, req)
+}
+
+// UpdateConfig calls paisa.v1.PaisaService.UpdateConfig.
+func (c *paisaServiceClient) UpdateConfig(ctx context.Context, req *connect.Request[v1.UpdateConfigRequest]) (*connect.Response[v1.UpdateConfigResponse], error) {
+	return c.updateConfig.CallUnary(ctx, req)
+}
+
 // PaisaServiceHandler is an implementation of the paisa.v1.PaisaService service.
 type PaisaServiceHandler interface {
 	// GetAccountTree returns the full hierarchical account tree derived from
 	// all postings currently stored in the database.
 	GetAccountTree(context.Context, *connect.Request[v1.GetAccountTreeRequest]) (*connect.Response[v1.GetAccountTreeResponse], error)
+	// GetConfig returns runtime config and schema payloads used by the app shell.
+	GetConfig(context.Context, *connect.Request[v1.GetConfigRequest]) (*connect.Response[v1.GetConfigResponse], error)
+	// UpdateConfig persists a full config payload.
+	UpdateConfig(context.Context, *connect.Request[v1.UpdateConfigRequest]) (*connect.Response[v1.UpdateConfigResponse], error)
 }
 
 // NewPaisaServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -104,10 +141,26 @@ func NewPaisaServiceHandler(svc PaisaServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(paisaServiceMethods.ByName("GetAccountTree")),
 		connect.WithHandlerOptions(opts...),
 	)
+	paisaServiceGetConfigHandler := connect.NewUnaryHandler(
+		PaisaServiceGetConfigProcedure,
+		svc.GetConfig,
+		connect.WithSchema(paisaServiceMethods.ByName("GetConfig")),
+		connect.WithHandlerOptions(opts...),
+	)
+	paisaServiceUpdateConfigHandler := connect.NewUnaryHandler(
+		PaisaServiceUpdateConfigProcedure,
+		svc.UpdateConfig,
+		connect.WithSchema(paisaServiceMethods.ByName("UpdateConfig")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/paisa.v1.PaisaService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case PaisaServiceGetAccountTreeProcedure:
 			paisaServiceGetAccountTreeHandler.ServeHTTP(w, r)
+		case PaisaServiceGetConfigProcedure:
+			paisaServiceGetConfigHandler.ServeHTTP(w, r)
+		case PaisaServiceUpdateConfigProcedure:
+			paisaServiceUpdateConfigHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -119,4 +172,12 @@ type UnimplementedPaisaServiceHandler struct{}
 
 func (UnimplementedPaisaServiceHandler) GetAccountTree(context.Context, *connect.Request[v1.GetAccountTreeRequest]) (*connect.Response[v1.GetAccountTreeResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("paisa.v1.PaisaService.GetAccountTree is not implemented"))
+}
+
+func (UnimplementedPaisaServiceHandler) GetConfig(context.Context, *connect.Request[v1.GetConfigRequest]) (*connect.Response[v1.GetConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("paisa.v1.PaisaService.GetConfig is not implemented"))
+}
+
+func (UnimplementedPaisaServiceHandler) UpdateConfig(context.Context, *connect.Request[v1.UpdateConfigRequest]) (*connect.Response[v1.UpdateConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("paisa.v1.PaisaService.UpdateConfig is not implemented"))
 }

@@ -61,6 +61,7 @@
           "commodity": "EUR",
           "quantity": -11000,
           "amount": -11000,
+          "original_amount": -11000,
           "status": "unmarked",
           "tag_recurring": "",
           "tag_period": "",
@@ -86,6 +87,7 @@
           "commodity": "AAPL",
           "quantity": 1,
           "amount": 10005.05,
+          "original_amount": 1,
           "status": "unmarked",
           "tag_recurring": "",
           "tag_period": "",
@@ -103,6 +105,26 @@
     "liabilities": {},
     "taxes": {}
   },
+  "multi_year": {
+    "2022": {
+      "month": {
+        "2022-01": 0,
+        "2022-02": 0,
+        "2022-03": 0,
+        "2022-04": 0,
+        "2022-05": 0,
+        "2022-06": 0,
+        "2022-07": 0,
+        "2022-08": 0,
+        "2022-09": 0,
+        "2022-10": 0,
+        "2022-11": 0,
+        "2022-12": 0
+      },
+      "total": 0
+    }
+  },
+  "trends": [],
   "year_wise": {
     "expenses": {},
     "incomes": {
@@ -116,6 +138,7 @@
           "commodity": "EUR",
           "quantity": -11000,
           "amount": -11000,
+          "original_amount": -11000,
           "status": "unmarked",
           "tag_recurring": "",
           "tag_period": "",
@@ -141,6 +164,7 @@
           "commodity": "AAPL",
           "quantity": 1,
           "amount": 10005.05,
+          "original_amount": 1,
           "status": "unmarked",
           "tag_recurring": "",
           "tag_period": "",
@@ -157,25 +181,5 @@
     },
     "liabilities": {},
     "taxes": {}
-  },
-  "trends": [],
-  "multi_year": {
-    "2022": {
-      "month": {
-        "2022-01": 0,
-        "2022-02": 0,
-        "2022-03": 0,
-        "2022-04": 0,
-        "2022-05": 0,
-        "2022-06": 0,
-        "2022-07": 0,
-        "2022-08": 0,
-        "2022-09": 0,
-        "2022-10": 0,
-        "2022-11": 0,
-        "2022-12": 0
-      },
-      "total": 0
-    }
   }
 }

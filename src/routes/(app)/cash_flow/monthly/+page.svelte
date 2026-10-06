@@ -183,17 +183,21 @@
                   <div class="column is-3-desktop is-6-mobile">
                     <div class="summary-card is-success-card">
                       <div class="is-flex is-justify-content-space-between is-align-items-start">
-                        <div>
+                        <div class="summary-content">
                           <p class="is-size-7 summary-label is-uppercase">Income</p>
-                          <div class="mt-1">
+                          <div class="mt-1 summary-values">
                             {#each summary.incomes as item}
-                              <p class="title is-4 mb-1">
-                                {formatCurrency(item.amount)}
-                                <span class="is-size-6">{item.commodity}</span>
-                              </p>
+                              <div class="summary-amount-row">
+                                <span class="summary-amount-value"
+                                  >{formatCurrency(item.amount)}</span
+                                >
+                                <span class="summary-amount-commodity">{item.commodity}</span>
+                              </div>
                             {/each}
                             {#if summary.incomes.length === 0}
-                              <p class="title is-4">0.00</p>
+                              <div class="summary-amount-row">
+                                <span class="summary-amount-value">0.00</span>
+                              </div>
                             {/if}
                           </div>
                         </div>
@@ -206,17 +210,21 @@
                   <div class="column is-3-desktop is-6-mobile">
                     <div class="summary-card is-danger-card">
                       <div class="is-flex is-justify-content-space-between is-align-items-start">
-                        <div>
+                        <div class="summary-content">
                           <p class="is-size-7 summary-label is-uppercase">Expenses</p>
-                          <div class="mt-1">
+                          <div class="mt-1 summary-values">
                             {#each summary.expenses as item}
-                              <p class="title is-4 mb-1">
-                                {formatCurrency(item.amount)}
-                                <span class="is-size-6">{item.commodity}</span>
-                              </p>
+                              <div class="summary-amount-row">
+                                <span class="summary-amount-value"
+                                  >{formatCurrency(item.amount)}</span
+                                >
+                                <span class="summary-amount-commodity">{item.commodity}</span>
+                              </div>
                             {/each}
                             {#if summary.expenses.length === 0}
-                              <p class="title is-4">0.00</p>
+                              <div class="summary-amount-row">
+                                <span class="summary-amount-value">0.00</span>
+                              </div>
                             {/if}
                           </div>
                         </div>
@@ -229,17 +237,21 @@
                   <div class="column is-3-desktop is-6-mobile">
                     <div class="summary-card is-warning-card">
                       <div class="is-flex is-justify-content-space-between is-align-items-start">
-                        <div>
+                        <div class="summary-content">
                           <p class="is-size-7 summary-label is-uppercase">Taxes</p>
-                          <div class="mt-1">
+                          <div class="mt-1 summary-values">
                             {#each summary.taxes as item}
-                              <p class="title is-4 mb-1">
-                                {formatCurrency(item.amount)}
-                                <span class="is-size-6">{item.commodity}</span>
-                              </p>
+                              <div class="summary-amount-row">
+                                <span class="summary-amount-value"
+                                  >{formatCurrency(item.amount)}</span
+                                >
+                                <span class="summary-amount-commodity">{item.commodity}</span>
+                              </div>
                             {/each}
                             {#if summary.taxes.length === 0}
-                              <p class="title is-4">0.00</p>
+                              <div class="summary-amount-row">
+                                <span class="summary-amount-value">0.00</span>
+                              </div>
                             {/if}
                           </div>
                         </div>
@@ -252,17 +264,23 @@
                   <div class="column is-3-desktop is-6-mobile">
                     <div class="summary-card is-info-card">
                       <div class="is-flex is-justify-content-space-between is-align-items-start">
-                        <div>
+                        <div class="summary-content">
                           <p class="is-size-7 summary-label is-uppercase">Net Flow</p>
-                          <div class="mt-1">
+                          <div class="mt-1 summary-values">
                             {#each summary.savings as item}
-                              <p class="title is-4 mb-1 {item.amount < 0 && 'is-deficit'}">
-                                {formatCurrency(item.amount)}
-                                <span class="is-size-6">{item.commodity}</span>
-                              </p>
+                              <div class="summary-amount-row">
+                                <span
+                                  class="summary-amount-value"
+                                  class:is-deficit={item.amount < 0}
+                                  >{formatCurrency(item.amount)}</span
+                                >
+                                <span class="summary-amount-commodity">{item.commodity}</span>
+                              </div>
                             {/each}
                             {#if summary.savings.length === 0}
-                              <p class="title is-4">0.00</p>
+                              <div class="summary-amount-row">
+                                <span class="summary-amount-value">0.00</span>
+                              </div>
                             {/if}
                           </div>
                         </div>
@@ -276,7 +294,7 @@
               </div>
 
               <div class="column is-6">
-                <div class="card-section">
+                <div class="card-section flow-column">
                   <div class="level is-mobile mb-4">
                     <div class="level-left">
                       <h3 class="subtitle is-5 has-text-weight-bold mb-0">Inflows</h3>
@@ -288,12 +306,14 @@
                       Income
                     </h4>
                     {#if aggregatedIncomes.length > 0}
-                      <table class="table is-fullwidth is-narrow is-hoverable is-borderless">
+                      <table
+                        class="table is-fullwidth is-narrow is-hoverable is-borderless cashflow-breakdown-table"
+                      >
                         <tbody>
                           {#each aggregatedIncomes as item}
                             <tr>
-                              <td class="pl-0">{restName(item.account)}</td>
-                              <td class="has-text-right tabular-nums pr-0">
+                              <td class="cashflow-row-label">{restName(item.account)}</td>
+                              <td class="cashflow-row-value has-text-right tabular-nums">
                                 <span class="has-text-weight-medium">
                                   {formatCurrency(item.amount)}
                                 </span>
@@ -313,12 +333,14 @@
                       <h4 class="is-size-7 has-text-grey has-text-weight-bold mb-2 is-uppercase">
                         Liabilities Inflow
                       </h4>
-                      <table class="table is-fullwidth is-narrow is-hoverable is-borderless">
+                      <table
+                        class="table is-fullwidth is-narrow is-hoverable is-borderless cashflow-breakdown-table"
+                      >
                         <tbody>
                           {#each aggregatedLiabilities as item}
                             <tr>
-                              <td class="pl-0">{restName(item.account)}</td>
-                              <td class="has-text-right tabular-nums pr-0">
+                              <td class="cashflow-row-label">{restName(item.account)}</td>
+                              <td class="cashflow-row-value has-text-right tabular-nums">
                                 <span class="has-text-weight-medium">
                                   {formatCurrency(item.amount)}
                                 </span>
@@ -334,7 +356,7 @@
               </div>
 
               <div class="column is-6">
-                <div class="card-section border-left-desktop">
+                <div class="card-section flow-column border-left-desktop">
                   <div class="level is-mobile mb-4">
                     <div class="level-left">
                       <h3 class="subtitle is-5 has-text-weight-bold mb-0">Outflows</h3>
@@ -346,12 +368,14 @@
                       Expenses
                     </h4>
                     {#if aggregatedExpenses.length > 0}
-                      <table class="table is-fullwidth is-narrow is-hoverable is-borderless">
+                      <table
+                        class="table is-fullwidth is-narrow is-hoverable is-borderless cashflow-breakdown-table"
+                      >
                         <tbody>
                           {#each aggregatedExpenses as item}
                             <tr>
-                              <td class="pl-0">{restName(item.account)}</td>
-                              <td class="has-text-right tabular-nums pr-0">
+                              <td class="cashflow-row-label">{restName(item.account)}</td>
+                              <td class="cashflow-row-value has-text-right tabular-nums">
                                 <span class="has-text-weight-medium">
                                   {formatCurrency(item.amount)}
                                 </span>
@@ -371,12 +395,14 @@
                       <h4 class="is-size-7 has-text-grey has-text-weight-bold mb-2 is-uppercase">
                         Taxes
                       </h4>
-                      <table class="table is-fullwidth is-narrow is-hoverable is-borderless">
+                      <table
+                        class="table is-fullwidth is-narrow is-hoverable is-borderless cashflow-breakdown-table"
+                      >
                         <tbody>
                           {#each aggregatedTaxes as item}
                             <tr>
-                              <td class="pl-0">{restName(item.account)}</td>
-                              <td class="has-text-right tabular-nums pr-0">
+                              <td class="cashflow-row-label">{restName(item.account)}</td>
+                              <td class="cashflow-row-value has-text-right tabular-nums">
                                 <span class="has-text-weight-medium">
                                   {formatCurrency(item.amount)}
                                 </span>
@@ -435,6 +461,7 @@
   @media screen and (min-width: 1024px) {
     .border-left-desktop {
       border-left: 1px solid var(--bulma-border, #dbdbdb);
+      margin-left: 1rem;
       padding-left: 2rem;
     }
   }
@@ -452,7 +479,8 @@
     background-color: var(--bulma-scheme-main-ter, #f5f5f5);
     border: 1px solid var(--bulma-border, #dbdbdb);
 
-    .title {
+    .summary-amount-value,
+    .summary-amount-commodity {
       color: var(--bulma-text, #363636);
     }
 
@@ -463,7 +491,8 @@
     &.is-success-card {
       background-color: var(--paisa-success-bg, rgba(72, 199, 142, 0.1));
       border-color: var(--bulma-success, #48c78e);
-      .title,
+      .summary-amount-value,
+      .summary-amount-commodity,
       .summary-label,
       .icon {
         color: var(--bulma-success-dark, #257953);
@@ -473,7 +502,8 @@
     &.is-danger-card {
       background-color: var(--paisa-danger-bg, rgba(241, 70, 104, 0.1));
       border-color: var(--bulma-danger, #f14668);
-      .title,
+      .summary-amount-value,
+      .summary-amount-commodity,
       .summary-label,
       .icon {
         color: var(--bulma-danger-dark, #cc0f35);
@@ -483,7 +513,8 @@
     &.is-warning-card {
       background-color: var(--paisa-warning-bg, rgba(255, 221, 87, 0.1));
       border-color: var(--bulma-warning, #ffdd57);
-      .title,
+      .summary-amount-value,
+      .summary-amount-commodity,
       .summary-label,
       .icon {
         color: var(--bulma-warning-dark, #947600);
@@ -493,12 +524,13 @@
     &.is-info-card {
       background-color: var(--paisa-info-bg, rgba(62, 142, 208, 0.1));
       border-color: var(--bulma-info, #3e8ed0);
-      .title,
+      .summary-amount-value,
+      .summary-amount-commodity,
       .summary-label,
       .icon {
         color: var(--bulma-info-dark, #205d8a);
       }
-      .title.is-deficit {
+      .summary-amount-value.is-deficit {
         color: var(--bulma-danger-dark, #cc0f35);
       }
     }
@@ -508,8 +540,51 @@
     }
   }
 
+  .summary-values {
+    display: grid;
+    gap: 0.15rem;
+    min-height: 5.75rem;
+  }
+
+  .summary-content {
+    flex: 1;
+    min-width: 0;
+    padding-right: 0.35rem;
+  }
+
+  .summary-amount-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: 0.45rem;
+    line-height: 1.15;
+  }
+
+  .summary-amount-value {
+    text-align: right;
+    font-size: 1.95rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+
+  .summary-amount-commodity {
+    font-size: 1rem;
+    font-weight: 600;
+    min-width: 3ch;
+    text-transform: uppercase;
+    opacity: 0.9;
+  }
+
   .card-section {
-    padding: 1rem 0;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .flow-column {
+    .subtitle {
+      letter-spacing: 0.01em;
+    }
   }
 
   .net-surplus-footer {
@@ -536,6 +611,34 @@
     }
   }
 
+  .cashflow-breakdown-table {
+    table-layout: fixed;
+
+    tbody tr {
+      border-radius: 6px;
+      transition: background-color 0.15s ease;
+    }
+
+    tbody tr:hover {
+      background-color: var(--bulma-scheme-main-ter, rgba(0, 0, 0, 0.03));
+    }
+  }
+
+  .cashflow-row-label {
+    width: 66%;
+    padding-right: 1.25rem;
+    word-break: break-word;
+  }
+
+  .cashflow-row-value {
+    width: 34%;
+    white-space: nowrap;
+
+    .is-size-7 {
+      margin-left: 0.35rem;
+    }
+  }
+
   :global(html[data-theme="dark"]) {
     .summary-card {
       background-color: rgba(255, 255, 255, 0.02);
@@ -551,7 +654,8 @@
       &.is-success-card {
         background-color: rgba(72, 199, 142, 0.08);
         border-color: rgba(72, 199, 142, 0.3);
-        .title,
+        .summary-amount-value,
+        .summary-amount-commodity,
         .summary-label,
         .icon {
           color: #82e0aa;
@@ -560,7 +664,8 @@
       &.is-danger-card {
         background-color: rgba(241, 70, 104, 0.08);
         border-color: rgba(241, 70, 104, 0.3);
-        .title,
+        .summary-amount-value,
+        .summary-amount-commodity,
         .summary-label,
         .icon {
           color: #f5b7b1;
@@ -569,7 +674,8 @@
       &.is-warning-card {
         background-color: rgba(255, 221, 87, 0.08);
         border-color: rgba(255, 221, 87, 0.3);
-        .title,
+        .summary-amount-value,
+        .summary-amount-commodity,
         .summary-label,
         .icon {
           color: #f9e79f;
@@ -578,12 +684,13 @@
       &.is-info-card {
         background-color: rgba(62, 142, 208, 0.08);
         border-color: rgba(62, 142, 208, 0.3);
-        .title,
+        .summary-amount-value,
+        .summary-amount-commodity,
         .summary-label,
         .icon {
           color: #aed6f1;
         }
-        .title.is-deficit {
+        .summary-amount-value.is-deficit {
           color: #f5b7b1;
         }
       }
@@ -608,5 +715,19 @@
 
   .tabular-nums {
     font-variant-numeric: tabular-nums;
+  }
+
+  @media screen and (max-width: 768px) {
+    .summary-values {
+      min-height: auto;
+    }
+
+    .summary-amount-value {
+      font-size: 1.55rem;
+    }
+
+    .summary-amount-commodity {
+      font-size: 0.95rem;
+    }
   }
 </style>

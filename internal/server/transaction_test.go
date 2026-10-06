@@ -9,6 +9,7 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/gin-gonic/gin"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -205,4 +206,95 @@ func TestGetTransactionsHandler_LimitAndOffsetFilter(t *testing.T) {
 	body := decodeTransactionResponse(t, rec)
 	require.Len(t, body.Transactions, 1, "expected 1 transaction with offset=1&limit=1")
 	assert.Equal(t, "Salary", body.Transactions[0].Payee)
+}
+
+func TestParseTransactionFilters(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(
+		http.MethodGet,
+		"/api/transaction?q=Amazon&amount_min=10.5&amount_max=200&account=expenses:shopping&commodity=INR&date_from=2024-01-01&date_to=2024-12-31",
+		nil,
+	)
+
+	filters := parseTransactionFilters(c)
+
+	require.NotNil(t, filters.AmountMin)
+	require.NotNil(t, filters.AmountMax)
+	require.NotNil(t, filters.DateFrom)
+	require.NotNil(t, filters.DateTo)
+	assert.Equal(t, "Amazon", filters.Query)
+	assert.Equal(t, 10.5, *filters.AmountMin)
+	assert.Equal(t, 200.0, *filters.AmountMax)
+	assert.Equal(t, "expenses:shopping", filters.Account)
+	assert.Equal(t, "INR", filters.Commodity)
+	assert.Equal(t, "2024-01-01", filters.DateFrom.Format("2006-01-02"))
+	assert.Equal(t, "2024-12-31", filters.DateTo.Format("2006-01-02"))
+}
+
+func TestParseTransactionFilters_InvalidValuesIgnored(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(
+		http.MethodGet,
+		"/api/transaction?amount_min=invalid&amount_max=oops&date_from=bad&date_to=nope",
+		nil,
+	)
+
+	filters := parseTransactionFilters(c)
+
+	assert.Nil(t, filters.AmountMin)
+	assert.Nil(t, filters.AmountMax)
+	assert.Nil(t, filters.DateFrom)
+	assert.Nil(t, filters.DateTo)
+}
+
+func TestGetTransactionsHandler_CombinedFilters(t *testing.T) {
+	db := openTestDB(t)
+	gin.SetMode(gin.TestMode)
+
+	d1 := time.Date(2024, 1, 10, 0, 0, 0, 0, time.UTC)
+	d2 := time.Date(2024, 3, 10, 0, 0, 0, 0, time.UTC)
+	seedTransactions(t, db, []posting.Posting{
+		{
+			TransactionID: "tx1", Date: d1, Payee: "Amazon Purchase", Account: "expenses:shopping",
+			Commodity: "INR", Amount: decimal.NewFromInt(-15000), TransactionNote: "electronics order", Forecast: false,
+		},
+		{
+			TransactionID: "tx1", Date: d1, Payee: "Amazon Purchase", Account: "assets:checking",
+			Commodity: "INR", Amount: decimal.NewFromInt(15000), TransactionNote: "electronics order", Forecast: false,
+		},
+		{
+			TransactionID: "tx2", Date: d2, Payee: "Amazon Pantry", Account: "expenses:groceries",
+			Commodity: "INR", Amount: decimal.NewFromInt(-9000), TransactionNote: "grocery order", Forecast: false,
+		},
+		{
+			TransactionID: "tx2", Date: d2, Payee: "Amazon Pantry", Account: "assets:checking",
+			Commodity: "INR", Amount: decimal.NewFromInt(9000), TransactionNote: "grocery order", Forecast: false,
+		},
+		{
+			TransactionID: "tx3", Date: d1, Payee: "Amazon USD Purchase", Account: "expenses:shopping",
+			Commodity: "USD", Amount: decimal.NewFromInt(-16000), TransactionNote: "electronics order", Forecast: false,
+		},
+		{
+			TransactionID: "tx3", Date: d1, Payee: "Amazon USD Purchase", Account: "assets:checking",
+			Commodity: "USD", Amount: decimal.NewFromInt(16000), TransactionNote: "electronics order", Forecast: false,
+		},
+	})
+
+	r := buildTransactionRouter(t, db)
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"/api/transaction?q=amazon&amount_min=10000&amount_max=20000&account=expenses:shopping&commodity=INR&date_from=2024-01-01&date_to=2024-01-31",
+		nil,
+	)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	body := decodeTransactionResponse(t, rec)
+	require.Len(t, body.Transactions, 1, "expected only one transaction matching all filters")
+	assert.Equal(t, "Amazon Purchase", body.Transactions[0].Payee)
 }

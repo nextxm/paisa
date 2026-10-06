@@ -14,6 +14,42 @@ export interface YoYInsightSummary {
   } | null;
 }
 
+export interface YoYCategoryMover {
+  name: string;
+  latestYearTotal: number;
+  previousYearTotal: number;
+  delta: number;
+  changePct: number | null;
+  shareOfExpensePct: number | null;
+}
+
+export interface YoYMonthlyNetPoint {
+  month: string;
+  expense: number;
+  income: number;
+  net: number;
+}
+
+export interface YoYDashboardSummary {
+  latestYear: string | null;
+  previousYear: string | null;
+  latestExpenseTotal: number;
+  previousExpenseTotal: number;
+  latestIncomeTotal: number;
+  previousIncomeTotal: number;
+  latestNetTotal: number;
+  previousNetTotal: number;
+  expenseChangePct: number | null;
+  incomeChangePct: number | null;
+  netChangePct: number | null;
+  savingsRatePct: number | null;
+  previousSavingsRatePct: number | null;
+  monthlyNet: YoYMonthlyNetPoint[];
+  highestExpenseMonth: YoYMonthlyNetPoint | null;
+  bestNetMonth: YoYMonthlyNetPoint | null;
+  topCategoryMovers: YoYCategoryMover[];
+}
+
 function expenseCategory(account: string) {
   // Expected format is "Expenses:<Category>[:SubCategory...]".
   // If the second segment is missing, we fall back to the original account.
@@ -146,4 +182,97 @@ export function buildYoYExportRows(
   }
 
   return rows;
+}
+
+function monthlyTotal(series: Record<string, YoYSeries>, year: string, month: number) {
+  const key = `${year}-${String(month).padStart(2, "0")}`;
+  return series[year]?.month?.[key] || 0;
+}
+
+function percentChange(current: number, previous: number) {
+  if (previous === 0) {
+    return null;
+  }
+  return ((current - previous) / previous) * 100;
+}
+
+function savingsRate(income: number, expense: number) {
+  if (income === 0) {
+    return null;
+  }
+  return ((income - expense) / income) * 100;
+}
+
+export function buildYoYDashboardSummary(
+  expenseSeries: Record<string, YoYSeries>,
+  incomeSeries: Record<string, YoYSeries>,
+  categorySeries: Record<string, Record<string, YoYSeries>>
+): YoYDashboardSummary {
+  const years = _.uniq([...orderedYears(expenseSeries), ...orderedYears(incomeSeries)]).sort(
+    (a, b) => Number(a) - Number(b)
+  );
+  const previousYear = years.length >= 2 ? years[years.length - 2] : null;
+  const latestYear = years.length >= 1 ? years[years.length - 1] : null;
+
+  const latestExpenseTotal = latestYear ? expenseSeries[latestYear]?.total || 0 : 0;
+  const previousExpenseTotal = previousYear ? expenseSeries[previousYear]?.total || 0 : 0;
+  const latestIncomeTotal = latestYear ? incomeSeries[latestYear]?.total || 0 : 0;
+  const previousIncomeTotal = previousYear ? incomeSeries[previousYear]?.total || 0 : 0;
+
+  const latestNetTotal = latestIncomeTotal - latestExpenseTotal;
+  const previousNetTotal = previousIncomeTotal - previousExpenseTotal;
+
+  const monthlyNet: YoYMonthlyNetPoint[] = !latestYear
+    ? []
+    : _.range(1, 13).map((month) => {
+        const monthLabel = dayjs(`2000-${String(month).padStart(2, "0")}-01`).format("MMM");
+        const expense = monthlyTotal(expenseSeries, latestYear, month);
+        const income = monthlyTotal(incomeSeries, latestYear, month);
+        return {
+          month: monthLabel,
+          expense,
+          income,
+          net: income - expense
+        };
+      });
+
+  const topCategoryMovers: YoYCategoryMover[] = latestYear
+    ? _.chain(categorySeries)
+        .map((seriesByYear, name) => {
+          const latestYearTotal = seriesByYear[latestYear]?.total || 0;
+          const previousYearTotal = previousYear ? seriesByYear[previousYear]?.total || 0 : 0;
+          const delta = latestYearTotal - previousYearTotal;
+          return {
+            name,
+            latestYearTotal,
+            previousYearTotal,
+            delta,
+            changePct: percentChange(latestYearTotal, previousYearTotal),
+            shareOfExpensePct:
+              latestExpenseTotal === 0 ? null : (latestYearTotal / latestExpenseTotal) * 100
+          };
+        })
+        .orderBy([(row) => Math.abs(row.delta), (row) => row.latestYearTotal], ["desc", "desc"])
+        .value()
+    : [];
+
+  return {
+    latestYear,
+    previousYear,
+    latestExpenseTotal,
+    previousExpenseTotal,
+    latestIncomeTotal,
+    previousIncomeTotal,
+    latestNetTotal,
+    previousNetTotal,
+    expenseChangePct: percentChange(latestExpenseTotal, previousExpenseTotal),
+    incomeChangePct: percentChange(latestIncomeTotal, previousIncomeTotal),
+    netChangePct: percentChange(latestNetTotal, previousNetTotal),
+    savingsRatePct: savingsRate(latestIncomeTotal, latestExpenseTotal),
+    previousSavingsRatePct: savingsRate(previousIncomeTotal, previousExpenseTotal),
+    monthlyNet,
+    highestExpenseMonth: _.maxBy(monthlyNet, (row) => row.expense) || null,
+    bestNetMonth: _.maxBy(monthlyNet, (row) => row.net) || null,
+    topCategoryMovers
+  };
 }

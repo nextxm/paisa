@@ -10,6 +10,7 @@
   } from "$lib/utils";
   import SankeyDiagram from "$lib/components/SankeyDiagram.svelte";
   import BoxLabel from "$lib/components/BoxLabel.svelte";
+  import { toExpenseBreakdown } from "$lib/sankey_utils";
   import { dateRange } from "../../../../store";
   import type { Dayjs } from "dayjs";
 
@@ -51,6 +52,10 @@
   onDestroy(() => {
     unsubscribe?.();
   });
+
+  let expenseNodes: SankeyNode[] = [];
+  let expenseLinks: SankeyLink[] = [];
+  $: ({ nodes: expenseNodes, links: expenseLinks } = toExpenseBreakdown(nodes, links));
 </script>
 
 <section class="section tab-expense">
@@ -81,19 +86,23 @@
       </div>
     {/if}
 
+    <p class="has-text-grey is-size-7 mb-3">
+      Expense Breakdown shows only outflows into expense accounts for the selected date range.
+    </p>
+
     <div class="columns">
       <div class="column is-12">
         <div class="box overflow-x-auto">
           <SankeyDiagram
-            {nodes}
-            {links}
+            nodes={expenseNodes}
+            links={expenseLinks}
             height={600}
             loading={isLoading}
-            emptyMessage="No flow data available for this period."
+            emptyMessage="No expense flow data available for this period."
           />
         </div>
       </div>
     </div>
-    <BoxLabel text="Expense Flow" />
+    <BoxLabel text="Expense Breakdown" />
   </div>
 </section>

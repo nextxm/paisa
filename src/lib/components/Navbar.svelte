@@ -2,12 +2,19 @@
   import { page } from "$app/stores";
   import { afterNavigate } from "$app/navigation";
   import Actions from "$lib/components/Actions.svelte";
-  import { month, year, dateMax, dateMin, dateRangeOption } from "../../store";
+  import {
+    month,
+    year,
+    dateMax,
+    dateMin,
+    dateRangeOption,
+    cashflowExpenseDepthAllowed,
+    cashflowIncomeDepthAllowed,
+    dataQualityIssueCount
+  } from "../../store";
   import {
     cashflowExpenseDepth,
-    cashflowExpenseDepthAllowed,
     cashflowIncomeDepth,
-    cashflowIncomeDepthAllowed,
     cashflowShowTransfers,
     obscure,
     sankeyPeriod,
@@ -82,7 +89,7 @@
           monthPicker: true,
           recurringIcons: true
         },
-        { label: "Sankey", href: "/sankey", sankeyPeriodSelector: true }
+        { label: "Money Flow", href: "/sankey", sankeyPeriodSelector: true }
       ]
     },
     {
@@ -92,7 +99,10 @@
         { label: "Monthly", href: "/monthly", monthPicker: true, dateRangeSelector: true },
         { label: "Yearly", href: "/yearly", financialYearPicker: true },
         { label: "Budget", href: "/budget", help: "budget", monthPicker: true },
-        { label: "Flow", href: "/sankey", dateRangeSelector: true }
+        { label: "Expense Breakdown", href: "/sankey", dateRangeSelector: true },
+        { label: "Heatmap", href: "/heatmap" },
+        { label: "YoY", href: "/yoy" },
+        { label: "MoM", href: "/mom" }
       ]
     },
     {
@@ -104,7 +114,7 @@
         { label: "Investment", href: "/investment" },
         { label: "Gain", href: "/gain" },
         { label: "Allocation", href: "/allocation", help: "allocation-targets" },
-        { label: "Analysis", href: "/analysis", tag: "alpha", help: "analysis" }
+        { label: "Portfolio", href: "/portfolio", tag: "alpha", help: "analysis" }
       ]
     },
     {
@@ -117,19 +127,29 @@
         { label: "Interest", href: "/interest" }
       ]
     },
-    { label: "Income", href: "/income" },
     {
-      label: "Analysis",
-      href: "/analysis",
-      tag: "alpha",
-      children: [{ label: "YoY", href: "/yoy", tag: "alpha" }]
+      label: "Income",
+      href: "/income",
+      children: [
+        { label: "Timeline", href: "" },
+        { label: "Investment", href: "/investment", financialYearPicker: true }
+      ]
+    },
+    {
+      label: "Planning",
+      href: "/planning",
+      children: [
+        { label: "Goals", href: "/goals", help: "goals" },
+        { label: "Projection", href: "/projection" },
+        { label: "Life Plan", href: "/life" }
+      ]
     },
     {
       label: "Ledger",
       href: "/ledger",
       children: [
-        { label: "Import", href: "/import", help: "import" },
         { label: "Editor", href: "/editor", help: "editor", disablePreload: true },
+        { label: "Import", href: "/import", help: "import" },
         { label: "Transactions", href: "/transaction", help: "bulk-edit" },
         { label: "Postings", href: "/posting" },
         { label: "Price", href: "/price" },
@@ -142,8 +162,8 @@
       children: [
         { label: "Configuration", href: "/config", help: "config" },
         { label: "Sheets", href: "/sheets", help: "sheets", disablePreload: true },
-        { label: "Goals", href: "/goals", help: "goals" },
         { label: "Doctor", href: "/doctor" },
+        { label: "Doctor V2", href: "/doctor-v2" },
         ...(USER_CONFIG.labs?.firefly_reconcile
           ? [{ label: "Reconciliation", href: "/reconciliation" }]
           : []),
@@ -168,8 +188,9 @@
     ]
   };
 
+  const planning = _.find(links, { label: "Planning" });
   if (USER_CONFIG.default_currency == "INR") {
-    _.last(links)?.children?.push(tax);
+    planning?.children?.push(tax);
   }
 
   const about = { label: "About", href: "/about" };
@@ -391,8 +412,17 @@
                     class="navbar-item"
                     {href}
                     data-sveltekit-preload-data={sublink.disablePreload ? "tap" : "hover"}
-                    class:is-active={normalizedPath.startsWith(href)}>{sublink.label}</a
+                    class:is-active={normalizedPath.startsWith(href)}
                   >
+                    {sublink.label}
+                    {#if sublink.href === "/doctor" && $dataQualityIssueCount > 0}
+                      <span
+                        class="tag is-danger is-rounded is-small ml-2"
+                        title="{$dataQualityIssueCount} data quality issue(s)"
+                        >{$dataQualityIssueCount}</span
+                      >
+                    {/if}
+                  </a>
                 {:else}
                   <div class="nested has-dropdown navbar-item">
                     <a
@@ -471,15 +501,15 @@
   {#if selectedLink}
     <nav
       style="margin-left: 0.73rem;"
-      class="breadcrumb has-chevron-separator mb-0 is-small"
+      class="breadcrumb has-chevron-separator mb-0 is-small app-breadcrumb"
       aria-label="breadcrumbs"
     >
       <ul>
-        <li>
-          <span class="is-inactive">{selectedLink.label}</span>
+        <li class="breadcrumb-node">
+          <span class="is-inactive breadcrumb-node-label">{selectedLink.label}</span>
           {#if selectedLink.help}
             <a
-              class="is-clear ml-1"
+              class="is-clear ml-1 breadcrumb-help"
               href={helpUrl(selectedLink.help)}
               aria-label={`Help for ${selectedLink.label}`}
               ><span class="icon is-small">
@@ -489,18 +519,16 @@
           {/if}
 
           {#if selectedLink.tag}
-            <span style="font-size: 0.6rem" class="tag is-rounded is-warning"
-              >{selectedLink.tag}</span
-            >
+            <span class="tag is-rounded is-warning breadcrumb-alpha-tag">{selectedLink.tag}</span>
           {/if}
         </li>
         {#if selectedSubLink}
-          <li>
-            <span class="is-inactive">{selectedSubLink.label}</span>
+          <li class="breadcrumb-node">
+            <span class="is-inactive breadcrumb-node-label">{selectedSubLink.label}</span>
 
             {#if selectedSubLink.help}
               <a
-                class="is-clear ml-1"
+                class="is-clear ml-1 breadcrumb-help"
                 href={helpUrl(selectedSubLink.help)}
                 aria-label={`Help for ${selectedSubLink.label}`}
                 ><span class="icon is-small">
@@ -510,7 +538,7 @@
             {/if}
 
             {#if selectedSubLink.tag}
-              <span style="font-size: 0.6rem" class="tag is-rounded is-warning mr-2"
+              <span class="tag is-rounded is-warning breadcrumb-alpha-tag"
                 >{selectedSubLink.tag}</span
               >
             {/if}

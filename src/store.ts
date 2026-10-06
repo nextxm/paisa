@@ -1,5 +1,6 @@
 import { writable, derived, get } from "svelte/store";
 import * as d3 from "d3";
+import { cashflowExpenseDepth, cashflowIncomeDepth } from "./persisted_store";
 
 import dayjs from "dayjs";
 import type { AccountTfIdf, LedgerFileError, SheetFileError, SheetLineResult } from "$lib/utils";
@@ -145,8 +146,29 @@ export function setAllowedDateRange(dates: dayjs.Dayjs[]) {
   }
 }
 
+// Transient UI state for cashflow depth controls (not persisted).
+// The allowed range is set by the page after loading data; the selected depth is persisted.
+export const cashflowExpenseDepthAllowed = writable({ min: 1, max: 1 });
+export const cashflowIncomeDepthAllowed = writable({ min: 1, max: 1 });
+
+export function setCashflowDepthAllowed(expense: number, income: number) {
+  cashflowExpenseDepthAllowed.set({ min: 1, max: expense });
+  if (get(cashflowExpenseDepth) == 0 || get(cashflowExpenseDepth) > expense) {
+    cashflowExpenseDepth.set(expense);
+  }
+
+  cashflowIncomeDepthAllowed.set({ min: 1, max: income });
+  if (get(cashflowIncomeDepth) == 0 || get(cashflowIncomeDepth) > income) {
+    cashflowIncomeDepth.set(income);
+  }
+}
+
 export const willRefresh = writable(0);
 export const commandPaletteOpen = writable(false);
+
+// Number of data-quality issues (duplicates + outliers) detected on the
+// last visit to the Doctor page.  Used to show a badge on the Doctor nav link.
+export const dataQualityIssueCount = writable(0);
 export async function refresh() {
   if (get(editorState).hasUnsavedChanges) {
     const confirmed = confirm("You have unsaved changes. Are you sure you want to leave?");

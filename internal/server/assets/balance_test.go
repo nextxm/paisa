@@ -29,7 +29,7 @@ func openTestDB(t *testing.T) *gorm.DB {
 func loadTestConfig(t *testing.T) {
 	t.Helper()
 	orig := config.GetConfig()
-	yaml := "journal_path: main.ledger\ndb_path: paisa.db\nchecking_accounts:\n  - Assets:Checking"
+	yaml := "journal_path: main.ledger\ndb_path: paisa.db\ntime_zone: UTC\nchecking_accounts:\n  - Assets:Checking"
 	require.NoError(t, config.LoadConfig([]byte(yaml), ""))
 	t.Cleanup(func() {
 		_ = config.LoadConfig([]byte("journal_path: "+orig.JournalPath+"\ndb_path: "+orig.DBPath), "")

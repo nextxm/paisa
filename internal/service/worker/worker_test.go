@@ -2,15 +2,27 @@ package worker_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/ananthakumaran/paisa/internal/model/migration"
 	"github.com/ananthakumaran/paisa/internal/service/worker"
+	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
+
+func openTestDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	require.NoError(t, migration.RunMigrations(db))
+	return db
+}
 
 // ---------------------------------------------------------------------------
 // Basic lifecycle tests
@@ -449,4 +461,180 @@ func TestSubmitDetailed_Progress(t *testing.T) {
 	job, _ = r.Get(id)
 	assert.Equal(t, 3, job.ItemsCompleted, "ItemsCompleted must be final value after completion")
 	assert.Equal(t, 3, job.TotalItems, "TotalItems must be final value after completion")
+}
+
+func TestRegistry_PersistsJobsAcrossRestart(t *testing.T) {
+	db := openTestDB(t)
+	r := worker.NewRegistry(db)
+
+	id := r.SubmitDetailed(context.Background(), map[string]any{"journal": true}, func(_ context.Context, progress func(int, int)) ([]string, error) {
+		progress(2, 2)
+		return []string{"finished"}, nil
+	})
+	require.NotEmpty(t, id)
+
+	assert.Eventually(t, func() bool {
+		job, ok := r.Get(id)
+		return ok && job.Status == worker.StatusCompleted
+	}, 2*time.Second, 5*time.Millisecond)
+
+	restarted := worker.NewRegistry(db)
+	job, ok := restarted.Get(id)
+	require.True(t, ok, "job must be reloaded from sqlite on restart")
+	assert.Equal(t, worker.StatusCompleted, job.Status)
+	assert.Equal(t, 2, job.ItemsCompleted)
+	assert.Equal(t, 2, job.TotalItems)
+	assert.Equal(t, []string{"finished"}, job.Details)
+}
+
+func TestRegistry_RecoverInterruptedJobs(t *testing.T) {
+	db := openTestDB(t)
+	seed := worker.NewRegistry(db)
+
+	jobID, err := seed.SubmitRecoverable(
+		context.Background(),
+		"sync",
+		map[string]any{"journal": true},
+		map[string]any{"journal": true},
+	)
+	require.Error(t, err, "missing recover handler must fail")
+	require.Empty(t, jobID)
+
+	seed.RegisterRecoverable("sync", func(_ context.Context, payload json.RawMessage, progress func(int, int)) ([]string, error) {
+		progress(1, 1)
+		return []string{string(payload)}, nil
+	})
+	jobID, err = seed.SubmitRecoverable(
+		context.Background(),
+		"sync",
+		map[string]any{"journal": true},
+		map[string]any{"journal": true},
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, jobID)
+
+	assert.Eventually(t, func() bool {
+		job, ok := seed.Get(jobID)
+		return ok && (job.Status == worker.StatusRunning || job.Status == worker.StatusCompleted)
+	}, 2*time.Second, 5*time.Millisecond)
+
+	// Simulate crash while running.
+	require.NoError(t, db.Exec("UPDATE jobs SET status = 'running', finished_at = NULL, error = '' WHERE id = ?", jobID).Error)
+
+	restarted := worker.NewRegistry(db)
+	restarted.RegisterRecoverable("sync", func(_ context.Context, payload json.RawMessage, progress func(int, int)) ([]string, error) {
+		progress(3, 3)
+		return []string{"replayed:" + string(payload)}, nil
+	})
+	require.NoError(t, restarted.RecoverInterrupted(context.Background()))
+
+	assert.Eventually(t, func() bool {
+		job, ok := restarted.Get(jobID)
+		return ok && job.Status == worker.StatusCompleted
+	}, 2*time.Second, 5*time.Millisecond)
+
+	job, ok := restarted.Get(jobID)
+	require.True(t, ok)
+	assert.Equal(t, 3, job.ItemsCompleted)
+	assert.Equal(t, 3, job.TotalItems)
+	assert.Contains(t, job.Details[0], "replayed:")
+}
+
+func TestRegistry_SubscribeReceivesUpdates(t *testing.T) {
+	r := worker.NewRegistry()
+	events, cancel := r.Subscribe()
+	defer cancel()
+
+	id := r.SubmitDetailed(context.Background(), nil, func(_ context.Context, progress func(int, int)) ([]string, error) {
+		progress(1, 2)
+		progress(2, 2)
+		return nil, nil
+	})
+	require.NotEmpty(t, id)
+
+	var gotTerminal bool
+	assert.Eventually(t, func() bool {
+		select {
+		case event := <-events:
+			if event.ID != id {
+				return false
+			}
+			if event.Status == worker.StatusCompleted {
+				gotTerminal = true
+			}
+			return gotTerminal
+		default:
+			return false
+		}
+	}, 2*time.Second, 5*time.Millisecond)
+}
+
+func TestRegistry_ClearTerminal(t *testing.T) {
+	db := openTestDB(t)
+	r := worker.NewRegistry(db)
+
+	// Submit completed job
+	id1 := r.Submit(context.Background(), func(_ context.Context) error { return nil })
+	assert.Eventually(t, func() bool {
+		j, _ := r.Get(id1)
+		return j.Status == worker.StatusCompleted
+	}, 2*time.Second, 5*time.Millisecond)
+
+	// Submit failed job
+	id2 := r.Submit(context.Background(), func(_ context.Context) error { return errors.New("failed") })
+	assert.Eventually(t, func() bool {
+		j, _ := r.Get(id2)
+		return j.Status == worker.StatusFailed
+	}, 2*time.Second, 5*time.Millisecond)
+
+	// Submit running/pending job (gated so it stays running)
+	gate := make(chan struct{})
+	id3 := r.Submit(context.Background(), func(_ context.Context) error {
+		<-gate
+		return nil
+	})
+
+	// Wait until it enters running or pending status
+	assert.Eventually(t, func() bool {
+		j, _ := r.Get(id3)
+		return j.Status == worker.StatusRunning || j.Status == worker.StatusPending
+	}, 2*time.Second, 5*time.Millisecond)
+
+	// Clear terminal jobs
+	require.NoError(t, r.ClearTerminal())
+
+	// Completed and failed should be gone
+	_, ok1 := r.Get(id1)
+	assert.False(t, ok1)
+	_, ok2 := r.Get(id2)
+	assert.False(t, ok2)
+
+	// Running/pending job should still exist
+	_, ok3 := r.Get(id3)
+	assert.True(t, ok3)
+
+	close(gate)
+}
+
+func TestRegistry_ClearOldJobs(t *testing.T) {
+	db := openTestDB(t)
+	r := worker.NewRegistry(db)
+
+	// Submit completed job
+	id := r.Submit(context.Background(), func(_ context.Context) error { return nil })
+	assert.Eventually(t, func() bool {
+		j, _ := r.Get(id)
+		return j.Status == worker.StatusCompleted
+	}, 2*time.Second, 5*time.Millisecond)
+
+	// Artificially modify CreatedAt in database to be 25 hours old
+	oldTime := time.Now().Add(-25 * time.Hour)
+	require.NoError(t, db.Exec("UPDATE jobs SET created_at = ? WHERE id = ?", oldTime, id).Error)
+
+	// Restart a new registry to load persisted jobs (which will trigger startup cleanup)
+	restarted := worker.NewRegistry(db)
+
+	// Verify that the job was cleared from database and restarted registry's memory
+	_, ok := restarted.Get(id)
+	assert.False(t, ok, "Completed job older than 24 hours should be auto-cleared on startup")
 }

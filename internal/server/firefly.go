@@ -79,11 +79,14 @@ func FireflyWebhookHandler(db *gorm.DB) gin.HandlerFunc {
 		for _, ft := range payload.Content.Transactions {
 			req := mapFireflyTransaction(ft)
 
-			entryText, err := appendTransactionAndSync(db, req)
+			entryText, errors, err := appendTransactionAndValidate(db, req)
 			if err != nil {
 				log.Errorf("Failed to append Firefly transaction: %v", err)
 				RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
 				return
+			}
+			if len(errors) > 0 {
+				log.Warnf("Firefly transaction appended but journal has errors: %v", errors)
 			}
 			entries = append(entries, entryText)
 		}

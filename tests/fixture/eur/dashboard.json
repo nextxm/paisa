@@ -36,8 +36,8 @@
         "balanceUnits": 0,
         "latestPrice": 0,
         "xirr": 0,
-        "gainAmount": 994.95,
         "absoluteReturn": 0,
+        "gainAmount": 994.95,
         "originalBalances": [
           {
             "currency": "EUR",
@@ -58,7 +58,10 @@
       "gainAmount": 20,
       "balanceAmount": 11020,
       "balanceUnits": 0,
-      "netInvestmentAmount": 11000
+      "netInvestmentAmount": 11000,
+      "contribution": 11000,
+      "fx_impact": 0,
+      "investment_return": 20
     },
     "xirr": 1.76
   },
@@ -78,6 +81,7 @@
           "commodity": "AAPL",
           "quantity": 1,
           "amount": 10005.05,
+          "original_amount": 1,
           "status": "unmarked",
           "tag_recurring": "",
           "tag_period": "",
@@ -99,6 +103,7 @@
           "commodity": "EUR",
           "quantity": -10005.05,
           "amount": -10005.05,
+          "original_amount": -10005.05,
           "status": "unmarked",
           "tag_recurring": "",
           "tag_period": "",
@@ -133,6 +138,7 @@
           "commodity": "EUR",
           "quantity": -11000,
           "amount": -11000,
+          "original_amount": -11000,
           "status": "unmarked",
           "tag_recurring": "",
           "tag_period": "",
@@ -154,6 +160,7 @@
           "commodity": "EUR",
           "quantity": 11000,
           "amount": 11000,
+          "original_amount": 11000,
           "status": "unmarked",
           "tag_recurring": "",
           "tag_period": "",

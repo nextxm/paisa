@@ -1064,6 +1064,29 @@ nav.breadcrumb .is-inactive {
   pointer-events: none;
 }
 
+nav.breadcrumb.app-breadcrumb li.breadcrumb-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 1.55rem;
+}
+
+nav.breadcrumb.app-breadcrumb .breadcrumb-node-label {
+  line-height: 1.2;
+}
+
+nav.breadcrumb.app-breadcrumb .breadcrumb-help {
+  display: inline-flex;
+  align-items: center;
+}
+
+nav.breadcrumb.app-breadcrumb .breadcrumb-alpha-tag {
+  font-size: 0.58rem;
+  line-height: 1;
+  padding: 0.12rem 0.42rem;
+  margin-left: 0.08rem;
+}
+
 .breadcrumb.has-chevron-separator li + li::before {
   font-family: "Font Awesome 6 Free";
   font-weight: 900;

@@ -1,9 +1,20 @@
 <script lang="ts">
+  import dayjs from "dayjs";
+  import { onDestroy } from "svelte";
   import Modal from "./Modal.svelte";
   import { jobsList, jobs } from "$lib/stores/jobs";
   import { statusTagClass, statusIconClass, formatTs, formatDuration } from "./sync_history_utils";
 
   let { open = $bindable(false) } = $props();
+  let nowTick = $state(dayjs());
+
+  const timer = setInterval(() => {
+    nowTick = dayjs();
+  }, 1000);
+
+  onDestroy(() => {
+    clearInterval(timer);
+  });
 
   /** Jobs displayed newest-first. */
   const displayJobs = $derived([...$jobsList].reverse());
@@ -73,7 +84,7 @@
                   </div>
                   <div class="column is-narrow">
                     <span class="has-text-weight-semibold">Duration:</span>
-                    {formatDuration(job)}
+                    {formatDuration(job, nowTick)}
                   </div>
                 </div>
               </div>

@@ -1,9 +1,12 @@
 package server
 
 import (
+	"net/http"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/transaction"
 	"github.com/ananthakumaran/paisa/internal/query"
@@ -44,6 +47,21 @@ type Graph struct {
 	Links []Link `json:"links"`
 }
 
+type DailyExpenseDay struct {
+	Date       time.Time                  `json:"date"`
+	Total      decimal.Decimal            `json:"total"`
+	ByCategory map[string]decimal.Decimal `json:"by_category,omitempty"`
+}
+
+type DailyExpenseResponse struct {
+	FromDate   time.Time         `json:"from_date"`
+	ToDate     time.Time         `json:"to_date"`
+	Categories []string          `json:"categories"`
+	Days       []DailyExpenseDay `json:"days"`
+}
+
+const expenseDailyDateLayout = "2006-01-02"
+
 // expenseCategory returns the second segment of an account name
 // (e.g. "Expenses:Groceries:Supermarket" → "Groceries").
 func expenseCategory(account string) string {
@@ -74,6 +92,11 @@ func ComputeExpenseTrends(db *gorm.DB) []ExpenseTrend {
 		Like("Expenses:%").
 		NotAccountPrefix("Expenses:Tax").
 		All()
+
+	return computeExpenseTrendsForWindows(currentPostings, previousPostings)
+}
+
+func computeExpenseTrendsForWindows(currentPostings []posting.Posting, previousPostings []posting.Posting) []ExpenseTrend {
 
 	// Aggregate amounts per category.
 	currentByCategory := make(map[string]decimal.Decimal)
@@ -129,7 +152,94 @@ func GetCurrentExpense(db *gorm.DB) map[string][]posting.Posting {
 	return utils.GroupByMonth(expenses)
 }
 
-func GetExpense(db *gorm.DB, years, untilYear int) gin.H {
+func parseExpenseDailyRange(c *gin.Context) (time.Time, time.Time, bool) {
+	now := utils.Now()
+	from := utils.ToDate(time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, now.Location()))
+	to := utils.ToDate(now)
+
+	if rawFrom := c.Query("from"); rawFrom != "" {
+		parsedFrom, err := time.Parse(expenseDailyDateLayout, rawFrom)
+		if err != nil {
+			RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, "invalid from format, expected YYYY-MM-DD")
+			return time.Time{}, time.Time{}, false
+		}
+		from = utils.ToDate(parsedFrom)
+	}
+
+	if rawTo := c.Query("to"); rawTo != "" {
+		parsedTo, err := time.Parse(expenseDailyDateLayout, rawTo)
+		if err != nil {
+			RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, "invalid to format, expected YYYY-MM-DD")
+			return time.Time{}, time.Time{}, false
+		}
+		to = utils.ToDate(parsedTo)
+	}
+
+	if from.After(to) {
+		RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, "from cannot be after to")
+		return time.Time{}, time.Time{}, false
+	}
+
+	return from, to, true
+}
+
+func GetDailyExpense(db *gorm.DB, from, to time.Time, groupByCategory bool) DailyExpenseResponse {
+	from = utils.ToDate(from)
+	to = utils.ToDate(to)
+
+	postings := query.Init(db).
+		Where("date >= ? and date <= ?", from, to).
+		Like("Expenses:%").
+		NotAccountPrefix("Expenses:Tax").
+		All()
+
+	dayByDate := make(map[string]*DailyExpenseDay)
+	categoriesSet := make(map[string]bool)
+
+	for _, p := range postings {
+		date := utils.ToDate(p.Date)
+		key := date.Format(expenseDailyDateLayout)
+		day := dayByDate[key]
+		if day == nil {
+			day = &DailyExpenseDay{
+				Date:  date,
+				Total: decimal.Zero,
+			}
+			dayByDate[key] = day
+		}
+
+		day.Total = day.Total.Add(p.Amount)
+		category := expenseCategory(p.Account)
+		categoriesSet[category] = true
+
+		if groupByCategory {
+			if day.ByCategory == nil {
+				day.ByCategory = make(map[string]decimal.Decimal)
+			}
+			day.ByCategory[category] = day.ByCategory[category].Add(p.Amount)
+		}
+	}
+
+	categories := lo.Keys(categoriesSet)
+	sort.Strings(categories)
+
+	days := make([]DailyExpenseDay, 0, len(dayByDate))
+	for _, day := range dayByDate {
+		days = append(days, *day)
+	}
+	sort.Slice(days, func(i, j int) bool {
+		return days[i].Date.Before(days[j].Date)
+	})
+
+	return DailyExpenseResponse{
+		FromDate:   from,
+		ToDate:     to,
+		Categories: categories,
+		Days:       days,
+	}
+}
+
+func GetExpense(db *gorm.DB, years, untilYear int, reportCurrency string) gin.H {
 	postings := query.Init(db).All()
 	requestedYears := years
 	if requestedYears < 1 {
@@ -156,6 +266,32 @@ func GetExpense(db *gorm.DB, years, untilYear int) gin.H {
 		}
 	}
 
+	// Original amounts are already preserved by query.All()
+
+	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
+		expenses = convertPostingsToReportCurrency(db, expenses, reportCurrency)
+		incomes = convertPostingsToReportCurrency(db, incomes, reportCurrency)
+		investments = convertPostingsToReportCurrency(db, investments, reportCurrency)
+		taxes = convertPostingsToReportCurrency(db, taxes, reportCurrency)
+		liabilities = convertPostingsToReportCurrency(db, liabilities, reportCurrency)
+	}
+
+	trends := ComputeExpenseTrends(db)
+	if reportCurrency != "" && reportCurrency != config.DefaultCurrency() {
+		now := utils.Now()
+		currentEnd := utils.EndOfDay(now)
+		currentStart := utils.ToDate(now.AddDate(0, 0, -30))
+		previousStart := utils.ToDate(now.AddDate(0, 0, -60))
+
+		currentPostings := lo.Filter(expenses, func(p posting.Posting, _ int) bool {
+			return utils.IsWithDate(p.Date, currentStart, currentEnd)
+		})
+		previousPostings := lo.Filter(expenses, func(p posting.Posting, _ int) bool {
+			return (p.Date.Equal(previousStart) || p.Date.After(previousStart)) && p.Date.Before(currentStart)
+		})
+		trends = computeExpenseTrendsForWindows(currentPostings, previousPostings)
+	}
+
 	graph := make(map[string]Graph)
 	for fy, ps := range utils.GroupByFY(postings) {
 		graph[fy] = sortGraph(computeHierarchyGraph(ps))
@@ -163,7 +299,7 @@ func GetExpense(db *gorm.DB, years, untilYear int) gin.H {
 
 	return gin.H{
 		"expenses": expenses,
-		"trends":   ComputeExpenseTrends(db),
+		"trends":   trends,
 		"multi_year": computeYoYMonthlySeries(
 			expenses,
 			requestedYears,

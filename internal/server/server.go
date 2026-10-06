@@ -3,10 +3,12 @@ package server
 import (
 	"context"
 	"crypto/subtle"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -38,7 +40,25 @@ import (
 func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 
-	registry := worker.NewRegistry()
+	registry := worker.NewRegistry(db)
+	registry.RegisterRecoverable("sync", func(_ context.Context, payload json.RawMessage, progress func(int, int)) ([]string, error) {
+		var syncRequest SyncRequest
+		if err := json.Unmarshal(payload, &syncRequest); err != nil {
+			return nil, fmt.Errorf("invalid persisted sync payload: %w", err)
+		}
+		result, details := Sync(db, syncRequest, progress)
+		if success, ok := result["success"].(bool); ok && !success {
+			message, _ := result["message"].(string)
+			if message == "" {
+				message = "sync failed"
+			}
+			return details, errors.New(message)
+		}
+		return details, nil
+	})
+	if err := registry.RecoverInterrupted(context.Background()); err != nil {
+		log.WithError(err).Warn("failed to recover interrupted jobs")
+	}
 
 	router := gin.New()
 	if enableCompression {
@@ -62,6 +82,10 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 
 	router.GET("/manifest.webmanifest", func(c *gin.Context) {
 		c.FileFromFS("/static/manifest.webmanifest", http.FS(web.Static))
+	})
+
+	router.GET("/site.webmanifest", func(c *gin.Context) {
+		c.FileFromFS("/static/site.webmanifest", http.FS(web.Static))
 	})
 
 	router.GET("/sw.js", func(c *gin.Context) {
@@ -88,12 +112,13 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.POST("/api/auth/logout", Logout(db))
 
 	router.GET("/api/config", func(c *gin.Context) {
+		requestDB, telemetry := beginRequestTelemetry(db)
 		var now *time.Time
 		if utils.IsNowDefined() {
 			n := utils.Now()
 			now = &n
 		}
-		lastPriceUpdate, _ := metadata.GetOrDefault(db, model.LastPriceSyncKey, "")
+		lastPriceUpdate, _ := metadata.GetOrDefault(requestDB, model.LastPriceSyncKey, "")
 
 		// Check if journal is dirty
 		journalPath := config.GetJournalPath()
@@ -102,12 +127,13 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 			files = []string{journalPath}
 		}
 		currentHash, _ := utils.SHA256Files(files)
-		lastHash, _ := metadata.GetOrDefault(db, model.JournalHashKey, "")
+		lastHash, _ := metadata.GetOrDefault(requestDB, model.JournalHashKey, "")
 		isJournalDirty := currentHash != lastHash
 
+		telemetry.writeHeaders(c)
 		c.JSON(200, gin.H{
 			"config":            config.GetConfig(),
-			"accounts":          accounting.AllAccounts(db),
+			"accounts":          accounting.AllAccounts(requestDB),
 			"now":               now,
 			"schema":            config.GetSchema(),
 			"last_price_update": lastPriceUpdate,
@@ -146,29 +172,59 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 			return
 		}
 
-		jobID := registry.SubmitDetailed(context.Background(), map[string]any{
-			"journal":      syncRequest.Journal,
-			"prices":       syncRequest.Prices,
-			"force_prices": syncRequest.ForcePrices,
-			"portfolios":   syncRequest.Portfolios,
-		}, func(_ context.Context, progress func(int, int)) ([]string, error) {
-			// context.Background() is intentional: the sync job must outlive the
-			// HTTP request.  Using c.Request.Context() would cancel the job as
-			// soon as the 202 response is flushed to the client.
-			result, details := Sync(db, syncRequest, progress)
-			if success, ok := result["success"].(bool); ok && !success {
-				message, _ := result["message"].(string)
-				if message == "" {
-					message = "sync failed"
-				}
-				return details, errors.New(message)
-			}
-			return details, nil
+		jobID, err := registry.SubmitRecoverable(context.Background(), "sync", syncRequest, map[string]any{
+			"journal":         syncRequest.Journal,
+			"prices":          syncRequest.Prices,
+			"force_prices":    syncRequest.ForcePrices,
+			"active_snapshot": syncRequest.ActiveSnapshot,
+			"portfolios":      syncRequest.Portfolios,
 		})
+		if err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
 
 		c.JSON(http.StatusAccepted, gin.H{"job_id": jobID})
 	})
 
+	writeGroup.POST("/api/jobs/clear", func(c *gin.Context) {
+		if err := registry.ClearTerminal(); err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"success": true})
+	})
+
+	router.GET("/api/jobs/stream", func(c *gin.Context) {
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Connection", "keep-alive")
+		c.Header("X-Accel-Buffering", "no")
+
+		for _, job := range registry.List() {
+			c.SSEvent("job", job)
+		}
+		c.Writer.Flush()
+
+		events, cancel := registry.Subscribe()
+		defer cancel()
+
+		for {
+			select {
+			case <-c.Request.Context().Done():
+				return
+			case job, ok := <-events:
+				if !ok {
+					return
+				}
+				c.SSEvent("job", job)
+				c.Writer.Flush()
+			case <-time.After(30 * time.Second):
+				c.SSEvent("ping", "ok")
+				c.Writer.Flush()
+			}
+		}
+	})
 	router.GET("/api/jobs/:id", func(c *gin.Context) {
 		job, ok := registry.Get(c.Param("id"))
 		if !ok {
@@ -179,11 +235,88 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.GET("/api/dashboard", func(c *gin.Context) {
-		c.JSON(200, GetDashboard(db))
+		requestDB, telemetry := beginRequestTelemetry(db)
+		snapshotStart := time.Now()
+		if payload, ok := getDashboardSnapshotPayload(requestDB); ok {
+			c.Header("X-Paisa-Perf-Dashboard-Source", "snapshot")
+			c.Header("X-Paisa-Perf-Dashboard-Snapshot-Ms", strconv.FormatInt(time.Since(snapshotStart).Milliseconds(), 10))
+			telemetry.writeHeaders(c)
+			c.Data(http.StatusOK, "application/json; charset=utf-8", payload)
+			return
+		}
+		c.Header("X-Paisa-Perf-Dashboard-Source", "live")
+		c.Header("X-Paisa-Perf-Dashboard-Snapshot-Ms", strconv.FormatInt(time.Since(snapshotStart).Milliseconds(), 10))
+		result, timings := buildDashboardWithTimings(requestDB)
+		if encoded := encodeDashboardStageTimings(timings); encoded != "" {
+			c.Header("X-Paisa-Perf-Dashboard-Stages-Ms", encoded)
+		}
+		telemetry.writeHeaders(c)
+		c.JSON(http.StatusOK, result)
 	})
 
 	router.GET("/api/networth", func(c *gin.Context) {
 		c.JSON(200, GetNetworth(db, c.Query("report_currency")))
+	})
+	router.GET("/api/networth/projection", func(c *gin.Context) {
+		req, ok := parseNetworthProjectionRequest(c)
+		if !ok {
+			return
+		}
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetNetworthProjection(requestDB, req)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
+	})
+
+	router.GET("/api/projection/dna", func(c *gin.Context) {
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetFinancialDNA(requestDB)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
+	})
+
+	router.POST("/api/projection/simulate", func(c *gin.Context) {
+		var req SimulateRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			// If no body or invalid JSON, use defaults
+			req = SimulateRequest{}
+		}
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetProjectionSimulate(requestDB, req)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
+	})
+
+	router.GET("/api/projection/goals", func(c *gin.Context) {
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetProjectionGoals(requestDB)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
+	})
+
+	router.POST("/api/projection/whatif", func(c *gin.Context) {
+		var req WhatIfRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			req = WhatIfRequest{}
+		}
+		if len(req.Scenarios) > 5 {
+			req.Scenarios = req.Scenarios[:5]
+		}
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetProjectionWhatIf(requestDB, req)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
+	})
+
+	router.POST("/api/projection/drawdown", func(c *gin.Context) {
+		var req DrawdownRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			req = DrawdownRequest{}
+		}
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetProjectionDrawdown(requestDB, req)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
 	})
 
 	router.GET("/api/assets/balance", func(c *gin.Context) {
@@ -219,8 +352,29 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/income", func(c *gin.Context) {
 		c.JSON(200, GetIncome(db, parseYearsParam(c.Query("years")), parseUntilYearParam(c.Query("until_year"))))
 	})
+	router.GET("/api/income/investment", func(c *gin.Context) {
+		if c.Request.URL.RawQuery == "" {
+			if payload, ok := getInvestmentIncomeSnapshotPayload(db); ok {
+				c.Data(200, "application/json; charset=utf-8", payload)
+				return
+			}
+		}
+
+		asOfDate, ok := parseAsOfDateOrYear(c)
+		if !ok {
+			return
+		}
+		c.JSON(200, GetInvestmentIncome(db, asOfDate))
+	})
 	router.GET("/api/expense", func(c *gin.Context) {
-		c.JSON(200, GetExpense(db, parseYearsParam(c.Query("years")), parseUntilYearParam(c.Query("until_year"))))
+		c.JSON(200, GetExpense(db, parseYearsParam(c.Query("years")), parseUntilYearParam(c.Query("until_year")), c.Query("report_currency")))
+	})
+	router.GET("/api/expense/daily", func(c *gin.Context) {
+		from, to, ok := parseExpenseDailyRange(c)
+		if !ok {
+			return
+		}
+		c.JSON(http.StatusOK, GetDailyExpense(db, from, to, c.Query("group_by") == "category"))
 	})
 
 	router.GET("/api/budget", func(c *gin.Context) {
@@ -238,6 +392,9 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 	router.GET("/api/allocation", func(c *gin.Context) {
 		c.JSON(200, GetAllocation(db))
+	})
+	router.GET("/api/currency-exposure", func(c *gin.Context) {
+		c.JSON(200, GetCurrencyExposure(db))
 	})
 	router.GET("/api/portfolio_allocation", func(c *gin.Context) {
 		c.JSON(200, GetPortfolioAllocation(db))
@@ -308,6 +465,20 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 	router.GET("/api/diagnosis", func(c *gin.Context) {
 		c.JSON(200, GetDiagnosis(db))
+	})
+	router.GET("/api/diagnosis/duplicates", func(c *gin.Context) {
+		c.JSON(200, GetDuplicatesAndOutliers(db))
+	})
+	writeGroup.POST("/api/diagnosis/duplicates/suppress", func(c *gin.Context) {
+		var req SuppressRequest
+		if !BindJSONOrError(c, &req) {
+			return
+		}
+		if err := SuppressDuplicate(db, req); err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
+		c.JSON(200, gin.H{"success": true})
 	})
 
 	router.GET("/api/liabilities/interest", func(c *gin.Context) {
