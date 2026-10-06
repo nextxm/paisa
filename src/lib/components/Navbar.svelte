@@ -140,7 +140,8 @@
       href: "/planning",
       children: [
         { label: "Goals", href: "/goals", help: "goals" },
-        { label: "Projection", href: "/projection" }
+        { label: "Projection", href: "/projection" },
+        { label: "Life Plan", href: "/life" }
       ]
     },
     {
@@ -162,6 +163,7 @@
         { label: "Configuration", href: "/config", help: "config" },
         { label: "Sheets", href: "/sheets", help: "sheets", disablePreload: true },
         { label: "Doctor", href: "/doctor" },
+        { label: "Doctor V2", href: "/doctor-v2" },
         ...(USER_CONFIG.labs?.firefly_reconcile
           ? [{ label: "Reconciliation", href: "/reconciliation" }]
           : []),

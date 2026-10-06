@@ -178,6 +178,178 @@ export interface NetworthProjectionResponse {
   optimistic_cagr: number;
 }
 
+export interface FinancialProfile {
+  current_networth: number;
+  monthly_contribution: number;
+  savings_rate: number;
+  annual_expenses: number;
+  annual_income: number;
+  income_growth_rate: number;
+  expense_growth_rate: number;
+  historical_return: number;
+  return_volatility: number;
+  income_years_covered: number;
+  expense_years_covered: number;
+  price_months_covered: number;
+}
+
+export interface SimulationMonthlyPoint {
+  date: dayjs.Dayjs;
+  balance_amount: number;
+}
+
+export interface GoalProbability {
+  goal_id: string;
+  name: string;
+  month: number;
+  probability: number;
+}
+
+export interface ProjectionLifeGoal {
+  goal_id: string;
+  name: string;
+  icon: string;
+  type: "milestone" | "recurring";
+  target_amount: number;
+  target_date: string;
+  start_date: string;
+  end_date: string;
+  frequency: "monthly" | "quarterly" | "yearly" | "";
+  inflation_rate?: number | null;
+  priority: number;
+  funded_by: string[];
+  monthly_allocation: number;
+  cashflow_count: number;
+  probability: number;
+}
+
+export interface SimulationResult {
+  bands: Record<string, SimulationMonthlyPoint[]>;
+  fire_probability: number;
+  fire_year_p50: number;
+  fire_year_p25: number;
+  fire_year_p75: number;
+  target_corpus: number;
+  goal_probabilities: GoalProbability[];
+  iterations: number;
+  months_projected: number;
+}
+
+export interface SimulationResponse {
+  profile: FinancialProfile;
+  simulation: SimulationResult;
+  goals: ProjectionLifeGoal[];
+}
+
+export interface WhatIfScenarioOverrides {
+  iterations?: number;
+  months_to_project?: number;
+  monthly_contribution?: number;
+  contribution_growth_rate?: number;
+  expected_return?: number;
+  return_volatility?: number;
+  inflation_rate?: number;
+  swr?: number;
+}
+
+export interface WhatIfScenarioRequest {
+  name: string;
+  overrides: WhatIfScenarioOverrides;
+}
+
+export interface WhatIfScenarioResult {
+  name: string;
+  simulation: SimulationResult;
+  goals: ProjectionLifeGoal[];
+}
+
+export interface WhatIfResponse {
+  profile: FinancialProfile;
+  baseline: {
+    simulation: SimulationResult;
+    goals: ProjectionLifeGoal[];
+  };
+  scenarios: WhatIfScenarioResult[];
+}
+
+export interface DrawdownBucket {
+  name: string;
+  accounts: string[];
+  account_glob: string;
+  tax_category: "" | "debt" | "equity" | "equity65" | "equity35" | "unlisted_equity";
+  override_tax_category: "" | "debt" | "equity" | "equity65" | "equity35" | "unlisted_equity";
+  holding_period_months: number;
+}
+
+export interface DrawdownRecommendation {
+  account: string;
+  commodity: string;
+  tax_category: string;
+  units: number;
+  amount: number;
+  estimated_tax: {
+    gain: number;
+    taxable: number;
+    slab: number;
+    long_term: number;
+    short_term: number;
+  };
+  holding_period_days: number;
+  holding_period_months: number;
+  purchase_date: dayjs.Dayjs;
+  current_unit_price: number;
+  effective_tax_rate: number;
+}
+
+export interface DrawdownAssetAccount {
+  account: string;
+  tax_category: "" | "debt" | "equity" | "equity65" | "equity35" | "unlisted_equity";
+}
+
+export interface DrawdownResponse {
+  available_accounts: string[];
+  available_assets: DrawdownAssetAccount[];
+  drawdown: {
+    requested_amount: number;
+    recommended_amount: number;
+    remaining_amount: number;
+    total_estimated_tax: {
+      gain: number;
+      taxable: number;
+      slab: number;
+      long_term: number;
+      short_term: number;
+    };
+    recommendations: DrawdownRecommendation[];
+  };
+  impact?: {
+    profile: FinancialProfile;
+    drawdown_outflow: {
+      withdrawal: number;
+      estimated_tax: {
+        gain: number;
+        taxable: number;
+        slab: number;
+        long_term: number;
+        short_term: number;
+      };
+      total: number;
+    };
+    baseline: {
+      simulation: SimulationResult;
+      goals: ProjectionLifeGoal[];
+    };
+    post_drawdown: {
+      simulation: SimulationResult;
+      goals: ProjectionLifeGoal[];
+    };
+    delta: {
+      fire_probability: number;
+      fire_year_p50: number;
+    };
+  };
+}
+
 export interface CurrencyExposure {
   currency: string;
   amount: number;
@@ -808,6 +980,20 @@ export function ajax(route: "/api/networth"): Promise<{
   xirr: number;
 }>;
 export function ajax(route: "/api/networth/projection"): Promise<NetworthProjectionResponse>;
+export function ajax(route: "/api/projection/dna"): Promise<{ profile: FinancialProfile }>;
+export function ajax(route: "/api/projection/goals"): Promise<{ goals: ProjectionLifeGoal[] }>;
+export function ajax(
+  route: "/api/projection/simulate",
+  options?: RequestOptions
+): Promise<SimulationResponse>;
+export function ajax(
+  route: "/api/projection/whatif",
+  options?: RequestOptions
+): Promise<WhatIfResponse>;
+export function ajax(
+  route: "/api/projection/drawdown",
+  options?: RequestOptions
+): Promise<DrawdownResponse>;
 export function ajax(route: "/api/gain"): Promise<{
   gain_breakdown: Gain[];
 }>;

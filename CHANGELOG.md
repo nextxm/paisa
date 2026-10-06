@@ -4,6 +4,51 @@
 
 #### Features
 
+- **Add smart per-bucket tax applicability overrides for Life Drawdown** — Added strategy-level tax rules so users can decide how selected assets are taxed during drawdown simulations.
+  - Extended drawdown buckets with an optional `override_tax_category` that applies tax treatment overrides to matching lots without changing global commodity configuration.
+  - Added named buckets and explicit account assignment (`accounts`) support so users can drag/drop asset accounts into strategy buckets for direct inclusion control.
+  - Updated lot collection and ordering logic to preserve bucket priority and use bucket-applied tax categories for sale-tax estimation.
+  - Added Drawdown UI controls for "Match Tax Category" and "Apply Tax As" plus an unassigned asset tray for drag/drop bucket assignment from planning.
+  - Added one-click auto-group actions to seed buckets by account family or tax category before fine-tuning with drag/drop.
+  - Added "Auto-group: Current Rules" to convert existing bucket rule filters into explicit per-bucket account assignments using bucket priority.
+  - Added preview bucket counts on all auto-group actions so users can see expected grouping size before applying.
+  - Added focused backend test coverage for override behavior and bucket-priority ordering.
+
+- **Add Doctor V2 triage workspace** — Added a parallel Doctor page with a clearer review flow for large diagnosis result sets.
+  - Added `/more/doctor-v2` with a queue-first overview, compact findings cards, and single-focus duplicate/outlier review modes.
+  - Reimagined `/more/doctor-v3` as a ranked single-item triage studio with keyboard navigation and a focused queue rail, replacing the section-dashboard pattern.
+  - Added quick filters in Doctor V3 for account, date range, and amount range (absolute) with account chips for faster narrowing of duplicate/outlier queues.
+  - Added a multi-card review mode and refreshed visual styling in Doctor V3 so users can scan many findings at once instead of single-item-only review.
+  - Removed loop-prone state synchronization in Doctor V3 that could trigger constant refresh-like rerender churn during review.
+  - Added Doctor V2 helper logic and focused Bun coverage for queue ordering and filtering behavior.
+  - Exposed the new page from the More navigation, command palette, and the legacy Doctor page so both versions can be compared before replacing the original.
+
+- **Complete Phase 6 caching and polish for Life Projection** — Added simulation-level caching and navigational/mobile refinements across life-planning pages.
+  - Added in-memory Monte Carlo result caching in `internal/projection/simulator` keyed by normalized simulation config to reduce repeated recomputation.
+  - Wired simulation cache invalidation into `cache.Clear()` so `/api/sync` and price-refresh flows invalidate cached projection runs.
+  - Improved life-planning navigation by adding direct links between What-If, Goals, Drawdown, and the main Life Plan dashboard.
+  - Polished drawdown mobile responsiveness by adjusting metric-card column behavior for compact viewports.
+
+- **Complete Phase 5 tax-aware drawdown strategy** — Added a full drawdown strategy flow that optimizes withdrawal recommendations by ordered strategy buckets and estimated tax burden using FIFO lots and existing capital-gains logic.
+  - Extended `internal/projection/drawdown` to honor bucket priority with `account_glob`, `tax_category`, and `holding_period_months` filters before tax-cost sorting.
+  - Added focused unit coverage for bucket matching rules, strategy ordering, and deterministic optimization behavior.
+  - Upgraded `/planning/life/drawdown` with a reorderable strategy bucket editor and richer recommendation cards (coverage, uncovered amount, holding period, purchase date, and tax totals).
+
+- **Add Phase 4 what-if scenario comparisons for Life Plan** — Added a scenario comparison API and a dedicated planning UI for testing alternative trajectories against the goal-aware projection engine.
+  - Added `internal/projection/whatif` to clone baseline simulation configs, apply scenario overrides, and return comparable Monte Carlo outputs.
+  - Added `POST /api/projection/whatif` with baseline + up to five named scenarios using the same life-goal assumptions as the baseline simulation.
+  - Added `/planning/life/whatif` with prebuilt templates, editable scenario overrides, and an overlay comparison chart.
+
+- **Add Phase 3 life-goal support to the life projection engine** — Added config-backed milestone and recurring life goals, integrated them into Monte Carlo simulations, and surfaced probabilities in the planning UI.
+  - Extended `paisa.yaml` and `internal/config/schema.json` with `goals.life[]` for milestone and recurring goals, including optional per-goal inflation overrides and priority.
+  - Added `internal/projection/goals/goals.go` to expand configured life goals into simulation cashflows with focused unit coverage.
+  - Updated projection simulation responses and added `GET /api/projection/goals` so the frontend can render configured goals with probability scores.
+  - Added a new `/planning/life/goals` editor route and goal markers/probability cards on `/planning/life`.
+
+- **Fix /site.webmanifest fallback to SPA HTML in Go server mode** — Added an explicit static route for `/site.webmanifest` so manifest requests return JSON instead of `index.html`.
+  - Updated Gin routing in `internal/server/server.go` to serve `web/static/site.webmanifest`.
+  - Added integration coverage in `internal/server/integration_test.go` to assert `/site.webmanifest` is valid JSON and not HTML.
+
 - **Fix PWA manifest fetch under auth-proxy deployments** — Changed the manifest link to `/site.webmanifest` and added a compatibility manifest file for deployments where auth gateways or Nginx rules only exempt `site.webmanifest`.
   - Updated app shell manifest href in `src/app.html`.
   - Updated embedded static shell manifest href in `web/static/index.html`.

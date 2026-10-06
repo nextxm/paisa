@@ -84,6 +84,10 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.FileFromFS("/static/manifest.webmanifest", http.FS(web.Static))
 	})
 
+	router.GET("/site.webmanifest", func(c *gin.Context) {
+		c.FileFromFS("/static/site.webmanifest", http.FS(web.Static))
+	})
+
 	router.GET("/sw.js", func(c *gin.Context) {
 		c.FileFromFS("/static/sw.js", http.FS(web.Static))
 	})
@@ -260,6 +264,57 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		}
 		requestDB, telemetry := beginRequestTelemetry(db)
 		result := GetNetworthProjection(requestDB, req)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
+	})
+
+	router.GET("/api/projection/dna", func(c *gin.Context) {
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetFinancialDNA(requestDB)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
+	})
+
+	router.POST("/api/projection/simulate", func(c *gin.Context) {
+		var req SimulateRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			// If no body or invalid JSON, use defaults
+			req = SimulateRequest{}
+		}
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetProjectionSimulate(requestDB, req)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
+	})
+
+	router.GET("/api/projection/goals", func(c *gin.Context) {
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetProjectionGoals(requestDB)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
+	})
+
+	router.POST("/api/projection/whatif", func(c *gin.Context) {
+		var req WhatIfRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			req = WhatIfRequest{}
+		}
+		if len(req.Scenarios) > 5 {
+			req.Scenarios = req.Scenarios[:5]
+		}
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetProjectionWhatIf(requestDB, req)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
+	})
+
+	router.POST("/api/projection/drawdown", func(c *gin.Context) {
+		var req DrawdownRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			req = DrawdownRequest{}
+		}
+		requestDB, telemetry := beginRequestTelemetry(db)
+		result := GetProjectionDrawdown(requestDB, req)
 		telemetry.writeHeaders(c)
 		c.JSON(200, result)
 	})
