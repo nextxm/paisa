@@ -8,6 +8,7 @@ interface State {
 export function format(text: string) {
   const state: State = { inTransaction: false, lines: [] };
   return text
+    .replace(/\r/g, "")
     .split("\n")
     .reduce((state: State, line: string) => {
       state.lines.push(formatLine(line, state));

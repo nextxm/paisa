@@ -43,14 +43,36 @@ function authHeaders(): Record<string, string> {
  */
 const transport = createConnectTransport({
   baseUrl: "/connect",
-  fetch: (input, init) =>
-    fetch(input, {
+  fetch: async (input, init) => {
+    const headers = new Headers(init?.headers);
+    const auth = authHeaders();
+    for (const [key, value] of Object.entries(auth)) {
+      headers.set(key, value);
+    }
+    const res = await fetch(input, {
       ...init,
-      headers: {
-        ...(init?.headers as Record<string, string> | undefined),
-        ...authHeaders()
+      headers
+    });
+    const contentEncoding = res.headers.get("content-encoding");
+    if (contentEncoding && contentEncoding.includes("gzip")) {
+      const arrayBuffer = await res.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
+        const ds = new DecompressionStream("gzip");
+        const decompressedStream = new Response(bytes).body!.pipeThrough(ds);
+        return new Response(decompressedStream, {
+          status: res.status,
+          statusText: res.statusText,
+          headers: (() => {
+            const h = new Headers(res.headers);
+            h.delete("content-encoding");
+            return h;
+          })()
+        });
       }
-    })
+    }
+    return res;
+  }
 });
 
 /**

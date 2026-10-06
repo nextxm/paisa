@@ -12,12 +12,18 @@ package paisa.v1;
 
 option go_package = "github.com/ananthakumaran/paisa/internal/gen/paisa/v1;paisav1";
 
+import "google/protobuf/struct.proto";
+
 // PaisaService exposes typed, schema-driven endpoints.
 // Endpoints are mounted at /connect/ alongside the existing REST API.
 service PaisaService {
   // GetAccountTree returns the full hierarchical account tree derived from
   // all postings currently stored in the database.
   rpc GetAccountTree(GetAccountTreeRequest) returns (GetAccountTreeResponse);
+  // GetConfig returns runtime config and schema payloads used by the app shell.
+  rpc GetConfig(GetConfigRequest) returns (GetConfigResponse);
+  // UpdateConfig persists a full config payload.
+  rpc UpdateConfig(UpdateConfigRequest) returns (UpdateConfigResponse);
 }
 
 // ─── Domain messages ─────────────────────────────────────────────────────────
@@ -109,4 +115,30 @@ message GetAccountTreeRequest {}
 message GetAccountTreeResponse {
   // Top-level account nodes (e.g. Assets, Expenses, Income, …).
   repeated AccountNode accounts = 1;
+}
+
+message GetConfigRequest {}
+
+message GetConfigResponse {
+  // Current application config.
+  google.protobuf.Struct config = 1;
+  // Config schema used by the frontend editor.
+  google.protobuf.Struct schema = 2;
+  // Flat account list.
+  repeated string accounts = 3;
+  // Last price sync marker.
+  string last_price_update = 4;
+  // Whether the journal file hash differs from the last synced hash.
+  bool is_journal_dirty = 5;
+  // Optional frozen "now" timestamp in RFC3339 format.
+  optional string now = 6;
+}
+
+message UpdateConfigRequest {
+  // Full config object to persist.
+  google.protobuf.Struct config = 1;
+}
+
+message UpdateConfigResponse {
+  bool success = 1;
 }

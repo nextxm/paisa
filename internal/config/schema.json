@@ -763,6 +763,11 @@
       "default": false,
       "description": "Set to true to log outbound provider HTTP requests and responses, including payload bodies, for subsequent syncs and data fetches."
     },
+    "disable_missing_price_logging": {
+      "type": "boolean",
+      "default": false,
+      "description": "Set to true to disable warning logs for missing commodity prices and dates."
+    },
     "goals": {
       "description": "Track your progress towards financial milestones like retirement or specific savings targets.",
       "type": "object",

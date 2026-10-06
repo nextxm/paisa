@@ -18,7 +18,13 @@ import (
 // quoted in USD rather than INR).  Falls back to the default-currency price if
 // no foreign-currency price is available.  Returns (value, quoteCurrency, ok).
 func GetNativeUnitPrice(db *gorm.DB, commodity string, date time.Time) (decimal.Decimal, string, bool) {
-	pcache.Do(func() { loadPriceCache(db) })
+	pcacheMu.Lock()
+	if !pcache.loaded {
+		pcacheMu.Unlock()
+		loadPriceCache(db)
+	} else {
+		pcacheMu.Unlock()
+	}
 
 	pcacheMu.RLock()
 	defer pcacheMu.RUnlock()
@@ -66,7 +72,13 @@ func GetNativeUnitPrice(db *gorm.DB, commodity string, date time.Time) (decimal.
 //   - it has price entries with a QuoteCommodity that differs from the default
 //     currency (e.g. AAPL priced in USD in an INR ledger).
 func IsSecurity(db *gorm.DB, commodity string) bool {
-	pcache.Do(func() { loadPriceCache(db) })
+	pcacheMu.Lock()
+	if !pcache.loaded {
+		pcacheMu.Unlock()
+		loadPriceCache(db)
+	} else {
+		pcacheMu.Unlock()
+	}
 
 	pcacheMu.RLock()
 	defer pcacheMu.RUnlock()
@@ -148,7 +160,13 @@ func GetFXRate(db *gorm.DB, base, quote string, date time.Time) (FXRate, bool) {
 		return FXRate{Date: date, Rate: decimal.NewFromInt(1), Derived: false}, true
 	}
 
-	rcache.Do(func() { loadRateCache(db) })
+	rcacheMu.Lock()
+	if !rcache.loaded {
+		rcacheMu.Unlock()
+		loadRateCache(db)
+	} else {
+		rcacheMu.Unlock()
+	}
 
 	// 1. Direct pair.
 	if rate, ok := lookupRateBetween(base, quote, date); ok {

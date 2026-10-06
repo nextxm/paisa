@@ -1,0 +1,25 @@
+version: "2"
+sql:
+  - engine: "sqlite"
+    schema: "internal/db/schema.sql"
+    queries: "internal/db/queries.sql"
+    gen:
+      go:
+        package: "sqlcdb"
+        out: "internal/db/sqlc"
+        emit_interface: true
+        overrides:
+          - column: "postings.quantity"
+            go_type: "github.com/shopspring/decimal.Decimal"
+          - column: "postings.amount"
+            go_type: "github.com/shopspring/decimal.Decimal"
+          - column: "postings.original_amount"
+            go_type: "github.com/shopspring/decimal.Decimal"
+          - column: "prices.value"
+            go_type: "github.com/shopspring/decimal.Decimal"
+          - column: "prices.commodity_type"
+            go_type: "github.com/ananthakumaran/paisa/internal/config.CommodityType"
+          - column: "portfolios.percentage"
+            go_type: "github.com/shopspring/decimal.Decimal"
+          - column: "portfolios.commodity_type"
+            go_type: "github.com/ananthakumaran/paisa/internal/config.CommodityType"

@@ -3,6 +3,7 @@
 
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS := -ldflags="-X 'github.com/ananthakumaran/paisa/cmd.Version=$(VERSION)'"
+SQLC := go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0
 
 develop:
 	./node_modules/.bin/concurrently --names "GO,JS" -c "auto" "make serve" "npm run dev"
@@ -42,7 +43,11 @@ proto:
 	  --es_opt=target=ts \
 	  proto/api.proto
 
+sqlc-generate:
+	$(SQLC) generate
+
 lint:
+	$(MAKE) sqlc-generate
 	./node_modules/.bin/prettier --check src
 	npm run check
 	test -z "$$(gofmt -l .)"
@@ -59,7 +64,7 @@ jstest:
 jsbuild:
 	npm run build
 
-test: jsbuild jstest
+test: sqlc-generate jsbuild jstest
 	go test ./...
 
 windows:

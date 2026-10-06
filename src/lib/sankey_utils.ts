@@ -135,3 +135,34 @@ export function graphToSankey(graph: Graph): { nodes: SankeyNode[]; links: Sanke
 
   return { nodes, links };
 }
+
+/**
+ * Narrows a Sankey graph to expense-focused links by keeping only links that
+ * terminate at expense accounts, along with the source/target nodes needed to
+ * render those links.
+ */
+export function toExpenseBreakdown(
+  nodes: SankeyNode[],
+  links: SankeyLink[]
+): { nodes: SankeyNode[]; links: SankeyLink[] } {
+  const kindByNodeID = new Map(nodes.map((node) => [node.id, node.kind]));
+  const expenseLinks = links
+    .filter((link) => (kindByNodeID.get(link.target) ?? classifyAccount(link.target)) === "expense")
+    .sort((a, b) => {
+      if (a.source !== b.source) return a.source.localeCompare(b.source);
+      return a.target.localeCompare(b.target);
+    });
+
+  const neededNodeIDs = new Set<string>();
+  for (const link of expenseLinks) {
+    neededNodeIDs.add(link.source);
+    neededNodeIDs.add(link.target);
+  }
+
+  const nodeByID = new Map(nodes.map((node) => [node.id, node]));
+  const expenseNodes = Array.from(neededNodeIDs)
+    .map((id) => nodeByID.get(id) ?? { id, name: id, kind: classifyAccount(id) })
+    .sort((a, b) => a.id.localeCompare(b.id));
+
+  return { nodes: expenseNodes, links: expenseLinks };
+}

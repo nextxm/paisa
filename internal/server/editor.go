@@ -27,12 +27,9 @@ type LedgerFile struct {
 }
 
 func GetFiles(db *gorm.DB) gin.H {
-	var accounts []string
-	var payees []string
-	var commodities []string
-	db.Model(&posting.Posting{}).Distinct().Pluck("Account", &accounts)
-	db.Model(&posting.Posting{}).Distinct().Pluck("Payee", &payees)
-	db.Model(&posting.Posting{}).Distinct().Pluck("Commodity", &commodities)
+	var orderedPostings []posting.Posting
+	db.Order("date asc").Order("transaction_begin_line asc").Order("id asc").Find(&orderedPostings)
+	accounts, payees, commodities := collectEditorMetadata(orderedPostings)
 
 	path := config.GetJournalPath()
 
@@ -48,8 +45,42 @@ func GetFiles(db *gorm.DB) gin.H {
 		}
 		files = append(files, file)
 	}
+	sortEditorFileResponse(files)
 
 	return gin.H{"files": files, "accounts": accounts, "payees": payees, "commodities": commodities}
+}
+
+func collectEditorMetadata(postings []posting.Posting) ([]string, []string, []string) {
+	accounts := []string{}
+	payees := []string{}
+	commodities := []string{}
+
+	accountSeen := map[string]bool{}
+	payeeSeen := map[string]bool{}
+	commoditySeen := map[string]bool{}
+
+	for _, p := range postings {
+		if !accountSeen[p.Account] {
+			accounts = append(accounts, p.Account)
+			accountSeen[p.Account] = true
+		}
+		if !payeeSeen[p.Payee] {
+			payees = append(payees, p.Payee)
+			payeeSeen[p.Payee] = true
+		}
+		if !commoditySeen[p.Commodity] {
+			commodities = append(commodities, p.Commodity)
+			commoditySeen[p.Commodity] = true
+		}
+	}
+
+	return accounts, payees, commodities
+}
+
+func sortEditorFileResponse(files []*LedgerFile) {
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].Name < files[j].Name
+	})
 }
 
 func GetFile(file LedgerFile) (gin.H, error) {

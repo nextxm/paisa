@@ -94,7 +94,9 @@ func formatTransaction(req AddTransactionRequest) string {
 		sb.WriteString(dateStr)
 		sb.WriteString(" * ")
 		if payee != "" && narration != "" {
-			sb.WriteString(payee + " | " + narration)
+			sb.WriteString(payee)
+			sb.WriteString(" | ")
+			sb.WriteString(narration)
 		} else if payee != "" {
 			sb.WriteString(payee)
 		} else if narration != "" {

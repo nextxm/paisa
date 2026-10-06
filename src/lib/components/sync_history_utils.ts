@@ -40,10 +40,10 @@ export function formatTs(iso: string | undefined): string {
 }
 
 /** Human-readable wall-clock duration between started_at and finished_at (or now). */
-export function formatDuration(job: Job): string {
+export function formatDuration(job: Job, nowTs?: dayjs.Dayjs): string {
   if (!job.started_at) return "—";
   const start = dayjs(job.started_at);
-  const end = job.finished_at ? dayjs(job.finished_at) : dayjs();
+  const end = job.finished_at ? dayjs(job.finished_at) : (nowTs ?? dayjs());
   const secs = end.diff(start, "second");
   if (secs < 60) return `${secs}s`;
   return `${Math.floor(secs / 60)}m ${secs % 60}s`;

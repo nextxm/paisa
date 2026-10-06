@@ -1,16 +1,18 @@
 package price
 
 import (
+	"context"
+	"database/sql"
 	"errors"
 	"time"
 
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
-
 	"github.com/ananthakumaran/paisa/internal/config"
+	dbutil "github.com/ananthakumaran/paisa/internal/db"
+	sqlcdb "github.com/ananthakumaran/paisa/internal/db/sqlc"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/google/btree"
 	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
 )
 
 type Price struct {
@@ -50,17 +52,75 @@ func defaultQuoteCommodity() string {
 	return dc
 }
 
+func upsertPriceParams(price *Price) sqlcdb.UpsertPriceParams {
+	return sqlcdb.UpsertPriceParams{
+		Date:           dbutil.NullTime(price.Date),
+		CommodityType:  price.CommodityType,
+		CommodityID:    dbutil.NullString(price.CommodityID),
+		CommodityName:  dbutil.NullString(price.CommodityName),
+		QuoteCommodity: dbutil.NullString(price.QuoteCommodity),
+		Value:          price.Value,
+		Source:         dbutil.NullString(price.Source),
+	}
+}
+
 func UpsertAllByTypeNameAndID(db *gorm.DB, commodityType config.CommodityType, commodityName string, commodityID string, prices []*Price) error {
 	return db.Transaction(func(tx *gorm.DB) error {
+		conn := tx.ConnPool
+		if tx.Statement != nil && tx.Statement.ConnPool != nil {
+			conn = tx.Statement.ConnPool
+		}
+
+		ctx := context.Background()
 		dc := defaultQuoteCommodity()
-		for _, price := range deduplicatePricePointers(prices) {
+		deduplicated := deduplicatePricePointers(prices)
+
+		if len(deduplicated) == 0 {
+			return nil
+		}
+
+		const query = `INSERT INTO prices (
+    date,
+    commodity_type,
+    commodity_id,
+    commodity_name,
+    quote_commodity,
+    value,
+    source
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+)
+ON CONFLICT (commodity_type, date, commodity_name, quote_commodity) DO UPDATE SET
+    commodity_id = excluded.commodity_id,
+    value = excluded.value,
+    source = excluded.source`
+
+		stmt, err := conn.PrepareContext(ctx, query)
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+
+		for _, price := range deduplicated {
 			if price.QuoteCommodity == "" {
 				price.QuoteCommodity = dc
 			}
-			err := tx.Clauses(clause.OnConflict{
-				Columns:   []clause.Column{{Name: "commodity_type"}, {Name: "date"}, {Name: "commodity_name"}, {Name: "quote_commodity"}},
-				UpdateAll: true,
-			}).Create(price).Error
+			params := upsertPriceParams(price)
+			_, err = stmt.ExecContext(ctx,
+				params.Date,
+				params.CommodityType,
+				params.CommodityID,
+				params.CommodityName,
+				params.QuoteCommodity,
+				params.Value,
+				params.Source,
+			)
 			if err != nil {
 				return err
 			}
@@ -145,21 +205,64 @@ func deduplicatePrices(prices []Price) []Price {
 
 func UpsertAllByType(db *gorm.DB, commodityType config.CommodityType, prices []Price) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		err := tx.Delete(&Price{}, "commodity_type = ?", commodityType).Error
-		if err != nil {
+		conn := tx.ConnPool
+		if tx.Statement != nil && tx.Statement.ConnPool != nil {
+			conn = tx.Statement.ConnPool
+		}
+
+		queries := dbutil.Queries(tx)
+		if err := queries.DeletePricesByType(context.Background(), commodityType); err != nil {
 			return err
 		}
 		dc := defaultQuoteCommodity()
-		for i := range prices {
-			if prices[i].QuoteCommodity == "" {
-				prices[i].QuoteCommodity = dc
-			}
+		deduplicated := deduplicatePrices(prices)
+
+		if len(deduplicated) == 0 {
+			return nil
 		}
-		for _, price := range deduplicatePrices(prices) {
-			err := tx.Clauses(clause.OnConflict{
-				Columns:   []clause.Column{{Name: "commodity_type"}, {Name: "date"}, {Name: "commodity_name"}, {Name: "quote_commodity"}},
-				UpdateAll: true,
-			}).Create(&price).Error
+
+		const query = `INSERT INTO prices (
+    date,
+    commodity_type,
+    commodity_id,
+    commodity_name,
+    quote_commodity,
+    value,
+    source
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+)
+ON CONFLICT (commodity_type, date, commodity_name, quote_commodity) DO UPDATE SET
+    commodity_id = excluded.commodity_id,
+    value = excluded.value,
+    source = excluded.source`
+
+		stmt, err := conn.PrepareContext(context.Background(), query)
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+
+		for _, price := range deduplicated {
+			if price.QuoteCommodity == "" {
+				price.QuoteCommodity = dc
+			}
+			params := upsertPriceParams(&price)
+			_, err = stmt.ExecContext(context.Background(),
+				params.Date,
+				params.CommodityType,
+				params.CommodityID,
+				params.CommodityName,
+				params.QuoteCommodity,
+				params.Value,
+				params.Source,
+			)
 			if err != nil {
 				return err
 			}
@@ -186,64 +289,84 @@ type PriceFilter struct {
 	LatestOnly bool
 }
 
+func listPricesParams(filter PriceFilter) sqlcdb.ListPricesParams {
+	return sqlcdb.ListPricesParams{
+		Column1: filter.Base,
+		Column2: filter.Quote,
+		Column3: filter.Source,
+		Column4: dbutil.BoolFlag(!filter.From.IsZero()),
+		Date:    dbutil.NullTime(filter.From),
+		Column6: dbutil.BoolFlag(!filter.To.IsZero()),
+		Date_2:  dbutil.NullTime(filter.To),
+	}
+}
+
+func listLatestPricesParams(filter PriceFilter) sqlcdb.ListLatestPricesParams {
+	return sqlcdb.ListLatestPricesParams{
+		Column1: filter.Base,
+		Column2: filter.Quote,
+		Column3: filter.Source,
+		Column4: dbutil.BoolFlag(!filter.From.IsZero()),
+		Date:    dbutil.NullTime(filter.From),
+		Column6: dbutil.BoolFlag(!filter.To.IsZero()),
+		Date_2:  dbutil.NullTime(filter.To),
+	}
+}
+
+func mapPrice(row sqlcdb.Price) Price {
+	price := Price{
+		ID:             uint(row.ID),
+		CommodityType:  row.CommodityType,
+		CommodityID:    row.CommodityID.String,
+		CommodityName:  row.CommodityName.String,
+		QuoteCommodity: row.QuoteCommodity.String,
+		Value:          row.Value,
+		Source:         row.Source.String,
+	}
+	if row.Date.Valid {
+		price.Date = utils.ToDate(row.Date.Time)
+	}
+	return price
+}
+
 // FindFiltered queries the prices table using the given filter and returns
 // results ordered deterministically by (date ASC, commodity_name ASC,
 // quote_commodity ASC, source ASC).
 func FindFiltered(db *gorm.DB, filter PriceFilter) ([]Price, error) {
-	q := applyPriceFilter(db.Model(&Price{}), filter)
+	queries := dbutil.Queries(db)
+	var (
+		rows []sqlcdb.Price
+		err  error
+	)
 	if filter.LatestOnly {
-		ranked := q.Select(`prices.*, ROW_NUMBER() OVER (
-			PARTITION BY commodity_name
-			ORDER BY date DESC, quote_commodity ASC, source ASC, id DESC
-		) AS row_number`)
-		q = db.Table("(?) as ranked_prices", ranked).
-			Select("id, date, commodity_type, commodity_id, commodity_name, quote_commodity, value, source").
-			Where("row_number = 1")
+		rows, err = queries.ListLatestPrices(context.Background(), listLatestPricesParams(filter))
+	} else {
+		rows, err = queries.ListPrices(context.Background(), listPricesParams(filter))
 	}
-	q = q.Order("date ASC, commodity_name ASC, quote_commodity ASC, source ASC")
-	var prices []Price
-	if err := q.Find(&prices).Error; err != nil {
+	if err != nil {
 		return nil, err
 	}
-	for i := range prices {
-		prices[i].Date = utils.ToDate(prices[i].Date)
+	prices := make([]Price, 0, len(rows))
+	for _, row := range rows {
+		prices = append(prices, mapPrice(row))
 	}
 	return prices, nil
-}
-
-func applyPriceFilter(q *gorm.DB, filter PriceFilter) *gorm.DB {
-	if filter.Base != "" {
-		q = q.Where("commodity_name = ?", filter.Base)
-	}
-	if filter.Quote != "" {
-		q = q.Where("quote_commodity = ?", filter.Quote)
-	}
-	if !filter.From.IsZero() {
-		q = q.Where("date >= ?", filter.From)
-	}
-	if !filter.To.IsZero() {
-		q = q.Where("date <= ?", filter.To)
-	}
-	if filter.Source != "" {
-		q = q.Where("source = ?", filter.Source)
-	}
-	return q
 }
 
 // FindByDateBaseQuote returns the most-recent price on or before date for the
 // given base/quote commodity pair.  The second return value is false only when
 // no matching row exists; any other database error is returned as-is.
 func FindByDateBaseQuote(db *gorm.DB, date time.Time, baseCommodity, quoteCommodity string) (Price, bool, error) {
-	var p Price
-	result := db.Where("commodity_name = ? AND quote_commodity = ? AND date <= ?", baseCommodity, quoteCommodity, date).
-		Order("date DESC").
-		First(&p)
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+	row, err := dbutil.Queries(db).FindPriceByDateBaseQuote(context.Background(), sqlcdb.FindPriceByDateBaseQuoteParams{
+		BaseCommodity:  dbutil.NullString(baseCommodity),
+		QuoteCommodity: dbutil.NullString(quoteCommodity),
+		AtOrBefore:     dbutil.NullTime(date),
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			return Price{}, false, nil
 		}
-		return Price{}, false, result.Error
+		return Price{}, false, err
 	}
-	p.Date = utils.ToDate(p.Date)
-	return p, true, nil
+	return mapPrice(row), true, nil
 }

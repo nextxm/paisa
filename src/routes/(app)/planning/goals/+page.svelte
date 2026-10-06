@@ -3,16 +3,19 @@
   import { flip } from "svelte/animate";
   import GoalSummaryCard from "$lib/components/GoalSummaryCard.svelte";
   import ZeroState from "$lib/components/ZeroState.svelte";
-  import { ajax, helpUrl, type GoalSummary } from "$lib/utils";
+  import { helpUrl, type GoalSummary } from "$lib/utils";
+  import { updateConfig } from "$lib/config_client";
   import _ from "lodash";
-  import { onMount } from "svelte";
   import * as toast from "bulma-toast";
   import { writable } from "svelte/store";
   import type { Action } from "svelte/action";
+  import type { PageData } from "./$types";
 
-  let isEmpty = $state(false);
-  let config: UserConfig = $state(null);
-  let goals: GoalSummary[] = $state([]);
+  let { data }: { data: PageData } = $props();
+
+  let goals: GoalSummary[] = $state(_.sortBy(data.goals, (g) => -g.priority));
+  let isEmpty = $state(_.isEmpty(goals));
+  let config: UserConfig = $state(data.config);
   const dragDisabled = writable(true);
 
   function handleConsider(event: CustomEvent<DndEvent<GoalSummary>>) {
@@ -35,11 +38,7 @@
   }
 
   async function save(newConfig: UserConfig) {
-    const { success, error } = await ajax("/api/config", {
-      method: "POST",
-      body: JSON.stringify(newConfig),
-      background: true
-    });
+    const { success, error } = await updateConfig(newConfig, { background: true });
 
     if (success) {
       globalThis.USER_CONFIG = _.cloneDeep(newConfig);
@@ -55,15 +54,6 @@
       });
     }
   }
-
-  onMount(async () => {
-    ({ config } = await ajax("/api/config"));
-    ({ goals } = await ajax("/api/goals"));
-    goals = _.sortBy(goals, (g) => -g.priority);
-    if (_.isEmpty(goals)) {
-      isEmpty = true;
-    }
-  });
 
   const dragHandle: Action<HTMLElement, {}> = (node: HTMLElement) => {
     function startDrag(e: Event) {

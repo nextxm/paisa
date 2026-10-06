@@ -15,12 +15,10 @@
   import type { EditorView } from "codemirror";
   import { format } from "$lib/journal";
   import _ from "lodash";
-  import { onMount } from "svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import type { PageData } from "./$types";
   import FileTree from "$lib/components/FileTree.svelte";
   import FileModal from "$lib/components/FileModal.svelte";
-  import { page } from "$app/stores";
   import {
     editorLeftWidth,
     editorRightWidth,
@@ -30,14 +28,14 @@
   import { get } from "svelte/store";
 
   let { data }: { data: PageData } = $props();
-  let editorDom: Element = $state();
-  let editor: EditorView = $state();
+  let editorDom: Element | undefined = $state();
+  let editor: EditorView | undefined = $state();
   let filesMap: Record<string, LedgerFile> = $state({});
-  let selectedFile: LedgerFile = $state(null);
+  let selectedFile: LedgerFile | null = $state(null);
   let accounts: string[] = $state([]);
   let commodities: string[] = $state([]);
   let payees: string[] = $state([]);
-  let selectedVersion: string = $state(null);
+  let selectedVersion: string | null = $state(null);
   let lineNumber = $state(0);
 
   let leftWidth = $state(get(editorLeftWidth));
@@ -128,15 +126,16 @@
     return true;
   }
 
-  onMount(async () => {
-    loadFiles(data.name);
-    const line = _.toNumber($page.url.hash.substring(1));
-    if (_.isNumber(line)) {
-      lineNumber = line;
-    }
+  $effect(() => {
+    filesMap = _.fromPairs(_.map(data.files, (f) => [f.name, f]));
+    accounts = data.accounts;
+    commodities = data.commodities;
+    payees = data.payees;
+    selectedFile = _.find(data.files, (f) => f.name == data.name) || data.files[0];
+    lineNumber = data.lineNumber || 0;
   });
 
-  async function loadFiles(selectedFileName: string) {
+  async function refreshFiles(selectedFileName: string) {
     let files;
     ({ files, accounts, commodities, payees } = await ajax("/api/editor/files"));
     filesMap = _.fromPairs(_.map(files, (f) => [f.name, f]));
@@ -159,10 +158,13 @@
       background: true
     });
 
-    updateContent(editor, file.content);
+    if (editor) {
+      updateContent(editor, file.content);
+    }
   }
 
   async function pretty() {
+    if (!editor) return;
     const formatted = format(editor.state.doc.toString());
     if (formatted != editor.state.doc.toString()) {
       updateContent(editor, formatted);
@@ -170,6 +172,7 @@
   }
 
   async function deleteBackups() {
+    if (!selectedFile) return;
     const { file } = await ajax("/api/editor/file/delete_backups", {
       method: "POST",
       body: JSON.stringify({ name: selectedFile.name }),
@@ -180,6 +183,7 @@
   }
 
   async function save() {
+    if (!editor || !selectedFile) return;
     const doc = editor.state.doc;
     const { errors, saved, file, message } = await ajax("/api/editor/save", {
       method: "POST",
@@ -209,7 +213,7 @@
   }
 
   $effect(() => {
-    if (selectedFile) {
+    if (selectedFile && editorDom) {
       if (!editor || editor.state.doc.toString() != selectedFile.content) {
         if (editor) {
           editor.destroy();
@@ -257,7 +261,7 @@
 
       const success = await navigate(`/ledger/editor/${encodeURIComponent(destinationFile)}`);
       if (success) {
-        await loadFiles(destinationFile);
+        await refreshFiles(destinationFile);
       }
     } else {
       toast.toast({
@@ -308,7 +312,7 @@
               <button
                 class="button is-small"
                 disabled={$editorState.undoDepth == 0}
-                onclick={(_e) => undo(editor)}
+                onclick={(_e) => editor && undo(editor)}
               >
                 <span class="icon is-small">
                   <i class="fas fa-arrow-left"></i>
@@ -320,7 +324,7 @@
               <button
                 class="button is-small"
                 disabled={$editorState.redoDepth == 0}
-                onclick={(_e) => redo(editor)}
+                onclick={(_e) => editor && redo(editor)}
               >
                 <span>Redo</span>
                 <span class="icon is-small">
@@ -367,13 +371,13 @@
             </p>
           </div>
 
-          {#if !_.isEmpty(selectedFile?.versions)}
+          {#if selectedFile && !_.isEmpty(selectedFile.versions)}
             <div class="field has-addons ml-5 mb-0">
               <p class="control">
                 <button
                   class="button is-small"
                   disabled={!selectedVersion}
-                  onclick={(_e) => revert(selectedVersion)}
+                  onclick={(_e) => selectedVersion && revert(selectedVersion)}
                 >
                   <span class="icon is-small">
                     <i class="fas fa-clock-rotate-left"></i>
@@ -411,7 +415,8 @@
               <button
                 type="button"
                 class="button p-0 has-background-transparent"
-                onclick={(_e) => moveToLine(editor, ($editorState.errors || [])[0].line_from)}
+                onclick={(_e) =>
+                  editor && moveToLine(editor, ($editorState.errors || [])[0].line_from)}
               >
                 <span class="ml-1 tag invertable is-danger is-light"
                   >{($editorState.errors || []).length} error(s) found</span
@@ -431,7 +436,7 @@
                 path=""
                 onselect={(file) => selectFile(file)}
                 files={buildDirectoryTree(_.values(filesMap))}
-                selectedFileName={selectedFile?.name}
+                selectedFileName={selectedFile?.name || ""}
                 hasUnsavedChanges={$editorState.hasUnsavedChanges}
               />
             </aside>

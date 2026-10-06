@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { ajax, type ReconcileItem } from "$lib/utils";
+  import { updateConfig } from "$lib/config_client";
   import COLORS from "$lib/colors";
 
   let items = $state<ReconcileItem[]>([]);
@@ -40,10 +41,10 @@
 
     const newConfig = { ...USER_CONFIG, firefly: fireflyConfig };
     try {
-      await ajax("/api/config", {
-        method: "POST",
-        body: JSON.stringify(newConfig)
-      } as any);
+      const result = await updateConfig(newConfig);
+      if (!result.success) {
+        throw new Error(result.error || "Failed to save config");
+      }
       USER_CONFIG.firefly = fireflyConfig;
     } catch (e: any) {
       alert("Failed to save config: " + e.message);

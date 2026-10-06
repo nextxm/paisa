@@ -17,17 +17,20 @@ describe("bulk_editor", () => {
           const args = JSON.parse(
             fs.readFileSync(`fixture/bulk_edit/${dir}/${name}.json`).toString()
           );
-          const after = fs.readFileSync(`fixture/bulk_edit/${dir}/${name}.ledger`).toString();
+          const after = fs
+            .readFileSync(`fixture/bulk_edit/${dir}/${name}.ledger`)
+            .toString()
+            .replace(/\r/g, "");
           const ledgerFile: LedgerFile = {
             type: "file",
             name: "main.ledger",
-            content: before.toString(),
+            content: before.toString().replace(/\r/g, ""),
             versions: []
           };
           const {
             newFiles: [newLedgerFile]
           } = applyChanges([ledgerFile], transactions, dir, args);
-          expect(_.trim(newLedgerFile.content)).toBe(_.trim(after.toString()));
+          expect(_.trim(newLedgerFile.content)).toBe(_.trim(after));
         }
       }
     });

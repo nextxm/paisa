@@ -1,6 +1,7 @@
 package posting
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -8,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	dbutil "github.com/ananthakumaran/paisa/internal/db"
+	sqlcdb "github.com/ananthakumaran/paisa/internal/db/sqlc"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
@@ -132,14 +135,6 @@ func (p Posting) HasBehaviour(behaviour string) bool {
 	return false
 }
 
-// transactionHashRow is a lightweight projection used to load existing
-// (transaction_id, transaction_hash) pairs from the database without
-// fetching the full posting rows.
-type transactionHashRow struct {
-	TransactionID   string
-	TransactionHash string
-}
-
 // contentHash computes a deterministic SHA-256 digest of the stable fields
 // that make up a single posting.  It is called once per posting; callers
 // accumulate the digests of all postings in a transaction and combine them
@@ -199,6 +194,29 @@ func StampTransactionHash(postings []*Posting) {
 	}
 }
 
+func insertPostingParams(p *Posting) sqlcdb.InsertPostingParams {
+	return sqlcdb.InsertPostingParams{
+		TransactionID:        dbutil.NullString(p.TransactionID),
+		Date:                 dbutil.NullTime(p.Date),
+		Payee:                dbutil.NullString(p.Payee),
+		Account:              dbutil.NullString(p.Account),
+		Commodity:            dbutil.NullString(p.Commodity),
+		Quantity:             p.Quantity,
+		Amount:               p.Amount,
+		OriginalAmount:       p.OriginalAmount,
+		Status:               dbutil.NullString(p.Status),
+		TagRecurring:         dbutil.NullString(p.TagRecurring),
+		TagPeriod:            dbutil.NullString(p.TagPeriod),
+		TransactionBeginLine: dbutil.NullInt64(int64(p.TransactionBeginLine)),
+		TransactionEndLine:   dbutil.NullInt64(int64(p.TransactionEndLine)),
+		FileName:             dbutil.NullString(p.FileName),
+		Forecast:             dbutil.NullBool(p.Forecast),
+		Note:                 dbutil.NullString(p.Note),
+		TransactionNote:      dbutil.NullString(p.TransactionNote),
+		TransactionHash:      dbutil.NullString(p.TransactionHash),
+	}
+}
+
 // DeltaUpsert performs an incremental update of the postings table.
 // It stamps a per-transaction content hash on every new posting, then:
 //   - Deletes rows for transaction IDs that are no longer present.
@@ -221,17 +239,15 @@ func DeltaUpsert(db *gorm.DB, newPostings []*Posting) (added, updated, removed, 
 	}
 
 	// Load existing (transaction_id, transaction_hash) pairs.
-	var rows []transactionHashRow
-	if err2 := db.Model(&Posting{}).
-		Select("DISTINCT transaction_id, transaction_hash").
-		Scan(&rows).Error; err2 != nil {
+	rows, err2 := dbutil.Queries(db).ListPostingTransactionHashes(context.Background())
+	if err2 != nil {
 		err = err2
 		return
 	}
 
 	existing := make(map[string]string, len(rows))
 	for _, r := range rows {
-		existing[r.TransactionID] = r.TransactionHash
+		existing[r.TransactionID.String] = r.TransactionHash.String
 	}
 
 	// Classify each existing transaction.
@@ -277,21 +293,19 @@ func DeltaUpsert(db *gorm.DB, newPostings []*Posting) (added, updated, removed, 
 	}
 
 	err = db.Transaction(func(tx *gorm.DB) error {
+		queries := dbutil.Queries(tx)
 		if len(txIDsToDelete) > 0 {
-			const chunkSize = 500
-			for i := 0; i < len(txIDsToDelete); i += chunkSize {
-				end := i + chunkSize
-				if end > len(txIDsToDelete) {
-					end = len(txIDsToDelete)
-				}
-				if e := tx.Where("transaction_id IN ?", txIDsToDelete[i:end]).Delete(&Posting{}).Error; e != nil {
+			for _, txID := range txIDsToDelete {
+				if e := queries.DeletePostingsByTransactionID(context.Background(), dbutil.NullString(txID)); e != nil {
 					return e
 				}
 			}
 		}
 		if len(postingsToInsert) > 0 {
-			if e := tx.CreateInBatches(postingsToInsert, 500).Error; e != nil {
-				return e
+			for _, posting := range postingsToInsert {
+				if e := queries.InsertPosting(context.Background(), insertPostingParams(posting)); e != nil {
+					return e
+				}
 			}
 		}
 		return nil
@@ -304,11 +318,9 @@ func DeltaUpsert(db *gorm.DB, newPostings []*Posting) (added, updated, removed, 
 // Use DeltaUpsert for incremental syncs; UpsertAll is provided for contexts
 // (such as tests) that need a complete replace.
 func UpsertAll(db *gorm.DB, postings []*Posting) error {
-	const batchSize = 500
-
 	return db.Transaction(func(tx *gorm.DB) error {
-		err := tx.Exec("DELETE FROM postings").Error
-		if err != nil {
+		queries := dbutil.Queries(tx)
+		if err := queries.DeleteAllPostings(context.Background()); err != nil {
 			return err
 		}
 
@@ -316,7 +328,12 @@ func UpsertAll(db *gorm.DB, postings []*Posting) error {
 			return nil
 		}
 
-		return tx.CreateInBatches(postings, batchSize).Error
+		for _, posting := range postings {
+			if err := queries.InsertPosting(context.Background(), insertPostingParams(posting)); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 

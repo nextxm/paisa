@@ -1,6 +1,9 @@
 package server
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strconv"
 	"testing"
 	"time"
@@ -278,4 +281,74 @@ func TestGetExpense_MultiYearSeries(t *testing.T) {
 	assert.True(t, series["2024"].Total.Equal(decimal.NewFromFloat(60)))
 	assert.True(t, series["2025"].Month["2025-01"].Equal(decimal.NewFromFloat(100)))
 	assert.True(t, series["2024"].Month["2024-01"].Equal(decimal.NewFromFloat(60)))
+}
+
+func TestGetDailyExpense_GroupsByDateAndCategory(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+
+	for _, seeded := range []posting.Posting{
+		{
+			TransactionID: "t1",
+			Date:          parseDay("2024-02-03"),
+			Account:       "Expenses:Groceries",
+			Amount:        decimal.NewFromInt(50),
+			Commodity:     "INR",
+		},
+		{
+			TransactionID: "t2",
+			Date:          parseDay("2024-02-03"),
+			Account:       "Expenses:Dining",
+			Amount:        decimal.NewFromInt(30),
+			Commodity:     "INR",
+		},
+		{
+			TransactionID: "t3",
+			Date:          parseDay("2024-02-04"),
+			Account:       "Expenses:Groceries",
+			Amount:        decimal.NewFromInt(20),
+			Commodity:     "INR",
+		},
+		{
+			TransactionID: "t4",
+			Date:          parseDay("2024-02-03"),
+			Account:       "Expenses:Tax:IncomeTax",
+			Amount:        decimal.NewFromInt(500),
+			Commodity:     "INR",
+		},
+	} {
+		require.NoError(t, db.Create(&seeded).Error)
+	}
+
+	response := GetDailyExpense(db, parseDay("2024-02-01"), parseDay("2024-02-29"), true)
+	require.Equal(t, parseDay("2024-02-01"), response.FromDate)
+	require.Equal(t, parseDay("2024-02-29"), response.ToDate)
+	require.Equal(t, []string{"Dining", "Groceries"}, response.Categories)
+	require.Len(t, response.Days, 2)
+
+	assert.True(t, response.Days[0].Date.Equal(parseDay("2024-02-03")))
+	assert.True(t, response.Days[0].Total.Equal(decimal.NewFromInt(80)))
+	assert.True(t, response.Days[0].ByCategory["Dining"].Equal(decimal.NewFromInt(30)))
+	assert.True(t, response.Days[0].ByCategory["Groceries"].Equal(decimal.NewFromInt(50)))
+
+	assert.True(t, response.Days[1].Date.Equal(parseDay("2024-02-04")))
+	assert.True(t, response.Days[1].Total.Equal(decimal.NewFromInt(20)))
+	assert.True(t, response.Days[1].ByCategory["Groceries"].Equal(decimal.NewFromInt(20)))
+}
+
+func TestExpenseDailyEndpoint_InvalidRangeReturns400(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+	router := Build(db, false)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/expense/daily?from=2024-03-01&to=2024-02-01", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusBadRequest, rec.Code)
+
+	var envelope map[string]ErrorDetail
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &envelope))
+	assert.Equal(t, ErrCodeInvalidRequest, envelope["error"].Code)
+	assert.Equal(t, "from cannot be after to", envelope["error"].Message)
 }

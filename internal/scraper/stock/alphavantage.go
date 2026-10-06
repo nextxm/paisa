@@ -92,15 +92,20 @@ func fetch[R any](url string, response *R) error {
 	return nil
 }
 
-func getHistory(code, commodityName string) ([]*price.Price, error) {
+func getHistory(code, commodityName string, since time.Time) ([]*price.Price, error) {
 	parts := strings.Split(code, ":")
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("Invalid code: %s", code)
 	}
 	apiKey, ticker, currency := parts[0], parts[1], parts[2]
 
+	outputSize := "full"
+	if !since.IsZero() && time.Since(since) < 80*24*time.Hour {
+		outputSize = "compact"
+	}
+
 	log.Info("Fetching stock price history from Alpha Vantage")
-	url := fmt.Sprintf("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s", ticker, apiKey)
+	url := fmt.Sprintf("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&outputsize=%s&apikey=%s", ticker, outputSize, apiKey)
 	var response TimeSeriesDailyReponse
 	err := fetch(url, &response)
 	if err != nil {
@@ -112,7 +117,7 @@ func getHistory(code, commodityName string) ([]*price.Price, error) {
 	if !utils.IsCurrency(currency) {
 		needExchangePrice = true
 		log.Info("Fetching exchange rate from Alpha Vantage")
-		url = fmt.Sprintf("https://www.alphavantage.co/query?function=FX_DAILY&from_symbol=%s&to_symbol=%s&outputsize=full&apikey=%s", currency, config.DefaultCurrency(), apiKey)
+		url = fmt.Sprintf("https://www.alphavantage.co/query?function=FX_DAILY&from_symbol=%s&to_symbol=%s&outputsize=%s&apikey=%s", currency, config.DefaultCurrency(), outputSize, apiKey)
 		var response FXSeriesDailyReponse
 		err = fetch(url, &response)
 		if err != nil {
@@ -226,7 +231,7 @@ func (p *AlphaVantagePriceProvider) ClearCache(db *gorm.DB) {
 }
 
 func (p *AlphaVantagePriceProvider) GetPrices(code string, commodityName string, since time.Time) ([]*price.Price, error) {
-	prices, err := getHistory(code, commodityName)
+	prices, err := getHistory(code, commodityName, since)
 	if err != nil {
 		return nil, err
 	}

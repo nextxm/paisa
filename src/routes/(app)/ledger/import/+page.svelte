@@ -25,39 +25,59 @@
   import * as toast from "bulma-toast";
   import FileModal from "$lib/components/FileModal.svelte";
   import Modal from "$lib/components/Modal.svelte";
+  import type { PageData } from "./$types";
+
+  let { data: pageData }: { data: PageData } = $props();
 
   let templates: ImportTemplate[] = $state([]);
-  let selectedTemplate: ImportTemplate = $state(null);
-  let saveAsName: string = $state(null);
+  let selectedTemplate: ImportTemplate | null = $state(null);
+  let saveAsName: string = $state("");
   let preview = $state("");
-  let parseErrorMessage: string = $state(null);
+  let parseErrorMessage: string | null = $state(null);
   let columnCount: number = $state(0);
   let data: any[][] = $state([]);
   let rows: Array<Record<string, any>> = $state([]);
   let previewRows: ImportPreviewRow[] = $state([]);
   let includedPreviewRows: boolean[] = $state([]);
   let importPresets: ImportPreset[] = $state([]);
-  let selectedPreset: ImportPreset = $state(null);
+  let selectedPreset: ImportPreset | null = $state(null);
   let delimiter: string = $state(",");
   let options: { reverse: boolean; trim: boolean } = $state({ reverse: false, trim: true });
   let importSaving = $state(false);
 
-  let templateEditorDom: Element = $state();
-  let templateEditor: EditorView = $state();
+  let templateEditorDom: Element | undefined = $state();
+  let templateEditor: EditorView | undefined = $state();
 
-  let previewEditorDom: Element = $state();
-  let previewEditor: EditorView = $state();
+  let previewEditorDom: Element | undefined = $state();
+  let previewEditor: EditorView | undefined = $state();
 
-  onMount(async () => {
-    accountTfIdf.set(await ajax("/api/account/tf_idf"));
-    ({ templates } = await ajax("/api/templates"));
-    ({ presets: importPresets } = await ajax("/api/import/presets"));
-    selectedPreset = _.find(importPresets, { name: "Generic Bank CSV" }) || importPresets[0];
-    delimiter = selectedPreset?.delimiter || ",";
-    selectedTemplate = templates[0];
-    saveAsName = selectedTemplate.name;
-    templateEditor = createTemplateEditor(selectedTemplate.content, templateEditorDom);
-    previewEditor = createPreviewEditor("", preview, previewEditorDom, { readonly: true });
+  $effect(() => {
+    templates = Array.isArray(pageData.templates) ? pageData.templates : [];
+    importPresets = Array.isArray(pageData.importPresets) ? pageData.importPresets : [];
+  });
+
+  $effect(() => {
+    if (!selectedTemplate && templates.length > 0) {
+      selectedTemplate = templates[0];
+      saveAsName = selectedTemplate?.name || "";
+    }
+  });
+
+  $effect(() => {
+    if (!selectedPreset && importPresets.length > 0) {
+      selectedPreset = _.find(importPresets, { name: "Generic Bank CSV" }) || importPresets[0];
+      delimiter = selectedPreset?.delimiter || ",";
+    }
+  });
+
+  onMount(() => {
+    accountTfIdf.set(pageData.accountTfIdf);
+    if (templateEditorDom) {
+      templateEditor = createTemplateEditor(selectedTemplate?.content || "", templateEditorDom);
+    }
+    if (previewEditorDom) {
+      previewEditor = createPreviewEditor("", preview, previewEditorDom, { readonly: true });
+    }
   });
 
   const saveAsNameDuplicate = $derived(
@@ -68,6 +88,7 @@
   );
 
   async function save() {
+    if (!templateEditor) return;
     const { template, saved, message } = await ajax("/api/templates/upsert", {
       method: "POST",
       body: JSON.stringify({
@@ -88,7 +109,7 @@
 
     ({ templates } = await ajax("/api/templates", { background: true }));
     selectedTemplate = _.find(templates, { id: template.id });
-    saveAsName = selectedTemplate.name;
+    saveAsName = selectedTemplate?.name || "";
     toast.toast({
       message: `Saved ${saveAsName}`,
       type: "is-success"
@@ -98,6 +119,7 @@
   }
 
   async function remove() {
+    if (!selectedTemplate) return;
     const oldName = selectedTemplate.name;
     const confirmed = confirm(`Are you sure you want to delete ${oldName} template?`);
     if (!confirmed) {
@@ -122,7 +144,7 @@
 
     ({ templates } = await ajax("/api/templates", { background: true }));
     selectedTemplate = templates[0];
-    saveAsName = selectedTemplate.name;
+    saveAsName = selectedTemplate?.name || "";
     toast.toast({
       message: `Removed ${oldName}`,
       type: "is-success"
@@ -132,7 +154,7 @@
   }
 
   $effect(() => {
-    if (!_.isEmpty(data) && $templateEditorState.template) {
+    if (!_.isEmpty(data) && $templateEditorState.template && previewEditor) {
       try {
         const selectedRows = filterSelectedRows(rows, includedPreviewRows);
         preview = renderJournal(selectedRows, $templateEditorState.template, {
@@ -147,7 +169,7 @@
   });
 
   $effect(() => {
-    if (selectedTemplate && templateEditor) {
+    if (selectedTemplate && templateEditor && templateEditorDom) {
       if (templateEditor.state.doc.toString() != selectedTemplate.content) {
         templateEditor.destroy();
         templateEditor = createTemplateEditor(selectedTemplate.content, templateEditorDom);
@@ -175,7 +197,8 @@
       data = results.data;
       rows = asRows(results);
 
-      columnCount = _.maxBy(data, (row) => row.length).length;
+      const maxRow = _.maxBy(data, (row) => row.length);
+      columnCount = maxRow ? maxRow.length : 0;
       _.each(data, (row) => {
         row.length = columnCount;
       });
@@ -306,7 +329,7 @@
     });
   }
 
-  function builtinNotAllowed(action: string, template: ImportTemplate) {
+  function builtinNotAllowed(action: string, template: ImportTemplate | null) {
     if (template?.template_type == "builtin") {
       return `Not allowed to ${action.toLowerCase()} builtin template`;
     }
@@ -345,7 +368,10 @@
     <button
       class="du-btn du-btn-success du-btn-sm"
       disabled={_.isEmpty(saveAsName) || saveAsNameDuplicate}
-      onclick={() => save() && close()}>Create</button
+      onclick={() => {
+        save();
+        close();
+      }}>Create</button
     >
     <button class="du-btn du-btn-sm" onclick={() => close()}>Cancel</button>
   {/snippet}
@@ -420,14 +446,18 @@
                 clearable={false}
                 floatingConfig={{ strategy: "fixed" }}
                 on:change={() => {
-                  saveAsName = selectedTemplate.name;
+                  if (selectedTemplate) {
+                    saveAsName = selectedTemplate.name;
+                  }
                 }}
               >
                 <div slot="selection" let:selection>
-                  {selection.name}
-                  <span class="tag is-small is-link invertable is-light"
-                    >{selection.template_type}</span
-                  >
+                  {#if selection}
+                    {selection.name}
+                    <span class="tag is-small is-link invertable is-light"
+                      >{selection.template_type}</span
+                    >
+                  {/if}
                 </div>
                 <div slot="item" let:item>
                   <span class="name">{item.name}</span>
