@@ -130,6 +130,13 @@ export const CONFIG_GROUPS: ConfigGroup[] = [
         description: "Automated journal health checks for balances and prices"
       },
       {
+        id: "backup",
+        label: "Backup & Export",
+        icon: "fa-file-zipper",
+        schemaKeys: [],
+        description: "Export full zip archive of journals, configuration, and sheet files"
+      },
+      {
         id: "firefly",
         label: "Firefly III",
         icon: "fa-fire",

@@ -509,6 +509,8 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, gin.H{"success": true})
 	})
 
+	router.GET("/api/backup/export", HandleExportBackup)
+
 	router.GET("/api/liabilities/interest", func(c *gin.Context) {
 		c.JSON(200, liabilities.GetInterest(db))
 	})
