@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { DoctorSummary } from "$lib/doctor_v2";
+  import HealthScoreRing from "./HealthScoreRing.svelte";
 
   let {
     summary,
@@ -11,127 +12,116 @@
     onSelectTab: (tab: "fix" | "review" | "dismissed" | "all") => void;
   } = $props();
 
+  const healthScore = $derived.by(() => {
+    let penalty = summary.fix_count * 15 + summary.review_count * 5 + summary.info_count * 2;
+    return Math.max(0, Math.min(100, 100 - penalty));
+  });
+
   const isAllClear = $derived(summary.fix_count === 0 && summary.review_count === 0);
 </script>
 
-<div class="box health-summary-box mb-5">
-  <div class="is-flex is-justify-content-space-between is-align-items-center mb-4 flex-wrap gap-3">
-    <div>
-      <div class="is-flex is-align-items-center gap-2">
-        <span
-          class="icon is-medium {isAllClear
-            ? 'has-text-success'
-            : summary.fix_count > 0
-              ? 'has-text-danger'
-              : 'has-text-warning'}"
-        >
-          <i
-            class="fas {isAllClear
-              ? 'fa-circle-check'
-              : summary.fix_count > 0
-                ? 'fa-triangle-exclamation'
-                : 'fa-circle-info'} fa-2x"
-          ></i>
-        </span>
-        <div>
-          <h1 class="title is-4 mb-0">Data Health Overview</h1>
-          <p class="subtitle is-6 has-text-grey mb-0">
-            {#if isAllClear}
-              All financial data checks passed cleanly. No issues detected.
-            {:else if summary.fix_count > 0}
-              {summary.fix_count} issue{summary.fix_count > 1 ? "s" : ""} require fixing to ensure ledger
-              accuracy.
-            {:else}
-              {summary.review_count} item{summary.review_count > 1 ? "s" : ""} ready for review.
-            {/if}
-          </p>
+<div class="health-hero-card box mb-5">
+  <div class="is-flex is-align-items-center gap-5 flex-wrap">
+    <HealthScoreRing score={healthScore} size={110} strokeWidth={9} />
+
+    <div class="hero-copy-column">
+      <div class="is-flex is-align-items-center gap-2 mb-1">
+        <h1 class="title is-3 mb-0">Data Health Studio</h1>
+        {#if isAllClear}
+          <span class="tag is-success is-light is-rounded">All Systems Operational</span>
+        {:else if summary.fix_count > 0}
+          <span class="tag is-danger is-rounded"
+            >{summary.fix_count} Action Item{summary.fix_count > 1 ? "s" : ""}</span
+          >
+        {:else}
+          <span class="tag is-warning is-rounded"
+            >{summary.review_count} Review Item{summary.review_count > 1 ? "s" : ""}</span
+          >
+        {/if}
+      </div>
+
+      <p class="subtitle is-6 has-text-grey mb-3">
+        {#if isAllClear}
+          Your financial ledger passes all integrity checks cleanly with zero detected anomalies.
+        {:else if summary.fix_count > 0}
+          Found {summary.fix_count} critical issue{summary.fix_count > 1 ? "s" : ""} that require manual
+          correction in your journal files.
+        {:else}
+          Found {summary.review_count} item{summary.review_count > 1 ? "s" : ""} to review for duplicates,
+          price gaps, or unusual amounts.
+        {/if}
+      </p>
+
+      <div class="hero-stats-row is-flex gap-4">
+        <div class="stat-item">
+          <span class="stat-value has-text-danger">{summary.fix_count}</span>
+          <span class="stat-label">To Fix</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value has-text-warning"
+            >{summary.review_count + summary.info_count}</span
+          >
+          <span class="stat-label">To Review</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value has-text-grey">{summary.dismissed_count}</span>
+          <span class="stat-label">Dismissed</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value">{summary.total}</span>
+          <span class="stat-label">Total Scanned</span>
         </div>
       </div>
     </div>
   </div>
-
-  <div class="summary-pills-grid">
-    <button
-      type="button"
-      class="box summary-pill-card {activeTab === 'fix' ? 'is-active' : ''}"
-      onclick={() => onSelectTab("fix")}
-    >
-      <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-        <span class="tag is-danger is-rounded">Needs Fixing</span>
-        <span class="title is-5 mb-0 {summary.fix_count > 0 ? 'has-text-danger' : 'has-text-grey'}"
-          >{summary.fix_count}</span
-        >
-      </div>
-      <p class="is-size-7 has-text-grey">Data errors that impact financial reports</p>
-    </button>
-
-    <button
-      type="button"
-      class="box summary-pill-card {activeTab === 'review' ? 'is-active' : ''}"
-      onclick={() => onSelectTab("review")}
-    >
-      <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-        <span class="tag is-warning is-rounded">To Review</span>
-        <span
-          class="title is-5 mb-0 {summary.review_count > 0 ? 'has-text-warning' : 'has-text-grey'}"
-          >{summary.review_count + summary.info_count}</span
-        >
-      </div>
-      <p class="is-size-7 has-text-grey">Potential duplicates, price gaps & outliers</p>
-    </button>
-
-    <button
-      type="button"
-      class="box summary-pill-card {activeTab === 'dismissed' ? 'is-active' : ''}"
-      onclick={() => onSelectTab("dismissed")}
-    >
-      <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-        <span class="tag is-light is-rounded">Dismissed</span>
-        <span class="title is-5 mb-0 has-text-grey">{summary.dismissed_count}</span>
-      </div>
-      <p class="is-size-7 has-text-grey">Ignored or confirmed false positives</p>
-    </button>
-
-    <button
-      type="button"
-      class="box summary-pill-card {activeTab === 'all' ? 'is-active' : ''}"
-      onclick={() => onSelectTab("all")}
-    >
-      <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-        <span class="tag is-info is-light is-rounded">Total Scanned</span>
-        <span class="title is-5 mb-0">{summary.total}</span>
-      </div>
-      <p class="is-size-7 has-text-grey">All data quality rules & signals</p>
-    </button>
-  </div>
 </div>
 
 <style>
-  .summary-pills-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 0.75rem;
-  }
-
-  .summary-pill-card {
-    text-align: left;
-    width: 100%;
-    margin-bottom: 0;
-    padding: 0.85rem 1rem;
+  .health-hero-card {
+    background:
+      radial-gradient(circle at top left, rgba(50, 115, 220, 0.08), transparent 70%),
+      rgba(18, 22, 31, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    cursor: pointer;
-    transition:
-      border-color 0.18s ease,
-      transform 0.18s ease;
+    backdrop-filter: blur(12px);
+    border-radius: 1rem;
+    padding: 1.5rem 1.75rem;
   }
 
-  .summary-pill-card:hover {
-    transform: translateY(-1px);
-    border-color: rgba(255, 255, 255, 0.2);
+  .hero-copy-column {
+    flex: 1;
+    min-width: 260px;
   }
 
-  .summary-pill-card.is-active {
-    border-color: #3273dc;
-    box-shadow: 0 0 0 1px #3273dc inset;
+  .hero-stats-row {
+    align-items: center;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+
+  .stat-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
   }
 </style>
