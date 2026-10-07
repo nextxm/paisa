@@ -12,6 +12,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/accounting"
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/duplicate_suppression"
+	"github.com/ananthakumaran/paisa/internal/model/finding_dismissal"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/query"
 	"github.com/ananthakumaran/paisa/internal/service"
@@ -500,4 +501,616 @@ func SuppressDuplicate(db *gorm.DB, req SuppressRequest) error {
 		PostingID2: id2,
 		CreatedAt:  time.Now(),
 	}).Error
+}
+
+// ---------------------------------------------------------------------------
+// Unified Doctor Findings (Phase B)
+// ---------------------------------------------------------------------------
+
+type FindingKind string
+
+const (
+	KindRule      FindingKind = "rule"
+	KindDuplicate FindingKind = "duplicate"
+	KindOutlier   FindingKind = "outlier"
+)
+
+type FindingSeverity string
+
+const (
+	SeverityFix    FindingSeverity = "fix"
+	SeverityReview FindingSeverity = "review"
+	SeverityInfo   FindingSeverity = "info"
+)
+
+type FindingEvidence struct {
+	PostingID  uint    `json:"posting_id,omitempty"`
+	PostingID2 uint    `json:"posting_id_2,omitempty"`
+	FileName   string  `json:"file_name,omitempty"`
+	LineNumber uint64  `json:"line_number,omitempty"`
+	Account    string  `json:"account,omitempty"`
+	Date       string  `json:"date,omitempty"`
+	Amount     float64 `json:"amount,omitempty"`
+	Commodity  string  `json:"commodity,omitempty"`
+	Payee      string  `json:"payee,omitempty"`
+	RawMessage string  `json:"raw_message,omitempty"`
+	TargetURL  string  `json:"target_url,omitempty"`
+	Sigma      float64 `json:"sigma,omitempty"`
+	Mean       float64 `json:"mean,omitempty"`
+	StdDev     float64 `json:"std_dev,omitempty"`
+}
+
+type FindingAction struct {
+	Type   string            `json:"type"`
+	Label  string            `json:"label"`
+	URL    string            `json:"url,omitempty"`
+	Params map[string]string `json:"params,omitempty"`
+}
+
+type DoctorFinding struct {
+	ID           string            `json:"id"`
+	RuleID       string            `json:"rule_id"`
+	Kind         FindingKind       `json:"kind"`
+	Title        string            `json:"title"`
+	Summary      string            `json:"summary"`
+	Description  string            `json:"description"`
+	WhyItMatters string            `json:"why_it_matters"`
+	HowToFix     string            `json:"how_to_fix"`
+	Severity     FindingSeverity   `json:"severity"`
+	Details      string            `json:"details"`
+	Evidence     []FindingEvidence `json:"evidence"`
+	Actions      []FindingAction   `json:"actions"`
+	Confidence   float64           `json:"confidence,omitempty"`
+	Dismissed    bool              `json:"dismissed"`
+	DismissNote  string            `json:"dismiss_note,omitempty"`
+}
+
+type DoctorSummary struct {
+	Total          int `json:"total"`
+	FixCount       int `json:"fix_count"`
+	ReviewCount    int `json:"review_count"`
+	InfoCount      int `json:"info_count"`
+	DismissedCount int `json:"dismissed_count"`
+}
+
+type UnifiedFindingsResponse struct {
+	Findings []DoctorFinding `json:"findings"`
+	Summary  DoctorSummary   `json:"summary"`
+}
+
+type DismissRequest struct {
+	Fingerprint string `json:"fingerprint"`
+	RuleID      string `json:"rule_id"`
+	Note        string `json:"note"`
+}
+
+type UndismissRequest struct {
+	Fingerprint string `json:"fingerprint"`
+}
+
+func evaluateAssetRegisterNonNegative(db *gorm.DB) []DoctorFinding {
+	findings := make([]DoctorFinding, 0)
+	ruleConfig := config.GetConfig().Doctor.NegativeBalance
+	if ruleConfig.Enabled == config.No {
+		return findings
+	}
+	assets := query.Init(db).Like(ruleConfig.Pattern...).All()
+	for account, ps := range lo.GroupBy(assets, func(posting posting.Posting) string { return posting.Account }) {
+		for _, balance := range accounting.Register(ps) {
+			if balance.Quantity.LessThan(decimal.NewFromFloat(0.01).Neg()) {
+				fingerprint := fmt.Sprintf("negative_balance:%s", account)
+				details := fmt.Sprintf("%s account went negative (%.2f) on %s", account, balance.Quantity.InexactFloat64(), balance.Date.Format(DATE_FORMAT))
+				findings = append(findings, DoctorFinding{
+					ID:           fingerprint,
+					RuleID:       "negative_balance",
+					Kind:         KindRule,
+					Title:        "Negative Account Balance",
+					Summary:      "Negative Balance",
+					Description:  "The running balance of an asset account is not supposed to go negative at any time.",
+					WhyItMatters: "Asset accounts like cash or bank balances should never drop below zero in double-entry accounting. A negative balance usually indicates missing income transactions or entries in the wrong order.",
+					HowToFix:     "Review transactions for this account around the date it went negative and insert missing deposits or correct transaction dates.",
+					Severity:     SeverityFix,
+					Details:      details,
+					Evidence: []FindingEvidence{
+						{
+							Account:    account,
+							Amount:     balance.Quantity.InexactFloat64(),
+							Date:       balance.Date.Format("2006-01-02"),
+							RawMessage: details,
+							TargetURL:  "/ledger/editor",
+						},
+					},
+					Actions: []FindingAction{
+						{Type: "open_url", Label: "Open Ledger Editor", URL: "/ledger/editor"},
+					},
+				})
+				break
+			}
+		}
+	}
+	return findings
+}
+
+func evaluateNonCreditAccount(db *gorm.DB) []DoctorFinding {
+	findings := make([]DoctorFinding, 0)
+	ruleConfig := config.GetConfig().Doctor.NonCreditAccount
+	if ruleConfig.Enabled == config.No {
+		return findings
+	}
+	incomes := query.Init(db).Like(ruleConfig.Pattern...).NotLike("Income:CapitalGains:%").All()
+	for _, p := range incomes {
+		if p.Amount.GreaterThan(decimal.NewFromFloat(0.01)) {
+			fingerprint := fmt.Sprintf("credit_entry:%d:%s:%s", p.ID, p.Account, p.Date.Format("2006-01-02"))
+			editorURL := fmt.Sprintf("/ledger/editor/%s#%d", url.PathEscape(p.FileName), p.TransactionBeginLine)
+			details := fmt.Sprintf("%.4f got credited to %s on %s", p.Amount.InexactFloat64(), p.Account, p.Date.Format(DATE_FORMAT))
+			findings = append(findings, DoctorFinding{
+				ID:           fingerprint,
+				RuleID:       "credit_entry",
+				Kind:         KindRule,
+				Title:        "Credit Entry in Income Account",
+				Summary:      "Credit Entry",
+				Description:  "Income account should never have credit entry.",
+				WhyItMatters: "Income accounts receive credits (negative values in ledger convention). A positive amount distorts total income calculations.",
+				HowToFix:     "Check if the transaction signs are flipped or if a refund/expense was incorrectly posted as positive income.",
+				Severity:     SeverityFix,
+				Details:      details,
+				Evidence: []FindingEvidence{
+					{
+						PostingID:  p.ID,
+						FileName:   p.FileName,
+						LineNumber: p.TransactionBeginLine,
+						Account:    p.Account,
+						Date:       p.Date.Format("2006-01-02"),
+						Amount:     p.Amount.InexactFloat64(),
+						Commodity:  p.Commodity,
+						Payee:      p.Payee,
+						RawMessage: details,
+						TargetURL:  editorURL,
+					},
+				},
+				Actions: []FindingAction{
+					{Type: "open_editor", Label: "Edit Transaction", URL: editorURL},
+				},
+			})
+		}
+	}
+	return findings
+}
+
+func evaluateNonDebitAccount(db *gorm.DB) []DoctorFinding {
+	findings := make([]DoctorFinding, 0)
+	ruleConfig := config.GetConfig().Doctor.NonDebitAccount
+	if ruleConfig.Enabled == config.No {
+		return findings
+	}
+	expenses := query.Init(db).Like(ruleConfig.Pattern...).All()
+	for _, p := range expenses {
+		if p.Amount.LessThan(decimal.NewFromFloat(0.01).Neg()) {
+			fingerprint := fmt.Sprintf("debit_entry:%d:%s:%s", p.ID, p.Account, p.Date.Format("2006-01-02"))
+			editorURL := fmt.Sprintf("/ledger/editor/%s#%d", url.PathEscape(p.FileName), p.TransactionBeginLine)
+			details := fmt.Sprintf("%.4f got debited from %s on %s", p.Amount.InexactFloat64(), p.Account, p.Date.Format(DATE_FORMAT))
+			findings = append(findings, DoctorFinding{
+				ID:           fingerprint,
+				RuleID:       "debit_entry",
+				Kind:         KindRule,
+				Title:        "Debit Entry in Expense Account",
+				Summary:      "Debit Entry",
+				Description:  "Expense Account should never have debit entry.",
+				WhyItMatters: "Expense accounts receive debits (positive values in ledger convention). A negative entry distorts expense reporting.",
+				HowToFix:     "Check if the transaction sign was inverted or if a refund should be handled under a dedicated category.",
+				Severity:     SeverityFix,
+				Details:      details,
+				Evidence: []FindingEvidence{
+					{
+						PostingID:  p.ID,
+						FileName:   p.FileName,
+						LineNumber: p.TransactionBeginLine,
+						Account:    p.Account,
+						Date:       p.Date.Format("2006-01-02"),
+						Amount:     p.Amount.InexactFloat64(),
+						Commodity:  p.Commodity,
+						Payee:      p.Payee,
+						RawMessage: details,
+						TargetURL:  editorURL,
+					},
+				},
+				Actions: []FindingAction{
+					{Type: "open_editor", Label: "Edit Transaction", URL: editorURL},
+				},
+			})
+		}
+	}
+	return findings
+}
+
+func evaluateExchangePriceMissing(db *gorm.DB) []DoctorFinding {
+	findings := make([]DoctorFinding, 0)
+	if config.GetConfig().Doctor.ExchangePriceMissing.Enabled == config.No {
+		return findings
+	}
+	postings := query.Init(db).Desc().All()
+
+	seenCommodities := make(map[string]bool)
+	for _, p := range postings {
+		if !utils.IsCurrency(p.Commodity) && !seenCommodities[p.Commodity] {
+			externalPrice := service.GetUnitPrice(db, p.Commodity, p.Date)
+			if externalPrice.CommodityName != "" && externalPrice.CommodityName != p.Commodity {
+				seenCommodities[p.Commodity] = true
+				fingerprint := fmt.Sprintf("exchange_price_missing:%s", p.Commodity)
+				details := fmt.Sprintf("Exchange price from %s to your default currency %s is not specified", p.Commodity, config.DefaultCurrency())
+				findings = append(findings, DoctorFinding{
+					ID:           fingerprint,
+					RuleID:       "exchange_price_missing",
+					Kind:         KindRule,
+					Title:        "Missing Commodity Price",
+					Summary:      "Exchange Price Missing",
+					Description:  "Exchange price is missing for the commodity.",
+					WhyItMatters: "Paisa requires commodity exchange prices to calculate total net worth and valuations accurately.",
+					HowToFix:     "Add a price entry for this commodity in the Price section or configure external price providers.",
+					Severity:     SeverityReview,
+					Details:      details,
+					Evidence: []FindingEvidence{
+						{
+							Commodity:  p.Commodity,
+							RawMessage: details,
+							TargetURL:  "/price",
+						},
+					},
+					Actions: []FindingAction{
+						{Type: "open_url", Label: "Open Price Manager", URL: "/price"},
+					},
+				})
+			}
+		}
+	}
+	return findings
+}
+
+func evaluateJournalPriceMismatch(db *gorm.DB) []DoctorFinding {
+	findings := make([]DoctorFinding, 0)
+	if config.GetConfig().Doctor.UnitPriceMismatch.Enabled == config.No {
+		return findings
+	}
+	postings := query.Init(db).Desc().All()
+	for _, p := range postings {
+		if !utils.IsCurrency(p.Commodity) {
+			externalPrice := service.GetUnitPrice(db, p.Commodity, p.Date)
+			diff := externalPrice.Value.Sub(p.Price()).Abs()
+			if externalPrice.CommodityName == p.Commodity &&
+				externalPrice.CommodityType != config.Unknown &&
+				!service.IsSellWithCapitalGains(db, p) &&
+				diff.GreaterThanOrEqual(decimal.NewFromFloat(0.0001)) {
+				fingerprint := fmt.Sprintf("unit_price_mismatch:%d:%s", p.ID, p.Commodity)
+				editorURL := fmt.Sprintf("/ledger/editor/%s#%d", url.PathEscape(p.FileName), p.TransactionBeginLine)
+				details := fmt.Sprintf("The price specified in posting doesn't match the price %.4f (%s) fetched from external system", externalPrice.Value.InexactFloat64(), externalPrice.Date.Format(DATE_FORMAT))
+				findings = append(findings, DoctorFinding{
+					ID:           fingerprint,
+					RuleID:       "unit_price_mismatch",
+					Kind:         KindRule,
+					Title:        "Journal Unit Price Mismatch",
+					Summary:      "Unit Price Mismatch",
+					Description:  "Unit price used in the journal doesn't match the price fetched from external system.",
+					WhyItMatters: "The unit price recorded in your ledger posting differs significantly from market prices.",
+					HowToFix:     "Verify the transaction price in your ledger entry or adjust the external price feed.",
+					Severity:     SeverityReview,
+					Details:      details,
+					Evidence: []FindingEvidence{
+						{
+							PostingID:  p.ID,
+							FileName:   p.FileName,
+							LineNumber: p.TransactionBeginLine,
+							Account:    p.Account,
+							Date:       p.Date.Format("2006-01-02"),
+							Amount:     p.Price().InexactFloat64(),
+							Commodity:  p.Commodity,
+							RawMessage: details,
+							TargetURL:  editorURL,
+						},
+					},
+					Actions: []FindingAction{
+						{Type: "open_editor", Label: "Edit Transaction", URL: editorURL},
+					},
+				})
+			}
+		}
+	}
+	return findings
+}
+
+func evaluateAllocationTargetMissingAssetAccounts(db *gorm.DB) []DoctorFinding {
+	findings := make([]DoctorFinding, 0)
+	ruleConfig := config.GetConfig().Doctor.AssetAllocationMissing
+	if ruleConfig.Enabled == config.No {
+		return findings
+	}
+	if len(config.GetConfig().AllocationTargets) == 0 {
+		return findings
+	}
+	var accounts []string
+	conditions := make([]string, len(ruleConfig.Pattern))
+	args := make([]interface{}, len(ruleConfig.Pattern))
+	for i, p := range ruleConfig.Pattern {
+		conditions[i] = "account like ?"
+		args[i] = p
+	}
+	db.Model(&posting.Posting{}).Where(strings.Join(conditions, " or "), args...).Distinct().Pluck("Account", &accounts)
+
+	ignoredAccounts := make([]string, 0)
+	for _, account := range accounts {
+		found := false
+		for _, target := range config.GetConfig().AllocationTargets {
+			for _, targetAccount := range target.Accounts {
+				match, _ := filepath.Match(targetAccount, account)
+				if match {
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+		if !found {
+			ignoredAccounts = append(ignoredAccounts, account)
+		}
+	}
+
+	if len(ignoredAccounts) > 0 {
+		fingerprint := "asset_allocation_missing:unallocated"
+		details := fmt.Sprintf("The following asset accounts are not part of any asset allocation target: %s", strings.Join(ignoredAccounts, ", "))
+		findings = append(findings, DoctorFinding{
+			ID:           fingerprint,
+			RuleID:       "asset_allocation_missing",
+			Kind:         KindRule,
+			Title:        "Asset Accounts Missing Allocation Target",
+			Summary:      "Asset Accounts missing from Allocation Target",
+			Description:  "Asset accounts are not part of any allocation target.",
+			WhyItMatters: "Asset accounts not assigned to any allocation target will be excluded from target portfolio rebalancing.",
+			HowToFix:     "Configure your allocation targets to assign these asset accounts.",
+			Severity:     SeverityInfo,
+			Details:      details,
+			Evidence: []FindingEvidence{
+				{
+					RawMessage: strings.Join(ignoredAccounts, ", "),
+					TargetURL:  "/allocation",
+				},
+			},
+			Actions: []FindingAction{
+				{Type: "open_url", Label: "Configure Allocation", URL: "/allocation"},
+			},
+		})
+	}
+	return findings
+}
+
+func evaluateDuplicates(db *gorm.DB) []DoctorFinding {
+	pairs := DetectDuplicates(db)
+	findings := make([]DoctorFinding, 0, len(pairs))
+	for _, pair := range pairs {
+		id1, id2 := pair.Posting1.ID, pair.Posting2.ID
+		if id1 > id2 {
+			id1, id2 = id2, id1
+		}
+		fingerprint := fmt.Sprintf("duplicate:%d:%d", id1, id2)
+		url1 := fmt.Sprintf("/ledger/editor/%s#%d", url.PathEscape(pair.Posting1.FileName), pair.Posting1.TransactionBeginLine)
+		url2 := fmt.Sprintf("/ledger/editor/%s#%d", url.PathEscape(pair.Posting2.FileName), pair.Posting2.TransactionBeginLine)
+
+		findings = append(findings, DoctorFinding{
+			ID:           fingerprint,
+			RuleID:       "duplicate_transaction",
+			Kind:         KindDuplicate,
+			Title:        "Potential Duplicate Transaction",
+			Summary:      "Potential Duplicate",
+			Description:  "Two postings with identical amounts and accounts were recorded within 2 days.",
+			WhyItMatters: "Duplicate entries inflate expenses or income figures and distort net worth.",
+			HowToFix:     "Inspect both postings. If it is a true duplicate, remove one entry in the editor. Otherwise, dismiss this finding.",
+			Severity:     SeverityReview,
+			Details:      pair.Reason,
+			Confidence:   pair.Confidence,
+			Evidence: []FindingEvidence{
+				{
+					PostingID:  pair.Posting1.ID,
+					FileName:   pair.Posting1.FileName,
+					LineNumber: pair.Posting1.TransactionBeginLine,
+					Account:    pair.Posting1.Account,
+					Date:       pair.Posting1.Date.Format("2006-01-02"),
+					Amount:     pair.Posting1.Amount.InexactFloat64(),
+					Commodity:  pair.Posting1.Commodity,
+					Payee:      pair.Posting1.Payee,
+					TargetURL:  url1,
+				},
+				{
+					PostingID:  pair.Posting2.ID,
+					FileName:   pair.Posting2.FileName,
+					LineNumber: pair.Posting2.TransactionBeginLine,
+					Account:    pair.Posting2.Account,
+					Date:       pair.Posting2.Date.Format("2006-01-02"),
+					Amount:     pair.Posting2.Amount.InexactFloat64(),
+					Commodity:  pair.Posting2.Commodity,
+					Payee:      pair.Posting2.Payee,
+					TargetURL:  url2,
+				},
+			},
+			Actions: []FindingAction{
+				{Type: "open_editor", Label: "Open Posting 1", URL: url1},
+				{Type: "open_editor", Label: "Open Posting 2", URL: url2},
+				{Type: "dismiss", Label: "Dismiss"},
+			},
+		})
+	}
+	return findings
+}
+
+func evaluateOutliers(db *gorm.DB) []DoctorFinding {
+	outliers := DetectOutliers(db)
+	findings := make([]DoctorFinding, 0, len(outliers))
+	for _, out := range outliers {
+		fingerprint := fmt.Sprintf("outlier:%d:%s", out.Posting.ID, out.Posting.Account)
+		editorURL := fmt.Sprintf("/ledger/editor/%s#%d", url.PathEscape(out.Posting.FileName), out.Posting.TransactionBeginLine)
+		details := fmt.Sprintf("%.1fσ above mean (mean: %.2f, σ: %.2f)", out.Sigma, out.Mean, out.StdDev)
+
+		findings = append(findings, DoctorFinding{
+			ID:           fingerprint,
+			RuleID:       "outlier_transaction",
+			Kind:         KindOutlier,
+			Title:        "Statistical Outlier Transaction",
+			Summary:      "Statistical Outlier",
+			Description:  "Posting amount is significantly higher than historical average for this account.",
+			WhyItMatters: "Unusually large amounts may indicate a typo (such as misplaced decimal points) or a misplaced zero.",
+			HowToFix:     "Verify the transaction amount in the ledger editor. If correct, dismiss this alert.",
+			Severity:     SeverityReview,
+			Details:      details,
+			Confidence:   out.Confidence,
+			Evidence: []FindingEvidence{
+				{
+					PostingID:  out.Posting.ID,
+					FileName:   out.Posting.FileName,
+					LineNumber: out.Posting.TransactionBeginLine,
+					Account:    out.Posting.Account,
+					Date:       out.Posting.Date.Format("2006-01-02"),
+					Amount:     out.Posting.Amount.InexactFloat64(),
+					Commodity:  out.Posting.Commodity,
+					Payee:      out.Posting.Payee,
+					Sigma:      out.Sigma,
+					Mean:       out.Mean,
+					StdDev:     out.StdDev,
+					TargetURL:  editorURL,
+				},
+			},
+			Actions: []FindingAction{
+				{Type: "open_editor", Label: "Edit Transaction", URL: editorURL},
+				{Type: "dismiss", Label: "Dismiss"},
+			},
+		})
+	}
+	return findings
+}
+
+func GetUnifiedFindings(db *gorm.DB) UnifiedFindingsResponse {
+	var dismissals []finding_dismissal.FindingDismissal
+	db.Find(&dismissals)
+	dismissedMap := make(map[string]string, len(dismissals))
+	for _, d := range dismissals {
+		dismissedMap[d.Fingerprint] = d.Note
+	}
+
+	var rawFindings []DoctorFinding
+	rawFindings = append(rawFindings, evaluateAssetRegisterNonNegative(db)...)
+	rawFindings = append(rawFindings, evaluateNonCreditAccount(db)...)
+	rawFindings = append(rawFindings, evaluateNonDebitAccount(db)...)
+	rawFindings = append(rawFindings, evaluateExchangePriceMissing(db)...)
+	rawFindings = append(rawFindings, evaluateJournalPriceMismatch(db)...)
+	rawFindings = append(rawFindings, evaluateAllocationTargetMissingAssetAccounts(db)...)
+	rawFindings = append(rawFindings, evaluateDuplicates(db)...)
+	rawFindings = append(rawFindings, evaluateOutliers(db)...)
+
+	findings := make([]DoctorFinding, 0, len(rawFindings))
+	var summary DoctorSummary
+
+	for _, f := range rawFindings {
+		note, isDismissed := dismissedMap[f.ID]
+		if isDismissed {
+			f.Dismissed = true
+			f.DismissNote = note
+			summary.DismissedCount++
+		} else {
+			switch f.Severity {
+			case SeverityFix:
+				summary.FixCount++
+			case SeverityReview:
+				summary.ReviewCount++
+			case SeverityInfo:
+				summary.InfoCount++
+			}
+		}
+		summary.Total++
+		findings = append(findings, f)
+	}
+
+	return UnifiedFindingsResponse{
+		Findings: findings,
+		Summary:  summary,
+	}
+}
+
+func GetDismissedFindings(db *gorm.DB) UnifiedFindingsResponse {
+	all := GetUnifiedFindings(db)
+	dismissed := make([]DoctorFinding, 0)
+	for _, f := range all.Findings {
+		if f.Dismissed {
+			dismissed = append(dismissed, f)
+		}
+	}
+	return UnifiedFindingsResponse{
+		Findings: dismissed,
+		Summary:  all.Summary,
+	}
+}
+
+func DismissFinding(db *gorm.DB, req DismissRequest) error {
+	if req.Fingerprint == "" {
+		return fmt.Errorf("fingerprint is required")
+	}
+
+	var count int64
+	db.Model(&finding_dismissal.FindingDismissal{}).
+		Where("fingerprint = ?", req.Fingerprint).
+		Count(&count)
+	if count == 0 {
+		err := db.Create(&finding_dismissal.FindingDismissal{
+			Fingerprint: req.Fingerprint,
+			RuleID:      req.RuleID,
+			Note:        req.Note,
+			CreatedAt:   time.Now(),
+		}).Error
+		if err != nil {
+			return err
+		}
+	} else if req.Note != "" {
+		db.Model(&finding_dismissal.FindingDismissal{}).
+			Where("fingerprint = ?", req.Fingerprint).
+			Update("note", req.Note)
+	}
+
+	if strings.HasPrefix(req.Fingerprint, "duplicate:") {
+		parts := strings.Split(req.Fingerprint, ":")
+		if len(parts) == 3 {
+			var id1, id2 uint
+			fmt.Sscanf(parts[1], "%d", &id1)
+			fmt.Sscanf(parts[2], "%d", &id2)
+			if id1 > 0 && id2 > 0 {
+				_ = SuppressDuplicate(db, SuppressRequest{PostingID1: id1, PostingID2: id2})
+			}
+		}
+	}
+
+	return nil
+}
+
+func UndismissFinding(db *gorm.DB, req UndismissRequest) error {
+	if req.Fingerprint == "" {
+		return fmt.Errorf("fingerprint is required")
+	}
+
+	if err := db.Where("fingerprint = ?", req.Fingerprint).Delete(&finding_dismissal.FindingDismissal{}).Error; err != nil {
+		return err
+	}
+
+	if strings.HasPrefix(req.Fingerprint, "duplicate:") {
+		parts := strings.Split(req.Fingerprint, ":")
+		if len(parts) == 3 {
+			var id1, id2 uint
+			fmt.Sscanf(parts[1], "%d", &id1)
+			fmt.Sscanf(parts[2], "%d", &id2)
+			if id1 > 0 && id2 > 0 {
+				a, b := id1, id2
+				if a > b {
+					a, b = b, a
+				}
+				db.Where("posting_id_1 = ? AND posting_id_2 = ?", a, b).Delete(&duplicate_suppression.DuplicateSuppression{})
+			}
+		}
+	}
+
+	return nil
 }

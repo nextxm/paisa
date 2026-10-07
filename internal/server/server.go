@@ -480,6 +480,34 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		}
 		c.JSON(200, gin.H{"success": true})
 	})
+	router.GET("/api/doctor/findings", func(c *gin.Context) {
+		c.JSON(200, GetUnifiedFindings(db))
+	})
+	router.GET("/api/doctor/dismissed", func(c *gin.Context) {
+		c.JSON(200, GetDismissedFindings(db))
+	})
+	writeGroup.POST("/api/doctor/dismiss", func(c *gin.Context) {
+		var req DismissRequest
+		if !BindJSONOrError(c, &req) {
+			return
+		}
+		if err := DismissFinding(db, req); err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
+		c.JSON(200, gin.H{"success": true})
+	})
+	writeGroup.POST("/api/doctor/undismiss", func(c *gin.Context) {
+		var req UndismissRequest
+		if !BindJSONOrError(c, &req) {
+			return
+		}
+		if err := UndismissFinding(db, req); err != nil {
+			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, err.Error())
+			return
+		}
+		c.JSON(200, gin.H{"success": true})
+	})
 
 	router.GET("/api/liabilities/interest", func(c *gin.Context) {
 		c.JSON(200, liabilities.GetInterest(db))
