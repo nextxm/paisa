@@ -810,6 +810,50 @@ export interface ImportPreset {
   preset_type: string;
 }
 
+export interface ImportRule {
+  id?: number;
+  name: string;
+  priority: number;
+  enabled: boolean;
+  payee_pattern?: string;
+  payee_match_type?: "contains" | "exact" | "regex";
+  memo_pattern?: string;
+  memo_match_type?: "contains" | "exact" | "regex";
+  tx_type?: "any" | "debit" | "credit";
+  min_amount?: number;
+  max_amount?: number;
+  target_account: string;
+  tags?: string[];
+  flag_for_review?: boolean;
+}
+
+export interface StagedTransaction {
+  index: number;
+  date: string;
+  payee: string;
+  memo: string;
+  amount: number;
+  is_debit: boolean;
+  selected_account: string;
+  suggested_account?: string;
+  confidence?: string;
+  matched_rule_name?: string;
+  matched_rule_id?: number;
+  tags?: string[];
+  flag_for_review?: boolean;
+  is_duplicate?: boolean;
+  duplicate_score?: number;
+  duplicate_match_id?: number;
+  duplicate_reason?: string;
+}
+
+export interface IngestionResult {
+  total_parsed: number;
+  auto_categorized: number;
+  possible_duplicates: number;
+  transactions: StagedTransaction[];
+}
+
 export interface Log {
   time: dayjs.Dayjs;
   level: string;
