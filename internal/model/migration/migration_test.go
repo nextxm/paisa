@@ -38,7 +38,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 18, version)
+	assert.Equal(t, 19, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -48,7 +48,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 18, version)
+	assert.Equal(t, 19, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -70,7 +70,7 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	assert.Equal(t, 18, migration.CurrentVersion(db))
+	assert.Equal(t, 19, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -106,9 +106,9 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&migration.SchemaVersion{}))
 	require.NoError(t, db.Create(&migration.SchemaVersion{Version: 1, AppliedAt: time.Now()}).Error)
 
-	// Run migrations – v2 through v18 should execute.
+	// Run migrations – v2 through v19 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 18, migration.CurrentVersion(db))
+	assert.Equal(t, 19, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -501,5 +501,16 @@ func TestV18Migration_FindingDismissalsTableExists(t *testing.T) {
 
 	var count int64
 	require.NoError(t, db.Raw("SELECT COUNT(*) FROM finding_dismissals WHERE fingerprint = 'fp-123'").Scan(&count).Error)
+	assert.Equal(t, int64(1), count)
+}
+
+func TestV19Migration_ImportRulesTableExists(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	require.NoError(t, db.Exec("INSERT INTO import_rules (name, target_account) VALUES ('Test Rule', 'Expenses:Groceries')").Error)
+
+	var count int64
+	require.NoError(t, db.Raw("SELECT COUNT(*) FROM import_rules WHERE name = 'Test Rule'").Scan(&count).Error)
 	assert.Equal(t, int64(1), count)
 }
