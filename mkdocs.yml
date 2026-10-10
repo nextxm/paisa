@@ -31,6 +31,8 @@ nav:
     - reference/config.md
     - reference/sync.md
     - reference/fx-rates.md
+    - reference/doctor.md
+    - reference/planning.md
     - 'Goals':
         - reference/goals/index.md
         - reference/goals/retirement.md

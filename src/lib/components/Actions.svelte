@@ -1,7 +1,7 @@
 <script lang="ts">
   import { sync, startPolling } from "$lib/sync";
   import { isLoggedIn, logout } from "$lib/utils";
-  import { obscure } from "../../persisted_store";
+  import { obscure, navLayout } from "../../persisted_store";
   import { goto } from "$app/navigation";
   import { jobsList } from "$lib/stores/jobs";
   import { get } from "svelte/store";
@@ -146,6 +146,20 @@
   >
     <span class="icon">
       <i class="fas fa-layer-group"></i>
+    </span>
+  </button>
+
+  <button
+    type="button"
+    class="navbar-action-button"
+    data-tippy-content="<p>Switch navigation menu ({$navLayout === 'grouped'
+      ? 'Grouped'
+      : 'Classic'})</p>"
+    aria-label="Toggle navigation layout"
+    onclick={(_e) => navLayout.set($navLayout === "grouped" ? "classic" : "grouped")}
+  >
+    <span class="icon">
+      <i class="fas {$navLayout === 'grouped' ? 'fa-table-cells-large' : 'fa-bars'}"></i>
     </span>
   </button>
 

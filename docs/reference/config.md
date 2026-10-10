@@ -362,3 +362,38 @@ labs:
 # OPTIONAL, DEFAULT: false
 enable_reconciliation: false
 ```
+
+## Doctor Rules
+
+Automated ledger hygiene and validation rules evaluated by the Data Health / Doctor engine.
+
+```yaml
+# Automated health diagnostic rules
+# OPTIONAL
+doctor:
+  negative_balance:
+    enabled: true
+    pattern:
+      - "Assets:*"
+  non_credit_account:
+    enabled: true
+    pattern:
+      - "Expenses:*"
+      - "Assets:*"
+  non_debit_account:
+    enabled: true
+    pattern:
+      - "Income:*"
+      - "Liabilities:*"
+  exchange_price_missing:
+    enabled: true
+  unit_price_mismatch:
+    enabled: true
+  asset_allocation_missing:
+    enabled: true
+```
+
+## Backup & Export
+
+Paisa provides full data archive export through **Configuration → Tools → Backup & Export** (`/more/config/backup`). This packages all your ledger journals, include files, configuration (`paisa.yaml`), and custom sheet templates into a single downloadable `.zip` archive for easy local backups or migration.
+
