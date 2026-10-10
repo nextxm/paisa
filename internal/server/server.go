@@ -393,6 +393,8 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/allocation", func(c *gin.Context) {
 		c.JSON(200, GetAllocation(db))
 	})
+	router.POST("/api/allocation/rebalance", RebalanceHandler(db))
+	writeGroup.POST("/api/allocation/targets", SaveAllocationTargetsHandler())
 	router.GET("/api/currency-exposure", func(c *gin.Context) {
 		c.JSON(200, GetCurrencyExposure(db))
 	})

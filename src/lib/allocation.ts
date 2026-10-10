@@ -30,6 +30,8 @@ export function renderAllocationTarget(
   }
   allocationTargets = _.sortBy(allocationTargets, (t) => t.name);
   const BAR_HEIGHT = rem(25);
+  d3.select(id).selectAll("*").remove();
+  d3.select("#d3-allocation-target-treemap").selectAll("*").remove();
   const svg = d3.select(id),
     margin = { top: rem(20), right: rem(20), bottom: rem(10), left: rem(150) },
     fullWidth = Math.max(document.getElementById(id.substring(1)).parentElement.clientWidth, 1000),
