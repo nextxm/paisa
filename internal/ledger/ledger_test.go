@@ -1,6 +1,8 @@
 package ledger
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func assertPriceEqual(t *testing.T, actual price.Price, date string, commodityName string, value float64, quoteCommodity string) {
@@ -171,4 +174,27 @@ default_currency: INR
 
 	value := lookupPrice(pricesTree, "VOD.L", time.Date(2026, time.April, 21, 0, 0, 0, 0, time.UTC))
 	assert.Equal(t, 117.2, value.InexactFloat64())
+}
+
+func TestParseBeancountIncludes(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	subDir := filepath.Join(tmpDir, "accounts")
+	require.NoError(t, os.MkdirAll(subDir, 0755))
+
+	mainFile := filepath.Join(tmpDir, "main.beancount")
+	accFile := filepath.Join(subDir, "assets.beancount")
+	optFile := filepath.Join(tmpDir, "options.beancount")
+
+	require.NoError(t, os.WriteFile(accFile, []byte("2020-01-01 open Assets:Checking USD\n"), 0644))
+	require.NoError(t, os.WriteFile(optFile, []byte("option \"title\" \"Test\"\n"), 0644))
+	require.NoError(t, os.WriteFile(mainFile, []byte("include \"accounts/assets.beancount\"\ninclude \"options.beancount\"\n"), 0644))
+
+	visited := make(map[string]bool)
+	files := parseBeancountIncludes(mainFile, visited)
+
+	assert.Len(t, files, 3)
+	assert.Contains(t, files, filepath.Clean(mainFile))
+	assert.Contains(t, files, filepath.Clean(accFile))
+	assert.Contains(t, files, filepath.Clean(optFile))
 }

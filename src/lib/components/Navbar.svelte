@@ -162,8 +162,7 @@
       children: [
         { label: "Configuration", href: "/config", help: "config" },
         { label: "Sheets", href: "/sheets", help: "sheets", disablePreload: true },
-        { label: "Doctor", href: "/doctor" },
-        { label: "Doctor V2", href: "/doctor-v2" },
+        { label: "Data Health", href: "/doctor" },
         ...(USER_CONFIG.labs?.firefly_reconcile
           ? [{ label: "Reconciliation", href: "/reconciliation" }]
           : []),

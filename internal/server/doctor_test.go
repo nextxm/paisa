@@ -209,3 +209,76 @@ func TestDetectOutliers_UniformAmountsNoOutlier(t *testing.T) {
 	outliers := DetectOutliers(db)
 	assert.Empty(t, outliers)
 }
+
+func TestGetUnifiedFindings_StructureAndDismissal(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+
+	// Create a duplicate pair
+	p1 := makePosting(1, "Expenses:Food", 500.0, "2024-01-10", "Shop")
+	p2 := makePosting(2, "Expenses:Food", 500.0, "2024-01-10", "Shop")
+	// Create an income credit entry error (positive amount on Income account)
+	p3 := makePosting(3, "Income:Salary", 1000.0, "2024-01-10", "Employer")
+
+	require.NoError(t, db.Create(&p1).Error)
+	require.NoError(t, db.Create(&p2).Error)
+	require.NoError(t, db.Create(&p3).Error)
+
+	res := GetUnifiedFindings(db)
+	assert.GreaterOrEqual(t, len(res.Findings), 2)
+	assert.GreaterOrEqual(t, res.Summary.FixCount, 1)
+
+	// Find the credit entry finding
+	var creditFinding DoctorFinding
+	found := false
+	for _, f := range res.Findings {
+		if f.RuleID == "credit_entry" {
+			creditFinding = f
+			found = true
+			break
+		}
+	}
+	require.True(t, found)
+	assert.Equal(t, SeverityFix, creditFinding.Severity)
+	assert.Equal(t, KindRule, creditFinding.Kind)
+	assert.NotEmpty(t, creditFinding.WhyItMatters)
+	assert.NotEmpty(t, creditFinding.HowToFix)
+	assert.NotEmpty(t, creditFinding.Evidence)
+
+	// Dismiss the credit finding
+	err := DismissFinding(db, DismissRequest{
+		Fingerprint: creditFinding.ID,
+		RuleID:      creditFinding.RuleID,
+		Note:        "Verified manual override",
+	})
+	require.NoError(t, err)
+
+	resAfter := GetUnifiedFindings(db)
+	var dismissedFinding DoctorFinding
+	foundAfter := false
+	for _, f := range resAfter.Findings {
+		if f.ID == creditFinding.ID {
+			dismissedFinding = f
+			foundAfter = true
+			break
+		}
+	}
+	require.True(t, foundAfter)
+	assert.True(t, dismissedFinding.Dismissed)
+	assert.Equal(t, "Verified manual override", dismissedFinding.DismissNote)
+	assert.Equal(t, 1, resAfter.Summary.DismissedCount)
+
+	// Undismiss finding
+	err = UndismissFinding(db, UndismissRequest{Fingerprint: creditFinding.ID})
+	require.NoError(t, err)
+
+	resUndismissed := GetUnifiedFindings(db)
+	var restoredFinding DoctorFinding
+	for _, f := range resUndismissed.Findings {
+		if f.ID == creditFinding.ID {
+			restoredFinding = f
+			break
+		}
+	}
+	assert.False(t, restoredFinding.Dismissed)
+}

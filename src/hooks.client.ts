@@ -52,14 +52,9 @@ async function cleanupStaleLocalServiceWorker() {
   if (typeof window === "undefined") return;
   if (!("serviceWorker" in navigator)) return;
 
-  const isLocalLikeHost =
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1" ||
-    window.location.hostname === "phoenix" ||
-    window.location.hostname.endsWith(".local");
-
-  // During local/dev workflows, old SW caches can mix chunks from different builds.
-  if (!(import.meta.env.DEV || isLocalLikeHost)) return;
+  // During local development workflows (Vite dev server), old SW caches can mix chunks.
+  // In production builds, the service worker is managed gracefully via ReloadPrompt.
+  if (!import.meta.env.DEV) return;
 
   const regs = await navigator.serviceWorker.getRegistrations();
   if (regs.length === 0) return;
@@ -69,11 +64,6 @@ async function cleanupStaleLocalServiceWorker() {
   if ("caches" in window) {
     const cacheKeys = await caches.keys();
     await Promise.all(cacheKeys.map((key) => caches.delete(key)));
-  }
-
-  if (!sessionStorage.getItem("paisa-sw-cleaned")) {
-    sessionStorage.setItem("paisa-sw-cleaned", "1");
-    window.location.reload();
   }
 }
 
