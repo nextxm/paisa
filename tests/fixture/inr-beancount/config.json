@@ -1260,25 +1260,39 @@
             "accounts": []
           },
           "properties": {
+            "accounts": {
+              "default": [
+                "Assets:Debt:*"
+              ],
+              "description": "List of accounts to consider for this target",
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "ui:widget": "accounts"
+            },
+            "commodities": {
+              "default": [],
+              "description": "Optional list of commodities to consider for this target",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "drift": {
+              "description": "Allowed drift tolerance percentage",
+              "maximum": 50,
+              "minimum": 0,
+              "type": "number"
+            },
             "name": {
               "type": "string"
             },
             "target": {
-              "type": "integer",
               "description": "Target percentage",
-              "minimum": 1,
-              "maximum": 100
-            },
-            "accounts": {
-              "type": "array",
-              "description": "List of accounts to consider for this target",
-              "default": [
-                "Assets:Debt:*"
-              ],
-              "items": {
-                "type": "string"
-              },
-              "ui:widget": "accounts"
+              "maximum": 100,
+              "minimum": 0,
+              "type": "number"
             }
           },
           "required": [

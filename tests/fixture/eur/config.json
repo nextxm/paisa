@@ -158,14 +158,28 @@
               "type": "array",
               "ui:widget": "accounts"
             },
+            "commodities": {
+              "default": [],
+              "description": "Optional list of commodities to consider for this target",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "drift": {
+              "description": "Allowed drift tolerance percentage",
+              "maximum": 50,
+              "minimum": 0,
+              "type": "number"
+            },
             "name": {
               "type": "string"
             },
             "target": {
               "description": "Target percentage",
               "maximum": 100,
-              "minimum": 1,
-              "type": "integer"
+              "minimum": 0,
+              "type": "number"
             }
           },
           "required": [

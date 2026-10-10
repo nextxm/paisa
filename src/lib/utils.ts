@@ -467,6 +467,31 @@ export interface AllocationTarget {
   target: number;
   current: number;
   aggregates: { [key: string]: Aggregate };
+  market_amount?: number;
+  drift?: number;
+  drift_tolerance?: number;
+  status?: "in_band" | "overweight" | "underweight" | string;
+  accounts?: string[];
+  commodities?: string[];
+}
+
+export interface RebalanceItem {
+  name: string;
+  target: number;
+  current: number;
+  market_amount: number;
+  target_amount: number;
+  action: "BUY" | "SELL" | "HOLD";
+  amount: number;
+  new_percent: number;
+}
+
+export interface RebalancePlan {
+  mode: "cash_injection" | "full_rebalance" | string;
+  cash_amount: number;
+  total_before: number;
+  total_after: number;
+  items: RebalanceItem[];
 }
 
 export interface Income {
@@ -1024,7 +1049,16 @@ export function ajax(route: "/api/allocation"): Promise<{
   aggregates: { [key: string]: Aggregate };
   aggregates_timeline: { [key: string]: Aggregate }[];
   allocation_targets: AllocationTarget[];
+  rebalance?: RebalancePlan;
 }>;
+export function ajax(
+  route: "/api/allocation/rebalance",
+  options?: RequestOptions
+): Promise<RebalancePlan>;
+export function ajax(
+  route: "/api/allocation/targets",
+  options?: RequestOptions
+): Promise<{ success: boolean }>;
 export function ajax(route: "/api/currency-exposure"): Promise<{
   currency_exposure: CurrencyExposure[];
 }>;

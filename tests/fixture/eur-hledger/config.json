@@ -158,14 +158,28 @@
               "type": "array",
               "ui:widget": "accounts"
             },
+            "commodities": {
+              "default": [],
+              "description": "Optional list of commodities to consider for this target",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "drift": {
+              "description": "Allowed drift tolerance percentage",
+              "maximum": 50,
+              "minimum": 0,
+              "type": "number"
+            },
             "name": {
               "type": "string"
             },
             "target": {
               "description": "Target percentage",
               "maximum": 100,
-              "minimum": 1,
-              "type": "integer"
+              "minimum": 0,
+              "type": "number"
             }
           },
           "required": [
@@ -609,6 +623,133 @@
       "goals": {
         "description": "Track your progress towards financial milestones like retirement or specific savings targets.",
         "properties": {
+          "life": {
+            "default": [],
+            "items": {
+              "additionalProperties": false,
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "const": "milestone"
+                      }
+                    }
+                  },
+                  "then": {
+                    "required": [
+                      "target_amount",
+                      "target_date"
+                    ]
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "const": "recurring"
+                      }
+                    }
+                  },
+                  "then": {
+                    "required": [
+                      "start_date",
+                      "end_date",
+                      "frequency",
+                      "monthly_allocation"
+                    ]
+                  }
+                }
+              ],
+              "description": "Life goal configuration",
+              "properties": {
+                "end_date": {
+                  "description": "End month for recurring goals in YYYY-MM format",
+                  "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+                  "type": "string"
+                },
+                "frequency": {
+                  "description": "Recurring goal cadence",
+                  "enum": [
+                    "monthly",
+                    "quarterly",
+                    "yearly"
+                  ],
+                  "type": "string"
+                },
+                "funded_by": {
+                  "default": [],
+                  "description": "Accounts intended to fund this goal",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "ui:widget": "accounts",
+                  "uniqueItems": true
+                },
+                "icon": {
+                  "description": "Goal icon name",
+                  "type": "string",
+                  "ui:widget": "icon"
+                },
+                "inflation_rate": {
+                  "description": "Optional per-goal inflation override",
+                  "minimum": 0,
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "monthly_allocation": {
+                  "description": "Recurring outflow amount for each goal occurrence",
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "name": {
+                  "description": "Goal name",
+                  "type": "string"
+                },
+                "priority": {
+                  "description": "Priority of the goal. Higher priority goals are funded first",
+                  "type": "integer"
+                },
+                "start_date": {
+                  "description": "Start month for recurring goals in YYYY-MM format",
+                  "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+                  "type": "string"
+                },
+                "target_amount": {
+                  "description": "One-time target amount for milestone goals",
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "target_date": {
+                  "description": "Target month for milestone goals in YYYY-MM format",
+                  "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+                  "type": "string"
+                },
+                "type": {
+                  "description": "Life goal type",
+                  "enum": [
+                    "milestone",
+                    "recurring"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "icon",
+                "type"
+              ],
+              "type": "object",
+              "ui:header": "name"
+            },
+            "itemsUniqueProperties": [
+              "name"
+            ],
+            "type": "array"
+          },
           "retirement": {
             "default": [
               {
@@ -776,133 +917,6 @@
               "name"
             ],
             "type": "array"
-          },
-          "life": {
-            "type": "array",
-            "default": [],
-            "itemsUniqueProperties": [
-              "name"
-            ],
-            "items": {
-              "description": "Life goal configuration",
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string",
-                  "description": "Goal name"
-                },
-                "icon": {
-                  "type": "string",
-                  "description": "Goal icon name",
-                  "ui:widget": "icon"
-                },
-                "type": {
-                  "type": "string",
-                  "enum": [
-                    "milestone",
-                    "recurring"
-                  ],
-                  "description": "Life goal type"
-                },
-                "target_amount": {
-                  "type": "number",
-                  "minimum": 0,
-                  "description": "One-time target amount for milestone goals"
-                },
-                "target_date": {
-                  "type": "string",
-                  "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
-                  "description": "Target month for milestone goals in YYYY-MM format"
-                },
-                "start_date": {
-                  "type": "string",
-                  "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
-                  "description": "Start month for recurring goals in YYYY-MM format"
-                },
-                "end_date": {
-                  "type": "string",
-                  "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
-                  "description": "End month for recurring goals in YYYY-MM format"
-                },
-                "frequency": {
-                  "type": "string",
-                  "enum": [
-                    "monthly",
-                    "quarterly",
-                    "yearly"
-                  ],
-                  "description": "Recurring goal cadence"
-                },
-                "inflation_rate": {
-                  "type": [
-                    "number",
-                    "null"
-                  ],
-                  "minimum": 0,
-                  "description": "Optional per-goal inflation override"
-                },
-                "priority": {
-                  "type": "integer",
-                  "description": "Priority of the goal. Higher priority goals are funded first"
-                },
-                "funded_by": {
-                  "type": "array",
-                  "description": "Accounts intended to fund this goal",
-                  "items": {
-                    "type": "string"
-                  },
-                  "ui:widget": "accounts",
-                  "uniqueItems": true,
-                  "default": []
-                },
-                "monthly_allocation": {
-                  "type": "number",
-                  "minimum": 0,
-                  "description": "Recurring outflow amount for each goal occurrence"
-                }
-              },
-              "ui:header": "name",
-              "required": [
-                "name",
-                "icon",
-                "type"
-              ],
-              "allOf": [
-                {
-                  "if": {
-                    "properties": {
-                      "type": {
-                        "const": "milestone"
-                      }
-                    }
-                  },
-                  "then": {
-                    "required": [
-                      "target_amount",
-                      "target_date"
-                    ]
-                  }
-                },
-                {
-                  "if": {
-                    "properties": {
-                      "type": {
-                        "const": "recurring"
-                      }
-                    }
-                  },
-                  "then": {
-                    "required": [
-                      "start_date",
-                      "end_date",
-                      "frequency",
-                      "monthly_allocation"
-                    ]
-                  }
-                }
-              ],
-              "additionalProperties": false
-            }
           }
         },
         "type": "object"
