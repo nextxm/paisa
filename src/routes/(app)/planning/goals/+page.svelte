@@ -13,9 +13,12 @@
 
   let { data }: { data: PageData } = $props();
 
-  let goals: GoalSummary[] = $state(_.sortBy(data.goals, (g) => -g.priority));
-  let isEmpty = $state(_.isEmpty(goals));
-  let config: UserConfig = $state(data.config);
+  let goals: GoalSummary[] = $state([]);
+  $effect(() => {
+    goals = _.sortBy(data.goals, (g) => -g.priority);
+  });
+  let isEmpty = $derived(_.isEmpty(goals));
+  let config: UserConfig = $derived(data.config);
   const dragDisabled = writable(true);
 
   function handleConsider(event: CustomEvent<DndEvent<GoalSummary>>) {

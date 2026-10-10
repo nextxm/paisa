@@ -51,5 +51,5 @@ The project uses a `Makefile` to orchestrate build and development tasks.
 - **Clean Architecture:** Domain logic is isolated in `internal/`.
 - **API First:** The frontend communicates with the Go backend via a REST API defined in `internal/server/`.
 - **Testing:** New features should include both Go unit tests and Svelte component tests where applicable.
-- **Linting:** Strict linting is enforced via `make lint`. Ensure code is formatted with `gofmt` and `prettier`.
+- **Linting & Formatting:** Strict linting is enforced via `make lint`. **Always run `gofmt -w <file>` on touched Go files and `npx prettier --write <file>` on touched frontend files** before finishing tasks or commits.
 - **Data Format:** Ledger files are the source of truth for financial data. SQLite is used for caching and supplemental metadata.

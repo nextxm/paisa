@@ -16,7 +16,7 @@
   let monthlyInvestmentTimelineLegends: Legend[] = $state([]);
   let yearlyInvestmentTimelineLegends: Legend[] = $state([]);
   let reportCurrency = $state("");
-  let availableCurrencies: string[] = $state(data.currencies.currencies || []);
+  let availableCurrencies: string[] = $derived(data.currencies.currencies || []);
 
   function renderInvestment(payload: PageData["investment"]) {
     monthlyInvestmentTimelineLegends = renderMonthlyInvestmentTimeline(payload.assets);
