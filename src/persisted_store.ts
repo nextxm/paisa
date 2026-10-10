@@ -17,3 +17,6 @@ export const editorRightWidth = persisted("editorRightWidth", 350);
 export const editorLeftCollapsed = persisted("editorLeftCollapsed", false);
 export const editorRightCollapsed = persisted("editorRightCollapsed", false);
 export const configSidebarCollapsed = persisted("configSidebarCollapsed", false);
+
+export type NavLayout = "classic" | "grouped";
+export const navLayout = persisted<NavLayout>("navLayout", "grouped");
