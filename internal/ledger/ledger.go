@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -471,32 +472,82 @@ func (Beancount) Prices(journalPath string) ([]price.Price, error) {
 	return parseBeancountPrices(utils.Dos2Unix(output.String()))
 }
 
+func parseBeancountIncludes(journalPath string, visited map[string]bool) []string {
+	absPath, err := filepath.Abs(journalPath)
+	if err != nil {
+		absPath = journalPath
+	}
+	absPath = filepath.Clean(absPath)
+	if visited[absPath] {
+		return nil
+	}
+	visited[absPath] = true
+
+	var files []string
+	content, err := os.ReadFile(absPath)
+	if err != nil {
+		return files
+	}
+	files = append(files, absPath)
+
+	dir := filepath.Dir(absPath)
+	re := regexp.MustCompile(`(?m)^\s*include\s+["']([^"']+)["']`)
+	matches := re.FindAllStringSubmatch(string(content), -1)
+
+	for _, match := range matches {
+		incPath := match[1]
+		fullIncPath := filepath.Join(dir, incPath)
+
+		if strings.ContainsAny(incPath, "*?[") {
+			globMatches, err := filepath.Glob(fullIncPath)
+			if err == nil {
+				for _, g := range globMatches {
+					files = append(files, parseBeancountIncludes(g, visited)...)
+				}
+			}
+		} else {
+			files = append(files, parseBeancountIncludes(fullIncPath, visited)...)
+		}
+	}
+
+	return files
+}
+
 func (Beancount) Files(journalPath string) ([]string, error) {
+	visited := make(map[string]bool)
+	files := parseBeancountIncludes(journalPath, visited)
+
 	path, err := binary.BeancountBinaryPath("bean-query")
-	if err != nil {
-		return nil, err
+	if err == nil {
+		var output, errBuf bytes.Buffer
+		err = utils.Exec(path, &output, &errBuf, "-f", "csv", journalPath, "select distinct filename")
+		if err == nil {
+			reader := csv.NewReader(bytes.NewBuffer(output.Bytes()))
+			records, err := reader.ReadAll()
+			if err == nil && len(records) > 1 {
+				for _, record := range records[1:] {
+					f := strings.TrimSpace(record[0])
+					if f != "" {
+						abs, err := filepath.Abs(f)
+						if err == nil {
+							abs = filepath.Clean(abs)
+						} else {
+							abs = f
+						}
+						if !visited[abs] {
+							visited[abs] = true
+							files = append(files, abs)
+						}
+					}
+				}
+			}
+		}
 	}
 
-	var output, errBuf bytes.Buffer
-	err = utils.Exec(path, &output, &errBuf, "-f", "csv", journalPath, "select distinct filename")
-	if err != nil {
-		return nil, err
-	}
-
-	reader := csv.NewReader(bytes.NewBuffer(output.Bytes()))
-	records, err := reader.ReadAll()
-	if err != nil {
-		return nil, err
-	}
-
-	if len(records) <= 1 {
+	if len(files) == 0 {
 		return []string{journalPath}, nil
 	}
 
-	var files []string
-	for _, record := range records[1:] {
-		files = append(files, strings.TrimSpace(record[0]))
-	}
 	return files, nil
 }
 

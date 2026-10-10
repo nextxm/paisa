@@ -12,6 +12,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/cii"
 	"github.com/ananthakumaran/paisa/internal/model/dashboard_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/duplicate_suppression"
+	"github.com/ananthakumaran/paisa/internal/model/finding_dismissal"
 	"github.com/ananthakumaran/paisa/internal/model/import_preset"
 	"github.com/ananthakumaran/paisa/internal/model/investment_income_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/job"
@@ -59,6 +60,7 @@ var steps = []step{
 	{Version: 15, Apply: v15AddPostingOriginalAmount},
 	{Version: 16, Apply: v16AddPersistentJobs},
 	{Version: 17, Apply: v17AddDuplicateSuppressions},
+	{Version: 18, Apply: v18AddFindingDismissals},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -310,6 +312,15 @@ func v16AddPersistentJobs(db *gorm.DB) error {
 func v17AddDuplicateSuppressions(db *gorm.DB) error {
 	if err := db.AutoMigrate(&duplicate_suppression.DuplicateSuppression{}); err != nil {
 		return fmt.Errorf("v17: AutoMigrate duplicate_suppressions failed: %w", err)
+	}
+	return nil
+}
+
+// v18AddFindingDismissals creates the finding_dismissals table used to
+// record dismissed findings by fingerprint across the Data Health dashboard.
+func v18AddFindingDismissals(db *gorm.DB) error {
+	if err := db.AutoMigrate(&finding_dismissal.FindingDismissal{}); err != nil {
+		return fmt.Errorf("v18: AutoMigrate finding_dismissals failed: %w", err)
 	}
 	return nil
 }

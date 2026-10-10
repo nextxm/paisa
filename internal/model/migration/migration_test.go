@@ -9,6 +9,8 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/account_note"
 	"github.com/ananthakumaran/paisa/internal/model/account_reconciliation"
 	"github.com/ananthakumaran/paisa/internal/model/dashboard_snapshot"
+	"github.com/ananthakumaran/paisa/internal/model/duplicate_suppression"
+	"github.com/ananthakumaran/paisa/internal/model/finding_dismissal"
 	"github.com/ananthakumaran/paisa/internal/model/import_preset"
 	"github.com/ananthakumaran/paisa/internal/model/investment_income_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/job"
@@ -36,7 +38,7 @@ func TestRunMigrations_FreshInstall(t *testing.T) {
 	require.NoError(t, err)
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 17, version)
+	assert.Equal(t, 18, version)
 }
 
 func TestRunMigrations_Idempotent(t *testing.T) {
@@ -46,7 +48,7 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 	require.NoError(t, migration.RunMigrations(db))
 
 	version := migration.CurrentVersion(db)
-	assert.Equal(t, 17, version)
+	assert.Equal(t, 18, version)
 }
 
 func TestCurrentVersion_NoMigrations(t *testing.T) {
@@ -68,7 +70,7 @@ func TestRunMigrations_ExistingInstall(t *testing.T) {
 	err := migration.RunMigrations(db)
 	require.NoError(t, err)
 
-	assert.Equal(t, 17, migration.CurrentVersion(db))
+	assert.Equal(t, 18, migration.CurrentVersion(db))
 }
 
 // TestV2Migration_BackfillsQuoteCommodity verifies that the v2 migration
@@ -104,9 +106,9 @@ func TestV2Migration_BackfillsQuoteCommodity(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&migration.SchemaVersion{}))
 	require.NoError(t, db.Create(&migration.SchemaVersion{Version: 1, AppliedAt: time.Now()}).Error)
 
-	// Run migrations – v2 through v17 should execute.
+	// Run migrations – v2 through v18 should execute.
 	require.NoError(t, migration.RunMigrations(db))
-	assert.Equal(t, 17, migration.CurrentVersion(db))
+	assert.Equal(t, 18, migration.CurrentVersion(db))
 
 	// All existing rows must have been backfilled with the default currency.
 	dc := config.DefaultCurrency()
@@ -468,5 +470,36 @@ func TestV16Migration_JobsTableExists(t *testing.T) {
 
 	var count int64
 	require.NoError(t, db.Raw("SELECT COUNT(*) FROM jobs WHERE id = 'job-1'").Scan(&count).Error)
+	assert.Equal(t, int64(1), count)
+}
+
+func TestV17Migration_DuplicateSuppressionsTableExists(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	require.NoError(t, db.Create(&duplicate_suppression.DuplicateSuppression{
+		PostingID1: 101,
+		PostingID2: 102,
+		CreatedAt:  time.Now(),
+	}).Error)
+
+	var count int64
+	require.NoError(t, db.Raw("SELECT COUNT(*) FROM duplicate_suppressions WHERE posting_id_1 = 101 AND posting_id_2 = 102").Scan(&count).Error)
+	assert.Equal(t, int64(1), count)
+}
+
+func TestV18Migration_FindingDismissalsTableExists(t *testing.T) {
+	db := openMemoryDB(t)
+	require.NoError(t, migration.RunMigrations(db))
+
+	require.NoError(t, db.Create(&finding_dismissal.FindingDismissal{
+		Fingerprint: "fp-123",
+		RuleID:      "rule-1",
+		Note:        "False positive",
+		CreatedAt:   time.Now(),
+	}).Error)
+
+	var count int64
+	require.NoError(t, db.Raw("SELECT COUNT(*) FROM finding_dismissals WHERE fingerprint = 'fp-123'").Scan(&count).Error)
 	assert.Equal(t, int64(1), count)
 }
