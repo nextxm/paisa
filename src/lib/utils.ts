@@ -467,6 +467,31 @@ export interface AllocationTarget {
   target: number;
   current: number;
   aggregates: { [key: string]: Aggregate };
+  market_amount?: number;
+  drift?: number;
+  drift_tolerance?: number;
+  status?: "in_band" | "overweight" | "underweight" | string;
+  accounts?: string[];
+  commodities?: string[];
+}
+
+export interface RebalanceItem {
+  name: string;
+  target: number;
+  current: number;
+  market_amount: number;
+  target_amount: number;
+  action: "BUY" | "SELL" | "HOLD";
+  amount: number;
+  new_percent: number;
+}
+
+export interface RebalancePlan {
+  mode: "cash_injection" | "full_rebalance" | string;
+  cash_amount: number;
+  total_before: number;
+  total_after: number;
+  items: RebalanceItem[];
 }
 
 export interface Income {
@@ -785,6 +810,50 @@ export interface ImportPreset {
   preset_type: string;
 }
 
+export interface ImportRule {
+  id?: number;
+  name: string;
+  priority: number;
+  enabled: boolean;
+  payee_pattern?: string;
+  payee_match_type?: "contains" | "exact" | "regex";
+  memo_pattern?: string;
+  memo_match_type?: "contains" | "exact" | "regex";
+  tx_type?: "any" | "debit" | "credit";
+  min_amount?: number;
+  max_amount?: number;
+  target_account: string;
+  tags?: string[];
+  flag_for_review?: boolean;
+}
+
+export interface StagedTransaction {
+  index: number;
+  date: string;
+  payee: string;
+  memo: string;
+  amount: number;
+  is_debit: boolean;
+  selected_account: string;
+  suggested_account?: string;
+  confidence?: string;
+  matched_rule_name?: string;
+  matched_rule_id?: number;
+  tags?: string[];
+  flag_for_review?: boolean;
+  is_duplicate?: boolean;
+  duplicate_score?: number;
+  duplicate_match_id?: number;
+  duplicate_reason?: string;
+}
+
+export interface IngestionResult {
+  total_parsed: number;
+  auto_categorized: number;
+  possible_duplicates: number;
+  transactions: StagedTransaction[];
+}
+
 export interface Log {
   time: dayjs.Dayjs;
   level: string;
@@ -1024,7 +1093,16 @@ export function ajax(route: "/api/allocation"): Promise<{
   aggregates: { [key: string]: Aggregate };
   aggregates_timeline: { [key: string]: Aggregate }[];
   allocation_targets: AllocationTarget[];
+  rebalance?: RebalancePlan;
 }>;
+export function ajax(
+  route: "/api/allocation/rebalance",
+  options?: RequestOptions
+): Promise<RebalancePlan>;
+export function ajax(
+  route: "/api/allocation/targets",
+  options?: RequestOptions
+): Promise<{ success: boolean }>;
 export function ajax(route: "/api/currency-exposure"): Promise<{
   currency_exposure: CurrencyExposure[];
 }>;

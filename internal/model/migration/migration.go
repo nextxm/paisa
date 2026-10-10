@@ -14,6 +14,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/duplicate_suppression"
 	"github.com/ananthakumaran/paisa/internal/model/finding_dismissal"
 	"github.com/ananthakumaran/paisa/internal/model/import_preset"
+	"github.com/ananthakumaran/paisa/internal/model/import_rule"
 	"github.com/ananthakumaran/paisa/internal/model/investment_income_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/job"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
@@ -61,6 +62,7 @@ var steps = []step{
 	{Version: 16, Apply: v16AddPersistentJobs},
 	{Version: 17, Apply: v17AddDuplicateSuppressions},
 	{Version: 18, Apply: v18AddFindingDismissals},
+	{Version: 19, Apply: v19AddImportRules},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -321,6 +323,15 @@ func v17AddDuplicateSuppressions(db *gorm.DB) error {
 func v18AddFindingDismissals(db *gorm.DB) error {
 	if err := db.AutoMigrate(&finding_dismissal.FindingDismissal{}); err != nil {
 		return fmt.Errorf("v18: AutoMigrate finding_dismissals failed: %w", err)
+	}
+	return nil
+}
+
+// v19AddImportRules creates the import_rules table used by the Smart Statement
+// Ingestion pipeline and Visual Rule Studio for categorizing transactions.
+func v19AddImportRules(db *gorm.DB) error {
+	if err := db.AutoMigrate(&import_rule.Rule{}); err != nil {
+		return fmt.Errorf("v19: AutoMigrate import_rules failed: %w", err)
 	}
 	return nil
 }

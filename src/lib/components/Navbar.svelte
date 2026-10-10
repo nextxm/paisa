@@ -18,11 +18,12 @@
     cashflowShowTransfers,
     obscure,
     sankeyPeriod,
-    sankeyRefDate
+    sankeyRefDate,
+    navLayout
   } from "../../persisted_store";
   import _ from "lodash";
   import { financialYear, forEachFinancialYear, helpUrl, isMobile, now } from "$lib/utils";
-  import { resolveNavbarSelectionTyped } from "$lib/navbar_selection";
+  import { resolveNavbarSelectionTyped, resolveHref } from "$lib/navbar_selection";
   import { tick } from "svelte";
   import { get } from "svelte/store";
   import DateRange from "./DateRange.svelte";
@@ -68,7 +69,7 @@
     disablePreload?: boolean;
   }
 
-  const links: Link[] = [
+  const classicLinks: Link[] = [
     { label: "Dashboard", href: "/", hide: true },
     {
       label: "Cash Flow",
@@ -138,6 +139,7 @@
     {
       label: "Planning",
       href: "/planning",
+      help: "planning",
       children: [
         { label: "Goals", href: "/goals", help: "goals" },
         { label: "Projection", href: "/projection" },
@@ -162,16 +164,17 @@
       children: [
         { label: "Configuration", href: "/config", help: "config" },
         { label: "Sheets", href: "/sheets", help: "sheets", disablePreload: true },
-        { label: "Data Health", href: "/doctor" },
+        { label: "Data Health", href: "/doctor", help: "doctor" },
         ...(USER_CONFIG.labs?.firefly_reconcile
           ? [{ label: "Reconciliation", href: "/reconciliation" }]
           : []),
-        { label: "Logs", href: "/logs" }
+        { label: "Logs", href: "/logs" },
+        { label: "About", href: "/about" }
       ]
     }
   ];
 
-  const tax = {
+  const classicTax = {
     label: "Tax",
     href: "/tax",
     help: "tax",
@@ -187,13 +190,199 @@
     ]
   };
 
-  const planning = _.find(links, { label: "Planning" });
+  const classicPlanning = _.find(classicLinks, { label: "Planning" });
   if (USER_CONFIG.default_currency == "INR") {
-    planning?.children?.push(tax);
+    classicPlanning?.children?.push(classicTax);
   }
 
-  const about = { label: "About", href: "/about" };
-  _.last(links)?.children?.push(about);
+  const groupedTax = {
+    label: "Tax",
+    href: "/tax",
+    help: "tax",
+    children: [
+      { label: "Tax Harvesting", href: "/harvest", help: "tax-harvesting" },
+      { label: "Capital Gains", href: "/capital_gains", help: "capital-gains" },
+      {
+        label: "Schedule AL",
+        href: "/schedule_al",
+        help: "schedule-al",
+        financialYearPicker: true
+      }
+    ]
+  };
+
+  const groupedLinks: Link[] = [
+    { label: "Dashboard", href: "/", hide: true },
+    {
+      label: "Cash Flow",
+      href: "/cash_flow",
+      children: [
+        {
+          label: "Cash Flow",
+          href: "",
+          children: [
+            { label: "Monthly Cash Flow", href: "/monthly", dateRangeSelector: true },
+            {
+              label: "Yearly Cash Flow",
+              href: "/yearly",
+              financialYearPicker: true,
+              maxDepthSelector: true
+            },
+            {
+              label: "Income Statement",
+              href: "/income_statement",
+              financialYearPicker: true
+            }
+          ]
+        },
+        {
+          label: "Expenses & Budget",
+          href: "/../expense",
+          children: [
+            { label: "Budget Tracker", href: "/budget", help: "budget", monthPicker: true },
+            {
+              label: "Monthly Expenses",
+              href: "/monthly",
+              monthPicker: true,
+              dateRangeSelector: true
+            },
+            { label: "Yearly Expenses", href: "/yearly", financialYearPicker: true },
+            { label: "Expense Breakdown", href: "/sankey", dateRangeSelector: true },
+            { label: "Heatmap", href: "/heatmap" },
+            { label: "Year-over-Year (YoY)", href: "/yoy" },
+            { label: "Month-over-Month (MoM)", href: "/mom" }
+          ]
+        },
+        {
+          label: "Income & Returns",
+          href: "/../income",
+          children: [
+            { label: "Income Timeline", href: "" },
+            {
+              label: "Investment Income",
+              href: "/investment",
+              financialYearPicker: true
+            }
+          ]
+        },
+        {
+          label: "Flows & Recurring",
+          href: "",
+          children: [
+            { label: "Money Flow (Sankey)", href: "/sankey", sankeyPeriodSelector: true },
+            {
+              label: "Recurring Bills",
+              href: "/recurring",
+              help: "recurring",
+              monthPicker: true,
+              recurringIcons: true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      label: "Net Worth",
+      href: "/assets",
+      children: [
+        {
+          label: "Net Worth",
+          href: "",
+          children: [
+            { label: "Net Worth History", href: "/networth", dateRangeSelector: true },
+            { label: "Asset Balances", href: "/balance" }
+          ]
+        },
+        {
+          label: "Investments & Portfolio",
+          href: "",
+          children: [
+            { label: "Holdings & Valuation", href: "/investment" },
+            { label: "Performance & Gain (XIRR)", href: "/gain" },
+            {
+              label: "Target Asset Allocation",
+              href: "/allocation",
+              help: "allocation-targets"
+            },
+            {
+              label: "Underlying Portfolio",
+              href: "/portfolio",
+              tag: "alpha",
+              help: "analysis"
+            }
+          ]
+        },
+        {
+          label: "Liabilities & Debt",
+          href: "/../liabilities",
+          children: [
+            { label: "Liabilities Balances", href: "/balance" },
+            {
+              label: "Credit Cards",
+              href: "/credit_cards",
+              help: "credit-cards"
+            },
+            { label: "Loan Repayments", href: "/repayment" },
+            { label: "Interest Analysis", href: "/interest" }
+          ]
+        }
+      ]
+    },
+    {
+      label: "Planning",
+      href: "/planning",
+      help: "planning",
+      children: [
+        {
+          label: "Projections & Life Plan",
+          href: "",
+          children: [
+            { label: "Life Plan & DNA", href: "/life" },
+            { label: "Net Worth Projections", href: "/projection" },
+            { label: "What-If Scenarios", href: "/life/whatif" },
+            { label: "Drawdown Strategy", href: "/life/drawdown" }
+          ]
+        },
+        {
+          label: "Financial Goals",
+          href: "",
+          children: [
+            { label: "Retirement & Savings Goals", href: "/goals", help: "goals" },
+            { label: "Milestone Life Goals", href: "/life/goals" }
+          ]
+        },
+        ...(USER_CONFIG.default_currency === "INR" ? [groupedTax] : [])
+      ]
+    },
+    {
+      label: "Ledger",
+      href: "/ledger",
+      children: [
+        { label: "Editor", href: "/editor", help: "editor", disablePreload: true },
+        { label: "Import", href: "/import", help: "import" },
+        { label: "Transactions", href: "/transaction", help: "bulk-edit" },
+        { label: "Postings Register", href: "/posting" },
+        { label: "Commodity Prices", href: "/price" },
+        { label: "FX Rates", href: "/fx-rates" }
+      ]
+    },
+    {
+      label: "Tools",
+      href: "/more",
+      children: [
+        { label: "Data Health", href: "/doctor", help: "doctor" },
+        { label: "Configuration", href: "/config", help: "config" },
+        { label: "Sheets", href: "/sheets", help: "sheets", disablePreload: true },
+        ...(USER_CONFIG.labs?.firefly_reconcile
+          ? [{ label: "Reconciliation", href: "/reconciliation" }]
+          : []),
+        { label: "System Logs", href: "/logs" },
+        { label: "About", href: "/about" }
+      ]
+    }
+  ];
+
+  const links = $derived($navLayout === "grouped" ? groupedLinks : classicLinks);
 
   let selectedLink: Link | null = $state(null);
   let selectedSubLink: Link | null = $state(null);
@@ -405,7 +594,7 @@
             >
             <div class="navbar-dropdown {!isMobile() && 'is-boxed'}">
               {#each link.children as sublink}
-                {@const href = link.href + sublink.href}
+                {@const href = resolveHref(link.href, sublink.href)}
                 {#if _.isEmpty(sublink.children)}
                   <a
                     class="navbar-item"
@@ -450,14 +639,14 @@
                     <div class="dropdown-menu">
                       <div class="dropdown-content">
                         {#each sublink.children as subsublink}
+                          {@const subsubHref = resolveHref(href, subsublink.href)}
                           <a
-                            href={href + subsublink.href}
+                            href={subsubHref}
                             class="navbar-item"
                             data-sveltekit-preload-data={subsublink.disablePreload
                               ? "tap"
                               : "hover"}
-                            class:is-active={normalizedPath == href + subsublink.href}
-                            >{subsublink.label}</a
+                            class:is-active={normalizedPath == subsubHref}>{subsublink.label}</a
                           >
                         {/each}
                       </div>
@@ -546,10 +735,25 @@
 
         {#if selectedSubLink}
           {#if selectedSubSubLink}
-            <li>
-              <span class="is-inactive">{selectedSubSubLink.label}</span>
+            <li class="breadcrumb-node">
+              <span class="is-inactive breadcrumb-node-label">{selectedSubSubLink.label}</span>
+              {#if selectedSubSubLink.help}
+                <a
+                  class="is-clear ml-1 breadcrumb-help"
+                  href={helpUrl(selectedSubSubLink.help)}
+                  aria-label={`Help for ${selectedSubSubLink.label}`}
+                  ><span class="icon is-small">
+                    <i class="fas fa-question"></i>
+                  </span></a
+                >
+              {/if}
+              {#if selectedSubSubLink.tag}
+                <span class="tag is-rounded is-warning breadcrumb-alpha-tag"
+                  >{selectedSubSubLink.tag}</span
+                >
+              {/if}
             </li>
-          {:else if selectedLink.href + selectedSubLink.href != normalizedPath}
+          {:else if resolveHref(selectedLink.href, selectedSubLink.href) != normalizedPath}
             <li>
               <span class="is-inactive"
                 >{decodeURIComponent(_.last(normalizedPath.split("/")) ?? "")}</span
@@ -562,7 +766,7 @@
   {/if}
 
   <div class="mr-3 is-flex" style="gap: 12px">
-    {#if selectedSubLink?.recurringIcons}
+    {#if selectedSubSubLink?.recurringIcons || selectedSubLink?.recurringIcons}
       <div class="flex gap-5 items-center has-text-grey">
         {#each RecurringIcons as icon}
           <div data-tippy-content="<p>{icon.label}</p>">
@@ -575,7 +779,7 @@
       </div>
     {/if}
 
-    {#if selectedSubLink?.maxDepthSelector}
+    {#if selectedSubSubLink?.maxDepthSelector || selectedSubLink?.maxDepthSelector}
       <div class="dropdown is-right is-hoverable">
         <div class="dropdown-trigger">
           <button class="button is-small" aria-haspopup="true" aria-label="Flow settings">
@@ -607,17 +811,17 @@
       </div>
     {/if}
 
-    {#if selectedSubLink?.dateRangeSelector || selectedLink?.dateRangeSelector}
+    {#if selectedSubSubLink?.dateRangeSelector || selectedSubLink?.dateRangeSelector || selectedLink?.dateRangeSelector}
       <div>
         <DateRange bind:value={$dateRangeOption} dateMin={$dateMin} dateMax={$dateMax} />
       </div>
     {/if}
 
-    {#if selectedSubLink?.monthPicker || selectedLink?.monthPicker}
+    {#if selectedSubSubLink?.monthPicker || selectedSubLink?.monthPicker || selectedLink?.monthPicker}
       <MonthPicker bind:value={$month} max={$dateMax} min={$dateMin} />
     {/if}
 
-    {#if selectedSubLink?.sankeyPeriodSelector || selectedLink?.sankeyPeriodSelector}
+    {#if selectedSubSubLink?.sankeyPeriodSelector || selectedSubLink?.sankeyPeriodSelector || selectedLink?.sankeyPeriodSelector}
       <PeriodSelector
         bind:value={$sankeyPeriod}
         bind:refDate={$sankeyRefDate}

@@ -11,11 +11,20 @@
   import Dropzone from "$lib/components/Dropzone.svelte";
   import ImportPreviewTable from "$lib/components/ImportPreviewTable.svelte";
   import PresetSelector from "$lib/components/PresetSelector.svelte";
+  import RuleStudioModal from "$lib/components/RuleStudioModal.svelte";
+  import TransactionStagingTable from "$lib/components/TransactionStagingTable.svelte";
   import { parse, asRows, render as renderJournal } from "$lib/spreadsheet";
   import _ from "lodash";
   import type { EditorView } from "codemirror";
   import { onMount } from "svelte";
-  import { ajax, type ImportPreset, type ImportPreviewRow, type ImportTemplate } from "$lib/utils";
+  import {
+    ajax,
+    type ImportPreset,
+    type ImportPreviewRow,
+    type ImportTemplate,
+    type StagedTransaction,
+    type IngestionResult
+  } from "$lib/utils";
   import {
     defaultIncludedFromValidation,
     filterSelectedRows,
@@ -29,6 +38,7 @@
 
   let { data: pageData }: { data: PageData } = $props();
 
+  let mode: "smart" | "template" = $state("smart");
   let templates: ImportTemplate[] = $state([]);
   let selectedTemplate: ImportTemplate | null = $state(null);
   let saveAsName: string = $state("");
@@ -45,6 +55,15 @@
   let options: { reverse: boolean; trim: boolean } = $state({ reverse: false, trim: true });
   let importSaving = $state(false);
 
+  // Smart Ingestion State
+  let stagedTransactions: StagedTransaction[] = $state([]);
+  let includedStaged: boolean[] = $state([]);
+  let baseAccount: string = $state("Assets:Checking");
+  let accountsList: string[] = $state([]);
+  let ruleStudioOpen: boolean = $state(false);
+  let rawFileContent: string = $state("");
+  let detectedFormat: "csv" | "ofx" | "qfx" = $state("csv");
+
   let templateEditorDom: Element | undefined = $state();
   let templateEditor: EditorView | undefined = $state();
 
@@ -54,6 +73,13 @@
   $effect(() => {
     templates = Array.isArray(pageData.templates) ? pageData.templates : [];
     importPresets = Array.isArray(pageData.importPresets) ? pageData.importPresets : [];
+    accountsList = Array.isArray(pageData.accounts) ? pageData.accounts : [];
+    if (accountsList.length > 0 && baseAccount === "Assets:Checking") {
+      baseAccount =
+        accountsList.find(
+          (a) => a.toLowerCase().includes("checking") || a.toLowerCase().includes("bank")
+        ) || accountsList[0];
+    }
   });
 
   $effect(() => {
@@ -188,8 +214,29 @@
 
   async function handleFilesSelect(detail: { acceptedFiles: File[] }) {
     const { acceptedFiles } = detail;
+    if (!acceptedFiles || acceptedFiles.length === 0) return;
 
-    const results = await parse(acceptedFiles[0]);
+    const file = acceptedFiles[0];
+    const ext = file.name.split(".").pop()?.toLowerCase();
+
+    // Read raw content for OFX / text statements
+    rawFileContent = await file.text();
+
+    if (
+      ext === "ofx" ||
+      ext === "qfx" ||
+      rawFileContent.includes("<OFX>") ||
+      rawFileContent.includes("<STMTTRN>")
+    ) {
+      detectedFormat = ext === "qfx" ? "qfx" : "ofx";
+      mode = "smart";
+      await runSmartIngest();
+      return;
+    }
+
+    // Standard CSV / Excel parsing
+    detectedFormat = "csv";
+    const results = await parse(file);
     if (results.error) {
       parseErrorMessage = results.error;
     } else {
@@ -203,7 +250,81 @@
         row.length = columnCount;
       });
 
-      await refreshImportPreview();
+      if (mode === "smart") {
+        await runSmartIngest();
+      } else {
+        await refreshImportPreview();
+      }
+    }
+  }
+
+  async function runSmartIngest() {
+    if (!rawFileContent && _.isEmpty(data)) return;
+
+    let contentToIngest = rawFileContent;
+    if (detectedFormat === "csv" && !_.isEmpty(data)) {
+      contentToIngest = toCSVContent(data);
+    }
+
+    try {
+      const response: IngestionResult = await ajax("/api/import/statement", {
+        method: "POST",
+        body: JSON.stringify({
+          format: detectedFormat,
+          content: contentToIngest,
+          delimiter,
+          base_account: baseAccount
+        }),
+        background: true
+      });
+
+      stagedTransactions = response.transactions || [];
+      // Default include only non-duplicate transactions with an assigned account
+      includedStaged = stagedTransactions.map((tx) => !tx.is_duplicate && !!tx.selected_account);
+
+      toast.toast({
+        message: `Parsed ${response.total_parsed} transactions (${response.auto_categorized} auto-categorized, ${response.possible_duplicates} duplicates flagged)`,
+        type: "is-info",
+        duration: 4000
+      });
+    } catch (e: any) {
+      parseErrorMessage = e.message;
+    }
+  }
+
+  async function commitStagedTransactions() {
+    const selected = stagedTransactions.filter((_, idx) => includedStaged[idx]);
+    if (selected.length === 0) {
+      toast.toast({ message: "No transactions selected to commit", type: "is-warning" });
+      return;
+    }
+
+    importSaving = true;
+    try {
+      const res: any = await ajax("/api/import/commit", {
+        method: "POST",
+        body: JSON.stringify({
+          base_account: baseAccount,
+          transactions: selected
+        }),
+        background: true
+      });
+
+      if (res.success) {
+        toast.toast({
+          message: `Successfully appended ${res.committed_count} transactions to ledger!`,
+          type: "is-success",
+          duration: 6000
+        });
+
+        // Remove committed transactions from staged list
+        stagedTransactions = stagedTransactions.filter((_, idx) => !includedStaged[idx]);
+        includedStaged = stagedTransactions.map(() => true);
+      }
+    } catch (e: any) {
+      toast.toast({ message: `Failed to commit transactions: ${e.message}`, type: "is-danger" });
+    } finally {
+      importSaving = false;
     }
   }
 
@@ -378,195 +499,367 @@
 </Modal>
 
 <FileModal bind:open={modalOpen} onsave={(file) => saveToFile(file)} />
+<RuleStudioModal
+  bind:open={ruleStudioOpen}
+  accounts={accountsList}
+  onruleschanged={() => {
+    if (stagedTransactions.length > 0) {
+      runSmartIngest();
+    }
+  }}
+/>
 
 <section class="section tab-import" style="padding-bottom: 0 !important">
   <div class="container is-fluid">
-    <div class="columns mb-0">
-      <div class="column is-5 py-0">
-        <div class="box p-3 mb-3 overflow-x-auto">
-          <div class="field is-grouped mb-0">
-            <p class="control">
-              <span data-tippy-content="Create" data-tippy-followCursor="false">
+    <!-- Pipeline Header & Mode Switcher -->
+    <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+      <div class="tabs is-toggle is-toggle-rounded is-small mb-0">
+        <ul>
+          <li class:is-active={mode === "smart"}>
+            <a
+              href={"#"}
+              onclick={(e) => {
+                e.preventDefault();
+                mode = "smart";
+              }}
+            >
+              <span class="icon is-small"><i class="fas fa-wand-magic-sparkles"></i></span>
+              <span>Smart Ingestion & Reconciliation</span>
+            </a>
+          </li>
+          <li class:is-active={mode === "template"}>
+            <a
+              href={"#"}
+              onclick={(e) => {
+                e.preventDefault();
+                mode = "template";
+              }}
+            >
+              <span class="icon is-small"><i class="fas fa-code"></i></span>
+              <span>Classic Template Editor</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="buttons are-small mb-0">
+        <button class="button is-primary is-light" onclick={() => (ruleStudioOpen = true)}>
+          <span class="icon is-small"><i class="fas fa-sliders"></i></span>
+          <span>Rule Studio</span>
+        </button>
+      </div>
+    </div>
+
+    {#if mode === "smart"}
+      <div class="columns mb-0">
+        <div class="column is-4 py-0">
+          <div class="box p-3 mb-3">
+            <h4 class="title is-6 mb-2">1. Upload Statement</h4>
+            <Dropzone
+              multiple={false}
+              accept=".csv,.txt,.ofx,.qfx,.xls,.xlsx,.pdf,.CSV,.TXT,.OFX,.QFX"
+              ondrop={handleFilesSelect}
+            >
+              Drag 'n' drop CSV, OFX, QFX or TXT statement here
+            </Dropzone>
+            {#if detectedFormat}
+              <div class="mt-2 is-size-7 has-text-grey">
+                Detected format: <span class="tag is-small is-light uppercase"
+                  >{detectedFormat}</span
+                >
+              </div>
+            {/if}
+          </div>
+
+          <div class="box p-3 mb-3">
+            <h4 class="title is-6 mb-2">2. Statement Account</h4>
+            <div class="field mb-3">
+              <label class="label is-small" for="smart-base-account">Source / Bank Account</label>
+              <div class="control">
+                <input
+                  id="smart-base-account"
+                  class="input is-small"
+                  type="text"
+                  list="accounts-datalist"
+                  bind:value={baseAccount}
+                  placeholder="e.g. Assets:Checking:Chase"
+                />
+                <datalist id="accounts-datalist">
+                  {#each accountsList as acc}
+                    <option value={acc}>{acc}</option>
+                  {/each}
+                </datalist>
+              </div>
+              <p class="help is-size-7">The physical account whose statement you are importing.</p>
+            </div>
+
+            <div class="field is-grouped is-align-items-center mb-0">
+              <label class="label is-small mb-0 mr-2" for="smart-delimiter">Delimiter</label>
+              <div class="control">
+                <input
+                  id="smart-delimiter"
+                  class="input is-small"
+                  style="width: 50px;"
+                  maxlength="1"
+                  bind:value={delimiter}
+                  onblur={() => runSmartIngest()}
+                />
+              </div>
+              <button
+                class="button is-small ml-auto"
+                disabled={_.isEmpty(data) && !rawFileContent}
+                onclick={() => runSmartIngest()}
+              >
+                Re-analyze
+              </button>
+            </div>
+          </div>
+
+          <div class="box p-3">
+            <h4 class="title is-6 mb-2">3. Append to Ledger</h4>
+            <p class="is-size-7 has-text-grey mb-3">
+              Appends selected categorized transactions cleanly into your ledger file with duplicate
+              safety checks.
+            </p>
+            <button
+              class="button is-success is-fullwidth"
+              class:is-loading={importSaving}
+              disabled={stagedTransactions.length === 0 ||
+                stagedTransactions.filter((_, i) => includedStaged[i]).length === 0 ||
+                importSaving}
+              onclick={commitStagedTransactions}
+            >
+              <span class="icon is-small"><i class="fas fa-check-double"></i></span>
+              <span
+                >Commit Selected ({stagedTransactions.filter((_, i) => includedStaged[i])
+                  .length})</span
+              >
+            </button>
+          </div>
+        </div>
+
+        <div class="column is-8 py-0">
+          {#if parseErrorMessage}
+            <div class="message invertable is-danger mb-3">
+              <div class="message-header">Ingestion Warning</div>
+              <div class="message-body">{parseErrorMessage}</div>
+            </div>
+          {/if}
+
+          {#if stagedTransactions.length > 0}
+            <TransactionStagingTable
+              bind:transactions={stagedTransactions}
+              bind:included={includedStaged}
+              accounts={accountsList}
+              oneditrule={(tx) => {
+                ruleStudioOpen = true;
+              }}
+            />
+          {:else}
+            <div class="notification is-light has-text-centered py-6">
+              <span class="icon is-large has-text-grey-light mb-2">
+                <i class="fas fa-file-invoice-dollar fa-3x"></i>
+              </span>
+              <p class="has-text-grey is-size-6 font-semibold">No Statement Uploaded Yet</p>
+              <p class="is-size-7 has-text-grey">
+                Drag 'n' drop your bank statement (CSV, OFX, QFX) into the upload box on the left to
+                start auto-categorizing.
+              </p>
+            </div>
+          {/if}
+        </div>
+      </div>
+    {:else}
+      <!-- Classic Template Mode -->
+      <div class="columns mb-0">
+        <div class="column is-5 py-0">
+          <div class="box p-3 mb-3 overflow-x-auto">
+            <div class="field is-grouped mb-0">
+              <p class="control">
+                <span data-tippy-content="Create" data-tippy-followCursor="false">
+                  <button
+                    class="button"
+                    aria-label="Create template"
+                    onclick={() => openTemplateCreateModal()}
+                  >
+                    <span class="icon">
+                      <i class="fas fa-file-circle-plus"></i>
+                    </span>
+                  </button>
+                </span>
+
+                <span
+                  class="ml-4"
+                  data-tippy-followCursor="false"
+                  data-tippy-content={$templateEditorState.hasUnsavedChanges == false
+                    ? "No Unsaved Chagnes"
+                    : builtinNotAllowed("Save", selectedTemplate)}
+                >
+                  <button
+                    class="button"
+                    aria-label="Save template"
+                    onclick={() => save()}
+                    disabled={$templateEditorState.hasUnsavedChanges == false ||
+                      selectedTemplate?.template_type == "builtin"}
+                  >
+                    <span class="icon">
+                      <i class="fas fa-floppy-disk"></i>
+                    </span>
+                  </button>
+                </span>
+
+                <span
+                  data-tippy-followCursor="false"
+                  data-tippy-content={builtinNotAllowed("Delete", selectedTemplate)}
+                >
+                  <button
+                    class="button"
+                    aria-label="Delete template"
+                    onclick={() => remove()}
+                    disabled={selectedTemplate?.template_type == "builtin"}
+                  >
+                    <span class="icon">
+                      <i class="fas fa-trash-can"></i>
+                    </span>
+                  </button>
+                </span>
+              </p>
+
+              <p class="control is-expanded">
+                <Select
+                  bind:value={selectedTemplate}
+                  showChevron={true}
+                  items={templates}
+                  label="name"
+                  itemId="id"
+                  searchable={true}
+                  clearable={false}
+                  floatingConfig={{ strategy: "fixed" }}
+                  on:change={() => {
+                    if (selectedTemplate) {
+                      saveAsName = selectedTemplate.name;
+                    }
+                  }}
+                >
+                  <div slot="selection" let:selection>
+                    {#if selection}
+                      {selection.name}
+                      <span class="tag is-small is-link invertable is-light"
+                        >{selection.template_type}</span
+                      >
+                    {/if}
+                  </div>
+                  <div slot="item" let:item>
+                    <span class="name">{item.name}</span>
+                    <span class="tag is-small is-link invertable is-light"
+                      >{item.template_type}</span
+                    >
+                  </div>
+                </Select>
+              </p>
+            </div>
+          </div>
+          <div class="box py-0">
+            <div class="field">
+              <div class="control">
+                <div class="template-editor" bind:this={templateEditorDom}></div>
+              </div>
+            </div>
+          </div>
+          <div class="box py-0">
+            <div class="field">
+              <div class="control">
                 <button
-                  class="button"
-                  aria-label="Create template"
-                  onclick={() => openTemplateCreateModal()}
+                  data-tippy-followCursor="false"
+                  data-tippy-content="Copy to Clipboard"
+                  class="button clipboard"
+                  aria-label="Copy preview to clipboard"
+                  disabled={_.isEmpty(preview)}
+                  onclick={copyToClipboard}
                 >
                   <span class="icon">
-                    <i class="fas fa-file-circle-plus"></i>
+                    <i class="fas fa-copy"></i>
                   </span>
                 </button>
-              </span>
-
-              <span
-                class="ml-4"
-                data-tippy-followCursor="false"
-                data-tippy-content={$templateEditorState.hasUnsavedChanges == false
-                  ? "No Unsaved Chagnes"
-                  : builtinNotAllowed("Save", selectedTemplate)}
-              >
                 <button
-                  class="button"
-                  aria-label="Save template"
-                  onclick={() => save()}
-                  disabled={$templateEditorState.hasUnsavedChanges == false ||
-                    selectedTemplate?.template_type == "builtin"}
+                  data-tippy-followCursor="false"
+                  data-tippy-content="Confirm & Save"
+                  class="button save"
+                  class:is-loading={importSaving}
+                  aria-label="Confirm selected rows and save"
+                  disabled={_.isEmpty(preview) || selectedPreviewCount === 0 || importSaving}
+                  onclick={openSaveModal}
                 >
                   <span class="icon">
                     <i class="fas fa-floppy-disk"></i>
                   </span>
                 </button>
-              </span>
-
-              <span
-                data-tippy-followCursor="false"
-                data-tippy-content={builtinNotAllowed("Delete", selectedTemplate)}
-              >
-                <button
-                  class="button"
-                  aria-label="Delete template"
-                  onclick={() => remove()}
-                  disabled={selectedTemplate?.template_type == "builtin"}
-                >
-                  <span class="icon">
-                    <i class="fas fa-trash-can"></i>
-                  </span>
-                </button>
-              </span>
-            </p>
-
-            <p class="control is-expanded">
-              <Select
-                bind:value={selectedTemplate}
-                showChevron={true}
-                items={templates}
-                label="name"
-                itemId="id"
-                searchable={true}
-                clearable={false}
-                floatingConfig={{ strategy: "fixed" }}
-                on:change={() => {
-                  if (selectedTemplate) {
-                    saveAsName = selectedTemplate.name;
-                  }
-                }}
-              >
-                <div slot="selection" let:selection>
-                  {#if selection}
-                    {selection.name}
-                    <span class="tag is-small is-link invertable is-light"
-                      >{selection.template_type}</span
-                    >
-                  {/if}
-                </div>
-                <div slot="item" let:item>
-                  <span class="name">{item.name}</span>
-                  <span class="tag is-small is-link invertable is-light">{item.template_type}</span>
-                </div>
-              </Select>
-            </p>
-          </div>
-        </div>
-        <div class="box py-0">
-          <div class="field">
-            <div class="control">
-              <div class="template-editor" bind:this={templateEditorDom}></div>
+                <div class="preview-editor" bind:this={previewEditorDom}></div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="box py-0">
-          <div class="field">
-            <div class="control">
-              <button
-                data-tippy-followCursor="false"
-                data-tippy-content="Copy to Clipboard"
-                class="button clipboard"
-                aria-label="Copy preview to clipboard"
-                disabled={_.isEmpty(preview)}
-                onclick={copyToClipboard}
-              >
-                <span class="icon">
-                  <i class="fas fa-copy"></i>
-                </span>
-              </button>
-              <button
-                data-tippy-followCursor="false"
-                data-tippy-content="Confirm & Save"
-                class="button save"
-                class:is-loading={importSaving}
-                aria-label="Confirm selected rows and save"
-                disabled={_.isEmpty(preview) || selectedPreviewCount === 0 || importSaving}
-                onclick={openSaveModal}
-              >
-                <span class="icon">
-                  <i class="fas fa-floppy-disk"></i>
-                </span>
-              </button>
-              <div class="preview-editor" bind:this={previewEditorDom}></div>
+        <div class="column is-7 py-0">
+          <div class="box p-3 mb-3">
+            <Dropzone
+              multiple={false}
+              accept=".csv,.txt,.xls,.xlsx,.pdf,.CSV,.TXT,.XLS,.XLSX,.PDF"
+              ondrop={handleFilesSelect}
+            >
+              Drag 'n' drop CSV, TXT, XLS, XLSX, PDF file here or click to select
+            </Dropzone>
+          </div>
+          <div class="box p-3 mb-3">
+            <PresetSelector
+              presets={importPresets}
+              bind:selectedPreset
+              onsavecurrent={saveCurrentAsPreset}
+            />
+            <div class="field is-grouped is-align-items-center">
+              <label class="label mb-0 mr-2" for="import-delimiter">Delimiter</label>
+              <div class="control">
+                <input
+                  id="import-delimiter"
+                  class="input is-small"
+                  maxlength="1"
+                  bind:value={delimiter}
+                  onblur={() => refreshImportPreview()}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-      <div class="column is-7 py-0">
-        <div class="box p-3 mb-3">
-          <Dropzone
-            multiple={false}
-            accept=".csv,.txt,.xls,.xlsx,.pdf,.CSV,.TXT,.XLS,.XLSX,.PDF"
-            ondrop={handleFilesSelect}
-          >
-            Drag 'n' drop CSV, TXT, XLS, XLSX, PDF file here or click to select
-          </Dropzone>
-        </div>
-        <div class="box p-3 mb-3">
-          <PresetSelector
-            presets={importPresets}
-            bind:selectedPreset
-            onsavecurrent={saveCurrentAsPreset}
-          />
-          <div class="field is-grouped is-align-items-center">
-            <label class="label mb-0 mr-2" for="import-delimiter">Delimiter</label>
-            <div class="control">
+          <div class="is-flex justify-end mb-3 gap-4">
+            <div class="field color-switch">
               <input
-                id="import-delimiter"
-                class="input is-small"
-                maxlength="1"
-                bind:value={delimiter}
-                onblur={() => refreshImportPreview()}
+                id="import-reverse"
+                type="checkbox"
+                bind:checked={options.reverse}
+                class="switch is-rounded is-small"
               />
+              <label for="import-reverse">Reverse</label>
+            </div>
+            <div class="field color-switch">
+              <input
+                id="trim-reverse"
+                type="checkbox"
+                bind:checked={options.trim}
+                class="switch is-rounded is-small"
+              />
+              <label for="trim-reverse">Trim</label>
             </div>
           </div>
+          {#if parseErrorMessage}
+            <div class="message invertable is-danger">
+              <div class="message-header">Failed to parse document</div>
+              <div class="message-body">{parseErrorMessage}</div>
+            </div>
+          {/if}
+          {#if !_.isEmpty(data)}
+            <ImportPreviewTable rows={previewRows} bind:included={includedPreviewRows} />
+          {/if}
         </div>
-        <div class="is-flex justify-end mb-3 gap-4">
-          <div class="field color-switch">
-            <input
-              id="import-reverse"
-              type="checkbox"
-              bind:checked={options.reverse}
-              class="switch is-rounded is-small"
-            />
-            <label for="import-reverse">Reverse</label>
-          </div>
-          <div class="field color-switch">
-            <input
-              id="trim-reverse"
-              type="checkbox"
-              bind:checked={options.trim}
-              class="switch is-rounded is-small"
-            />
-            <label for="trim-reverse">Trim</label>
-          </div>
-        </div>
-        {#if parseErrorMessage}
-          <div class="message invertable is-danger">
-            <div class="message-header">Failed to parse document</div>
-            <div class="message-body">{parseErrorMessage}</div>
-          </div>
-        {/if}
-        {#if !_.isEmpty(data)}
-          <ImportPreviewTable rows={previewRows} bind:included={includedPreviewRows} />
-        {/if}
       </div>
-    </div>
+    {/if}
     <div></div>
   </div>
 </section>

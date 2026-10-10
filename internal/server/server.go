@@ -393,6 +393,8 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/allocation", func(c *gin.Context) {
 		c.JSON(200, GetAllocation(db))
 	})
+	router.POST("/api/allocation/rebalance", RebalanceHandler(db))
+	writeGroup.POST("/api/allocation/targets", SaveAllocationTargetsHandler())
 	router.GET("/api/currency-exposure", func(c *gin.Context) {
 		c.JSON(200, GetCurrencyExposure(db))
 	})
@@ -632,9 +634,15 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.POST("/api/import/preview", handleImportPreview)
+	router.POST("/api/import/statement", HandleParseStatement(db))
+	writeGroup.POST("/api/import/commit", HandleCommitImport(db))
 	router.GET("/api/import/presets", handleGetImportPresets(db))
 	writeGroup.POST("/api/import/presets", handleUpsertImportPreset(db))
 	writeGroup.DELETE("/api/import/presets", handleDeleteImportPreset(db))
+
+	router.GET("/api/rules", HandleGetRules(db))
+	writeGroup.POST("/api/rules", HandleSaveRule(db))
+	writeGroup.DELETE("/api/rules/:id", HandleDeleteRule(db))
 
 	writeGroup.POST("/api/templates/upsert", func(c *gin.Context) {
 		var t template.Template
