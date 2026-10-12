@@ -108,3 +108,76 @@ func TestIngestExcelAndPDF(t *testing.T) {
 	assert.Equal(t, 2, pdfResult.TotalParsed)
 	assert.Equal(t, "Salary Deposit", pdfResult.Transactions[1].Payee)
 }
+
+func TestIngestStatementWithMetadataHeader(t *testing.T) {
+	db := openTestDB(t)
+
+	// Sample with non-transaction top section and Dr./Cr. amounts
+	statement := `,,,,,,,,,,,,,,,,,
+,VIEW CURRENT STATEMENT,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,My Credit Card Details for,,,,XXXAFAFA 450172******0023,,,,,,,,,,,,
+,Card Holder Name,,,,XXXAFAFA,,,,Card Type,,,,primary,,,,
+,Statement Date,,,,12-10-2026,,,,Previous Balance,,,,INR 4083,,,,
+,Transaction Details,,,,,,,,,,,,,,,,
+,Transaction Date,,,,Details,,,,Amount (INR),,,,Reward Points,,,,Reference Number
+,,,,,,,,,,,,,,,,,
+,11-10-2026,,,,UPI-Smart Ba,,,,366.55 Dr.,,,,7,,,,14336279452
+,10-10-2026,,,,AMAZON MUMBAI,,,,299 Dr.,,,,5,,,,14335604658
+,26-09-2026,,,,BBPS Payment received,,,,4083 Cr.,,,,0,,,,14238609506
+`
+
+	result, err := Ingest(db, IngestionRequest{
+		Format:  FormatCSV,
+		Content: statement,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 3, result.TotalParsed)
+
+	// First tx: 366.55 Dr.
+	assert.Equal(t, "2026-10-11", result.Transactions[0].Date)
+	assert.Equal(t, "UPI-Smart Ba", result.Transactions[0].Payee)
+	assert.Equal(t, 366.55, result.Transactions[0].Amount)
+	assert.True(t, result.Transactions[0].IsDebit)
+
+	// Second tx: 299 Dr.
+	assert.Equal(t, "2026-10-10", result.Transactions[1].Date)
+	assert.Equal(t, 299.0, result.Transactions[1].Amount)
+	assert.True(t, result.Transactions[1].IsDebit)
+
+	// Third tx: 4083 Cr. (Payment)
+	assert.Equal(t, "2026-09-26", result.Transactions[2].Date)
+	assert.Equal(t, "BBPS Payment received", result.Transactions[2].Payee)
+	assert.Equal(t, 4083.0, result.Transactions[2].Amount)
+	assert.False(t, result.Transactions[2].IsDebit)
+}
+
+func TestIngestSampleICICIStatement_FromDocs(t *testing.T) {
+	db := openTestDB(t)
+
+	// Ingesting the real ICICI statement as CSV content (as produced by frontend XLSX parser)
+	statementText := `,VIEW CURRENT STATEMENT,,,,,,,,,,,,,,,,
+,My Credit Card Details for,,,,XXXAFAFA 450172******0023,,,,,,,,,,,,
+,Card Holder Name,,,,XXXAFAFA,,,,Card Type,,,,primary,,,,
+,Statement Date,,,,12-10-2026,,,,Previous Balance,,,,INR 4083,,,,
+,Transaction Details,,,,,,,,,,,,,,,,
+,Transaction Date,,,,Details,,,,Amount (INR),,,,Reward Points,,,,Reference Number
+,11-10-2026,,,,UPI-Smart Ba,,,,366.55 Dr.,,,,7,,,,14336279452
+,11-10-2026,,,,UPI-ZEPTONOW,,,,427 Dr.,,,,8,,,,14333458614
+,11-10-2026,,,,UPI-SWIGGY,,,,309 Dr.,,,,6,,,,14333153570
+,10-10-2026,,,,AMAZON MUMBAI,,,,299 Dr.,,,,5,,,,14335604658
+,09-10-2026,,,,FlipkartInternetPrivate,,,,6409 Dr.,,,,128,,,,14331602122
+,26-09-2026,,,,BBPS Payment received,,,,4083 Cr.,,,,0,,,,14238609506
+`
+
+	result, err := Ingest(db, IngestionRequest{
+		Format:  FormatExcel,
+		Content: statementText,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 6, result.TotalParsed)
+	assert.Equal(t, 366.55, result.Transactions[0].Amount)
+	assert.True(t, result.Transactions[0].IsDebit)
+	assert.Equal(t, 4083.0, result.Transactions[5].Amount)
+	assert.False(t, result.Transactions[5].IsDebit)
+}
