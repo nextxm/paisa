@@ -7,10 +7,12 @@
   let {
     open = $bindable(false),
     accounts = [],
+    initialRule = null,
     onruleschanged = () => {}
   }: {
     open: boolean;
     accounts?: string[];
+    initialRule?: Partial<ImportRule> | null;
     onruleschanged?: () => void;
   } = $props();
 
@@ -37,6 +39,23 @@
   $effect(() => {
     if (open) {
       loadRules();
+      if (initialRule) {
+        editingRule = {
+          name: initialRule.name || "",
+          priority: initialRule.priority || 100,
+          enabled: initialRule.enabled ?? true,
+          payee_pattern: initialRule.payee_pattern || "",
+          payee_match_type: initialRule.payee_match_type || "contains",
+          memo_pattern: initialRule.memo_pattern || "",
+          memo_match_type: initialRule.memo_match_type || "contains",
+          tx_type: initialRule.tx_type || "any",
+          target_account: initialRule.target_account || accounts[0] || "Expenses:Miscellaneous",
+          tags: initialRule.tags || [],
+          flag_for_review: initialRule.flag_for_review || false
+        };
+        rawTags = (editingRule.tags || []).join(", ");
+        activeTab = "edit";
+      }
     }
   });
 

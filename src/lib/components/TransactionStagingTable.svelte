@@ -153,6 +153,13 @@
                   <i class="fas fa-wand-magic-sparkles mr-1"></i>
                   {tx.matched_rule_name}
                 </span>
+              {:else if tx.confidence === "ai"}
+                <span
+                  class="tag is-info is-light is-rounded is-small"
+                  title="Suggested based on past ledger history"
+                >
+                  <i class="fas fa-robot mr-1"></i> AI Suggested
+                </span>
               {:else if tx.selected_account}
                 <span class="tag is-info is-light is-rounded is-small">Assigned</span>
               {:else}

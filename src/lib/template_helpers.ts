@@ -53,7 +53,7 @@ function tfidf(query: string) {
     .value();
 }
 
-function findMatch(query: string) {
+export function findMatch(query: string): [string, number][] {
   if (accountTfIdf === null || get(accountTfIdf) == null) {
     return [];
   }
@@ -66,12 +66,12 @@ function findMatch(query: string) {
       const tokens = _.uniq(_.concat(Object.keys(queryVector), Object.keys(tf_idf[account])));
       const q = tokens.map((token) => queryVector[token] || 0);
       const a = tokens.map((token) => tf_idf[account][token] || 0);
-      return [account, similarity(q, a)];
+      return [account, similarity(q, a)] as [string, number];
     })
     .sortBy(([, score]) => score)
-    .filter(([, score]: [string, number]) => score > 0)
+    .filter(([, score]) => score > 0)
     .reverse()
-    .value();
+    .value() as [string, number][];
 }
 
 function scrubAmount(str: string) {

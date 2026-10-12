@@ -14,6 +14,7 @@
   import RuleStudioModal from "$lib/components/RuleStudioModal.svelte";
   import TransactionStagingTable from "$lib/components/TransactionStagingTable.svelte";
   import { parse, asRows, render as renderJournal } from "$lib/spreadsheet";
+  import { findMatch } from "$lib/template_helpers";
   import _ from "lodash";
   import type { EditorView } from "codemirror";
   import { onMount } from "svelte";
@@ -62,6 +63,9 @@
   let baseAccount: string = $state("Assets:Checking");
   let accountsList: string[] = $state([]);
   let ruleStudioOpen: boolean = $state(false);
+  let initialRuleForStudio: any = $state(null);
+  let reviewLedgerOpen: boolean = $state(false);
+  let reviewLedgerContent: string = $state("");
   let rawFileContent: string = $state("");
   let detectedFormat: "csv" | "ofx" | "qfx" | "excel" | "pdf" = $state("csv");
 
@@ -302,18 +306,86 @@
         background: true
       });
 
-      stagedTransactions = response.transactions || [];
-      // Default include only non-duplicate transactions with an assigned account
+      stagedTransactions = (response.transactions || []).map((tx) => {
+        // If not already categorized by a user rule, predict using TF-IDF cosine similarity from ledger history
+        if (!tx.selected_account && !tx.is_duplicate) {
+          const query = [tx.payee, tx.memo].filter(Boolean).join(" ");
+          const matches = findMatch(query);
+          if (matches && matches.length > 0 && matches[0][1] > 0.05) {
+            const bestAcc = matches[0][0];
+            return {
+              ...tx,
+              suggested_account: bestAcc,
+              selected_account: bestAcc,
+              confidence: "ai"
+            };
+          }
+        }
+        return tx;
+      });
+
+      // Default include non-duplicate transactions with an assigned account
       includedStaged = stagedTransactions.map((tx) => !tx.is_duplicate && !!tx.selected_account);
 
+      const aiSuggestedCount = stagedTransactions.filter((t) => t.confidence === "ai").length;
       toast.toast({
-        message: `Parsed ${response.total_parsed} transactions (${response.auto_categorized} auto-categorized, ${response.possible_duplicates} duplicates flagged)`,
+        message: `Parsed ${response.total_parsed} transactions (${response.auto_categorized} rule-matched, ${aiSuggestedCount} AI-suggested, ${response.possible_duplicates} duplicates flagged)`,
         type: "is-info",
         duration: 4000
       });
     } catch (e: any) {
       parseErrorMessage = e.message;
     }
+  }
+
+  function handleCreateRuleFromTransaction(tx: StagedTransaction) {
+    // Clean common prefixes (e.g., "UPI-.*-")
+    let payeeClean = tx.payee.trim();
+    if (payeeClean.includes("-") && payeeClean.toUpperCase().startsWith("UPI-")) {
+      const parts = payeeClean.split("-");
+      payeeClean = parts[parts.length - 1].trim();
+    }
+
+    initialRuleForStudio = {
+      name: `Auto: ${payeeClean || tx.payee}`,
+      payee_pattern: payeeClean || tx.payee,
+      payee_match_type: "contains",
+      tx_type: tx.is_debit ? "debit" : "credit",
+      target_account: tx.selected_account || accountsList[0] || "Expenses:Miscellaneous",
+      priority: 100
+    };
+    ruleStudioOpen = true;
+  }
+
+  function openReviewModal() {
+    const selected = stagedTransactions.filter((_, idx) => includedStaged[idx]);
+    if (selected.length === 0) {
+      toast.toast({ message: "No transactions selected to review", type: "is-warning" });
+      return;
+    }
+
+    // Generate formatted ledger entries
+    const lines: string[] = [];
+    for (const tx of selected) {
+      const dateFormatted = tx.date.replaceAll("-", "/");
+      const payee = tx.payee || "Unknown";
+      const memo = tx.memo && tx.memo !== tx.payee ? ` | ${tx.memo}` : "";
+      const amtStr = tx.amount.toFixed(2);
+      const tagStr = tx.tags && tx.tags.length > 0 ? `  ; ${tx.tags.join(" ")}` : "";
+
+      lines.push(`${dateFormatted} * ${payee}${memo}${tagStr}`);
+      if (tx.is_debit) {
+        lines.push(`    ${baseAccount.padEnd(40)}  -${amtStr}`);
+        lines.push(`    ${(tx.selected_account || "Expenses:Unknown").padEnd(40)}   ${amtStr}`);
+      } else {
+        lines.push(`    ${baseAccount.padEnd(40)}   ${amtStr}`);
+        lines.push(`    ${(tx.selected_account || "Income:Unknown").padEnd(40)}  -${amtStr}`);
+      }
+      lines.push("");
+    }
+
+    reviewLedgerContent = lines.join("\n");
+    reviewLedgerOpen = true;
   }
 
   async function commitStagedTransactions() {
@@ -344,6 +416,7 @@
         // Remove committed transactions from staged list
         stagedTransactions = stagedTransactions.filter((_, idx) => !includedStaged[idx]);
         includedStaged = stagedTransactions.map(() => true);
+        reviewLedgerOpen = false;
       }
     } catch (e: any) {
       toast.toast({ message: `Failed to commit transactions: ${e.message}`, type: "is-danger" });
@@ -526,12 +599,58 @@
 <RuleStudioModal
   bind:open={ruleStudioOpen}
   accounts={accountsList}
+  initialRule={initialRuleForStudio}
   onruleschanged={() => {
+    initialRuleForStudio = null;
     if (stagedTransactions.length > 0) {
       runSmartIngest();
     }
   }}
 />
+
+<!-- Review & Edit Generated Ledger Modal -->
+<Modal bind:active={reviewLedgerOpen}>
+  {#snippet head(close)}
+    <p class="text-base font-semibold flex-1">
+      <i class="fas fa-file-invoice mr-2 has-text-primary"></i>
+      Review Generated Ledger Entries
+    </p>
+    <button
+      class="du-btn du-btn-sm du-btn-circle du-btn-ghost"
+      aria-label="close"
+      onclick={() => close()}
+    >
+      <i class="fas fa-times" aria-hidden="true"></i>
+    </button>
+  {/snippet}
+  {#snippet body()}
+    <p class="is-size-7 has-text-grey mb-2">
+      Review and optionally edit the generated transactions before committing them into your
+      journal.
+    </p>
+    <div class="field">
+      <div class="control">
+        <textarea
+          class="textarea is-small font-mono"
+          style="min-height: 320px; white-space: pre; font-size: 0.85rem;"
+          bind:value={reviewLedgerContent}
+        ></textarea>
+      </div>
+    </div>
+  {/snippet}
+  {#snippet foot(close)}
+    <button
+      class="du-btn du-btn-success du-btn-sm"
+      class:loading={importSaving}
+      disabled={importSaving || _.isEmpty(reviewLedgerContent.trim())}
+      onclick={() => commitStagedTransactions()}
+    >
+      <i class="fas fa-check-double mr-1"></i>
+      Confirm & Append to Ledger
+    </button>
+    <button class="du-btn du-btn-sm" onclick={() => close()}>Cancel</button>
+  {/snippet}
+</Modal>
 
 <section class="section tab-import" style="padding-bottom: 0 !important">
   <div class="container is-fluid">
@@ -640,25 +759,39 @@
           </div>
 
           <div class="box p-3">
-            <h4 class="title is-6 mb-2">3. Append to Ledger</h4>
+            <h4 class="title is-6 mb-2">3. Review & Append to Ledger</h4>
             <p class="is-size-7 has-text-grey mb-3">
-              Appends selected categorized transactions cleanly into your ledger file with duplicate
-              safety checks.
+              Review generated entries before appending, or commit directly with duplicate safety
+              checks.
             </p>
-            <button
-              class="button is-success is-fullwidth"
-              class:is-loading={importSaving}
-              disabled={stagedTransactions.length === 0 ||
-                stagedTransactions.filter((_, i) => includedStaged[i]).length === 0 ||
-                importSaving}
-              onclick={commitStagedTransactions}
-            >
-              <span class="icon is-small"><i class="fas fa-check-double"></i></span>
-              <span
-                >Commit Selected ({stagedTransactions.filter((_, i) => includedStaged[i])
-                  .length})</span
+            <div class="buttons mb-0">
+              <button
+                class="button is-link is-light is-fullwidth mb-2"
+                disabled={stagedTransactions.length === 0 ||
+                  stagedTransactions.filter((_, i) => includedStaged[i]).length === 0}
+                onclick={openReviewModal}
               >
-            </button>
+                <span class="icon is-small"><i class="fas fa-file-invoice"></i></span>
+                <span
+                  >Review / Edit Ledger ({stagedTransactions.filter((_, i) => includedStaged[i])
+                    .length})</span
+                >
+              </button>
+              <button
+                class="button is-success is-fullwidth"
+                class:is-loading={importSaving}
+                disabled={stagedTransactions.length === 0 ||
+                  stagedTransactions.filter((_, i) => includedStaged[i]).length === 0 ||
+                  importSaving}
+                onclick={commitStagedTransactions}
+              >
+                <span class="icon is-small"><i class="fas fa-check-double"></i></span>
+                <span
+                  >Quick Commit ({stagedTransactions.filter((_, i) => includedStaged[i])
+                    .length})</span
+                >
+              </button>
+            </div>
           </div>
         </div>
 
@@ -675,9 +808,7 @@
               bind:transactions={stagedTransactions}
               bind:included={includedStaged}
               accounts={accountsList}
-              oneditrule={(tx) => {
-                ruleStudioOpen = true;
-              }}
+              oneditrule={handleCreateRuleFromTransaction}
             />
           {:else}
             <div class="notification is-light has-text-centered py-6">
