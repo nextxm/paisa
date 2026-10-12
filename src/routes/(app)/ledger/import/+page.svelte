@@ -63,7 +63,7 @@
   let accountsList: string[] = $state([]);
   let ruleStudioOpen: boolean = $state(false);
   let rawFileContent: string = $state("");
-  let detectedFormat: "csv" | "ofx" | "qfx" = $state("csv");
+  let detectedFormat: "csv" | "ofx" | "qfx" | "excel" | "pdf" = $state("csv");
 
   let templateEditorDom: Element | undefined = $state();
   let templateEditor: EditorView | undefined = $state();
@@ -227,23 +227,36 @@
     const file = acceptedFiles[0];
     const ext = file.name.split(".").pop()?.toLowerCase();
 
-    // Read raw content for OFX / text statements
-    rawFileContent = await file.text();
-
-    if (
-      ext === "ofx" ||
-      ext === "qfx" ||
-      rawFileContent.includes("<OFX>") ||
-      rawFileContent.includes("<STMTTRN>")
-    ) {
+    // OFX / QFX statement check
+    if (ext === "ofx" || ext === "qfx") {
+      rawFileContent = await file.text();
       detectedFormat = ext === "qfx" ? "qfx" : "ofx";
       mode = "smart";
       await runSmartIngest();
       return;
     }
 
-    // Standard CSV / Excel parsing
-    detectedFormat = "csv";
+    if (ext === "csv" || ext === "txt") {
+      rawFileContent = await file.text();
+      if (rawFileContent.includes("<OFX>") || rawFileContent.includes("<STMTTRN>")) {
+        detectedFormat = "ofx";
+        mode = "smart";
+        await runSmartIngest();
+        return;
+      }
+      detectedFormat = "csv";
+    } else if (ext === "xls" || ext === "xlsx") {
+      detectedFormat = "excel";
+      rawFileContent = "";
+    } else if (ext === "pdf") {
+      detectedFormat = "pdf";
+      rawFileContent = "";
+    } else {
+      detectedFormat = "csv";
+      rawFileContent = await file.text();
+    }
+
+    // Standard tabular parsing (CSV, XLS, XLSX, PDF via parse())
     const results = await parse(file);
     if (results.error) {
       parseErrorMessage = results.error;
@@ -270,7 +283,10 @@
     if (!rawFileContent && _.isEmpty(data)) return;
 
     let contentToIngest = rawFileContent;
-    if (detectedFormat === "csv" && !_.isEmpty(data)) {
+    if (
+      (detectedFormat === "csv" || detectedFormat === "excel" || detectedFormat === "pdf") &&
+      !_.isEmpty(data)
+    ) {
       contentToIngest = toCSVContent(data);
     }
 
@@ -565,10 +581,10 @@
             <h4 class="title is-6 mb-2">1. Upload Statement</h4>
             <Dropzone
               multiple={false}
-              accept=".csv,.txt,.ofx,.qfx,.xls,.xlsx,.pdf,.CSV,.TXT,.OFX,.QFX"
+              accept=".csv,.txt,.ofx,.qfx,.xls,.xlsx,.pdf,.CSV,.TXT,.OFX,.QFX,.XLS,.XLSX,.PDF"
               ondrop={handleFilesSelect}
             >
-              Drag 'n' drop CSV, OFX, QFX or TXT statement here
+              Drag 'n' drop CSV, OFX, QFX, Excel (.xlsx, .xls) or PDF statement here
             </Dropzone>
             {#if detectedFormat}
               <div class="mt-2 is-size-7 has-text-grey">
@@ -670,8 +686,8 @@
               </span>
               <p class="has-text-grey is-size-6 font-semibold">No Statement Uploaded Yet</p>
               <p class="is-size-7 has-text-grey">
-                Drag 'n' drop your bank statement (CSV, OFX, QFX) into the upload box on the left to
-                start auto-categorizing.
+                Drag 'n' drop your bank statement (CSV, OFX, QFX, Excel, PDF) into the upload box on
+                the left to start auto-categorizing.
               </p>
             </div>
           {/if}

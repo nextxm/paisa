@@ -76,3 +76,35 @@ func TestIngestCSV_WithRulesAndDuplicates(t *testing.T) {
 	assert.Equal(t, "", tx3.SelectedAccount)
 	assert.False(t, tx3.IsDuplicate)
 }
+
+func TestIngestExcelAndPDF(t *testing.T) {
+	db := openTestDB(t)
+
+	// Normalized tabular content produced from Excel or PDF
+	content := `Date,Description,Debit,Credit
+2026-09-15,Supermarket Groceries,45.20,
+2026-09-16,Salary Deposit,,3500.00
+`
+
+	// Test Excel format request
+	excelResult, err := Ingest(db, IngestionRequest{
+		Format:  FormatExcel,
+		Content: content,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 2, excelResult.TotalParsed)
+	assert.Equal(t, "Supermarket Groceries", excelResult.Transactions[0].Payee)
+	assert.True(t, excelResult.Transactions[0].IsDebit)
+	assert.Equal(t, 45.20, excelResult.Transactions[0].Amount)
+	assert.False(t, excelResult.Transactions[1].IsDebit)
+	assert.Equal(t, 3500.00, excelResult.Transactions[1].Amount)
+
+	// Test PDF format request
+	pdfResult, err := Ingest(db, IngestionRequest{
+		Format:  FormatPDF,
+		Content: content,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 2, pdfResult.TotalParsed)
+	assert.Equal(t, "Salary Deposit", pdfResult.Transactions[1].Payee)
+}

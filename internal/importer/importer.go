@@ -18,10 +18,12 @@ import (
 type IngestionFormat string
 
 const (
-	FormatCSV IngestionFormat = "csv"
-	FormatOFX IngestionFormat = "ofx"
-	FormatQFX IngestionFormat = "qfx"
-	FormatCAS IngestionFormat = "cas"
+	FormatCSV   IngestionFormat = "csv"
+	FormatOFX   IngestionFormat = "ofx"
+	FormatQFX   IngestionFormat = "qfx"
+	FormatExcel IngestionFormat = "excel"
+	FormatPDF   IngestionFormat = "pdf"
+	FormatCAS   IngestionFormat = "cas"
 )
 
 // StagedTransaction represents an ingested row enriched with classification and duplicate analysis.
@@ -85,7 +87,7 @@ func Ingest(db *gorm.DB, req IngestionRequest) (*IngestionResult, error) {
 			})
 		}
 
-	case string(FormatCSV), "":
+	case string(FormatCSV), string(FormatExcel), string(FormatPDF), "":
 		parsed, err := parseCSVRows(req.Content, req.Delimiter, req.PresetName, db)
 		if err != nil {
 			return nil, err
@@ -246,10 +248,20 @@ func parseCSVRows(content, delimiter, presetName string, db *gorm.DB) ([]import_
 }
 
 func findColumnIndex(header []string, targets []string) int {
+	// First pass: exact match (case-insensitive)
 	for i, h := range header {
 		clean := strings.ToLower(strings.TrimSpace(h))
 		for _, target := range targets {
-			if strings.Contains(clean, target) {
+			if clean == target {
+				return i
+			}
+		}
+	}
+	// Second pass: substring match for targets with length > 2
+	for i, h := range header {
+		clean := strings.ToLower(strings.TrimSpace(h))
+		for _, target := range targets {
+			if len(target) > 2 && strings.Contains(clean, target) {
 				return i
 			}
 		}
