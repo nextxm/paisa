@@ -55,11 +55,12 @@ func (Rule) TableName() string {
 
 // CandidateTransaction represents a parsed statement entry to evaluate.
 type CandidateTransaction struct {
-	Date    string  `json:"date"`
-	Payee   string  `json:"payee"`
-	Memo    string  `json:"memo"`
-	Amount  float64 `json:"amount"` // Absolute amount
-	IsDebit bool    `json:"is_debit"`
+	Date     string  `json:"date"`
+	Payee    string  `json:"payee"`
+	Memo     string  `json:"memo"`
+	Amount   float64 `json:"amount"` // Absolute amount
+	Currency string  `json:"currency,omitempty"`
+	IsDebit  bool    `json:"is_debit"`
 }
 
 // RuleMatchResult contains the decision from applying a rule.

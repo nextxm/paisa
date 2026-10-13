@@ -64,8 +64,14 @@
     try {
       const res: any = await ajax("/api/rules", { background: true });
       rules = res.rules || [];
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      rules = [];
+      toast.toast({
+        message:
+          "Unable to load rules from server. Please ensure the Paisa backend server is running.",
+        type: "is-warning",
+        duration: 5000
+      });
     } finally {
       loading = false;
     }

@@ -4,10 +4,12 @@ import (
 	"encoding/csv"
 	"fmt"
 	"math"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/importer/ofx"
 	"github.com/ananthakumaran/paisa/internal/model/import_rule"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
@@ -33,6 +35,7 @@ type StagedTransaction struct {
 	Payee            string   `json:"payee"`
 	Memo             string   `json:"memo"`
 	Amount           float64  `json:"amount"` // Absolute amount
+	Currency         string   `json:"currency"`
 	IsDebit          bool     `json:"is_debit"`
 	SelectedAccount  string   `json:"selected_account"`
 	SuggestedAccount string   `json:"suggested_account,omitempty"`
@@ -79,11 +82,12 @@ func Ingest(db *gorm.DB, req IngestionRequest) (*IngestionResult, error) {
 		}
 		for _, tx := range stmt.Transactions {
 			candidates = append(candidates, import_rule.CandidateTransaction{
-				Date:    tx.Date.Format("2006-01-02"),
-				Payee:   tx.Payee,
-				Memo:    tx.Memo,
-				Amount:  tx.AbsAmount(),
-				IsDebit: tx.IsDebit(),
+				Date:     tx.Date.Format("2006-01-02"),
+				Payee:    tx.Payee,
+				Memo:     tx.Memo,
+				Amount:   tx.AbsAmount(),
+				Currency: stmt.Currency,
+				IsDebit:  tx.IsDebit(),
 			})
 		}
 
@@ -106,19 +110,30 @@ func Ingest(db *gorm.DB, req IngestionRequest) (*IngestionResult, error) {
 	db.Select("id, transaction_id, date, payee, account, amount, original_amount, note").
 		Find(&existingPostings)
 
+	defaultCurr := config.DefaultCurrency()
+	if defaultCurr == "" {
+		defaultCurr = "INR"
+	}
+
 	staged := make([]StagedTransaction, 0, len(candidates))
 	autoCatCount := 0
 	duplicateCount := 0
 
 	for i, c := range candidates {
+		curr := strings.TrimSpace(c.Currency)
+		if curr == "" {
+			curr = defaultCurr
+		}
+
 		item := StagedTransaction{
-			Index:   i,
-			Date:    c.Date,
-			Payee:   c.Payee,
-			Memo:    c.Memo,
-			Amount:  c.Amount,
-			IsDebit: c.IsDebit,
-			Tags:    []string{},
+			Index:    i,
+			Date:     c.Date,
+			Payee:    c.Payee,
+			Memo:     c.Memo,
+			Amount:   c.Amount,
+			Currency: curr,
+			IsDebit:  c.IsDebit,
+			Tags:     []string{},
 		}
 
 		// 1. Evaluate Rule Match
@@ -175,7 +190,7 @@ func parseCSVRows(content, delimiter, presetName string, db *gorm.DB) ([]import_
 		return nil, fmt.Errorf("statement must have at least a header and one data row")
 	}
 
-	headerIdx, dateIdx, descIdx, debitIdx, creditIdx, amountIdx := detectHeaderRow(records)
+	headerIdx, dateIdx, descIdx, debitIdx, creditIdx, amountIdx, currIdx, stmtCurrency := detectHeaderRow(records)
 	if headerIdx < 0 || dateIdx < 0 || (debitIdx < 0 && creditIdx < 0 && amountIdx < 0) {
 		return nil, fmt.Errorf("could not detect valid transaction table header in statement")
 	}
@@ -208,27 +223,41 @@ func parseCSVRows(content, delimiter, presetName string, db *gorm.DB) ([]import_
 
 		var amt float64
 		var isDebit bool
+		var rowCurr string
+
+		if currIdx >= 0 && currIdx < len(row) {
+			rowCurr = normalizeCurrencyToken(row[currIdx])
+		}
 
 		if debitIdx >= 0 && debitIdx < len(row) && strings.TrimSpace(row[debitIdx]) != "" {
-			val, _, isCr := parseAmountFloat(row[debitIdx])
+			val, _, isCr, parsedCurr := parseAmountFloat(row[debitIdx])
 			if val > 0 {
 				amt = val
 				isDebit = !isCr // Default true for debit column unless explicitly marked Cr
+				if rowCurr == "" && parsedCurr != "" {
+					rowCurr = parsedCurr
+				}
 			}
 		}
 
 		if amt == 0 && creditIdx >= 0 && creditIdx < len(row) && strings.TrimSpace(row[creditIdx]) != "" {
-			val, isDr, _ := parseAmountFloat(row[creditIdx])
+			val, isDr, _, parsedCurr := parseAmountFloat(row[creditIdx])
 			if val > 0 {
 				amt = val
 				isDebit = isDr // Default false for credit column unless explicitly marked Dr
+				if rowCurr == "" && parsedCurr != "" {
+					rowCurr = parsedCurr
+				}
 			}
 		}
 
 		if amt == 0 && amountIdx >= 0 && amountIdx < len(row) && strings.TrimSpace(row[amountIdx]) != "" {
-			val, d, isCr := parseAmountFloat(row[amountIdx])
+			val, d, isCr, parsedCurr := parseAmountFloat(row[amountIdx])
 			if val > 0 {
 				amt = val
+				if rowCurr == "" && parsedCurr != "" {
+					rowCurr = parsedCurr
+				}
 				if isCr {
 					isDebit = false
 				} else if d {
@@ -240,13 +269,18 @@ func parseCSVRows(content, delimiter, presetName string, db *gorm.DB) ([]import_
 			}
 		}
 
+		if rowCurr == "" {
+			rowCurr = stmtCurrency
+		}
+
 		if amt > 0 {
 			candidates = append(candidates, import_rule.CandidateTransaction{
-				Date:    dateStr,
-				Payee:   desc,
-				Memo:    desc,
-				Amount:  amt,
-				IsDebit: isDebit,
+				Date:     dateStr,
+				Payee:    desc,
+				Memo:     desc,
+				Amount:   amt,
+				Currency: rowCurr,
+				IsDebit:  isDebit,
 			})
 		}
 	}
@@ -254,8 +288,10 @@ func parseCSVRows(content, delimiter, presetName string, db *gorm.DB) ([]import_
 	return candidates, nil
 }
 
+var headerCurrencyRe = regexp.MustCompile(`(?i)\(([A-Z]{3})\)|\b(INR|USD|EUR|GBP|CAD|AUD|SGD|JPY|CHF|AED)\b`)
+
 // detectHeaderRow scans the top rows of a statement (up to 50 rows) to find where the actual transaction table begins.
-func detectHeaderRow(records [][]string) (headerIdx, dateIdx, descIdx, debitIdx, creditIdx, amountIdx int) {
+func detectHeaderRow(records [][]string) (headerIdx, dateIdx, descIdx, debitIdx, creditIdx, amountIdx, currIdx int, stmtCurrency string) {
 	maxScan := len(records)
 	if maxScan > 50 {
 		maxScan = 50
@@ -263,7 +299,7 @@ func detectHeaderRow(records [][]string) (headerIdx, dateIdx, descIdx, debitIdx,
 
 	bestHeaderIdx := -1
 	bestScore := -1
-	var bDate, bDesc, bDebit, bCredit, bAmount int
+	var bDate, bDesc, bDebit, bCredit, bAmount, bCurr int
 
 	for i := 0; i < maxScan; i++ {
 		row := records[i]
@@ -276,6 +312,7 @@ func detectHeaderRow(records [][]string) (headerIdx, dateIdx, descIdx, debitIdx,
 		drIdx := findColumnIndex(row, []string{"debit amount", "withdrawal", "debit", "dr"})
 		crIdx := findColumnIndex(row, []string{"credit amount", "deposit", "credit", "cr"})
 		aIdx := findColumnIndex(row, []string{"amount (inr)", "net amount", "trans amount", "amount"})
+		cIdx := findColumnIndex(row, []string{"currency", "curr", "ccy", "iso currency"})
 
 		score := 0
 		if dIdx >= 0 {
@@ -303,10 +340,44 @@ func detectHeaderRow(records [][]string) (headerIdx, dateIdx, descIdx, debitIdx,
 			bDebit = drIdx
 			bCredit = crIdx
 			bAmount = aIdx
+			bCurr = cIdx
 		}
 	}
 
-	return bestHeaderIdx, bDate, bDesc, bDebit, bCredit, bAmount
+	// Extract currency hint from header row or top metadata section
+	if bestHeaderIdx >= 0 {
+		for _, cell := range records[bestHeaderIdx] {
+			if m := headerCurrencyRe.FindStringSubmatch(cell); len(m) > 0 {
+				if m[1] != "" {
+					stmtCurrency = strings.ToUpper(m[1])
+					break
+				} else if m[2] != "" {
+					stmtCurrency = strings.ToUpper(m[2])
+					break
+				}
+			}
+		}
+		if stmtCurrency == "" {
+			for i := 0; i < bestHeaderIdx; i++ {
+				for _, cell := range records[i] {
+					if m := headerCurrencyRe.FindStringSubmatch(cell); len(m) > 0 {
+						if m[1] != "" {
+							stmtCurrency = strings.ToUpper(m[1])
+							break
+						} else if m[2] != "" {
+							stmtCurrency = strings.ToUpper(m[2])
+							break
+						}
+					}
+				}
+				if stmtCurrency != "" {
+					break
+				}
+			}
+		}
+	}
+
+	return bestHeaderIdx, bDate, bDesc, bDebit, bCredit, bAmount, bCurr, stmtCurrency
 }
 
 func findColumnIndex(header []string, targets []string) int {
@@ -340,7 +411,26 @@ func allEmpty(row []string) bool {
 	return true
 }
 
-func parseAmountFloat(val string) (amount float64, isDebit bool, isCredit bool) {
+func normalizeCurrencyToken(raw string) string {
+	clean := strings.ToUpper(strings.TrimSpace(raw))
+	switch clean {
+	case "$", "US$", "USD":
+		return "USD"
+	case "₹", "RS", "RS.", "INR":
+		return "INR"
+	case "€", "EUR":
+		return "EUR"
+	case "£", "GBP":
+		return "GBP"
+	default:
+		if len(clean) == 3 {
+			return clean
+		}
+		return ""
+	}
+}
+
+func parseAmountFloat(val string) (amount float64, isDebit bool, isCredit bool, currency string) {
 	cleaned := strings.TrimSpace(val)
 	upper := strings.ToUpper(cleaned)
 
@@ -360,27 +450,43 @@ func parseAmountFloat(val string) (amount float64, isDebit bool, isCredit bool) 
 		cleaned = strings.TrimSuffix(cleaned, "CR")
 	}
 
+	upperCleaned := strings.ToUpper(cleaned)
+	switch {
+	case strings.Contains(upperCleaned, "INR") || strings.Contains(cleaned, "₹") || strings.Contains(upperCleaned, "RS."):
+		currency = "INR"
+	case strings.Contains(upperCleaned, "USD") || strings.Contains(cleaned, "$"):
+		currency = "USD"
+	case strings.Contains(upperCleaned, "EUR") || strings.Contains(cleaned, "€"):
+		currency = "EUR"
+	case strings.Contains(upperCleaned, "GBP") || strings.Contains(cleaned, "£"):
+		currency = "GBP"
+	}
+
 	cleaned = strings.ReplaceAll(cleaned, ",", "")
 	cleaned = strings.ReplaceAll(cleaned, "$", "")
 	cleaned = strings.ReplaceAll(cleaned, "₹", "")
-	cleaned = strings.ReplaceAll(cleaned, "INR", "")
+	cleaned = strings.ReplaceAll(cleaned, "€", "")
+	cleaned = strings.ReplaceAll(cleaned, "£", "")
+	for _, code := range []string{"INR", "USD", "EUR", "GBP", "CAD", "AUD", "SGD", "Rs.", "RS.", "rs."} {
+		cleaned = strings.ReplaceAll(cleaned, code, "")
+	}
 	cleaned = strings.TrimSpace(cleaned)
 
 	parsed, err := strconv.ParseFloat(cleaned, 64)
 	if err != nil {
-		return 0, false, false
+		return 0, false, false, ""
 	}
 
 	if parsed < 0 {
-		return math.Abs(parsed), true, false
+		return math.Abs(parsed), true, false, currency
 	}
 	if isDebit {
-		return parsed, true, false
+		return parsed, true, false, currency
 	}
 	if isCredit {
-		return parsed, false, true
+		return parsed, false, true, currency
 	}
-	return parsed, false, false
+	return parsed, false, false, currency
 }
 
 func normalizeDateString(raw string) (string, bool) {

@@ -61,6 +61,8 @@
   let stagedTransactions: StagedTransaction[] = $state([]);
   let includedStaged: boolean[] = $state([]);
   let baseAccount: string = $state("Assets:Checking");
+  let defaultCurrency: string = $state((globalThis as any)?.USER_CONFIG?.default_currency || "INR");
+  let groupByDate: boolean = $state(true);
   let accountsList: string[] = $state([]);
   let ruleStudioOpen: boolean = $state(false);
   let initialRuleForStudio: any = $state(null);
@@ -104,6 +106,9 @@
     }
     try {
       const cfg = await fetchConfig({ background: true });
+      if (cfg?.config?.default_currency) {
+        defaultCurrency = cfg.config.default_currency;
+      }
       if (cfg?.accounts && Array.isArray(cfg.accounts)) {
         accountsList = cfg.accounts;
         if (accountsList.length > 0 && baseAccount === "Assets:Checking") {
@@ -311,23 +316,50 @@
         if (!tx.selected_account && !tx.is_duplicate) {
           const query = [tx.payee, tx.memo].filter(Boolean).join(" ");
           const matches = findMatch(query);
-          if (matches && matches.length > 0 && matches[0][1] > 0.05) {
-            const bestAcc = matches[0][0];
-            return {
-              ...tx,
-              suggested_account: bestAcc,
-              selected_account: bestAcc,
-              confidence: "ai"
-            };
+          if (matches && matches.length > 0) {
+            // Filter by logical account type:
+            // For Debits (outflow): prioritize Expenses: or Assets: or Liabilities:
+            // Avoid defaulting to Equity: unless no other match exists
+            let preferredMatch = tx.is_debit
+              ? matches.find(
+                  ([acc, score]) =>
+                    score > 0.03 &&
+                    (acc.startsWith("Expenses:") ||
+                      acc.startsWith("Liabilities:") ||
+                      acc.startsWith("Assets:"))
+                )
+              : matches.find(
+                  ([acc, score]) =>
+                    score > 0.03 &&
+                    (acc.startsWith("Income:") ||
+                      acc.startsWith("Assets:") ||
+                      acc.startsWith("Liabilities:"))
+                );
+
+            if (!preferredMatch && matches[0][1] > 0.05 && !matches[0][0].startsWith("Equity:")) {
+              preferredMatch = matches[0];
+            }
+
+            if (preferredMatch) {
+              const bestAcc = preferredMatch[0];
+              return {
+                ...tx,
+                suggested_account: bestAcc,
+                selected_account: "", // Requires user acceptance or edit
+                confidence: "ai_suggested"
+              };
+            }
           }
         }
         return tx;
       });
 
-      // Default include non-duplicate transactions with an assigned account
+      // Default include only non-duplicate transactions that have already been assigned (or rule matched)
       includedStaged = stagedTransactions.map((tx) => !tx.is_duplicate && !!tx.selected_account);
 
-      const aiSuggestedCount = stagedTransactions.filter((t) => t.confidence === "ai").length;
+      const aiSuggestedCount = stagedTransactions.filter(
+        (t) => t.confidence === "ai_suggested"
+      ).length;
       toast.toast({
         message: `Parsed ${response.total_parsed} transactions (${response.auto_categorized} rule-matched, ${aiSuggestedCount} AI-suggested, ${response.possible_duplicates} duplicates flagged)`,
         type: "is-info",
@@ -338,13 +370,61 @@
     }
   }
 
-  function handleCreateRuleFromTransaction(tx: StagedTransaction) {
-    // Clean common prefixes (e.g., "UPI-.*-")
-    let payeeClean = tx.payee.trim();
-    if (payeeClean.includes("-") && payeeClean.toUpperCase().startsWith("UPI-")) {
-      const parts = payeeClean.split("-");
-      payeeClean = parts[parts.length - 1].trim();
+  function extractShortNote(payee?: string, memo?: string): string {
+    const raw = (payee || memo || "").trim();
+    if (!raw) return "";
+
+    // Strip common payment system prefixes (UPI-, NEFT/, POS, etc.)
+    const cleaned = raw.replace(
+      /^(UPI|NEFT|IMPS|RTGS|POS|ATM|ACH|BIL|MMT|BBPS|ECOM|VPS|IPS)[-/\s:*]+/i,
+      ""
+    );
+
+    // Split by common delimiters and filter out reference/transaction IDs and VPA handles
+    const segments = cleaned.split(/[/\-|*]+/);
+    const meaningful: string[] = [];
+
+    for (const seg of segments) {
+      let s = seg
+        .trim()
+        // Remove VPA handles like merchant@icici
+        .replace(/\S+@\S+/g, "")
+        // Remove reference/txn numbers (e.g., REF 123456, 6+ digit IDs, alphanumeric tokens with 4+ digits)
+        .replace(
+          /\b(REF|TXN|TRN|UTR|RRN|ID|NO|NUM|CHQ)[\s.:#-]*[A-Z0-9]{5,}\b|\b\d{6,}\b|\b[A-Z0-9]*\d{4,}[A-Z0-9]*\b/gi,
+          ""
+        )
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const upper = s.toUpperCase();
+      if (
+        !s ||
+        ["UPI", "NEFT", "IMPS", "RTGS", "DR", "CR", "IN", "IND", "PAYMENT", "PAY"].includes(upper)
+      ) {
+        continue;
+      }
+      meaningful.push(s);
     }
+
+    let result = meaningful.join(" ").trim();
+    if (!result) {
+      result = cleaned
+        .replace(
+          /\b(REF|TXN|TRN|UTR|RRN|ID|NO|NUM|CHQ)[\s.:#-]*[A-Z0-9]{5,}\b|\b\d{6,}\b|\b[A-Z0-9]*\d{4,}[A-Z0-9]*\b/gi,
+          ""
+        )
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+    if (result.length > 32) {
+      result = result.slice(0, 32).trim();
+    }
+    return result || raw.slice(0, 24).trim();
+  }
+
+  function handleCreateRuleFromTransaction(tx: StagedTransaction) {
+    const payeeClean = extractShortNote(tx.payee, tx.memo);
 
     initialRuleForStudio = {
       name: `Auto: ${payeeClean || tx.payee}`,
@@ -357,23 +437,17 @@
     ruleStudioOpen = true;
   }
 
-  function openReviewModal() {
-    const selected = stagedTransactions.filter((_, idx) => includedStaged[idx]);
-    if (selected.length === 0) {
-      toast.toast({ message: "No transactions selected to review", type: "is-warning" });
-      return;
-    }
-
-    // Generate formatted ledger entries
+  function generateLedgerText(selected: StagedTransaction[], clubByDate: boolean): string {
     const lines: string[] = [];
-    for (const tx of selected) {
+
+    const writeSingleTx = (tx: StagedTransaction) => {
       const dateFormatted = tx.date.replaceAll("-", "/");
-      const payee = tx.payee || "Unknown";
-      const memo = tx.memo && tx.memo !== tx.payee ? ` | ${tx.memo}` : "";
-      const amtStr = tx.amount.toFixed(2);
+      const shortNote = extractShortNote(tx.payee, tx.memo) || "Transaction";
+      const curr = (tx.currency || defaultCurrency || "INR").trim();
+      const amtStr = `${tx.amount.toFixed(2)} ${curr}`;
       const tagStr = tx.tags && tx.tags.length > 0 ? `  ; ${tx.tags.join(" ")}` : "";
 
-      lines.push(`${dateFormatted} * ${payee}${memo}${tagStr}`);
+      lines.push(`${dateFormatted} * ${shortNote}${tagStr}`);
       if (tx.is_debit) {
         lines.push(`    ${baseAccount.padEnd(40)}  -${amtStr}`);
         lines.push(`    ${(tx.selected_account || "Expenses:Unknown").padEnd(40)}   ${amtStr}`);
@@ -382,15 +456,74 @@
         lines.push(`    ${(tx.selected_account || "Income:Unknown").padEnd(40)}  -${amtStr}`);
       }
       lines.push("");
+    };
+
+    if (clubByDate) {
+      const debitGroups = new Map<string, StagedTransaction[]>();
+      const creditTxs: StagedTransaction[] = [];
+
+      for (const tx of selected) {
+        const curr = (tx.currency || defaultCurrency || "INR").trim();
+        if (tx.is_debit) {
+          const key = `${tx.date}__${curr}`;
+          if (!debitGroups.has(key)) {
+            debitGroups.set(key, []);
+          }
+          debitGroups.get(key)!.push(tx);
+        } else {
+          creditTxs.push(tx);
+        }
+      }
+
+      for (const [key, txs] of debitGroups.entries()) {
+        if (txs.length === 1) {
+          writeSingleTx(txs[0]);
+          continue;
+        }
+        const [date, curr] = key.split("__");
+        const dateFormatted = date.replaceAll("-", "/");
+        lines.push(`${dateFormatted} * Consolidated Debits (${txs.length} items)`);
+        let total = 0;
+        for (const tx of txs) {
+          total += tx.amount;
+          const acc = (tx.selected_account || "Expenses:Unknown").padEnd(40);
+          const amtStr = `${tx.amount.toFixed(2)} ${curr}`;
+          let note = extractShortNote(tx.payee, tx.memo);
+          if (tx.tags && tx.tags.length > 0) {
+            note = note ? `${note} (${tx.tags.join(" ")})` : tx.tags.join(" ");
+          }
+          lines.push(`    ${acc}   ${amtStr}${note ? `  ; ${note}` : ""}`);
+        }
+        lines.push(`    ${baseAccount.padEnd(40)}  -${total.toFixed(2)} ${curr}`);
+        lines.push("");
+      }
+
+      for (const tx of creditTxs) {
+        writeSingleTx(tx);
+      }
+    } else {
+      for (const tx of selected) {
+        writeSingleTx(tx);
+      }
     }
 
-    reviewLedgerContent = lines.join("\n");
+    return lines.join("\n");
+  }
+
+  function openReviewModal() {
+    const selected = stagedTransactions.filter((_, idx) => includedStaged[idx]);
+    if (selected.length === 0) {
+      toast.toast({ message: "No transactions selected to review", type: "is-warning" });
+      return;
+    }
+
+    reviewLedgerContent = generateLedgerText(selected, groupByDate);
     reviewLedgerOpen = true;
   }
 
-  async function commitStagedTransactions() {
+  async function commitStagedTransactions(useRawReview = false) {
     const selected = stagedTransactions.filter((_, idx) => includedStaged[idx]);
-    if (selected.length === 0) {
+    if (selected.length === 0 && (!useRawReview || !reviewLedgerContent.trim())) {
       toast.toast({ message: "No transactions selected to commit", type: "is-warning" });
       return;
     }
@@ -401,6 +534,9 @@
         method: "POST",
         body: JSON.stringify({
           base_account: baseAccount,
+          commodity: defaultCurrency,
+          group_by_date: groupByDate,
+          raw_content: useRawReview ? reviewLedgerContent : "",
           transactions: selected
         }),
         background: true
@@ -624,10 +760,23 @@
     </button>
   {/snippet}
   {#snippet body()}
-    <p class="is-size-7 has-text-grey mb-2">
-      Review and optionally edit the generated transactions before committing them into your
-      journal.
-    </p>
+    <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+      <p class="is-size-7 has-text-grey mb-0">
+        Review and optionally edit the generated transactions before committing them into your
+        journal.
+      </p>
+      <label class="checkbox is-size-7 has-text-weight-medium">
+        <input
+          type="checkbox"
+          bind:checked={groupByDate}
+          onchange={() => {
+            const selected = stagedTransactions.filter((_, idx) => includedStaged[idx]);
+            reviewLedgerContent = generateLedgerText(selected, groupByDate);
+          }}
+        />
+        Club debits by date
+      </label>
+    </div>
     <div class="field">
       <div class="control">
         <textarea
@@ -643,7 +792,7 @@
       class="du-btn du-btn-success du-btn-sm"
       class:loading={importSaving}
       disabled={importSaving || _.isEmpty(reviewLedgerContent.trim())}
-      onclick={() => commitStagedTransactions()}
+      onclick={() => commitStagedTransactions(true)}
     >
       <i class="fas fa-check-double mr-1"></i>
       Confirm & Append to Ledger
@@ -760,10 +909,16 @@
 
           <div class="box p-3">
             <h4 class="title is-6 mb-2">3. Review & Append to Ledger</h4>
-            <p class="is-size-7 has-text-grey mb-3">
+            <p class="is-size-7 has-text-grey mb-2">
               Review generated entries before appending, or commit directly with duplicate safety
               checks.
             </p>
+            <div class="field mb-3">
+              <label class="checkbox is-size-7">
+                <input type="checkbox" bind:checked={groupByDate} />
+                Club multiple debit entries per date into single transaction
+              </label>
+            </div>
             <div class="buttons mb-0">
               <button
                 class="button is-link is-light is-fullwidth mb-2"
@@ -783,7 +938,7 @@
                 disabled={stagedTransactions.length === 0 ||
                   stagedTransactions.filter((_, i) => includedStaged[i]).length === 0 ||
                   importSaving}
-                onclick={commitStagedTransactions}
+                onclick={() => commitStagedTransactions(false)}
               >
                 <span class="icon is-small"><i class="fas fa-check-double"></i></span>
                 <span
@@ -808,6 +963,7 @@
               bind:transactions={stagedTransactions}
               bind:included={includedStaged}
               accounts={accountsList}
+              {defaultCurrency}
               oneditrule={handleCreateRuleFromTransaction}
             />
           {:else}

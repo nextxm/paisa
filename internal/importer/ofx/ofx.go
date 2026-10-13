@@ -35,7 +35,7 @@ var (
 // Parse extracts transactions and account info from an OFX or QFX content string.
 func Parse(content string) (*Statement, error) {
 	stmt := &Statement{
-		Currency:     "USD",
+		Currency:     "",
 		Transactions: []Transaction{},
 	}
 

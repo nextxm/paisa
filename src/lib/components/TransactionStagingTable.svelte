@@ -6,11 +6,13 @@
     transactions = $bindable([]),
     included = $bindable([]),
     accounts = [],
+    defaultCurrency = "INR",
     oneditrule = (_tx: StagedTransaction) => {}
   }: {
     transactions: StagedTransaction[];
     included: boolean[];
     accounts?: string[];
+    defaultCurrency?: string;
     oneditrule?: (tx: StagedTransaction) => void;
   } = $props();
 
@@ -69,6 +71,23 @@
     </div>
 
     <div class="buttons are-small mb-0">
+      {#if transactions.some((t) => !t.is_duplicate && !t.selected_account && !!t.suggested_account)}
+        <button
+          class="button is-small is-link is-light"
+          onclick={() => {
+            transactions.forEach((tx, idx) => {
+              if (!tx.is_duplicate && !tx.selected_account && tx.suggested_account) {
+                tx.selected_account = tx.suggested_account;
+                tx.confidence = "accepted";
+                included[idx] = true;
+              }
+            });
+          }}
+        >
+          <span class="icon is-small"><i class="fas fa-check-double"></i></span>
+          <span>Accept All Suggestions</span>
+        </button>
+      {/if}
       <button class="button is-white" onclick={() => selectAllFiltered(true)}
         >Select Filtered</button
       >
@@ -94,7 +113,7 @@
           </th>
           <th style="width: 90px;">Date</th>
           <th>Payee & Narration</th>
-          <th style="width: 100px; text-align: right;">Amount</th>
+          <th style="width: 115px; text-align: right;">Amount</th>
           <th style="width: 220px;">Target Offset Account</th>
           <th style="width: 120px;">Status / Rule</th>
           <th style="width: 45px;">Action</th>
@@ -127,6 +146,7 @@
             <td style="text-align: right;" class="font-mono">
               <span class={tx.is_debit ? "has-text-danger" : "has-text-success"}>
                 {tx.is_debit ? "-" : "+"}{tx.amount.toFixed(2)}
+                {tx.currency || defaultCurrency}
               </span>
             </td>
             <td>
@@ -135,10 +155,45 @@
                   class="input is-small {!tx.selected_account ? 'is-danger' : ''}"
                   type="text"
                   list="account-options"
-                  bind:value={tx.selected_account}
-                  placeholder="Select account..."
+                  value={tx.selected_account}
+                  placeholder={tx.suggested_account
+                    ? `Suggested: ${tx.suggested_account}`
+                    : "Select account..."}
+                  oninput={(e) => {
+                    const newVal = (e.currentTarget as HTMLInputElement).value;
+                    tx.selected_account = newVal;
+                    if (newVal) {
+                      if (tx.suggested_account && newVal === tx.suggested_account) {
+                        tx.confidence = "accepted";
+                      } else {
+                        tx.confidence = "manual";
+                      }
+                      included[idx] = true;
+                    } else {
+                      tx.confidence = tx.suggested_account ? "ai_suggested" : undefined;
+                      included[idx] = false;
+                    }
+                  }}
                 />
               </div>
+              {#if tx.suggested_account && !tx.selected_account}
+                <div class="is-flex is-align-items-center mt-1">
+                  <span class="is-size-7 has-text-grey mr-2 truncate" title={tx.suggested_account}>
+                    <i class="fas fa-lightbulb has-text-warning mr-1"></i>{tx.suggested_account}
+                  </span>
+                  <button
+                    class="button is-small is-link is-light py-0 px-2 ml-auto"
+                    style="height: 20px; font-size: 0.7rem;"
+                    onclick={() => {
+                      tx.selected_account = tx.suggested_account || "";
+                      tx.confidence = "accepted";
+                      included[idx] = true;
+                    }}
+                  >
+                    Accept
+                  </button>
+                </div>
+              {/if}
             </td>
             <td>
               {#if tx.is_duplicate}
@@ -153,12 +208,26 @@
                   <i class="fas fa-wand-magic-sparkles mr-1"></i>
                   {tx.matched_rule_name}
                 </span>
-              {:else if tx.confidence === "ai"}
+              {:else if tx.confidence === "ai_suggested"}
+                <span
+                  class="tag is-warning is-light is-rounded is-small"
+                  title="AI Suggested (Click Accept or edit to confirm)"
+                >
+                  <i class="fas fa-robot mr-1"></i> Suggested
+                </span>
+              {:else if tx.confidence === "accepted"}
+                <span
+                  class="tag is-success is-light is-rounded is-small"
+                  title="Accepted AI recommendation"
+                >
+                  <i class="fas fa-check mr-1"></i> Accepted
+                </span>
+              {:else if tx.confidence === "manual"}
                 <span
                   class="tag is-info is-light is-rounded is-small"
-                  title="Suggested based on past ledger history"
+                  title="Manually entered account"
                 >
-                  <i class="fas fa-robot mr-1"></i> AI Suggested
+                  <i class="fas fa-user-pen mr-1"></i> Manual
                 </span>
               {:else if tx.selected_account}
                 <span class="tag is-info is-light is-rounded is-small">Assigned</span>

@@ -87,3 +87,50 @@ func TestImportRules_API(t *testing.T) {
 	assert.Equal(t, "Expenses:Groceries", parseResp.Transactions[0].SelectedAccount)
 	assert.Equal(t, "Groceries Rule", parseResp.Transactions[0].MatchedRuleName)
 }
+
+func TestFormatTransactionsForCommit_GroupByDate(t *testing.T) {
+	db := openTestDB(t)
+
+	req := CommitImportRequest{
+		BaseAccount: "Liabilities:CreditCard:ICICI",
+		GroupByDate: true,
+		Transactions: []CommitCandidateTransaction{
+			{
+				Date:            "2026-10-11",
+				Payee:           "UPI-Smart Ba-14336279452-REF998877",
+				Amount:          366.55,
+				Currency:        "INR",
+				IsDebit:         true,
+				SelectedAccount: "Expenses:Groceries",
+			},
+			{
+				Date:            "2026-10-11",
+				Payee:           "UPI/SWIGGY/14333153570/swiggy@icici",
+				Amount:          309.00,
+				Currency:        "INR",
+				IsDebit:         true,
+				SelectedAccount: "Expenses:Dining",
+			},
+			{
+				Date:            "2026-09-26",
+				Payee:           "BBPS Payment received 14238609506",
+				Amount:          4083.00,
+				Currency:        "", // Should fallback to defaultCommodity
+				IsDebit:         false,
+				SelectedAccount: "Assets:Checking",
+			},
+		},
+	}
+
+	out := formatTransactionsForCommit(db, req, "INR")
+	assert.Contains(t, out, "2026/10/11 * Consolidated Debits (2 items)")
+	assert.Contains(t, out, "366.55 INR  ; Smart Ba")
+	assert.NotContains(t, out, "14336279452")
+	assert.NotContains(t, out, "REF998877")
+	assert.Contains(t, out, "309.00 INR  ; SWIGGY")
+	assert.NotContains(t, out, "swiggy@icici")
+	assert.Contains(t, out, "-675.55 INR")
+	assert.Contains(t, out, "2026/09/26 * Payment received")
+	assert.NotContains(t, out, "14238609506")
+	assert.Contains(t, out, "4083.00 INR")
+}

@@ -177,7 +177,34 @@ func TestIngestSampleICICIStatement_FromDocs(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 6, result.TotalParsed)
 	assert.Equal(t, 366.55, result.Transactions[0].Amount)
+	assert.Equal(t, "INR", result.Transactions[0].Currency)
 	assert.True(t, result.Transactions[0].IsDebit)
 	assert.Equal(t, 4083.0, result.Transactions[5].Amount)
+	assert.Equal(t, "INR", result.Transactions[5].Currency)
 	assert.False(t, result.Transactions[5].IsDebit)
+}
+
+func TestIngestCurrencyFallbackAndExplicit(t *testing.T) {
+	db := openTestDB(t)
+
+	// 1. Statement without explicit currency falls back to default currency (INR)
+	noCurrStmt := "Date,Description,Amount\n2026-10-10,Coffee Shop,150.00\n"
+	res1, err := Ingest(db, IngestionRequest{
+		Format:  FormatCSV,
+		Content: noCurrStmt,
+	})
+	require.NoError(t, err)
+	require.Len(t, res1.Transactions, 1)
+	assert.Equal(t, "INR", res1.Transactions[0].Currency)
+
+	// 2. Statement with explicit USD symbol in amount
+	usdStmt := "Date,Description,Amount\n2026-10-10,Cloud Hosting,$29.99\n"
+	res2, err := Ingest(db, IngestionRequest{
+		Format:  FormatCSV,
+		Content: usdStmt,
+	})
+	require.NoError(t, err)
+	require.Len(t, res2.Transactions, 1)
+	assert.Equal(t, "USD", res2.Transactions[0].Currency)
+	assert.Equal(t, 29.99, res2.Transactions[0].Amount)
 }

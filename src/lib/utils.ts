@@ -833,6 +833,7 @@ export interface StagedTransaction {
   payee: string;
   memo: string;
   amount: number;
+  currency?: string;
   is_debit: boolean;
   selected_account: string;
   suggested_account?: string;
