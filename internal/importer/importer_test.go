@@ -256,4 +256,3 @@ func TestSuggestOffsetAccount(t *testing.T) {
 	assert.Equal(t, "Income:Salary", accSal)
 	assert.Equal(t, "heuristic", confSal)
 }
-

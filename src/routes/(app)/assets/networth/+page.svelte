@@ -35,7 +35,7 @@
   let showFXImpact = $state(true);
   let showProjection = $state(false);
   let reportCurrency = $state("");
-  let availableCurrencies: string[] = $state(data.currencies.currencies || []);
+  let availableCurrencies: string[] = $derived(data.currencies.currencies || []);
   let projection: NetworthProjectionResponse | null = $state(null);
 
   $effect(() => {
@@ -99,7 +99,9 @@
     xirr = result.xirr;
   }
 
-  applyNetworthResult(data.networth);
+  $effect(() => {
+    applyNetworthResult(data.networth);
+  });
 
   async function fetchNetworth() {
     const params = new URLSearchParams();
