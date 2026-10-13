@@ -60,7 +60,7 @@
   // Smart Ingestion State
   let stagedTransactions: StagedTransaction[] = $state([]);
   let includedStaged: boolean[] = $state([]);
-  let baseAccount: string = $state("Assets:Checking");
+  let baseAccount: string = $state("");
   let defaultCurrency: string = $state((globalThis as any)?.USER_CONFIG?.default_currency || "INR");
   let groupByDate: boolean = $state(true);
   let accountsList: string[] = $state([]);
@@ -111,16 +111,86 @@
       }
       if (cfg?.accounts && Array.isArray(cfg.accounts)) {
         accountsList = cfg.accounts;
-        if (accountsList.length > 0 && baseAccount === "Assets:Checking") {
-          baseAccount =
-            accountsList.find(
-              (a) => a.toLowerCase().includes("checking") || a.toLowerCase().includes("bank")
-            ) || accountsList[0];
-        }
       }
     } catch {
       // ignore if offline or background fetch fails
     }
+  });
+
+  // Header content extracted from raw text or parsed sheet rows
+  let statementHeaderContext = $derived.by(() => {
+    const parts: string[] = [];
+    if (rawFileContent) {
+      // First 25 lines of raw statement text
+      const lines = rawFileContent.split(/\r?\n/).slice(0, 25);
+      parts.push(...lines);
+    }
+    if (data && data.length > 0) {
+      // First 10 rows of parsed tabular data
+      for (let i = 0; i < Math.min(10, data.length); i++) {
+        const row = data[i];
+        if (Array.isArray(row)) {
+          parts.push(row.map((cell) => String(cell || "")).join(" "));
+        }
+      }
+    }
+    return parts.join(" ").toLowerCase();
+  });
+
+  // Order existing bank/credit card/source accounts so that any match with statement header section is ranked first
+  let orderedBaseAccounts = $derived.by(() => {
+    // Primary candidates for statement sources are Assets:* and Liabilities:*
+    const sourceCandidates = accountsList.filter(
+      (a) => a.startsWith("Assets:") || a.startsWith("Liabilities:")
+    );
+    const otherAccounts = accountsList.filter(
+      (a) => !a.startsWith("Assets:") && !a.startsWith("Liabilities:")
+    );
+
+    const allCandidates = [...sourceCandidates, ...otherAccounts];
+    const header = statementHeaderContext;
+
+    if (!header) {
+      return allCandidates;
+    }
+
+    const scored = allCandidates.map((acc) => {
+      let score = 0;
+      // Extract tokens from account name (e.g., "Assets:Checking:ICICI" -> ["assets", "checking", "icici"])
+      const tokens = acc
+        .toLowerCase()
+        .split(/[:\s_-]+/)
+        .filter((t) => t.length >= 3 && t !== "assets" && t !== "liabilities");
+
+      for (const tok of tokens) {
+        if (header.includes(tok)) {
+          score += 10;
+        }
+      }
+
+      // Exact substring match for the full leaf name
+      const leaf = acc.split(":").pop()?.toLowerCase();
+      if (leaf && leaf.length >= 3 && header.includes(leaf)) {
+        score += 25;
+      }
+
+      return { acc, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.map((s) => s.acc);
+  });
+
+  // Top suggested source account when a header match is found
+  let topSuggestedBaseAccount = $derived.by(() => {
+    if (!statementHeaderContext || orderedBaseAccounts.length === 0) return "";
+    const first = orderedBaseAccounts[0];
+    const tokens = first
+      .toLowerCase()
+      .split(/[:\s_-]+/)
+      .filter((t) => t.length >= 3 && t !== "assets" && t !== "liabilities");
+    const matched = tokens.some((t) => statementHeaderContext.includes(t));
+    return matched ? first : "";
   });
 
   const saveAsNameDuplicate = $derived(
@@ -312,32 +382,40 @@
       });
 
       stagedTransactions = (response.transactions || []).map((tx) => {
-        // If not already categorized by a user rule, predict using TF-IDF cosine similarity from ledger history
-        if (!tx.selected_account && !tx.is_duplicate) {
+        // If not already categorized by a user rule or backend suggester, predict using TF-IDF cosine similarity
+        if (!tx.selected_account && !tx.suggested_account && !tx.is_duplicate) {
           const query = [tx.payee, tx.memo].filter(Boolean).join(" ");
           const matches = findMatch(query);
           if (matches && matches.length > 0) {
             // Filter by logical account type:
-            // For Debits (outflow): prioritize Expenses: or Assets: or Liabilities:
-            // Avoid defaulting to Equity: unless no other match exists
+            // For Debits (outflow): prioritize Expenses:* at top, then Liabilities:*/Assets:*, strictly deprioritizing Equity/Income
+            // For Credits (inflow): prioritize Income:* at top, then Assets:*/Liabilities:*, strictly deprioritizing Expenses/Equity
             let preferredMatch = tx.is_debit
-              ? matches.find(
+              ? matches.find(([acc, score]) => score > 0.02 && acc.startsWith("Expenses:")) ||
+                matches.find(
                   ([acc, score]) =>
-                    score > 0.03 &&
-                    (acc.startsWith("Expenses:") ||
-                      acc.startsWith("Liabilities:") ||
-                      acc.startsWith("Assets:"))
+                    score > 0.03 && (acc.startsWith("Liabilities:") || acc.startsWith("Assets:"))
                 )
-              : matches.find(
+              : matches.find(([acc, score]) => score > 0.02 && acc.startsWith("Income:")) ||
+                matches.find(
                   ([acc, score]) =>
-                    score > 0.03 &&
-                    (acc.startsWith("Income:") ||
-                      acc.startsWith("Assets:") ||
-                      acc.startsWith("Liabilities:"))
+                    score > 0.03 && (acc.startsWith("Assets:") || acc.startsWith("Liabilities:"))
                 );
 
-            if (!preferredMatch && matches[0][1] > 0.05 && !matches[0][0].startsWith("Equity:")) {
-              preferredMatch = matches[0];
+            if (!preferredMatch && matches[0][1] > 0.05) {
+              if (
+                tx.is_debit &&
+                !matches[0][0].startsWith("Equity:") &&
+                !matches[0][0].startsWith("Income:")
+              ) {
+                preferredMatch = matches[0];
+              } else if (
+                !tx.is_debit &&
+                !matches[0][0].startsWith("Equity:") &&
+                !matches[0][0].startsWith("Expenses:")
+              ) {
+                preferredMatch = matches[0];
+              }
             }
 
             if (preferredMatch) {
@@ -357,11 +435,11 @@
       // Default include only non-duplicate transactions that have already been assigned (or rule matched)
       includedStaged = stagedTransactions.map((tx) => !tx.is_duplicate && !!tx.selected_account);
 
-      const aiSuggestedCount = stagedTransactions.filter(
-        (t) => t.confidence === "ai_suggested"
+      const suggestedCount = stagedTransactions.filter(
+        (t) => !t.selected_account && !!t.suggested_account
       ).length;
       toast.toast({
-        message: `Parsed ${response.total_parsed} transactions (${response.auto_categorized} rule-matched, ${aiSuggestedCount} AI-suggested, ${response.possible_duplicates} duplicates flagged)`,
+        message: `Parsed ${response.total_parsed} transactions (${response.auto_categorized} rule-matched, ${suggestedCount} suggested, ${response.possible_duplicates} duplicates flagged)`,
         type: "is-info",
         duration: 4000
       });
@@ -435,6 +513,50 @@
       priority: 100
     };
     ruleStudioOpen = true;
+  }
+
+  async function handleQuickSaveRule(tx: StagedTransaction) {
+    if (!tx.selected_account) return;
+    const payeeClean = extractShortNote(tx.payee, tx.memo) || tx.payee;
+
+    try {
+      const res: any = await ajax("/api/rules", {
+        method: "POST",
+        body: JSON.stringify({
+          name: `Rule: ${payeeClean}`,
+          payee_pattern: payeeClean,
+          payee_match_type: "contains",
+          tx_type: tx.is_debit ? "debit" : "credit",
+          target_account: tx.selected_account,
+          priority: 100,
+          enabled: true
+        }),
+        background: true
+      });
+
+      if (res?.saved) {
+        toast.toast({
+          message: `Saved rule for "${payeeClean}" -> ${tx.selected_account}`,
+          type: "is-success",
+          duration: 3500
+        });
+
+        // Re-run smart ingest or update matching transactions in staging table
+        stagedTransactions.forEach((t) => {
+          if (!t.selected_account && t.payee.toLowerCase().includes(payeeClean.toLowerCase())) {
+            t.selected_account = tx.selected_account;
+            t.matched_rule_name = res.rule?.name || `Rule: ${payeeClean}`;
+            t.confidence = "rule";
+          }
+        });
+      }
+    } catch (e: any) {
+      toast.toast({
+        message: `Failed to save rule: ${e.message}`,
+        type: "is-danger",
+        duration: 5000
+      });
+    }
   }
 
   function generateLedgerText(selected: StagedTransaction[], clubByDate: boolean): string {
@@ -511,6 +633,14 @@
   }
 
   function openReviewModal() {
+    if (!baseAccount.trim()) {
+      toast.toast({
+        message: "Please select your Source / Bank Account first.",
+        type: "is-warning"
+      });
+      return;
+    }
+
     const selected = stagedTransactions.filter((_, idx) => includedStaged[idx]);
     if (selected.length === 0) {
       toast.toast({ message: "No transactions selected to review", type: "is-warning" });
@@ -522,6 +652,14 @@
   }
 
   async function commitStagedTransactions(useRawReview = false) {
+    if (!baseAccount.trim() && !useRawReview) {
+      toast.toast({
+        message: "Please select your Source / Bank Account first.",
+        type: "is-warning"
+      });
+      return;
+    }
+
     const selected = stagedTransactions.filter((_, idx) => includedStaged[idx]);
     if (selected.length === 0 && (!useRawReview || !reviewLedgerContent.trim())) {
       toast.toast({ message: "No transactions selected to commit", type: "is-warning" });
@@ -870,18 +1008,38 @@
               <div class="control">
                 <input
                   id="smart-base-account"
-                  class="input is-small"
+                  class="input is-small {!baseAccount ? 'is-warning' : ''}"
                   type="text"
                   list="accounts-datalist"
                   bind:value={baseAccount}
-                  placeholder="e.g. Assets:Checking:Chase"
+                  placeholder={topSuggestedBaseAccount
+                    ? `Suggested: ${topSuggestedBaseAccount}`
+                    : "Select source account (e.g. Assets:Checking:ICICI)..."}
                 />
                 <datalist id="accounts-datalist">
-                  {#each accountsList as acc}
+                  {#each orderedBaseAccounts as acc}
                     <option value={acc}>{acc}</option>
                   {/each}
                 </datalist>
               </div>
+              {#if topSuggestedBaseAccount && !baseAccount}
+                <div class="is-flex is-align-items-center mt-1">
+                  <span class="is-size-7 has-text-grey mr-2 truncate">
+                    <i class="fas fa-lightbulb has-text-warning mr-1"></i>
+                    Header match:
+                    <strong class="has-text-grey-darker">{topSuggestedBaseAccount}</strong>
+                  </span>
+                  <button
+                    class="button is-small is-link is-light py-0 px-2 ml-auto"
+                    style="height: 20px; font-size: 0.7rem;"
+                    onclick={() => {
+                      baseAccount = topSuggestedBaseAccount;
+                    }}
+                  >
+                    Select
+                  </button>
+                </div>
+              {/if}
               <p class="help is-size-7">The physical account whose statement you are importing.</p>
             </div>
 
@@ -965,6 +1123,7 @@
               accounts={accountsList}
               {defaultCurrency}
               oneditrule={handleCreateRuleFromTransaction}
+              onquicksave={handleQuickSaveRule}
             />
           {:else}
             <div class="notification is-light has-text-centered py-6">

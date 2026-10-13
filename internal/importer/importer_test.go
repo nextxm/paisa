@@ -208,3 +208,52 @@ func TestIngestCurrencyFallbackAndExplicit(t *testing.T) {
 	assert.Equal(t, "USD", res2.Transactions[0].Currency)
 	assert.Equal(t, 29.99, res2.Transactions[0].Amount)
 }
+
+func TestSuggestOffsetAccount(t *testing.T) {
+	db := openTestDB(t)
+
+	// Seed historical posting for Swiggy
+	pastDate, _ := time.Parse("2006-01-02", "2026-08-01")
+	require.NoError(t, db.Create(&posting.Posting{
+		Date:      pastDate,
+		Payee:     "SWIGGY BANGALORE",
+		Account:   "Expenses:Food:OnlineDelivery",
+		Amount:    decimal.NewFromFloat(-340.00),
+		Commodity: "INR",
+	}).Error)
+
+	chart := []string{"Expenses:Food:OnlineDelivery", "Expenses:Utilities", "Expenses:Shopping", "Income:Salary"}
+
+	// 1. Historical payee match test
+	res, err := Ingest(db, IngestionRequest{
+		Format:  FormatCSV,
+		Content: "Date,Description,Amount\n2026-10-10,UPI-SWIGGY-123456@icici,420.00\n",
+	})
+	require.NoError(t, err)
+	require.Len(t, res.Transactions, 1)
+	assert.Equal(t, "Expenses:Food:OnlineDelivery", res.Transactions[0].SuggestedAccount)
+	assert.Equal(t, "historical", res.Transactions[0].Confidence)
+
+	// 2. Taxonomy keyword test (Uber without history)
+	uberTx := import_rule.CandidateTransaction{
+		Date:    "2026-10-11",
+		Payee:   "UBER INDIA SYSTEMS",
+		Amount:  210.00,
+		IsDebit: true,
+	}
+	acc, conf := SuggestOffsetAccount(uberTx, chart, nil)
+	assert.Equal(t, "Expenses:Transport", acc)
+	assert.Equal(t, "taxonomy", conf)
+
+	// 3. Polarity & amount heuristic test (Salary deposit)
+	salaryTx := import_rule.CandidateTransaction{
+		Date:    "2026-10-01",
+		Payee:   "MONTHLY SALARY TRANSFER",
+		Amount:  75000.00,
+		IsDebit: false,
+	}
+	accSal, confSal := SuggestOffsetAccount(salaryTx, chart, nil)
+	assert.Equal(t, "Income:Salary", accSal)
+	assert.Equal(t, "heuristic", confSal)
+}
+

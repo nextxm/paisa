@@ -7,13 +7,15 @@
     included = $bindable([]),
     accounts = [],
     defaultCurrency = "INR",
-    oneditrule = (_tx: StagedTransaction) => {}
+    oneditrule = (_tx: StagedTransaction) => {},
+    onquicksave = (_tx: StagedTransaction) => {}
   }: {
     transactions: StagedTransaction[];
     included: boolean[];
     accounts?: string[];
     defaultCurrency?: string;
     oneditrule?: (tx: StagedTransaction) => void;
+    onquicksave?: (tx: StagedTransaction) => void;
   } = $props();
 
   let allIncluded = $derived(
@@ -21,6 +23,29 @@
   );
 
   let filterStatus: "all" | "new" | "duplicate" | "unassigned" = $state("all");
+
+  // Intelligent account prioritization:
+  // For Debits (outflow): Expenses:* at top, followed by Assets:*, Liabilities:*, then others
+  // For Credits (inflow): Income:* at top, followed by Assets:*, Liabilities:*, then others
+  let debitAccounts = $derived.by(() => {
+    const expenses = accounts.filter((a) => a.startsWith("Expenses:"));
+    const liabilities = accounts.filter((a) => a.startsWith("Liabilities:"));
+    const assets = accounts.filter((a) => a.startsWith("Assets:"));
+    const others = accounts.filter(
+      (a) => !a.startsWith("Expenses:") && !a.startsWith("Liabilities:") && !a.startsWith("Assets:")
+    );
+    return [...expenses, ...assets, ...liabilities, ...others];
+  });
+
+  let creditAccounts = $derived.by(() => {
+    const income = accounts.filter((a) => a.startsWith("Income:"));
+    const assets = accounts.filter((a) => a.startsWith("Assets:"));
+    const liabilities = accounts.filter((a) => a.startsWith("Liabilities:"));
+    const others = accounts.filter(
+      (a) => !a.startsWith("Income:") && !a.startsWith("Assets:") && !a.startsWith("Liabilities:")
+    );
+    return [...income, ...assets, ...liabilities, ...others];
+  });
 
   let filteredIndices = $derived.by(() => {
     return transactions
@@ -154,7 +179,7 @@
                 <input
                   class="input is-small {!tx.selected_account ? 'is-danger' : ''}"
                   type="text"
-                  list="account-options"
+                  list={tx.is_debit ? "debit-account-options" : "credit-account-options"}
                   value={tx.selected_account}
                   placeholder={tx.suggested_account
                     ? `Suggested: ${tx.suggested_account}`
@@ -208,17 +233,38 @@
                   <i class="fas fa-wand-magic-sparkles mr-1"></i>
                   {tx.matched_rule_name}
                 </span>
+              {:else if tx.confidence === "historical"}
+                <span
+                  class="tag is-link is-light is-rounded is-small"
+                  title="Matched from previous transactions in your ledger"
+                >
+                  <i class="fas fa-history mr-1"></i> Past Pattern
+                </span>
+              {:else if tx.confidence === "taxonomy"}
+                <span
+                  class="tag is-info is-light is-rounded is-small"
+                  title="Matched from built-in merchant dictionary"
+                >
+                  <i class="fas fa-store mr-1"></i> Merchant
+                </span>
+              {:else if tx.confidence === "heuristic"}
+                <span
+                  class="tag is-info is-light is-rounded is-small"
+                  title="Matched using amount & type heuristics"
+                >
+                  <i class="fas fa-calculator mr-1"></i> Heuristic
+                </span>
               {:else if tx.confidence === "ai_suggested"}
                 <span
                   class="tag is-warning is-light is-rounded is-small"
-                  title="AI Suggested (Click Accept or edit to confirm)"
+                  title="AI Similarity Suggestion (Click Accept or edit to confirm)"
                 >
                   <i class="fas fa-robot mr-1"></i> Suggested
                 </span>
               {:else if tx.confidence === "accepted"}
                 <span
                   class="tag is-success is-light is-rounded is-small"
-                  title="Accepted AI recommendation"
+                  title="Accepted recommendation"
                 >
                   <i class="fas fa-check mr-1"></i> Accepted
                 </span>
@@ -236,15 +282,28 @@
               {/if}
             </td>
             <td style="text-align: center;">
-              <button
-                class="button is-small is-ghost p-1"
-                title="Create rule from this transaction"
-                onclick={() => oneditrule(tx)}
-              >
-                <span class="icon is-small has-text-primary">
-                  <i class="fas fa-wand-magic-sparkles"></i>
-                </span>
-              </button>
+              <div class="is-flex is-justify-content-center">
+                {#if tx.selected_account && !tx.matched_rule_name}
+                  <button
+                    class="button is-small is-ghost p-1 mr-1"
+                    title="Quick Save: Remember as rule for future imports"
+                    onclick={() => onquicksave(tx)}
+                  >
+                    <span class="icon is-small has-text-success">
+                      <i class="fas fa-bookmark"></i>
+                    </span>
+                  </button>
+                {/if}
+                <button
+                  class="button is-small is-ghost p-1"
+                  title="Customize rule in Rule Studio"
+                  onclick={() => oneditrule(tx)}
+                >
+                  <span class="icon is-small has-text-primary">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                  </span>
+                </button>
+              </div>
             </td>
           </tr>
         {/each}
@@ -253,8 +312,14 @@
   </div>
 </div>
 
-<datalist id="account-options">
-  {#each accounts as acc}
+<datalist id="debit-account-options">
+  {#each debitAccounts as acc}
+    <option value={acc}>{acc}</option>
+  {/each}
+</datalist>
+
+<datalist id="credit-account-options">
+  {#each creditAccounts as acc}
     <option value={acc}>{acc}</option>
   {/each}
 </datalist>

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ananthakumaran/paisa/internal/accounting"
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/importer/ofx"
 	"github.com/ananthakumaran/paisa/internal/model/import_rule"
@@ -105,10 +106,16 @@ func Ingest(db *gorm.DB, req IngestionRequest) (*IngestionResult, error) {
 	// Fetch active user rules
 	rules, _ := import_rule.ActiveRules(db)
 
-	// Fetch existing ledger postings for duplicate detection
+	// Fetch existing ledger postings for duplicate detection and historical payee analysis
 	var existingPostings []posting.Posting
 	db.Select("id, transaction_id, date, payee, account, amount, original_amount, note").
 		Find(&existingPostings)
+
+	// Build historical payee mapping index
+	historyMap := BuildHistoricalPayeeMap(existingPostings)
+
+	// Fetch existing chart of accounts for account resolution
+	existingAccounts := accounting.AllAccounts(db)
 
 	defaultCurr := config.DefaultCurrency()
 	if defaultCurr == "" {
@@ -147,6 +154,13 @@ func Ingest(db *gorm.DB, req IngestionRequest) (*IngestionResult, error) {
 			item.FlagForReview = match.FlagForReview
 			item.Confidence = "rule"
 			autoCatCount++
+		} else {
+			// Suggest offset account using historical postings, merchant taxonomy, or heuristics
+			suggestedAcc, conf := SuggestOffsetAccount(c, existingAccounts, historyMap)
+			if suggestedAcc != "" {
+				item.SuggestedAccount = suggestedAcc
+				item.Confidence = conf
+			}
 		}
 
 		// 2. Duplicate Detection Scoring
