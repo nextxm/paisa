@@ -47,12 +47,14 @@
     return [...income, ...assets, ...liabilities, ...others];
   });
 
+  let editingRowIdx: number | null = $state(null);
+
   let filteredIndices = $derived.by(() => {
     return transactions
       .map((tx, idx) => ({ tx, idx }))
-      .filter(({ tx }) => {
+      .filter(({ tx, idx }) => {
         if (filterStatus === "duplicate") return tx.is_duplicate;
-        if (filterStatus === "unassigned") return !tx.selected_account;
+        if (filterStatus === "unassigned") return !tx.selected_account || editingRowIdx === idx;
         if (filterStatus === "new") return !tx.is_duplicate && !!tx.selected_account;
         return true;
       })
@@ -148,8 +150,8 @@
         {#each filteredIndices as idx}
           {@const tx = transactions[idx]}
           <tr
-            class:has-background-warning-light={tx.is_duplicate}
-            class:has-background-danger-light={!tx.selected_account && !tx.is_duplicate}
+            class:row-duplicate={tx.is_duplicate}
+            class:row-unassigned={!tx.selected_account && !tx.is_duplicate}
           >
             <td style="text-align: center;">
               <input type="checkbox" bind:checked={included[idx]} />
@@ -184,6 +186,12 @@
                   placeholder={tx.suggested_account
                     ? `Suggested: ${tx.suggested_account}`
                     : "Select account..."}
+                  onfocus={() => {
+                    editingRowIdx = idx;
+                  }}
+                  onblur={() => {
+                    editingRowIdx = null;
+                  }}
                   oninput={(e) => {
                     const newVal = (e.currentTarget as HTMLInputElement).value;
                     tx.selected_account = newVal;
@@ -330,9 +338,32 @@
     border-radius: 6px;
     padding: 0.75rem;
     background: var(--bulma-card-background-color, #fff);
+
+    :global(html[data-theme="dark"]) & {
+      background: hsl(215, 18%, 13%);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
   }
+
   .table-wrapper {
     max-height: calc(100vh - 350px);
     overflow-y: auto;
+  }
+
+  // Theme-aware row tints
+  tr.row-unassigned {
+    background-color: rgba(241, 70, 104, 0.08) !important;
+
+    :global(html[data-theme="dark"]) & {
+      background-color: rgba(241, 70, 104, 0.14) !important;
+    }
+  }
+
+  tr.row-duplicate {
+    background-color: rgba(255, 221, 87, 0.12) !important;
+
+    :global(html[data-theme="dark"]) & {
+      background-color: rgba(255, 221, 87, 0.16) !important;
+    }
   }
 </style>
