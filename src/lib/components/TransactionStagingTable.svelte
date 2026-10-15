@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { StagedTransaction } from "$lib/utils";
+  import { cleanPayee, type StagedTransaction } from "$lib/utils";
   import _ from "lodash";
 
   let {
@@ -52,22 +52,13 @@
   let bulkSelectedAccount: string = $state("");
   let collapsedClusters: Record<string, boolean> = $state({});
 
-  // Clean and normalize payee to cluster similar merchants (e.g. UPI-ZEPTO-1234, POS ZEPTOMKT -> "zepto")
+  // Clean and normalize payee to cluster similar merchants (e.g. Smart Ba, Zepto, Swiggy)
   function getMerchantCluster(tx: StagedTransaction): string {
-    const raw = (tx.payee || tx.memo || "").toLowerCase().trim();
-    if (!raw) return "other";
-
-    // Strip common banking and UPI prefixes
-    const clean = raw
-      .replace(/^(upi|neft|imps|rtgs|pos|atm|ach|bil|mmt|bbps|ecom|vps|ips)[-/\s:*]+/i, "")
-      .replace(/@\S+/g, "")
-      .replace(/\b(ref|txn|trn|utr|rrn|id|no|num|chq)[\s.:#-]*[a-z0-9]{4,}\b/gi, "")
-      .replace(/\b\d{5,}\b/gi, "");
-
-    // Extract first 1 or 2 meaningful words
-    const tokens = clean
-      .split(/[\s/|*:\-_]+/)
-      .map((t) => t.trim())
+    const cleaned = cleanPayee(tx.payee) || cleanPayee(tx.memo);
+    if (!cleaned) return "other";
+    const tokens = cleaned
+      .toLowerCase()
+      .split(/\s+/)
       .filter(
         (t) =>
           t.length >= 2 &&
@@ -419,6 +410,7 @@
 
 {#snippet transactionRow(idx: number)}
   {@const tx = transactions[idx]}
+  {@const cleanName = cleanPayee(tx.payee) || cleanPayee(tx.memo)}
   <tr
     class:row-duplicate={tx.is_duplicate}
     class:row-unassigned={!tx.selected_account && !tx.is_duplicate}
@@ -428,9 +420,15 @@
     </td>
     <td class="font-mono">{tx.date}</td>
     <td>
-      <div class="has-text-weight-semibold">{tx.payee}</div>
-      {#if tx.memo && tx.memo !== tx.payee}
-        <div class="is-size-7 has-text-grey">{tx.memo}</div>
+      <div class="has-text-weight-semibold">{cleanName || tx.payee}</div>
+      {#if cleanName && cleanName !== tx.payee}
+        <div class="is-size-7 has-text-grey truncate" style="max-width: 320px;" title={tx.payee}>
+          {tx.payee}
+        </div>
+      {:else if tx.memo && tx.memo !== tx.payee}
+        <div class="is-size-7 has-text-grey truncate" style="max-width: 320px;" title={tx.memo}>
+          {tx.memo}
+        </div>
       {/if}
       {#if tx.tags && tx.tags.length > 0}
         <div class="tags mt-1 mb-0">

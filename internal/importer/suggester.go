@@ -107,52 +107,11 @@ func BuildHistoricalPayeeMap(postings []posting.Posting) map[string]*HistoricalP
 
 // NormalizePayeeName cleans raw payees into a canonical search key.
 func NormalizePayeeName(raw string) string {
-	s := strings.ToLower(strings.TrimSpace(raw))
-	if s == "" {
-		return ""
+	clean := CleanPayee(raw)
+	if clean != "" {
+		return strings.ToLower(clean)
 	}
-	// Strip standard banking noise
-	prefixes := []string{"upi-", "upi/", "neft/", "neft-", "imps-", "imps/", "rtgs-", "rtgs/", "pos-", "pos ", "ach-", "bbps-", "bbps/"}
-	for _, p := range prefixes {
-		if strings.HasPrefix(s, p) {
-			s = strings.TrimPrefix(s, p)
-			break
-		}
-	}
-	// Remove trailing location or code tokens after slashes
-	parts := strings.FieldsFunc(s, func(r rune) bool {
-		return r == '/' || r == '-' || r == '|' || r == '*' || r == ':'
-	})
-	if len(parts) > 0 {
-		clean := strings.TrimSpace(parts[0])
-		if len(clean) >= 3 {
-			s = clean
-		}
-	}
-	// Remove common digits or merchant IDs at the end
-	words := strings.Fields(s)
-	var filtered []string
-	for _, w := range words {
-		// skip pure numbers or reference codes
-		if len(w) >= 6 && isAlphanumericCode(w) {
-			continue
-		}
-		if strings.Contains(w, "@") {
-			continue
-		}
-		filtered = append(filtered, w)
-	}
-	return strings.Join(filtered, " ")
-}
-
-func isAlphanumericCode(s string) bool {
-	digitCount := 0
-	for _, r := range s {
-		if r >= '0' && r <= '9' {
-			digitCount++
-		}
-	}
-	return digitCount >= 4
+	return strings.ToLower(strings.TrimSpace(raw))
 }
 
 // SuggestOffsetAccount combines:

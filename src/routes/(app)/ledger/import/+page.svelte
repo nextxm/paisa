@@ -24,7 +24,8 @@
     type ImportPreviewRow,
     type ImportTemplate,
     type StagedTransaction,
-    type IngestionResult
+    type IngestionResult,
+    cleanPayee
   } from "$lib/utils";
   import { fetchConfig } from "$lib/config_client";
   import {
@@ -449,56 +450,7 @@
   }
 
   function extractShortNote(payee?: string, memo?: string): string {
-    const raw = (payee || memo || "").trim();
-    if (!raw) return "";
-
-    // Strip common payment system prefixes (UPI-, NEFT/, POS, etc.)
-    const cleaned = raw.replace(
-      /^(UPI|NEFT|IMPS|RTGS|POS|ATM|ACH|BIL|MMT|BBPS|ECOM|VPS|IPS)[-/\s:*]+/i,
-      ""
-    );
-
-    // Split by common delimiters and filter out reference/transaction IDs and VPA handles
-    const segments = cleaned.split(/[/\-|*]+/);
-    const meaningful: string[] = [];
-
-    for (const seg of segments) {
-      let s = seg
-        .trim()
-        // Remove VPA handles like merchant@icici
-        .replace(/\S+@\S+/g, "")
-        // Remove reference/txn numbers (e.g., REF 123456, 6+ digit IDs, alphanumeric tokens with 4+ digits)
-        .replace(
-          /\b(REF|TXN|TRN|UTR|RRN|ID|NO|NUM|CHQ)[\s.:#-]*[A-Z0-9]{5,}\b|\b\d{6,}\b|\b[A-Z0-9]*\d{4,}[A-Z0-9]*\b/gi,
-          ""
-        )
-        .replace(/\s+/g, " ")
-        .trim();
-
-      const upper = s.toUpperCase();
-      if (
-        !s ||
-        ["UPI", "NEFT", "IMPS", "RTGS", "DR", "CR", "IN", "IND", "PAYMENT", "PAY"].includes(upper)
-      ) {
-        continue;
-      }
-      meaningful.push(s);
-    }
-
-    let result = meaningful.join(" ").trim();
-    if (!result) {
-      result = cleaned
-        .replace(
-          /\b(REF|TXN|TRN|UTR|RRN|ID|NO|NUM|CHQ)[\s.:#-]*[A-Z0-9]{5,}\b|\b\d{6,}\b|\b[A-Z0-9]*\d{4,}[A-Z0-9]*\b/gi,
-          ""
-        )
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-    if (result.length > 32) {
-      result = result.slice(0, 32).trim();
-    }
-    return result || raw.slice(0, 24).trim();
+    return cleanPayee(payee) || cleanPayee(memo) || (payee || memo || "").slice(0, 32).trim();
   }
 
   function handleCreateRuleFromTransaction(tx: StagedTransaction) {

@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -258,14 +257,7 @@ func formatTransactionsForCommit(db *gorm.DB, req CommitImportRequest, defaultCo
 	return sb.String()
 }
 
-var (
-	txPrefixRe = regexp.MustCompile(`(?i)^(UPI|NEFT|IMPS|RTGS|POS|ATM|ACH|BIL|MMT|BBPS|ECOM|VPS|IPS)[-/\s:*]+`)
-	refIdRe    = regexp.MustCompile(`(?i)\b(REF|TXN|TRN|UTR|RRN|ID|NO|NUM|CHQ)[\s.:#-]*[A-Z0-9]{5,}\b|\b\d{6,}\b|\b[A-Z0-9]*\d{4,}[A-Z0-9]*\b`)
-	vpaRe      = regexp.MustCompile(`\S+@\S+`)
-	multiSpace = regexp.MustCompile(`\s+`)
-)
-
-// extractShortNote strips transaction prefixes, reference/transaction IDs, and VPA handles to produce a concise note.
+// extractShortNote cleans raw statement payee/memo to produce a concise note without random bank IDs or hashes.
 func extractShortNote(payee, memo string) string {
 	raw := strings.TrimSpace(payee)
 	if raw == "" {
@@ -274,44 +266,7 @@ func extractShortNote(payee, memo string) string {
 	if raw == "" {
 		return ""
 	}
-
-	// Strip common payment prefixes like UPI-, NEFT/, POS etc.
-	cleaned := txPrefixRe.ReplaceAllString(raw, "")
-
-	// Split by common delimiters (/, -, |, *) and keep meaningful non-ID segments
-	segments := strings.FieldsFunc(cleaned, func(r rune) bool {
-		return r == '/' || r == '-' || r == '|' || r == '*'
-	})
-
-	var meaningful []string
-	for _, seg := range segments {
-		s := strings.TrimSpace(seg)
-		if s == "" {
-			continue
-		}
-		// Remove VPA handles and long reference IDs
-		s = vpaRe.ReplaceAllString(s, "")
-		s = refIdRe.ReplaceAllString(s, "")
-		s = strings.TrimSpace(multiSpace.ReplaceAllString(s, " "))
-		// Skip pure noise tokens
-		upper := strings.ToUpper(s)
-		if s == "" || upper == "UPI" || upper == "NEFT" || upper == "IMPS" || upper == "RTGS" || upper == "DR" || upper == "CR" || upper == "IN" || upper == "IND" {
-			continue
-		}
-		meaningful = append(meaningful, s)
-	}
-
-	result := strings.Join(meaningful, " ")
-	if result == "" {
-		// Fallback to basic reference number stripping on raw string
-		result = refIdRe.ReplaceAllString(cleaned, "")
-		result = strings.TrimSpace(multiSpace.ReplaceAllString(result, " "))
-	}
-
-	if len(result) > 32 {
-		result = strings.TrimSpace(result[:32])
-	}
-	return result
+	return importer.CleanPayee(raw)
 }
 
 func writeSingleLedgerEntry(sb *strings.Builder, db *gorm.DB, baseAcc string, tx CommitCandidateTransaction, commodity string, dialect string) {

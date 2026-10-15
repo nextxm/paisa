@@ -134,3 +134,75 @@ func TestFormatTransactionsForCommit_GroupByDate(t *testing.T) {
 	assert.NotContains(t, out, "14238609506")
 	assert.Contains(t, out, "4083.00 INR")
 }
+
+func TestFormatTransactionsForCommit_ComplexBankStatementUPIStrings(t *testing.T) {
+	db := openTestDB(t)
+
+	req := CommitImportRequest{
+		BaseAccount: "Liabilities:INR:CC:ICICI",
+		GroupByDate: true,
+		Transactions: []CommitCandidateTransaction{
+			{
+				Date:            "2026-10-11",
+				Payee:           "UPI-628488132438-AXB20261011065534179345543681884180_UPI-628488132438-Smart Ba",
+				Amount:          366.55,
+				Currency:        "INR",
+				IsDebit:         true,
+				SelectedAccount: "Expenses:Groceries",
+			},
+			{
+				Date:            "2026-10-11",
+				Payee:           "UPI-153753889520-UPI5ca7522e9efb5a2887d8e2ac5a2bf462_UPI-153753889520-ZEPTONOW",
+				Amount:          427.00,
+				Currency:        "INR",
+				IsDebit:         true,
+				SelectedAccount: "Expenses:Groceries",
+			},
+			{
+				Date:            "2026-10-11",
+				Payee:           "UPI-628483076887-AXB20261011065534179345543681884170_UPI-628483076887-SWIGGY  ",
+				Amount:          309.00,
+				Currency:        "INR",
+				IsDebit:         true,
+				SelectedAccount: "Expenses:Dining-Out",
+			},
+			{
+				Date:            "2026-10-11",
+				Payee:           "UPI-628476888036-RBA01a128edf6bbb180c3c81ac01df186f8_UPI-628476888036-Amazon I",
+				Amount:          403.00,
+				Currency:        "INR",
+				IsDebit:         true,
+				SelectedAccount: "Expenses:Shopping",
+			},
+			{
+				Date:            "2026-10-11",
+				Payee:           "UPI-628476639026-RBA01a1271bf68fe97d2e804990fc5898e2_UPI-628476639026-Amazon B",
+				Amount:          379.00,
+				Currency:        "INR",
+				IsDebit:         true,
+				SelectedAccount: "Expenses:Shopping",
+			},
+			{
+				Date:            "2026-10-11",
+				Payee:           "UPI-628476637684-APL01a1271ada1c694c5e121259e7805ae8_UPI-628476637684-Amazon I",
+				Amount:          701.78,
+				Currency:        "INR",
+				IsDebit:         true,
+				SelectedAccount: "Expenses:Shopping",
+			},
+		},
+	}
+
+	out := formatTransactionsForCommit(db, req, "INR")
+	assert.Contains(t, out, "2026/10/11 * Consolidated Debits (6 items)")
+	assert.Contains(t, out, "366.55 INR  ; Smart Ba")
+	assert.Contains(t, out, "427.00 INR  ; ZEPTONOW")
+	assert.Contains(t, out, "309.00 INR  ; SWIGGY")
+	assert.Contains(t, out, "403.00 INR  ; Amazon I")
+	assert.Contains(t, out, "379.00 INR  ; Amazon B")
+	assert.Contains(t, out, "701.78 INR  ; Amazon I")
+	assert.NotContains(t, out, "AXB20261011065534179345543681884")
+	assert.NotContains(t, out, "UPI5ca7522e9efb5a2887d8e2ac5a2bf")
+	assert.NotContains(t, out, "RBA01a128edf6bbb180c3c81ac01df18")
+	assert.NotContains(t, out, "APL01a1271ada1c694c5e121259e7805")
+}
