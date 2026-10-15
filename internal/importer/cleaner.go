@@ -7,7 +7,6 @@ import (
 
 var (
 	txPrefixRe   = regexp.MustCompile(`(?i)\b(UPI|NEFT|IMPS|RTGS|POS|ATM|ACH|BIL|MMT|BBPS|ECOM|VPS|IPS)[-/\s:*]+`)
-	vpaRe        = regexp.MustCompile(`[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+`)
 	delimsRe     = regexp.MustCompile(`[-/|*:_]+|\s+`)
 	multiSpaceRe = regexp.MustCompile(`\s+`)
 	digitsOnlyRe = regexp.MustCompile(`^\d{4,}$`)
@@ -16,6 +15,9 @@ var (
 )
 
 func isNoiseToken(w string) bool {
+	if strings.Contains(w, "@") {
+		return true
+	}
 	upper := strings.ToUpper(w)
 	switch upper {
 	case "UPI", "NEFT", "IMPS", "RTGS", "POS", "ATM", "ACH", "BIL", "MMT", "BBPS", "ECOM", "VPS", "IPS",
@@ -71,8 +73,6 @@ func CleanPayee(raw string) string {
 		part := parts[i]
 		// Strip payment system prefixes (UPI-, NEFT/, POS etc.)
 		cleaned := txPrefixRe.ReplaceAllString(part, " ")
-		// Strip VPA handles (user@bank)
-		cleaned = vpaRe.ReplaceAllString(cleaned, " ")
 
 		tokens := delimsRe.Split(cleaned, -1)
 		var meaningful []string
@@ -101,7 +101,6 @@ func CleanPayee(raw string) string {
 
 	// Fallback to basic clean if no pure words were found
 	cleaned := txPrefixRe.ReplaceAllString(raw, "")
-	cleaned = vpaRe.ReplaceAllString(cleaned, "")
 	cleaned = strings.TrimSpace(multiSpaceRe.ReplaceAllString(cleaned, " "))
 	if len(cleaned) > 36 {
 		cleaned = strings.TrimSpace(cleaned[:36])

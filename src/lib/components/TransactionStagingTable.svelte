@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { cleanPayee, type StagedTransaction } from "$lib/utils";
+  import type { StagedTransaction } from "$lib/utils";
+  import { cleanPayee } from "$lib/clean_payee";
   import _ from "lodash";
 
   let {

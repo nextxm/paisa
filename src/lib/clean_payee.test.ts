@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { cleanPayee } from "./utils";
+import { cleanPayee } from "./clean_payee";
 
 describe("cleanPayee", () => {
   it("cleans complex Indian UPI and card statement strings", () => {

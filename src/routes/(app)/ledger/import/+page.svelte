@@ -24,9 +24,9 @@
     type ImportPreviewRow,
     type ImportTemplate,
     type StagedTransaction,
-    type IngestionResult,
-    cleanPayee
+    type IngestionResult
   } from "$lib/utils";
+  import { cleanPayee } from "$lib/clean_payee";
   import { fetchConfig } from "$lib/config_client";
   import {
     defaultIncludedFromValidation,
