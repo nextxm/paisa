@@ -2,6 +2,8 @@
 
 ### Unreleased — Future changes
 
+### 0.9-beta (2026-10-16) — Future changes
+
 #### Features
 
 - **Add smart per-bucket tax applicability overrides for Life Drawdown** — Added strategy-level tax rules so users can decide how selected assets are taxed during drawdown simulations.
