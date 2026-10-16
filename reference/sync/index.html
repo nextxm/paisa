@@ -582,6 +582,12 @@
       
         
       
+        
+      
+        
+      
+        
+      
     
     
       
@@ -673,6 +679,28 @@
   
   <span class="md-ellipsis">
     Engineering Review
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../performance-baseline-phase0/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Phase 0 Performance Baseline (config/dashboard/projection)
     
   </span>
   
@@ -804,7 +832,7 @@
         
   
   <span class="md-ellipsis">
-    Allocation Targets
+    Target Asset Allocation &amp; Rebalancing
     
   </span>
   
@@ -1217,6 +1245,50 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../doctor/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data Health (Doctor)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../planning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Financial Planning &amp; Life Projections
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1240,7 +1312,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_21" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_24" >
         
           
           
@@ -1257,14 +1329,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_21" id="__nav_3_21_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_24" id="__nav_3_24_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_21_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_21">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_24_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_24">
             <span class="md-nav__icon md-icon"></span>
             Goals
           </label>
@@ -1487,7 +1559,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_28" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_31" >
         
           
           
@@ -1504,14 +1576,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_28" id="__nav_3_28_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_31" id="__nav_3_31_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_28_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_28">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_31_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_31">
             <span class="md-nav__icon md-icon"></span>
             Tax
           </label>
@@ -2173,9 +2245,10 @@
 <h3 id="async-sync-job-tracking">Async Sync &amp; Job Tracking<a class="headerlink" href="#async-sync-job-tracking" title="Permanent link">&para;</a></h3>
 <p><code>POST /api/sync</code> returns <code>202 Accepted</code> immediately with a job ID
 (<code>{ "job_id": "&lt;uuid&gt;" }</code>) rather than blocking until the sync
-completes.  The work is performed in the background; the UI
-automatically polls <code>GET /api/jobs/:id</code> every two seconds to track
-progress.</p>
+completes. The work is performed in the background and tracked in a
+SQLite-backed queue, so in-flight jobs survive process restarts. The UI
+subscribes to <code>GET /api/jobs/stream</code> (Server-Sent Events) for live
+status/progress updates instead of polling.</p>
 <h4 id="sync-history-overlay">Sync History Overlay<a class="headerlink" href="#sync-history-overlay" title="Permanent link">&para;</a></h4>
 <p>Click the clock-rotate-left icon in the header action bar to open the
 <strong>Sync History</strong> overlay.  The overlay lists all background jobs in
@@ -2186,7 +2259,9 @@ reverse-chronological order and shows for each job:</p>
 <li>An error message snippet for failed jobs.</li>
 <li>An expandable list of per-step details.</li>
 </ul>
-<p>A <strong>Clear history</strong> button resets the in-memory log.  The overlay can
+<p>A <strong>Clear history</strong> button resets the client-side view. The persisted
+job queue remains available on the server and is replayed into the UI
+stream after reconnect. The overlay can
 be opened and closed at any time without interrupting an in-progress
 sync.</p>
 <h3 id="price-journal-freshness-indicators">Price &amp; Journal Freshness Indicators<a class="headerlink" href="#price-journal-freshness-indicators" title="Permanent link">&para;</a></h3>

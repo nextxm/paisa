@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="How to configure and track asset allocation of your mutual funds, stocks etc.">
+        <meta name="description" content="How to configure, monitor, and rebalance your asset allocation in Paisa">
       
       
         <meta name="author" content="Anantha Kumaran and nextxm contributors">
@@ -26,7 +26,7 @@
     
     
       
-        <title>Allocation Targets - Paisa</title>
+        <title>Target Asset Allocation & Rebalancing - Paisa</title>
       
     
     
@@ -98,7 +98,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#allocation-targets" class="md-skip">
+        <a href="#target-asset-allocation-rebalancing" class="md-skip">
           Skip to content
         </a>
       
@@ -132,7 +132,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Allocation Targets
+              Target Asset Allocation &amp; Rebalancing
             
           </span>
         </div>
@@ -582,6 +582,12 @@
       
         
       
+        
+      
+        
+      
+        
+      
     
     
       
@@ -673,6 +679,28 @@
   
   <span class="md-ellipsis">
     Engineering Review
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../performance-baseline-phase0/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Phase 0 Performance Baseline (config/dashboard/projection)
     
   </span>
   
@@ -809,16 +837,170 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Target Asset Allocation &amp; Rebalancing
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
-    Allocation Targets
+    Target Asset Allocation &amp; Rebalancing
     
   </span>
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-overview-key-capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Overview &amp; Key Capabilities
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-setting-up-allocation-targets-via-the-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Setting Up Allocation Targets via the UI
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Setting Up Allocation Targets via the UI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-by-step-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step-by-Step Configuration:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-monitoring-portfolio-drift" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Monitoring Portfolio Drift
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Monitoring Portfolio Drift">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#status-badges-drift-indicators" class="md-nav__link">
+    <span class="md-ellipsis">
+      Status Badges &amp; Drift Indicators
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visual-charts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visual Charts
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-using-the-smart-rebalancing-calculator" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Using the Smart Rebalancing Calculator
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Using the Smart Rebalancing Calculator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mode-1-cash-deployment-buy-only-no-tax" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mode 1: Cash Deployment (Buy Only / No Tax)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mode-2-full-rebalance-buy-sell" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mode 2: Full Rebalance (Buy &amp; Sell)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-configuration-file-reference-paisayaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Configuration File Reference (paisa.yaml)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Configuration File Reference (paisa.yaml)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Field Definitions:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1081,6 +1263,50 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../doctor/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data Health (Doctor)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../planning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Financial Planning &amp; Life Projections
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1104,7 +1330,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_21" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_24" >
         
           
           
@@ -1121,14 +1347,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_21" id="__nav_3_21_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_24" id="__nav_3_24_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_21_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_21">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_24_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_24">
             <span class="md-nav__icon md-icon"></span>
             Goals
           </label>
@@ -1351,7 +1577,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_28" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_31" >
         
           
           
@@ -1368,14 +1594,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_28" id="__nav_3_28_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_31" id="__nav_3_31_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_28_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_28">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_31_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_31">
             <span class="md-nav__icon md-icon"></span>
             Tax
           </label>
@@ -1900,6 +2126,137 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-overview-key-capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Overview &amp; Key Capabilities
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-setting-up-allocation-targets-via-the-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Setting Up Allocation Targets via the UI
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Setting Up Allocation Targets via the UI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-by-step-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step-by-Step Configuration:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-monitoring-portfolio-drift" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Monitoring Portfolio Drift
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Monitoring Portfolio Drift">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#status-badges-drift-indicators" class="md-nav__link">
+    <span class="md-ellipsis">
+      Status Badges &amp; Drift Indicators
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visual-charts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visual Charts
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-using-the-smart-rebalancing-calculator" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Using the Smart Rebalancing Calculator
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Using the Smart Rebalancing Calculator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mode-1-cash-deployment-buy-only-no-tax" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mode 1: Cash Deployment (Buy Only / No Tax)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mode-2-full-rebalance-buy-sell" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mode 2: Full Rebalance (Buy &amp; Sell)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-configuration-file-reference-paisayaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Configuration File Reference (paisa.yaml)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Configuration File Reference (paisa.yaml)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Field Definitions:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1917,23 +2274,169 @@
   
 
 
-<h1 id="allocation-targets">Allocation Targets<a class="headerlink" href="#allocation-targets" title="Permanent link">&para;</a></h1>
-<p>Paisa allows you to set a allocation target for a group of accounts
-which might represent your assets like mutual funds, stocks etc. The
-allocation page shows how far your current allocation is from the
-allocation target. For example, to keep a 40:60 split between debt and
-equity, use the following configuration. The account name can have <code>*</code>
-which matches any characters</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">allocation_targets</span><span class="p">:</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Debt</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">accounts</span><span class="p">:</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Assets:Debt:*</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Equity</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">accounts</span><span class="p">:</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Assets:Equity:*</span>
+<h1 id="target-asset-allocation-rebalancing">Target Asset Allocation &amp; Rebalancing<a class="headerlink" href="#target-asset-allocation-rebalancing" title="Permanent link">&para;</a></h1>
+<p>Asset allocation is the primary driver of portfolio risk and long-term investment performance. Paisa provides an interactive, UI-driven asset allocation system that lets you set target weights, monitor allocation drift in real-time, and calculate smart buy/sell rebalancing recommendations without editing configuration files.</p>
+<hr />
+<h2 id="1-overview-key-capabilities">1. Overview &amp; Key Capabilities<a class="headerlink" href="#1-overview-key-capabilities" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>flowchart LR
+    A["Asset Accounts &amp; Holdings\n(Equity, Debt, Gold, Cash)"] --&gt; B["Target Allocation Engine\n(Target % + Drift Bands)"]
+    B --&gt; C["Real-Time Drift Dashboard\n(Overweight / Underweight / In Band)"]
+    C --&gt; D["Smart Rebalancing Calculator\n(Cash Deployment or Full Rebalance)"]</code></pre>
+<ul>
+<li><strong>100% UI-Managed Setup:</strong> Build and adjust target asset classes directly from the browser with interactive account search, checkboxes, and live 100% balance validation.</li>
+<li><strong>Tolerance &amp; Drift Corridors:</strong> Set custom drift bands (e.g., $\pm 5\%$) per asset class. Visual status badges immediately highlight which buckets require attention.</li>
+<li><strong>Tax-Free Cash Deployment Rebalancing:</strong> Enter your fresh monthly savings, and Paisa’s water-filling algorithm tells you exactly how much to inject into underweighted buckets without selling assets or triggering capital gains taxes.</li>
+<li><strong>Full Portfolio Rebalancing:</strong> Calculate exact buy and sell orders needed across all buckets to restore target equilibrium.</li>
+</ul>
+<hr />
+<h2 id="2-setting-up-allocation-targets-via-the-ui">2. Setting Up Allocation Targets via the UI<a class="headerlink" href="#2-setting-up-allocation-targets-via-the-ui" title="Permanent link">&para;</a></h2>
+<p>You do not need to edit text files or write YAML regex. You can manage your entire asset allocation visually:</p>
+<ol>
+<li>Navigate to <strong>Assets</strong> $\rightarrow$ <strong>Allocation</strong> (<code>/assets/allocation</code>) from the left sidebar.</li>
+<li>In the <strong>Target Asset Allocation</strong> card:</li>
+<li>If you have no targets configured yet, click <strong>Set Up Asset Targets</strong>.</li>
+<li>If you already have targets, click <strong>Manage Targets</strong> (⚙ icon) at the top right.</li>
+</ol>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌─────────────────────────────────────────────────────────────────────────────────┐
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│  Asset Allocation Target Builder                        [ + Add Asset Class ]   │
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├─────────────────────────────────────────────────────────────────────────────────┤
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│  [ Equity (Domestic)           ]  Target: [ 50 ] %  Drift: [ ±5 ] %             │
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│  Mapped Accounts: Assets:Equity:* [Edit Mappings] [Delete]                      │
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│                                                                                 │
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│  [ Fixed Income / Debt         ]  Target: [ 30 ] %  Drift: [ ±5 ] %             │
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│  Mapped Accounts: Assets:Debt:*   [Edit Mappings] [Delete]                      │
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│                                                                                 │
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│  [ Gold &amp; Commodities          ]  Target: [ 10 ] %  Drift: [ ±2 ] %             │
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│  Mapped Accounts: Assets:Gold:*   [Edit Mappings] [Delete]                      │
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│                                                                                 │
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>│  [ International Equity        ]  Target: [ 10 ] %  Drift: [ ±3 ] %             │
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>│  Mapped Accounts: Assets:Equity:US:* [Edit Mappings] [Delete]                   │
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>├─────────────────────────────────────────────────────────────────────────────────┤
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>│  Total Allocation: 100%  [✓ Balanced]                       [ Save Targets ]    │
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>└─────────────────────────────────────────────────────────────────────────────────┘
 </span></code></pre></div>
+<h3 id="step-by-step-configuration">Step-by-Step Configuration:<a class="headerlink" href="#step-by-step-configuration" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Asset Class Name:</strong> Enter a label (e.g., <code>Domestic Equity</code>, <code>Fixed Income</code>, <code>Gold</code>, <code>Cash</code>).</li>
+<li><strong>Target Percentage (%):</strong> Specify your target weight (e.g., <code>50</code>).</li>
+<li><strong>Drift Band (±%):</strong> Specify the allowed tolerance (defaults to <code>±5%</code>). For example, a target of 50% with $\pm 5\%$ drift remains "In Band" between 45% and 55%.</li>
+<li><strong>Assigning Accounts:</strong></li>
+<li>Click <strong>+ Select Accounts</strong> to open the account picker.</li>
+<li>Search and toggle checkboxes for existing accounts (e.g., <code>Assets:Equity:MutualFunds</code>, <code>Assets:Debt:FixedDeposits</code>).</li>
+<li>Or type a wildcard pattern (e.g., <code>Assets:Equity:*</code>) and click <strong>Add</strong> to match all sub-accounts.</li>
+<li><strong>Total Balance Tracker:</strong> The progress bar dynamically verifies that your allocations total <strong>100%</strong>. It turns green when balanced and alerts you if allocations are under or over 100%.</li>
+<li>Click <strong>Save Targets</strong>. Paisa automatically saves the configuration and instantly refreshes the charts.</li>
+</ul>
+<hr />
+<h2 id="3-monitoring-portfolio-drift">3. Monitoring Portfolio Drift<a class="headerlink" href="#3-monitoring-portfolio-drift" title="Permanent link">&para;</a></h2>
+<p>Once targets are saved, the <strong>Target Asset Allocation</strong> dashboard displays:</p>
+<h3 id="status-badges-drift-indicators">Status Badges &amp; Drift Indicators<a class="headerlink" href="#status-badges-drift-indicators" title="Permanent link">&para;</a></h3>
+<p>Each asset class displays its current valuation, actual weight, target weight, and drift delta ($\Delta = \text{Actual \%} - \text{Target \%}$):</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Status Badge</th>
+<th style="text-align: left;">Condition</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>In Band (Green)</strong></td>
+<td style="text-align: left;">$</td>
+<td style="text-align: left;">\Delta</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Overweight (Amber)</strong></td>
+<td style="text-align: left;">$\Delta &gt; +\text{Drift Band}$</td>
+<td style="text-align: left;">Asset class has expanded beyond the upper band.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Underweight (Blue)</strong></td>
+<td style="text-align: left;">$\Delta &lt; -\text{Drift Band}$</td>
+<td style="text-align: left;">Asset class has fallen below the lower band.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="visual-charts">Visual Charts<a class="headerlink" href="#visual-charts" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Treemap &amp; Target Comparison:</strong> Shows target proportions alongside current market values.</li>
+<li><strong>Allocation Timeline:</strong> Shows how your asset distribution has evolved over time.</li>
+<li><strong>Allocation Table:</strong> Complete breakdown of leaf accounts, market values, and percentage shares.</li>
+</ul>
+<hr />
+<h2 id="4-using-the-smart-rebalancing-calculator">4. Using the Smart Rebalancing Calculator<a class="headerlink" href="#4-using-the-smart-rebalancing-calculator" title="Permanent link">&para;</a></h2>
+<p>Directly below the allocation charts, the <strong>Portfolio Rebalancing Engine</strong> card provides real-time guidance on what to buy or sell:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>┌─────────────────────────────────────────────────────────────────────────────────┐
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>│ ⚖️ Portfolio Rebalancing Engine                                                  │
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>│ [💧 Cash Deployment (Buy Only)]   [🔄 Full Rebalance (Buy &amp; Sell)]              │
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>├─────────────────────────────────────────────────────────────────────────────────┤
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>│ Fresh Investable Cash: [ 50000        ]  [+10k] [+50k] [+100k] [Reset]          │
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>├─────────────────────────────────────────────────────────────────────────────────┤
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>│ Asset Class       Target %   Current %   Current Value   Action Required  New % │
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>│ Equity            50.0%      58.0%       ₹5,80,000       [ HOLD ]         52.7% │
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>│ Debt              30.0%      25.0%       ₹2,50,000       [ BUY ₹35,000 ]  26.0% │
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>│ Gold              10.0%       8.0%         ₹80,000       [ BUY ₹15,000 ]   8.6% │
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>│ Cash              10.0%       9.0%         ₹90,000       [ HOLD ]          8.2% │
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>├─────────────────────────────────────────────────────────────────────────────────┤
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>│ Portfolio Total: ₹10,000,000 ➔ Projected: ₹10,050,000                           │
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>└─────────────────────────────────────────────────────────────────────────────────┘
+</span></code></pre></div>
+<h3 id="mode-1-cash-deployment-buy-only-no-tax">Mode 1: Cash Deployment (Buy Only / No Tax)<a class="headerlink" href="#mode-1-cash-deployment-buy-only-no-tax" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Best for:</strong> Monthly savings, systematic investments, or deploying lump-sum bonuses.</li>
+<li><strong>How it works:</strong> Instead of forcing you to sell existing holdings (which can trigger capital gains taxes and exit loads), this mode uses a <strong>water-filling algorithm</strong>:</li>
+<li>It identifies which buckets are below their target weights.</li>
+<li>It distributes your fresh cash strictly into underweighted buckets in proportion to their deficits.</li>
+<li>Buckets that are already overweight receive <strong>HOLD</strong> (zero cash).</li>
+<li><strong>Presets:</strong> Use the quick-add buttons (<code>+10k</code>, <code>+50k</code>, <code>+100k</code>) to quickly simulate deploying different amounts.</li>
+</ul>
+<h3 id="mode-2-full-rebalance-buy-sell">Mode 2: Full Rebalance (Buy &amp; Sell)<a class="headerlink" href="#mode-2-full-rebalance-buy-sell" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Best for:</strong> Periodic portfolio reviews (e.g., annual or semi-annual rebalancing).</li>
+<li><strong>How it works:</strong> Computes the exact trades needed to reset the portfolio to exact target weights:</li>
+<li>Trims overweighted assets with a <strong>SELL</strong> action.</li>
+<li>Reallocates proceeds to underweighted assets with a <strong>BUY</strong> action.</li>
+</ul>
+<hr />
+<h2 id="5-configuration-file-reference-paisayaml">5. Configuration File Reference (<code>paisa.yaml</code>)<a class="headerlink" href="#5-configuration-file-reference-paisayaml" title="Permanent link">&para;</a></h2>
+<p>While you can manage everything directly through the UI, target configurations can also be inspected or version-controlled in <code>paisa.yaml</code> under <code>allocation_targets</code>:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">allocation_targets</span><span class="p">:</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Domestic Equity</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">drift</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">accounts</span><span class="p">:</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Assets:Equity:India:*&quot;</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Assets:MutualFunds:LargeCap:*&quot;</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Fixed Income</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="nt">drift</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="nt">accounts</span><span class="p">:</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Assets:Debt:*&quot;</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Assets:FixedDeposits:*&quot;</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">International Equity</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">    </span><span class="nt">drift</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="nt">accounts</span><span class="p">:</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Assets:Equity:US:*&quot;</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Gold &amp; Commodities</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">    </span><span class="nt">drift</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">    </span><span class="nt">accounts</span><span class="p">:</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Assets:Gold:*&quot;</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Assets:Commodities:*&quot;</span>
+</span></code></pre></div>
+<h3 id="field-definitions">Field Definitions:<a class="headerlink" href="#field-definitions" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>name</code></strong> <em>(string, required)</em>: Descriptive name of the asset class.</li>
+<li><strong><code>target</code></strong> <em>(number, required)</em>: Desired target weight percentage ($0 \le \text{target} \le 100$).</li>
+<li><strong><code>drift</code></strong> <em>(number, optional)</em>: Allowed drift corridor percentage (defaults to <code>5</code> if omitted).</li>
+<li><strong><code>accounts</code></strong> <em>(array of strings, required)</em>: Account names or wildcard glob patterns included in this bucket.</li>
+<li><strong><code>commodities</code></strong> <em>(array of strings, optional)</em>: Specific commodity tickers to filter or restrict to within this target.</li>
+</ul>
 
 
 

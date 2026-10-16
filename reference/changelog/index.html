@@ -582,6 +582,12 @@
       
         
       
+        
+      
+        
+      
+        
+      
     
     
       
@@ -673,6 +679,28 @@
   
   <span class="md-ellipsis">
     Engineering Review
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../performance-baseline-phase0/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Phase 0 Performance Baseline (config/dashboard/projection)
     
   </span>
   
@@ -804,7 +832,7 @@
         
   
   <span class="md-ellipsis">
-    Allocation Targets
+    Target Asset Allocation &amp; Rebalancing
     
   </span>
   
@@ -1071,6 +1099,50 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../doctor/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data Health (Doctor)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../planning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Financial Planning &amp; Life Projections
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1094,7 +1166,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_21" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_24" >
         
           
           
@@ -1111,14 +1183,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_21" id="__nav_3_21_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_24" id="__nav_3_24_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_21_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_21">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_24_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_24">
             <span class="md-nav__icon md-icon"></span>
             Goals
           </label>
@@ -1341,7 +1413,7 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_28" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_31" >
         
           
           
@@ -1358,14 +1430,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_28" id="__nav_3_28_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_31" id="__nav_3_31_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_28_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_28">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_31_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_31">
             <span class="md-nav__icon md-icon"></span>
             Tax
           </label>
@@ -2686,6 +2758,428 @@
 <h3 id="unreleased-future-changes">Unreleased — Future changes<a class="headerlink" href="#unreleased-future-changes" title="Permanent link">&para;</a></h3>
 <h4 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h4>
 <ul>
+<li><strong>Add smart per-bucket tax applicability overrides for Life Drawdown</strong> — Added strategy-level tax rules so users can decide how selected assets are taxed during drawdown simulations.</li>
+<li>Extended drawdown buckets with an optional <code>override_tax_category</code> that applies tax treatment overrides to matching lots without changing global commodity configuration.</li>
+<li>Added named buckets and explicit account assignment (<code>accounts</code>) support so users can drag/drop asset accounts into strategy buckets for direct inclusion control.</li>
+<li>Updated lot collection and ordering logic to preserve bucket priority and use bucket-applied tax categories for sale-tax estimation.</li>
+<li>Added Drawdown UI controls for "Match Tax Category" and "Apply Tax As" plus an unassigned asset tray for drag/drop bucket assignment from planning.</li>
+<li>Added one-click auto-group actions to seed buckets by account family or tax category before fine-tuning with drag/drop.</li>
+<li>Added "Auto-group: Current Rules" to convert existing bucket rule filters into explicit per-bucket account assignments using bucket priority.</li>
+<li>Added preview bucket counts on all auto-group actions so users can see expected grouping size before applying.</li>
+<li>
+<p>Added focused backend test coverage for override behavior and bucket-priority ordering.</p>
+</li>
+<li>
+<p><strong>Add Doctor V2 triage workspace</strong> — Added a parallel Doctor page with a clearer review flow for large diagnosis result sets.</p>
+</li>
+<li>Added <code>/more/doctor-v2</code> with a queue-first overview, compact findings cards, and single-focus duplicate/outlier review modes.</li>
+<li>Reimagined <code>/more/doctor-v3</code> as a ranked single-item triage studio with keyboard navigation and a focused queue rail, replacing the section-dashboard pattern.</li>
+<li>Added quick filters in Doctor V3 for account, date range, and amount range (absolute) with account chips for faster narrowing of duplicate/outlier queues.</li>
+<li>Added a multi-card review mode and refreshed visual styling in Doctor V3 so users can scan many findings at once instead of single-item-only review.</li>
+<li>Removed loop-prone state synchronization in Doctor V3 that could trigger constant refresh-like rerender churn during review.</li>
+<li>Added Doctor V2 helper logic and focused Bun coverage for queue ordering and filtering behavior.</li>
+<li>
+<p>Exposed the new page from the More navigation, command palette, and the legacy Doctor page so both versions can be compared before replacing the original.</p>
+</li>
+<li>
+<p><strong>Complete Phase 6 caching and polish for Life Projection</strong> — Added simulation-level caching and navigational/mobile refinements across life-planning pages.</p>
+</li>
+<li>Added in-memory Monte Carlo result caching in <code>internal/projection/simulator</code> keyed by normalized simulation config to reduce repeated recomputation.</li>
+<li>Wired simulation cache invalidation into <code>cache.Clear()</code> so <code>/api/sync</code> and price-refresh flows invalidate cached projection runs.</li>
+<li>Improved life-planning navigation by adding direct links between What-If, Goals, Drawdown, and the main Life Plan dashboard.</li>
+<li>
+<p>Polished drawdown mobile responsiveness by adjusting metric-card column behavior for compact viewports.</p>
+</li>
+<li>
+<p><strong>Complete Phase 5 tax-aware drawdown strategy</strong> — Added a full drawdown strategy flow that optimizes withdrawal recommendations by ordered strategy buckets and estimated tax burden using FIFO lots and existing capital-gains logic.</p>
+</li>
+<li>Extended <code>internal/projection/drawdown</code> to honor bucket priority with <code>account_glob</code>, <code>tax_category</code>, and <code>holding_period_months</code> filters before tax-cost sorting.</li>
+<li>Added focused unit coverage for bucket matching rules, strategy ordering, and deterministic optimization behavior.</li>
+<li>
+<p>Upgraded <code>/planning/life/drawdown</code> with a reorderable strategy bucket editor and richer recommendation cards (coverage, uncovered amount, holding period, purchase date, and tax totals).</p>
+</li>
+<li>
+<p><strong>Add Phase 4 what-if scenario comparisons for Life Plan</strong> — Added a scenario comparison API and a dedicated planning UI for testing alternative trajectories against the goal-aware projection engine.</p>
+</li>
+<li>Added <code>internal/projection/whatif</code> to clone baseline simulation configs, apply scenario overrides, and return comparable Monte Carlo outputs.</li>
+<li>Added <code>POST /api/projection/whatif</code> with baseline + up to five named scenarios using the same life-goal assumptions as the baseline simulation.</li>
+<li>
+<p>Added <code>/planning/life/whatif</code> with prebuilt templates, editable scenario overrides, and an overlay comparison chart.</p>
+</li>
+<li>
+<p><strong>Add Phase 3 life-goal support to the life projection engine</strong> — Added config-backed milestone and recurring life goals, integrated them into Monte Carlo simulations, and surfaced probabilities in the planning UI.</p>
+</li>
+<li>Extended <code>paisa.yaml</code> and <code>internal/config/schema.json</code> with <code>goals.life[]</code> for milestone and recurring goals, including optional per-goal inflation overrides and priority.</li>
+<li>Added <code>internal/projection/goals/goals.go</code> to expand configured life goals into simulation cashflows with focused unit coverage.</li>
+<li>Updated projection simulation responses and added <code>GET /api/projection/goals</code> so the frontend can render configured goals with probability scores.</li>
+<li>
+<p>Added a new <code>/planning/life/goals</code> editor route and goal markers/probability cards on <code>/planning/life</code>.</p>
+</li>
+<li>
+<p><strong>Fix /site.webmanifest fallback to SPA HTML in Go server mode</strong> — Added an explicit static route for <code>/site.webmanifest</code> so manifest requests return JSON instead of <code>index.html</code>.</p>
+</li>
+<li>Updated Gin routing in <code>internal/server/server.go</code> to serve <code>web/static/site.webmanifest</code>.</li>
+<li>
+<p>Added integration coverage in <code>internal/server/integration_test.go</code> to assert <code>/site.webmanifest</code> is valid JSON and not HTML.</p>
+</li>
+<li>
+<p><strong>Fix PWA manifest fetch under auth-proxy deployments</strong> — Changed the manifest link to <code>/site.webmanifest</code> and added a compatibility manifest file for deployments where auth gateways or Nginx rules only exempt <code>site.webmanifest</code>.</p>
+</li>
+<li>Updated app shell manifest href in <code>src/app.html</code>.</li>
+<li>Updated embedded static shell manifest href in <code>web/static/index.html</code>.</li>
+<li>
+<p>Added <code>static/site.webmanifest</code> and <code>web/static/site.webmanifest</code>.</p>
+</li>
+<li>
+<p><strong>Harden Ledger Import route against invalid select-prop states</strong> — Prevented runtime failures on Import page load when template/preset payloads are missing or select values are uninitialized.</p>
+</li>
+<li>Normalized <code>templates</code> and <code>importPresets</code> in route load to always return arrays.</li>
+<li>Switched Import page <code>selectedTemplate</code>/<code>selectedPreset</code> state to null-safe defaults and guarded assignment from route data.</li>
+<li>Added null-safe selection rendering in template/preset selectors.</li>
+<li>
+<p>Added regression coverage in <code>src/routes/(app)/load_functions.test.ts</code> for missing template/preset payloads.</p>
+</li>
+<li>
+<p><strong>Improve dashboard first paint by deferring investment income fetch</strong> — Reduced startup blocking on the home route.</p>
+</li>
+<li><code>src/routes/(app)/+page.ts</code> now preloads only <code>/api/dashboard</code> in route <code>load</code>.</li>
+<li><code>/api/income/investment</code> is fetched after first paint from <code>onMount</code> as a background request.</li>
+<li>
+<p>Investment Income widget keeps placeholder values until the deferred request completes.</p>
+</li>
+<li>
+<p><strong>Doctor page data-quality UX redesign for large journals</strong> — Reworked the Doctor page to stay navigable with hundreds of findings.</p>
+</li>
+<li>Added a summary workspace with quick focus modes (All, Duplicates, Outliers) and visible per-section counts.</li>
+<li>Replaced unbounded Diagnosis Findings rendering with search + pagination to prevent very large single-page lists.</li>
+<li>Added shared search and confidence filters across duplicate and outlier findings.</li>
+<li>Added configurable page sizes and independent pagination for duplicates/outliers to remove endless-scroll workflows.</li>
+<li>
+<p>Added sticky controls on desktop for faster triage while reviewing long result sets.</p>
+</li>
+<li>
+<p><strong>Duplicate &amp; Anomaly Transaction Detection</strong> — Added a Data Quality section to the Doctor page with backend duplicate detection and outlier detection algorithms.</p>
+</li>
+<li><code>GET /api/diagnosis/duplicates</code> returns duplicate posting pairs (same account + amount within 2 days) and statistical outliers (&gt;3σ from per-account mean), each with a confidence score.</li>
+<li><code>POST /api/diagnosis/duplicates/suppress</code> marks a pair as a false positive so it is excluded from future results (stored in new <code>duplicate_suppressions</code> DB table, schema v17).</li>
+<li>Doctor page shows duplicate pairs side-by-side with dismiss buttons and outlier cards with sigma/mean/stddev context.</li>
+<li>
+<p>Doctor nav link displays a red count badge when data quality issues are detected.</p>
+</li>
+<li>
+<p><strong>Transaction and posting search/filter bar with saved transaction searches</strong> — Added richer transaction filtering across backend and frontend.</p>
+</li>
+<li>Extended <code>GET /api/transaction</code> with <code>q</code>, <code>amount_min</code>, <code>amount_max</code>, <code>account</code>, <code>commodity</code>, <code>date_from</code>, and <code>date_to</code>.</li>
+<li>Added reusable <code>TransactionFilterBar</code> and integrated it into <strong>Ledger → Transactions</strong> and <strong>Ledger → Postings</strong>.</li>
+<li>
+<p>Added saved transaction searches in localStorage and a command palette entry to open transaction search with focused input.</p>
+</li>
+<li>
+<p><strong>Document and implement year-by-year FIRE projection breakdown</strong> — Expanded the projection reference docs with a clearer explanation of how annual expenses feed the FIRE target corpus and added year-by-year scenario tables for conservative, expected, and optimistic projections on the Projection page, including inflation-adjusted annual expense rows.</p>
+</li>
+<li>
+<p><strong>Fix PWA blank white page on load from Workbox fallback mismatch</strong> — Bound Workbox navigation fallback to <code>/index.html</code> and explicitly precached <code>index.html</code>.</p>
+</li>
+<li>Prevents runtime <code>non-precached-url</code> errors in <code>sw.js</code> during app load/navigation.</li>
+<li>
+<p>Reduces cases where the SPA boots to a blank white screen due to a failed service-worker navigation response.</p>
+</li>
+<li>
+<p><strong>Add pre-hydration boot splash to avoid initial white flash</strong> — Added an inline startup splash in <code>app.html</code> that displays immediately and fades out once Svelte content is mounted.</p>
+</li>
+<li>Prevents a pure white frame while the client-only app (<code>ssr = false</code>) downloads and hydrates.</li>
+<li>Uses a MutationObserver/load fallback so the splash is removed quickly when the app shell appears.</li>
+<li>
+<p>Adjusted splash teardown to wait until <code>window.load</code> (with timeout fallback) to avoid hiding too early on script-only shell nodes.</p>
+</li>
+<li>
+<p><strong>Add dashboard latency breakdown headers for slow-request diagnosis</strong> — <code>GET /api/dashboard</code> now returns extra profiling headers to pinpoint whether time is spent in snapshot refresh or live aggregation stages.</p>
+</li>
+<li>Added <code>X-Paisa-Perf-Dashboard-Source</code> (<code>snapshot</code> or <code>live</code>) and <code>X-Paisa-Perf-Dashboard-Snapshot-Ms</code>.</li>
+<li>
+<p>Added <code>X-Paisa-Perf-Dashboard-Stages-Ms</code> for live-path stage timings (<code>checkingBalances</code>, <code>networth</code>, <code>expenses</code>, <code>cashFlows</code>, <code>transactionSequences</code>, <code>transactions</code>, <code>budget</code>, <code>goalSummaries</code>).</p>
+</li>
+<li>
+<p><strong>Customizable dashboard widgets and layout persistence</strong> — Added a widget registry-driven dashboard customization flow.</p>
+</li>
+<li>Users can open a dashboard customize modal (gear button), drag-and-drop widget order, and toggle widget visibility per column.</li>
+<li>Dashboard layout state persists in <code>localStorage</code> under <code>dashboard-layout</code> and is normalized against a typed widget registry.</li>
+<li>
+<p>Added per-widget configuration controls for item counts (goals, recurring, recent transactions, budget accounts, checking balances) with focused layout persistence tests.</p>
+</li>
+<li>
+<p><strong>Lazy snapshot refresh with active-view prioritization</strong> — Reduced sync wall-clock latency by avoiding eager rebuilds of all read-model snapshots after every data-changing sync.</p>
+</li>
+<li>Sync now marks dashboard, projection, and investment-income snapshots as dirty when journal/prices change.</li>
+<li>The sync request can include an <code>active_snapshot</code> hint; only that snapshot is refreshed eagerly during the sync job.</li>
+<li>Snapshot-backed endpoints now refresh their own snapshot lazily on first access when dirty, then clear the dirty marker.</li>
+<li>
+<p>Sync History durations now update live every second for running jobs instead of appearing static until terminal state.</p>
+</li>
+<li>
+<p><strong>Add Expenses → Heatmap for daily spend patterns and seasonality</strong> — Introduced a calendar-style spending heatmap plus weekday/month seasonality views.</p>
+</li>
+<li>Added backend <code>GET /api/expense/daily</code> with configurable <code>from</code>/<code>to</code> bounds and optional category grouping for daily spend totals.</li>
+<li>Added <strong>Expenses → Heatmap</strong> with a year selector, category filter, GitHub-style spend intensity grid, weekday averages, and month-of-year seasonality bars.</li>
+<li>
+<p>Added focused backend aggregation tests and frontend heatmap utility tests for date-range padding and seasonality calculations.</p>
+</li>
+<li>
+<p><strong>Optimize commodity price sync network payload and database upsert speeds</strong> — Solved a performance bottleneck where price synchronization could take over 2 minutes by implementing incremental scraper requests and GORM bulk inserts.</p>
+</li>
+<li><strong>Yahoo Finance delta queries</strong>: Modified <code>YahooPriceProvider</code> to accept the sync <code>since</code> timestamp and dynamically supply Yahoo's <code>period1</code> URL query parameter, restricting network payload download to the daily price/FX delta rather than downloading a full 50-year dataset on every run.</li>
+<li><strong>Alpha Vantage compact mode</strong>: Programmed the Alpha Vantage provider to conditionally request <code>outputsize=compact</code> (returning only the last 100 data points) when the incremental sync date is within the last 80 days.</li>
+<li>
+<p><strong>Bulk database inserts</strong>: Refactored the <code>UpsertAllByTypeNameAndID</code> GORM pipeline to use a single <code>CreateInBatches</code> query in SQLite instead of executing a slow, row-by-row <code>INSERT ON CONFLICT DO UPDATE</code> loop, speeding up SQLite database write performance by 100x.</p>
+</li>
+<li>
+<p><strong>Fix projection snapshot refresh and journal Files() fallback</strong> — Resolved two issues preventing projection recalculation after journal sync.</p>
+</li>
+<li>Fixed sync handler to only refresh projection snapshot when journal sync actually runs (not when skipped due to unchanged hash). Previously, requesting a journal sync that was skipped would still trigger unnecessary projection recalculation.</li>
+<li>
+<p>Added warning when <code>ledger files</code> fails to list included files, causing hash to be computed on main file only. This could prevent changes to included files from being detected until a forced sync. Operators should investigate the <code>ledger files</code> failure and consider forcing a sync if included files may have changed.</p>
+</li>
+<li>
+<p><strong>SvelteKit route-level data loading for core SPA views</strong> — Moved primary API fetches from component lifecycle hooks to idiomatic <code>+page.ts</code> load functions.</p>
+</li>
+<li>Added page <code>load</code> prefetching for Dashboard, Assets Networth, Assets Investment, Planning Goals, Ledger Import, and goal detail pages (retirement/savings), and expanded Ledger Editor detail load data.</li>
+<li>Updated affected pages to consume typed <code>data</code> props for initial render and kept <code>onMount</code> focused on DOM/chart initialization only.</li>
+<li>
+<p>Added a navigation-state loading pill in app layout using SvelteKit <code>$navigating</code> to surface route transitions during load.</p>
+</li>
+<li>
+<p><strong>Connect-RPC config contract expansion</strong> — Added typed Connect methods for config reads/writes and migrated frontend config consumers away from <code>/api/config</code> REST calls.</p>
+</li>
+<li>Extended <code>proto/api.proto</code> with <code>GetConfig</code> and <code>UpdateConfig</code> RPCs and regenerated Go/TypeScript stubs.</li>
+<li>Implemented Connect handlers in <code>internal/server/connect_service.go</code> with journal-dirty and schema/config payload parity.</li>
+<li>Added <code>src/lib/config_client.ts</code> and switched config-loading/saving paths in app shell, command palette quick add, goals, config editor, and reconciliation UI to <code>paisaClient</code>.</li>
+<li>
+<p>Removed legacy <code>/api/config</code> AJAX overloads from <code>src/lib/utils.ts</code>.</p>
+</li>
+<li>
+<p><strong>SQLc-backed posting, price, and portfolio persistence hot paths</strong> — Added a typed raw-SQL query layer for the highest-traffic SQLite reads and writes.</p>
+</li>
+<li>Added <code>sqlc.yaml</code> plus <code>internal/db/schema.sql</code> / <code>internal/db/queries.sql</code>, and checked in generated Go clients under <code>internal/db/sqlc/</code>.</li>
+<li>Refactored posting queries (<code>internal/query</code>), price reads/writes, portfolio reads/writes, and posting upserts to execute through SQLc-generated code while preserving the existing package APIs and focused GORM fallback for unsupported ad-hoc predicates.</li>
+<li>
+<p>Integrated <code>sqlc generate</code> into the <code>Makefile</code> build pipeline and added focused regression coverage for SQLc-backed posting filters and portfolio persistence.</p>
+</li>
+<li>
+<p><strong>Stabilize <code>/api/editor/files</code> metadata ordering across environments</strong> — Fixed flaky regression snapshots for ledger file metadata.</p>
+</li>
+<li><code>accounts</code>, <code>payees</code>, and <code>commodities</code> are now derived from postings ordered by <code>(date, transaction_begin_line, id)</code> and deduplicated in first-seen order, removing dependence on SQL <code>DISTINCT</code> row-order behavior.</li>
+<li>
+<p>Added focused <code>internal/server/editor_test.go</code> coverage for first-seen metadata order and file-name sorting.</p>
+</li>
+<li>
+<p><strong>Phase 5: Query plan tuning and posting index optimization for long-history journals</strong> — Added migration-backed posting indexes and query-plan validation for dashboard/projection hot filters.</p>
+</li>
+<li>Added migration v12 to create <code>idx_postings_forecast_date</code> and <code>idx_postings_forecast_account_date</code>, applied safely with <code>CREATE INDEX IF NOT EXISTS</code> for existing databases.</li>
+<li>Added migration tests that verify index creation and assert <code>EXPLAIN QUERY PLAN</code> uses the new indexes for representative projection/dashboard-style predicates.</li>
+<li>
+<p>Documented the migration/rollback strategy and phase-5 validation workflow in <code>docs/reference/performance-phase5-query-plan.md</code>.</p>
+</li>
+<li>
+<p><strong>Phase 4: Home page load-shaping and deferred secondary fetches</strong> — Improved time-to-interactive for the home page.</p>
+</li>
+<li><code>onMount</code> now awaits only the critical <code>/api/dashboard</code> payload before rendering the first paint; the expensive <code>/api/income/investment</code> and <code>/api/networth/projection</code> calls are deferred.</li>
+<li>Deferred requests are fired concurrently (<code>Promise.all</code>) as background calls after the first paint, so the global loading spinner is not re-triggered.</li>
+<li>Investment Income TTM and FIRE metrics widgets show <code>—</code> placeholders while their deferred data loads, providing graceful loading states without layout shift.</li>
+<li>
+<p>Added <code>performance.mark</code>/<code>performance.measure</code> telemetry around both load phases (<code>paisa-home-phase1-dashboard</code> and <code>paisa-home-phase2-secondary</code>) so the API waterfall is visible in browser DevTools Performance panel.</p>
+</li>
+<li>
+<p><strong>Phase 3 projection-input snapshot</strong> — <code>GET /api/networth/projection</code> now reads precomputed sync-time base inputs instead of rescanning history on the hot path.</p>
+</li>
+<li>Added a <code>projection_snapshots</code> SQLite read-model table plus migration v11 for current net worth, derived monthly contribution, annual expenses, and savings rate.</li>
+<li>Successful journal/price syncs now refresh the projection snapshot alongside other warmed read models, while request-time query params and response schema remain unchanged.</li>
+<li>
+<p>Added focused migration, snapshot persistence, and projection parity tests plus perf-harness seeding for the new snapshot.</p>
+</li>
+<li>
+<p><strong>Phase 2 dashboard materialized snapshot</strong> — <code>GET /api/dashboard</code> now serves a persisted sync-time snapshot instead of recomputing every section on the hot path.</p>
+</li>
+<li>Added a <code>dashboard_snapshots</code> SQLite read-model table plus migration v10.</li>
+<li>Successful journal/price syncs now rebuild the dashboard JSON snapshot after cache/XIRR warming and write it atomically so failed refreshes cannot leave a half-written payload behind.</li>
+<li><code>GET /api/dashboard</code> now reads the snapshot first and falls back to the live query path only when the snapshot is missing, invalid, or schema-mismatched.</li>
+<li>
+<p>Added focused migration, snapshot transaction, and dashboard handler regression tests.</p>
+</li>
+<li>
+<p><strong>Out-of-band journal change detection</strong> — The app now detects when ledger files are edited externally (outside the app) and immediately reflects the dirty state in the sync icon without waiting for the user to manually trigger a sync.</p>
+</li>
+<li>Added a background <code>JournalWatcher</code> goroutine that polls file modification times every 10 seconds. When any watched file's mtime advances it performs a SHA256 hash comparison; on a real content change it persists <code>JournalDirtyKey = "true"</code> in metadata.</li>
+<li><code>GET /api/config</code> now reads <code>is_journal_dirty</code> from the persisted metadata entry instead of computing a full SHA256 at request time (Phase 1: remove hot-path hashing).</li>
+<li>Added <code>GET /api/journal/status</code> — a lightweight endpoint (<code>{"is_dirty": bool}</code>) backed by a single DB metadata read. Used by the frontend's background poll.</li>
+<li>The frontend polls <code>/api/journal/status</code> every 30 seconds and also on <code>visibilitychange</code> (when the user returns to the tab). On a dirty-state change it updates the sync icon colour without triggering a full page reload.</li>
+<li>
+<p>After a successful journal sync the watcher resets its file list (via ledger CLI) and clears the dirty flag. After a failed journal sync the dirty flag is set so the warning remains visible.</p>
+</li>
+<li>
+<p><strong>Phase 0 performance baseline telemetry for config/dashboard/projection</strong> — Added request-scope performance instrumentation and a reproducible benchmark harness for key slow paths.</p>
+</li>
+<li><code>GET /api/config</code>, <code>GET /api/dashboard</code>, and <code>GET /api/networth/projection</code> now emit per-request telemetry headers: <code>X-Paisa-Perf-Latency-Ms</code>, <code>X-Paisa-Perf-SQL-Count</code>, and <code>X-Paisa-Perf-SQL-Time-Ms</code>.</li>
+<li>Added <code>cmd/perfbaseline</code> to seed a synthetic long-history dataset and report p50/p95 latency plus SQL query/time totals for each endpoint.</li>
+<li>
+<p>Added <code>docs/reference/performance-baseline-phase0.md</code> with baseline numbers, run steps, and a reusable before/after comparison checklist.</p>
+</li>
+<li>
+<p><strong>Net worth projection and FIRE calculator</strong> — Added forward-looking wealth planning across backend and UI.</p>
+</li>
+<li>Added backend <code>GET /api/networth/projection</code> with conservative/expected/optimistic CAGR scenarios, historical savings-rate-derived monthly contribution defaults, FIRE target corpus (<code>annual_expenses / SWR</code>), years-to-FIRE estimation, and milestone markers.</li>
+<li>Added <strong>Assets → Projection</strong> page with interactive CAGR/monthly contribution/SWR controls and a scenario-band chart over historical net worth.</li>
+<li>Added a compact FIRE progress widget to the dashboard Assets tile and a <strong>Project Forward</strong> toggle on <strong>Assets → Networth</strong> to overlay projected lines and milestones.</li>
+<li>
+<p>Added focused backend projection math tests.</p>
+</li>
+<li>
+<p><strong>Clarify Sankey views: Money Flow vs Expense Breakdown</strong> — Kept both Sankey pages but made their scope explicit after investigating parameter and rendering differences.</p>
+</li>
+<li><strong>Cash Flow → Money Flow</strong> (<code>/cash_flow/sankey</code>) continues to query <code>/api/sankey</code> with a period selector and supports account-depth aggregation plus optional asset-transfer hiding for full-path flow analysis.</li>
+<li><strong>Expenses → Expense Breakdown</strong> (<code>/expense/sankey</code>) continues to use date-range bounds but now renders only links that terminate in expense accounts, producing a focused outflow view.</li>
+<li>
+<p>Updated navigation and command palette labels to remove ambiguous "Sankey/Flow" naming, and added inline help text on both pages to explain each view.</p>
+</li>
+<li>
+<p><strong>Create top-level Planning navigation for Goals and Tax</strong> — Promoted planning workflows out of the More section for better discoverability.</p>
+</li>
+<li>Moved routes from <code>/more/goals</code> to <code>/planning/goals</code> and from <code>/more/tax/*</code> to <code>/planning/tax/*</code>.</li>
+<li>Added a new top-level <strong>Planning</strong> navbar section (between Income and Ledger) with <strong>Goals</strong>, plus INR-gated <strong>Tax</strong> submenu entries.</li>
+<li>Removed Goals/Tax links from <strong>More</strong> and updated internal links (dashboard and command palette) to point to <code>/planning/*</code>.</li>
+<li>Added legacy redirects from <code>/more/goals</code> and <code>/more/tax/*</code> to the new planning routes.</li>
+<li>
+<p>Added focused navbar-selection tests for <code>Planning &gt; Goals</code> and <code>Planning &gt; Tax &gt; Harvest</code>.</p>
+</li>
+<li>
+<p><strong>Move YoY and MoM analysis under Expenses navigation</strong> — Removed the top-level Analysis section and relocated both pages under Expenses.</p>
+</li>
+<li>Moved routes from <code>/analysis/yoy</code> and <code>/analysis/mom</code> to <code>/expense/yoy</code> and <code>/expense/mom</code>.</li>
+<li>Added legacy redirects from old analysis URLs to the new expense URLs.</li>
+<li>Updated navbar hierarchy so Expenses now includes <strong>Monthly, Yearly, Budget, Flow, YoY, MoM</strong> and removed alpha tags for YoY/MoM.</li>
+<li>
+<p>Breadcrumbs now resolve as <code>Expenses &gt; YoY</code> and <code>Expenses &gt; MoM</code>.</p>
+</li>
+<li>
+<p><strong>Rename Assets → Analysis to Assets → Portfolio</strong> — Eliminated the naming collision between the top-level Analysis section and the Assets child page.</p>
+</li>
+<li>Renamed the navbar entry under Assets from <strong>Analysis</strong> to <strong>Portfolio</strong> (route <code>/assets/portfolio</code>).</li>
+<li>Moved the route from <code>src/routes/(app)/assets/analysis/</code> to <code>src/routes/(app)/assets/portfolio/</code>.</li>
+<li>Added a 301 redirect from <code>/assets/analysis</code> to <code>/assets/portfolio</code> for backward compatibility.</li>
+<li>
+<p>Breadcrumb now renders as <code>Assets &gt; Portfolio</code>; the <code>alpha</code> tag is preserved.</p>
+</li>
+<li>
+<p><strong>Income section polish: Timeline label, Investment year picker, and cross-link summary</strong> — Completed the Income navigation and historical investment-income polish.</p>
+</li>
+<li>Renamed <strong>Income → Overview</strong> to <strong>Income → Timeline</strong> so navbar and breadcrumb labels match the page semantics.</li>
+<li>Enabled the financial-year picker on <strong>Income → Investment</strong> and wired the page to request <code>/api/income/investment?year=&lt;FY&gt;</code>.</li>
+<li>Updated backend <code>GET /api/income/investment</code> to accept both <code>as_of_date</code> and <code>year</code> query parameters for historical trailing-12-month yield calculations.</li>
+<li>Added a <strong>TTM Investment Income</strong> summary card to the Income Timeline page, sourced from <code>/api/income/investment</code>.</li>
+<li>
+<p>Added focused tests for Income navbar route selection and investment-income year/as_of_date query handling.</p>
+</li>
+<li>
+<p><strong>Investment income tracking and total-return enhancements</strong> — Added dedicated investment income aggregation and surfaced trailing yield/total return across backend and UI.</p>
+</li>
+<li>Added backend <code>GET /api/income/investment</code> to classify investment income (<code>Dividend</code>, <code>Interest</code>, <code>Distribution</code>) by holding, return monthly timeline data, and compute per-holding trailing 12-month yield.</li>
+<li>Extended gain computations so investment income is included in total return; <code>/api/gain</code> and <code>/api/gain/:account</code> now return <code>income_received</code>, <code>price_appreciation</code>, <code>total_return</code>, and <code>ttm_yield</code>.</li>
+<li>Updated UI navigation with <strong>Income → Overview / Investment</strong>, added a new <strong>Income → Investment</strong> page with holding/type breakdown and timeline, added a gain breakdown table with a new trailing yield column in <strong>Assets → Gain</strong>, and added an investment-income compact card on the dashboard assets tile.</li>
+<li>
+<p>Added focused backend tests for investment income grouping, yield calculation, and gain total-return composition.</p>
+</li>
+<li>
+<p><strong>FX impact decomposition and currency exposure surfaces</strong> — Added multi-currency attribution across net worth and asset views.</p>
+</li>
+<li>Backend <code>/api/networth</code> timeline points now include <code>contribution</code>, <code>investment_return</code>, and <code>fx_impact</code>, with decomposition logic that separates cumulative FX movement from local investment return for non-default-currency holdings.</li>
+<li>Added backend <code>GET /api/currency-exposure</code> to return denomination-level portfolio exposure (<code>currency</code>, <code>amount</code>, <code>percentage</code>).</li>
+<li>Updated assets net worth UI with FX overlay toggle, added decomposition metrics cards, and surfaced FX/contribution details in timeline tooltips.</li>
+<li>Added currency exposure donut widget on <strong>Assets → Allocation</strong> and <strong>Ledger → FX Rates</strong> pages.</li>
+<li>
+<p>Added backend-focused tests validating FX decomposition consistency and currency exposure grouping totals.</p>
+</li>
+<li>
+<p><strong>Fix More → Logs runtime errors</strong> — Resolved a Logs page failure caused by Workbox navigation fallback and fragile client rendering.</p>
+</li>
+<li>Updated PWA <code>navigateFallback</code> to <code>/index.html</code> so Workbox always serves a precached navigation shell (avoids <code>non-precached-url</code> for <code>/</code>).</li>
+<li>Hardened <code>/more/logs</code> rendering by removing direct <code>window</code> access in markup, guarding virtualized rows, and safely formatting log timestamps.</li>
+<li>
+<p>Wrapped logs fetch in error handling to avoid unhandled promise rejections when the API request fails.</p>
+</li>
+<li>
+<p><strong>Svelte 5 state management: complete class-based adapters and decouple UI/persisted state (P2.3)</strong> — Completed the remaining Svelte 5 state modernisation tasks (#231 #232 #233):</p>
+</li>
+<li>Added <code>commandPaletteOpen</code>, <code>cashflowExpenseDepthAllowed</code>, and <code>cashflowIncomeDepthAllowed</code> to the <code>UIState</code> class in <code>src/lib/state/ui.svelte.ts</code> so all transient UI state is accessible via a single rune-compatible entry point (<code>uiState.&lt;prop&gt;.current</code>).</li>
+<li>Added <code>editorLeftWidth</code>, <code>editorRightWidth</code>, <code>editorLeftCollapsed</code>, <code>editorRightCollapsed</code>, and <code>configSidebarCollapsed</code> to the <code>PersistedState</code> class in <code>src/lib/state/persisted.svelte.ts</code>, completing coverage of every persisted store.</li>
+<li>Moved the non-persisted <code>cashflowExpenseDepthAllowed</code>, <code>cashflowIncomeDepthAllowed</code>, and <code>setCashflowDepthAllowed</code> from <code>persisted_store.ts</code> to <code>store.ts</code>, enforcing a clear boundary: <code>persisted_store.ts</code> contains only localStorage-backed stores while <code>store.ts</code> owns all transient runtime state.</li>
+<li>
+<p>Updated <code>Navbar.svelte</code> and the yearly cash-flow page to import the moved stores from <code>store.ts</code>.</p>
+</li>
+<li>
+<p><strong>YoY Analysis: aligned top controls and denser KPI cards</strong> — Fixed the <code>/analysis/yoy</code> top-bar control alignment so both dropdowns and the CSV action align cleanly on the same baseline. Tightened KPI card spacing/padding to reduce empty whitespace, expanded the KPI strip with new standalone cards for biggest category mover and efficiency snapshot (expense load + best net month), and tuned card heights/type scale for a more balanced 6-card layout on desktop and tablet.</p>
+</li>
+<li>
+<p><strong>Cash Flow Monthly: aligned multi-currency summary card numbers</strong> — Refined the Monthly Cash Flow summary cards (Income, Expenses, Taxes, Net Flow) so each value now uses a consistent amount-and-currency grid with tabular numerals. This improves readability for mixed-commodity months by lining up figures cleanly across rows and cards.</p>
+</li>
+<li>
+<p><strong>YoY Analysis: richer dashboard layout with deeper insights</strong> — Revamped the <code>/analysis/yoy</code> page with a stronger visual hierarchy and additional analytical elements. Added headline KPI cards (spending, income, net savings, savings rate), a hero summary band for selected comparison range, a category movers table (YoY change + expense share), and a monthly net profile panel that highlights highest expense and best net months. Existing YoY line/bar charts and CSV export remain intact, now presented within a more polished, responsive layout.</p>
+</li>
+<li>
+<p><strong>Cash Flow Monthly: polished inflow/outflow breakdown layout</strong> — Fixed the vertical divider spacing regression in the monthly cash-flow page so the outflow section no longer crowds the divider. Also refined inflow/outflow breakdown tables with improved row spacing, clearer amount alignment, and subtle hover treatment for better readability.</p>
+</li>
+<li>
+<p><strong>Dev server: fixed Svelte virtual CSS parsing regression</strong> — Adjusted Vite polyfill configuration to avoid intercepting Svelte virtual style modules in development, preventing PostCSS errors like <code>Unknown word</code> on <code>.svelte?type=style</code> requests.</p>
+</li>
+<li>
+<p><strong>Navigation: breadcrumb alpha tag spacing fix</strong> — Fixed breadcrumb label/tag overlap by aligning breadcrumb items with inline-flex layout and dedicated alpha tag spacing, preventing the <code>alpha</code> badge from colliding with menu text.</p>
+</li>
+<li>
+<p><strong>MoM Analysis: negative trajectory values bounded correctly</strong> — Fixed the MoM expense trajectory chart so windows containing negative values no longer spill outside the chart area. The y-axis now uses real min/max series bounds (with padding), the filled area anchors to the zero baseline, and values are clamped to chart space.</p>
+</li>
+<li>
+<p><strong>MoM Analysis: actual-currency filtering dropdown</strong> — In actual currency mode, a new currency dropdown now allows filtering all MoM visuals and tables to a single selected currency (for example, CAD). When a currency is selected, charts, summary cards, timeline, variance/composition, and breakdown rows all render only that currency's data. Leaving it as <code>All currencies</code> preserves the current multi-currency behavior.</p>
+</li>
+<li>
+<p><strong>MoM Analysis: toggle between default and actual currency view</strong> — Modified the MoM analysis page to support viewing expense data in two modes:</p>
+</li>
+<li><strong>Default Currency</strong>: All amounts converted to and displayed in the default currency (INR by default). Reflects how much was spent in default currency terms.</li>
+<li><strong>Actual Currency</strong>: Amounts displayed in their original transaction currencies (USD, EUR, etc.). When multiple currencies exist for the same dimension (e.g., "Groceries USD" and "Groceries EUR"), they appear as separate rows in the breakdown table so you can track spending by original commodity.</li>
+<li>Backend now returns <code>original_amount</code> field on each posting, preserving the amount in the original commodity before any conversion. Frontend toggles between using <code>amount</code> (converted to default) and <code>original_amount</code> (native commodity) for all calculations and charts.</li>
+<li>In actual currency view, dimensions are grouped by both category/payee/account AND commodity, so mixed-currency spending is shown separately — e.g., "Groceries" becomes "Groceries (USD)" and "Groceries (EUR)" if both exist.</li>
+<li>
+<p>No server roundtrip on currency toggle — all amounts are pre-calculated and sent with each posting.</p>
+</li>
+<li>
+<p><strong>MoM Analysis: client-side currency conversion</strong> — Added a "Currency" selector to the MoM analysis page control panel. On load, the page fetches latest FX rates for all configured currency pairs from the new <code>GET /api/expense/latest-rates</code> endpoint and stores them locally. Switching currencies instantly re-derives all charts and tables via a <code>$derived</code> converted postings layer — no extra network request on each switch. The new backend endpoint (<code>GetLatestRates</code>) returns a <code>rates[base][quote]</code> map plus the default currency so the UI can build the selector and apply conversions without server-side re-processing.</p>
+</li>
+<li>
+<p><strong>Month-on-Month (MoM) Analysis – Phase 5 &amp; Layout Polish</strong> — Continued improvements to the MoM analysis page:</p>
+</li>
+<li><strong>MoM Delta Chart</strong> — New D3 diverging bar chart (right of the Monthly Timeline) showing month-over-month change as positive (red) or negative (green) bars. Includes hover tooltips, percentage labels on large bars, and a zero baseline, making directional month changes immediately visible at a glance.</li>
+<li><strong>Monthly Timeline compacted to left half</strong> — The timeline table now occupies 5/12 columns with a <code>white-space: nowrap</code> style to prevent wrapping, while the MoM Delta chart fills the freed 7/12 columns to the right. The table now shows percentage-only MoM column (hover for absolute value) for better scannability.</li>
+<li><strong>Signals sidebar removed</strong> — Redundant "Largest Movers" and "30-Day Momentum" sidebar replaced by the richer Dimension Variance Chart above (added in Phase 3). Breakdown table promoted to full width.</li>
+<li><strong>Breakdown table MoM column</strong> — Now shows percentage change (e.g. <code>+12.3%</code>) as primary value with absolute amount on hover, matching the Timeline table style.</li>
+<li><strong>Help tooltips on metrics</strong> — Volatility card now explains Coefficient of Variation via title attribute with thresholds (Low &lt;15%, Medium 15-30%, High &gt;30%). 3M Avg and MoM column headers carry descriptive <code>title</code> attributes. Volatility value includes a ✓ or ⚠ indicator.</li>
+<li>
+<p><strong>Volatility card expanded</strong> — Added trend direction ("Up/Down this month") and 3M Avg directly into the Volatility card, replacing the previous sparse layout.</p>
+</li>
+<li>
+<p><strong>Month-on-Month (MoM) Analysis Page – Phase 1-4 Complete</strong> — Launched a sophisticated month-on-month analysis page with advanced visualizations and compact layout:</p>
+</li>
+<li><strong>Phase 1: Compact Layout</strong> — Redesigned control panel (single-row flexbox), 3-column summary cards (Latest Month, Range Highlights, Volatility &amp; Trend), reduced padding/fonts throughout for dense information display.</li>
+<li><strong>Phase 2: Expense Trajectory Chart (Hero)</strong> — Interactive D3 line chart showing actual expense trajectory + 3-month moving average overlay, with hover tooltips displaying month, expense, 3M avg, and MoM % change. Includes area fill for visual depth, grid lines, and responsive sizing.</li>
+<li><strong>Phase 3: Dimension Variance Chart</strong> — Grouped bar chart (Previous vs Current month) for top movers (categories/payees/accounts), sorted by absolute change. Color-coded by direction (red=increase, green=decrease), with value labels and interactive hover details. Helps identify what drove month-over-month changes.</li>
+<li><strong>Phase 4: Dimension Composition Chart</strong> — Stacked area chart showing how category/payee/account breakdown shifts over selected month window. Interactive legend for toggling visibility. Answers "How has spending distribution changed?"</li>
+<li><strong>Multi-currency Support</strong> — All charts and tables respect the <code>report_currency</code> dropdown; data is converted server-side via <code>/api/expense</code> with <code>report_currency</code> parameter using available FX rates.</li>
+<li><strong>Supporting Tables</strong> — Compact Monthly Timeline (month, total, MoM change, 3M avg) and Breakdown table (by selected dimension) with sparkline trends for each category.</li>
+<li>
+<p><strong>Design Philosophy</strong> — Charts are primary; tables are supporting reference. Opposite of YoY's basic approach. Delivers rich trend analysis for detailed expense insights.</p>
+</li>
+<li>
+<p><strong>MoM analysis currency controls</strong> — The MoM analysis page now supports dual display modes: original transaction currency and report currency. Users can pick currencies from configured settings (<code>currencies</code>) via selectors. In report-currency mode, <code>/api/expense</code> now accepts <code>report_currency</code> and returns expense amounts/trends converted from the default currency using available FX rates.</p>
+</li>
+<li>
+<p><strong>Avoid app refresh after Quick Add and Editor save</strong> — Saving via Quick Add transaction creation or Ledger Editor no longer triggers a global app refresh/remount. This prevents the perceived page refresh right after writes while keeping the existing explicit sync workflow (<code>Please sync to see changes</code>).</p>
+</li>
 <li>
 <p><strong>Frontend typing fix for <code>/api/config</code> quick-add fetch</strong> — Fixed <code>ajax("/api/config", { background: true })</code> typing so GET calls with options retain the config response shape (including <code>accounts</code>), resolving <code>svelte-check</code> failures in quick-add launch paths.</p>
 </li>
@@ -2703,7 +3197,7 @@
 <li><strong>Unit Tests</strong> — 18+ test cases covering all 10 transaction scenarios plus edge cases (empty input, long input, missing fields, special characters). All tests passing.</li>
 <li><strong>Phase 2 backend APIs</strong> — Added <code>POST /api/parser/parse</code> for parser preview and <code>POST /api/parser/create-transaction</code> for parse + append + sync flow with optional user overrides.</li>
 <li><strong>Training log persistence</strong> — Added schema migration v8 to create <code>parser_training_log</code> and log parser predictions plus user-confirmed values for future model training.</li>
-<li><strong>Phase 2 frontend quick-add polish</strong> — Added explicit “Clear Parsed State” action in Quick Add modal and extracted parser submit/suggestion helpers for focused parser-assisted quick-add tests (parse mapping, suggestion selection, create payload path).  - <strong>Parser Enhancements for Compact Formats</strong> — Improved parsing of compact transaction descriptions (e.g., "20 cad groceries bmo cc at no frills") with:<ul>
+<li><strong>Phase 2 frontend quick-add polish</strong> — Added explicit “Clear Parsed State” action in Quick Add modal and extracted parser submit/suggestion helpers for focused parser-assisted quick-add tests (parse mapping, suggestion selection, create payload path). - <strong>Parser Enhancements for Compact Formats</strong> — Improved parsing of compact transaction descriptions (e.g., "20 cad groceries bmo cc at no frills") with:<ul>
 <li><strong>Category hint extraction</strong> — Detects expense/income markers in text and uses them as "to" account hints for better category matching (e.g., "groceries" → "Expenses:Groceries").</li>
 <li><strong>Payment method expansion</strong> — Enhances payment method hints by extracting bank/card names (e.g., "bmo cc" → "bmo credit card") for improved TF-IDF account matching (+0.5 similarity boost for matching bank names).</li>
 <li><strong>Robust amount extraction</strong> — Fixed regex patterns for both prefix ($15) and suffix (15$, 15 CAD) amount formats, with case-insensitive currency matching (cad, CAD, etc.).</li>
@@ -2767,6 +3261,13 @@
 <p>Direction detection now considers full text context (not only extracted hints), improving transfer classification.</p>
 </li>
 <li>
+<p><strong>Quick Add parser create payload type fix</strong> — Fixed parser-assisted Quick Add submission to coerce form values to strings before POSTing to <code>/api/parser/create-transaction</code>.</p>
+</li>
+<li>Prevents <code>400 Bad Request</code> errors like <code>cannot unmarshal number into go struct CreateParsedTransactionRequest</code> when parser-returned numeric amounts were sent back as JSON numbers.</li>
+<li>
+<p>Added frontend regression tests for numeric parser amount coercion in quick add parser utilities.</p>
+</li>
+<li>
 <p><strong>Epic 6: Account balance snapshots as-of date</strong> — Assets balance and account detail flows now support historical as-of views for reconciliation.</p>
 </li>
 <li><strong>Subtask 6.1 (Backend – Date filter on balance endpoints)</strong> — Added <code>as_of_date</code> (<code>YYYY-MM-DD</code>) support to <code>GET /api/assets/balance</code>, <code>GET /api/gain/:account</code>, and new <code>GET /api/account/:account/balance</code>. Date defaults to today, rejects invalid format/future dates with <code>400 INVALID_REQUEST</code>, and excludes postings after the selected date.</li>
@@ -2789,13 +3290,35 @@
 <p><strong>Year-over-Year "Until year" selector</strong> — The Year-over-Year analysis page now includes an "Until year" dropdown alongside "Years to compare". Users can select an end year (e.g. 2025) so the comparison covers the N years up to and including that year (e.g. last 3 years until 2025 = 2023, 2024, 2025). Defaults to the current year, preserving existing behaviour. The <code>/api/expense</code> and <code>/api/income</code> endpoints now accept an optional <code>until_year</code> query parameter.</p>
 </li>
 <li>
+<p><strong>Month-over-Month analysis page (<code>/analysis/mom</code>)</strong> — Added a dedicated Analysis view for MoM expense trends across multiple angles.</p>
+</li>
+<li>Selectable analysis window (6/12/24 months) and end month.</li>
+<li>Breakdown switches for category, payee, and account views.</li>
+<li>Monthly timeline table with MoM deltas and 3-month moving averages.</li>
+<li>Top contributors with share-of-month and compact sparklines.</li>
+<li>
+<p>Additional insight cards for range highs/lows, biggest movers, and strongest 30-day momentum signals.</p>
+</li>
+<li>
 <p><strong>Incremental price sync (delta updates)</strong> — <code>SyncCommodities</code> now performs incremental syncs instead of fetching and replacing the full price history on every run.</p>
 </li>
 <li><code>PriceProvider.GetPrices</code> accepts a new <code>since time.Time</code> parameter. Providers use it to filter returned prices to those on or after the start-of-day of <code>since</code>; a zero value means fetch the full history (first run).</li>
 <li><code>syncCommodities</code> reads the <code>last_price_sync</code> metadata timestamp and forwards it to every provider as <code>since</code>, enabling incremental fetches after the first sync.</li>
 <li>The sync API now accepts <code>force_prices: true</code> to bypass <code>last_price_sync</code> and fetch the full commodity price history on demand. The Prices page exposes this via a new <strong>Force Refresh</strong> action.</li>
 <li><code>UpsertAllByTypeNameAndID</code> now uses a pure UPSERT (INSERT … ON CONFLICT DO UPDATE) without first deleting existing rows. Historical prices are preserved across syncs; the same date's value is updated in place if the provider returns a corrected figure.</li>
-<li>New <code>price.FilterSince(prices, since)</code> helper: filters a <code>[]*Price</code> slice to entries on or after the start-of-day of <code>since</code> (UTC). Zero <code>since</code> returns the slice unmodified.</li>
+<li>
+<p>New <code>price.FilterSince(prices, since)</code> helper: filters a <code>[]*Price</code> slice to entries on or after the start-of-day of <code>since</code> (UTC). Zero <code>since</code> returns the slice unmodified.</p>
+</li>
+<li>
+<p><strong>Incremental journal sync with transaction-level change tracking</strong> — <code>SyncJournal</code> now performs delta updates to the <code>postings</code> table instead of a full DELETE + INSERT on every sync run, significantly reducing I/O for frequent small journal edits.</p>
+</li>
+<li><strong>File-level hash skip</strong> — before invoking the ledger CLI at all, <code>SyncJournal</code> computes a combined SHA-256 hash of all included journal files (<code>ledger.Cli().Files()</code>) and compares it against the value stored in <code>metadata</code> under <code>journal_hash</code>. If the hash matches the sync returns <code>SyncResult{Skipped: true}</code> immediately, eliminating all CLI and database work when nothing has changed.</li>
+<li><strong>Transaction-level content hash</strong> — each posting now carries a <code>transaction_hash</code> column (schema migration v9) containing a deterministic SHA-256 hash of the full set of postings belonging to the same <code>TransactionID</code>. Postings within a transaction are sorted by account name before hashing so that re-ordering within a transaction does not produce a spurious "changed" signal.</li>
+<li><strong><code>posting.DeltaUpsert</code></strong> — new function that replaces <code>posting.UpsertAll</code> in the sync path. It loads the existing <code>(transaction_id, transaction_hash)</code> pairs with a lightweight indexed query, classifies each incoming transaction as added / updated / removed / unchanged, and issues only the SQL writes that are necessary. Unchanged transactions — the common case when only one or two transactions are appended to a large journal — are skipped entirely.</li>
+<li><strong><code>force_journal: true</code> sync option</strong> — the <code>POST /api/sync</code> request body now accepts <code>force_journal: true</code> to bypass both the file-level hash check and the transaction-level delta path and instead perform a full <code>DELETE all + INSERT all</code> replace. This mirrors the existing <code>force_prices</code> flag and is the recommended escape hatch when the <code>transaction_hash</code> index may be stale (e.g. after a manual DB edit, data import, or migration from an older build). <code>SyncJournal</code> also clears the cached journal hash before attempting the work so a subsequent ordinary sync will not silently skip.</li>
+<li><strong>Post-sync actions are unaffected</strong> — <code>cache.WarmCache</code>, <code>service.WarmXIRRCache</code>, and <code>account_balance.RefreshFromPostings</code> all operate on the full <code>postings</code> table after the delta write completes, so XIRR calculations, balance computations, and market-price cache warming always see a fully consistent picture regardless of whether an incremental or full-replace sync was used.</li>
+<li><strong><code>SyncResult</code> delta counters</strong> — <code>SyncResult</code> now includes <code>PostingsAdded</code>, <code>PostingsUpdated</code>, <code>PostingsRemoved</code>, and <code>PostingsUnchanged</code> counts so operators can observe the incremental-sync efficiency at a glance.</li>
+<li><strong><code>posting.StampTransactionHash</code> / <code>posting.ComputeTransactionHash</code></strong> — exported helpers for stamping and computing per-transaction hashes, available for use in tests and future tooling.</li>
 </ul>
 <h4 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h4>
 <ul>
@@ -2966,6 +3489,9 @@
 <h4 id="bug-fixes">Bug fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h4>
 <ul>
 <li>
+<p><strong>Frontend jobs store API export hardening</strong> — Added an explicit <code>JobsStore</code> type contract in <code>src/lib/stores/jobs.ts</code> so the exported <code>jobs</code> store is guaranteed to expose <code>upsert</code>, <code>updateById</code>, <code>reset</code>, and <code>snapshot</code> in addition to <code>subscribe</code>. Also switched reset's <code>/api/jobs/clear</code> call to a lazy runtime import of <code>ajax</code> and made the store a <code>globalThis</code> singleton, preventing duplicated-module test contexts from observing mismatched jobs-store instances (<code>jobs.reset is not a function</code> / stale <code>runningJob</code> state).</p>
+</li>
+<li>
 <p><strong>Journal sync posting writes optimized</strong> — <code>posting.UpsertAll</code> now performs replacement
   inserts using GORM <code>CreateInBatches</code> instead of one-row-at-a-time inserts, reducing sync
   time on large journals while preserving atomic replace behavior.</p>
@@ -3087,7 +3613,9 @@
 <li><strong><code>Job</code> and <code>JobStatus</code> types in utils.ts</strong> — Added <code>JobStatus</code> union type (<code>"pending" | "running" | "completed" | "failed"</code>) and <code>Job</code> interface mirroring the Go <code>worker.Job</code> struct. Date fields (<code>created_at</code>, <code>started_at</code>, <code>finished_at</code>) are typed as <code>string</code> because the ajax reviver only converts keys matching <code>/Date|date|time|now/</code>.</li>
 <li><strong><code>POST /api/sync</code> ajax overload updated</strong> — The TypeScript overload for <code>/api/sync</code> now declares the return type as <code>{ job_id: string }</code>, matching the <code>202 Accepted</code> response the backend already returns. A new overload for <code>GET /api/jobs/:id</code> returning <code>Job</code> is also added.</li>
 <li><strong><code>src/lib/sync.ts</code> adapted for async API</strong> — <code>sync()</code> now extracts <code>job_id</code> from the <code>202</code> response and immediately upserts a <code>pending</code> job into the jobs store. Network-level failures (non-2xx, connection errors) are surfaced as a Bulma toast; job-level failures will be surfaced via polling (P1.3-12).</li>
-<li><strong><code>startPolling</code> — background job status polling</strong> — <code>startPolling(jobId, onTerminal?, options?)</code> polls <code>GET /api/jobs/:id</code> in the background at 2-second intervals, updating the jobs store on each response. Polling stops automatically when the job reaches a terminal state (completed or failed) or after 150 attempts (~5 minutes). Up to 5 consecutive network errors are tolerated before polling aborts; the error counter resets on the next successful response. On failure, a Bulma toast is shown with the error message. The <code>onTerminal</code> callback is called with the final job, enabling callers (e.g. <code>Actions.svelte</code>) to trigger a data refresh. All timing and retry parameters are injectable for unit testing (P1.3).</li>
+<li><strong>Persistent SQLite job queue + recovery</strong> — Background jobs are now persisted in a new <code>jobs</code> table (migration v16). <code>worker.Registry</code> can load persisted jobs on startup, replay interrupted recoverable jobs, and persist status/details/progress updates (<code>items_completed</code> / <code>total_items</code>) throughout execution.</li>
+<li><strong>Real-time job stream via SSE</strong> — Added <code>GET /api/jobs/stream</code> which emits job snapshots as <code>text/event-stream</code>. The frontend sync tracker now consumes the stream for live updates and terminal-state callbacks, eliminating client-side HTTP polling for job progress.</li>
+<li><strong><code>startPolling</code> now backed by SSE</strong> — For call-site compatibility, <code>startPolling(jobId, onTerminal?)</code> remains exported but now registers terminal listeners and ensures the <code>/api/jobs/stream</code> SSE connection is active. No periodic <code>GET /api/jobs/:id</code> polling is performed by the frontend.</li>
 <li><strong><code>Actions.svelte</code> updated for async sync</strong> — <code>syncWithLoader</code> now calls <code>startPolling</code> after <code>sync()</code> returns a <code>job_id</code>, deferring the data <code>refresh()</code> to the <code>onTerminal</code> callback rather than running it immediately. This ensures the UI reflects the completed sync result rather than stale data (P1.3).</li>
 <li><strong><code>createJobsStore</code> exported</strong> — The <code>createJobsStore</code> factory in <code>src/lib/stores/jobs.ts</code> is now exported so tests and tooling can create isolated store instances without sharing the module-level singleton.</li>
 <li><strong>Asynchronous POST /api/sync</strong> — <code>POST /api/sync</code> now returns <code>202 Accepted</code> immediately with <code>{"job_id": "&lt;uuid&gt;"}</code> instead of blocking until the sync completes. The sync work is performed in the background via the <code>worker.Registry</code>; callers can poll the job status via <code>GET /api/jobs/:id</code> (P1.2). Readonly and authentication behaviour are preserved: the endpoint is still guarded by <code>ReadonlyMiddleware</code> and <code>TokenAuthMiddleware</code>.</li>
