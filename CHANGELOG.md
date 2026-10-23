@@ -4,6 +4,12 @@
 
 #### Features
 
+- **Tighten statement-import duplicate matching and expense categorization** — Updated the spreadsheet import utility to avoid false duplicate merges caused by equal amounts alone and to improve best-effort expense guessing for bank/credit-card statements.
+  - Duplicate detection in statement imports now requires the same account, same amount, and a sufficiently close date plus matching payee text to suppress accidental merges across different merchants.
+  - Expense account guesses now map common merchants to categories like groceries, transportation, utilities, shopping, and health with a safe fallback to `Expenses:Unknown`.
+  - Monthly statement consolidation keeps category totals grouped by month and account in a Beancount-friendly output for faster review.
+  - Added focused regression coverage for duplicate matching, merchant guessing, and month aggregation in the import test suite.
+
 - **Add smart per-bucket tax applicability overrides for Life Drawdown** — Added strategy-level tax rules so users can decide how selected assets are taxed during drawdown simulations.
   - Extended drawdown buckets with an optional `override_tax_category` that applies tax treatment overrides to matching lots without changing global commodity configuration.
   - Added named buckets and explicit account assignment (`accounts`) support so users can drag/drop asset accounts into strategy buckets for direct inclusion control.
