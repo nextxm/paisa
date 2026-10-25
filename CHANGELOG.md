@@ -2,6 +2,8 @@
 
 ### Unreleased — Future changes
 
+### 0.91-beta (2026-10-25) — Future changes
+
 #### Features
 
 - **Tighten statement-import duplicate matching and expense categorization** — Updated the spreadsheet import utility to avoid false duplicate merges caused by equal amounts alone and to improve best-effort expense guessing for bank/credit-card statements.
