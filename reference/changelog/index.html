@@ -2758,7 +2758,16 @@
 <h3 id="unreleased-future-changes">Unreleased — Future changes<a class="headerlink" href="#unreleased-future-changes" title="Permanent link">&para;</a></h3>
 <h4 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h4>
 <ul>
-<li><strong>Add smart per-bucket tax applicability overrides for Life Drawdown</strong> — Added strategy-level tax rules so users can decide how selected assets are taxed during drawdown simulations.</li>
+<li><strong>Tighten statement-import duplicate matching and expense categorization</strong> — Updated the spreadsheet import utility to avoid false duplicate merges caused by equal amounts alone and to improve best-effort expense guessing for bank/credit-card statements.</li>
+<li>Duplicate detection in statement imports now requires the same account, same amount, and a sufficiently close date plus matching payee text to suppress accidental merges across different merchants.</li>
+<li>Expense account guesses now map common merchants to categories like groceries, transportation, utilities, shopping, and health with a safe fallback to <code>Expenses:Unknown</code>.</li>
+<li>Monthly statement consolidation keeps category totals grouped by month and account in a Beancount-friendly output for faster review.</li>
+<li>
+<p>Added focused regression coverage for duplicate matching, merchant guessing, and month aggregation in the import test suite.</p>
+</li>
+<li>
+<p><strong>Add smart per-bucket tax applicability overrides for Life Drawdown</strong> — Added strategy-level tax rules so users can decide how selected assets are taxed during drawdown simulations.</p>
+</li>
 <li>Extended drawdown buckets with an optional <code>override_tax_category</code> that applies tax treatment overrides to matching lots without changing global commodity configuration.</li>
 <li>Added named buckets and explicit account assignment (<code>accounts</code>) support so users can drag/drop asset accounts into strategy buckets for direct inclusion control.</li>
 <li>Updated lot collection and ordering logic to preserve bucket priority and use bucket-applied tax categories for sale-tax estimation.</li>
