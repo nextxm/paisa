@@ -70,6 +70,7 @@
   let reviewLedgerOpen: boolean = $state(false);
   let reviewLedgerContent: string = $state("");
   let rawFileContent: string = $state("");
+  let uploadedFileName: string = $state("");
   let detectedFormat: "csv" | "ofx" | "qfx" | "excel" | "pdf" = $state("csv");
 
   let templateEditorDom: Element | undefined = $state();
@@ -118,17 +119,24 @@
     }
   });
 
-  // Header content extracted from raw text or parsed sheet rows
+  // Header content extracted from raw text, file metadata, or parsed sheet rows
   let statementHeaderContext = $derived.by(() => {
     const parts: string[] = [];
+    if (uploadedFileName) {
+      parts.push(uploadedFileName);
+    }
     if (rawFileContent) {
-      // First 25 lines of raw statement text
-      const lines = rawFileContent.split(/\r?\n/).slice(0, 25);
-      parts.push(...lines);
+      const lines = rawFileContent.split(/\r?\n/);
+      // Top section (up to 100 lines)
+      parts.push(...lines.slice(0, 100));
+      // Bottom section (up to 50 lines - captures bank footer/contact info)
+      if (lines.length > 100) {
+        parts.push(...lines.slice(-50));
+      }
     }
     if (data && data.length > 0) {
-      // First 10 rows of parsed tabular data
-      for (let i = 0; i < Math.min(10, data.length); i++) {
+      // First 50 rows of parsed tabular data
+      for (let i = 0; i < Math.min(50, data.length); i++) {
         const row = data[i];
         if (Array.isArray(row)) {
           parts.push(row.map((cell) => String(cell || "")).join(" "));
@@ -184,14 +192,41 @@
 
   // Top suggested source account when a header match is found
   let topSuggestedBaseAccount = $derived.by(() => {
-    if (!statementHeaderContext || orderedBaseAccounts.length === 0) return "";
-    const first = orderedBaseAccounts[0];
-    const tokens = first
-      .toLowerCase()
-      .split(/[:\s_-]+/)
-      .filter((t) => t.length >= 3 && t !== "assets" && t !== "liabilities");
-    const matched = tokens.some((t) => statementHeaderContext.includes(t));
-    return matched ? first : "";
+    if (!statementHeaderContext) return "";
+    if (orderedBaseAccounts.length > 0) {
+      const first = orderedBaseAccounts[0];
+      const tokens = first
+        .toLowerCase()
+        .split(/[:\s_-]+/)
+        .filter((t) => t.length >= 3 && t !== "assets" && t !== "liabilities");
+      const matched = tokens.some((t) => statementHeaderContext.includes(t));
+      if (matched) return first;
+    }
+    // Fallback bank account detection when user hasn't created a specific account yet
+    if (statementHeaderContext.includes("kotak") || statementHeaderContext.includes("811")) {
+      return "Assets:Checking:Kotak";
+    }
+    if (statementHeaderContext.includes("icici")) {
+      return statementHeaderContext.includes("credit card")
+        ? "Liabilities:CreditCard:ICICI"
+        : "Assets:Checking:ICICI";
+    }
+    if (statementHeaderContext.includes("axis")) {
+      return "Assets:Checking:Axis";
+    }
+    if (statementHeaderContext.includes("hdfc")) {
+      return "Assets:Checking:HDFC";
+    }
+    if (statementHeaderContext.includes("sbi")) {
+      return "Assets:Checking:SBI";
+    }
+    return "";
+  });
+
+  $effect(() => {
+    if (!baseAccount && topSuggestedBaseAccount) {
+      baseAccount = topSuggestedBaseAccount;
+    }
   });
 
   const saveAsNameDuplicate = $derived(
@@ -305,6 +340,7 @@
     if (!acceptedFiles || acceptedFiles.length === 0) return;
 
     const file = acceptedFiles[0];
+    uploadedFileName = file.name;
     const ext = file.name.split(".").pop()?.toLowerCase();
 
     // OFX / QFX statement check
@@ -350,6 +386,33 @@
       _.each(data, (row) => {
         row.length = columnCount;
       });
+
+      // Auto-detect preset and template if matching bank is found in content or filename
+      const bankKeywords = [
+        { key: "kotak", name: "Kotak" },
+        { key: "811", name: "Kotak" },
+        { key: "icici", name: "ICICI" },
+        { key: "sbi", name: "SBI" },
+        { key: "hdfc", name: "HDFC" },
+        { key: "chase", name: "Chase" }
+      ];
+      const fileHint = (file.name + " " + rawFileContent.slice(0, 2000)).toLowerCase();
+      for (const b of bankKeywords) {
+        if (fileHint.includes(b.key)) {
+          const foundPreset = importPresets.find((p) =>
+            p.name.toLowerCase().includes(b.name.toLowerCase())
+          );
+          if (foundPreset) selectedPreset = foundPreset;
+          const foundTemplate = templates.find((t) =>
+            t.name.toLowerCase().includes(b.name.toLowerCase())
+          );
+          if (foundTemplate) {
+            selectedTemplate = foundTemplate;
+            saveAsName = foundTemplate.name;
+          }
+          break;
+        }
+      }
 
       if (mode === "smart") {
         await runSmartIngest();

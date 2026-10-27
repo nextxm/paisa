@@ -17,12 +17,12 @@ var defaultMerchantTaxonomy = []struct {
 }{
 	// Food & Dining
 	{
-		Keywords: []string{"swiggy", "zomato", "mcdonald", "starbucks", "dominos", "pizza", "burger", "cafe", "restaurant", "eats", "diner", "subway", "kfc", "chai", "tea point", "coffee"},
+		Keywords: []string{"swiggy", "zomato", "mcdonald", "starbucks", "dominos", "pizza", "burger", "cafe", "restaurant", "eats", "diner", "subway", "kfc", "chai", "tea point", "coffee", "sweets", "bakery"},
 		Account:  "Expenses:Food:Dining",
 	},
 	// Groceries
 	{
-		Keywords: []string{"blinkit", "zepto", "instamart", "dmart", "bigbasket", "grofers", "supermarket", "nature basket", "spencer", "reliance fresh", "more retail", "kirana", "provision"},
+		Keywords: []string{"blinkit", "zepto", "instamart", "dmart", "bigbasket", "grofers", "supermarket", "nature basket", "spencer", "reliance fresh", "more retail", "kirana", "provision", "smart bazaar", "vegetab", "vegetable", "fruits"},
 		Account:  "Expenses:Food:Groceries",
 	},
 	// Transport & Travel

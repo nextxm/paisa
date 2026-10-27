@@ -36,5 +36,9 @@ describe("cleanPayee", () => {
     expect(cleanPayee("UPI/SWIGGY/14333153570/swiggy@icici")).toBe("SWIGGY");
 
     expect(cleanPayee("BBPS Payment received 14238609506")).toBe("Payment received");
+    expect(cleanPayee("PCD/1440/PHP*MEESHO TECHNOLOGIE/S  Ben251026/23:46")).toBe(
+      "MEESHO TECHNOLOGIE"
+    );
+    expect(cleanPayee("UPI/MANGALBAI SHIV/BKID/666407498372/UPI")).toBe("MANGALBAI SHIV");
   });
 });
