@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -255,4 +256,64 @@ func TestSuggestOffsetAccount(t *testing.T) {
 	accSal, confSal := SuggestOffsetAccount(salaryTx, chart, nil)
 	assert.Equal(t, "Income:Salary", accSal)
 	assert.Equal(t, "heuristic", confSal)
+}
+
+func TestIngestKotakStatement_SampleCSV(t *testing.T) {
+	db := openTestDB(t)
+
+	content, err := os.ReadFile("../../src/8153288160_statement.csv")
+	require.NoError(t, err)
+
+	result, err := Ingest(db, IngestionRequest{
+		Format:  FormatCSV,
+		Content: string(content),
+	})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	assert.Equal(t, 25, result.TotalParsed)
+
+	// Row 1: PCD/1440/PHP*MEESHO TECHNOLOGIE/S Ben251026/23:46
+	tx0 := result.Transactions[0]
+	assert.Equal(t, "2026-10-25", tx0.Date)
+	assert.Equal(t, 172.0, tx0.Amount)
+	assert.True(t, tx0.IsDebit, "172 DR should be marked as debit")
+	assert.Equal(t, "INR", tx0.Currency)
+
+	// Row 4: CASHBACK EARNED
+	tx3 := result.Transactions[3]
+	assert.Equal(t, "2026-10-25", tx3.Date)
+	assert.Equal(t, 1.5, tx3.Amount)
+	assert.False(t, tx3.IsDebit, "1.5 CR should be marked as credit")
+	assert.Equal(t, "INR", tx3.Currency)
+
+	// Row 12: KOTAK811/629630620608 5,000.00 CR
+	tx11 := result.Transactions[11]
+	assert.Equal(t, "2026-10-23", tx11.Date)
+	assert.Equal(t, 5000.0, tx11.Amount)
+	assert.False(t, tx11.IsDebit, "5000.00 CR deposit should be marked as credit")
+
+	// Row 15: VISA-REFUND 3,058.00 CR
+	tx14 := result.Transactions[14]
+	assert.Equal(t, "2026-10-20", tx14.Date)
+	assert.Equal(t, 3058.0, tx14.Amount)
+	assert.False(t, tx14.IsDebit, "Refund CR should be marked as credit")
+
+	// Row 25: KOTAK811/665405003730 10,000.00 CR
+	tx24 := result.Transactions[24]
+	assert.Equal(t, "2026-10-15", tx24.Date)
+	assert.Equal(t, 10000.0, tx24.Amount)
+	assert.False(t, tx24.IsDebit, "10000.00 CR deposit should be marked as credit")
+
+	// Verify all 17 debits and 8 credits
+	debits := 0
+	credits := 0
+	for _, tx := range result.Transactions {
+		if tx.IsDebit {
+			debits++
+		} else {
+			credits++
+		}
+	}
+	assert.Equal(t, 18, debits)
+	assert.Equal(t, 7, credits)
 }

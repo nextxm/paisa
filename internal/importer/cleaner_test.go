@@ -47,6 +47,14 @@ func TestCleanPayee_RemovesBankNoiseAndIDs(t *testing.T) {
 			input:    "BBPS Payment received 14238609506",
 			expected: "Payment received",
 		},
+		{
+			input:    "PCD/1440/PHP*MEESHO TECHNOLOGIE/S  Ben251026/23:46",
+			expected: "MEESHO TECHNOLOGIE",
+		},
+		{
+			input:    "UPI/MANGALBAI SHIV/BKID/666407498372/UPI",
+			expected: "MANGALBAI SHIV",
+		},
 	}
 
 	for _, tc := range cases {

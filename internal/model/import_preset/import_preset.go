@@ -149,6 +149,17 @@ func BuiltinPresets() []ImportPreset {
 			Delimiter:       ",",
 			PresetType:      Builtin,
 		},
+		{
+			ID:   buildID("Kotak Bank Statement CSV", Builtin),
+			Name: "Kotak Bank Statement CSV",
+			ColumnMappings: map[string]string{
+				"date": "B", "description": "D", "amount": "F", "dr_cr": "G", "balance": "H",
+			},
+			DateFormat:      "DD-MM-YY",
+			DefaultAccounts: map[string]string{"asset": "Assets:Checking:Kotak"},
+			Delimiter:       ",",
+			PresetType:      Builtin,
+		},
 	}
 }
 
