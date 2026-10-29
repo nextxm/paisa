@@ -8,6 +8,15 @@
   }
 
   @include mobile {
+    font-size: 15px;
+    overflow-x: hidden;
+    max-width: 100vw;
+
+    body {
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+
     .navbar-item {
       &.has-dropdown {
         .navbar-dropdown {

@@ -685,7 +685,7 @@
   ></button>
 {/if}
 
-<div class="mt-3 px-3 is-flex is-justify-content-space-between">
+<div class="mt-3 px-3 is-flex is-justify-content-space-between subnav-bar">
   {#if selectedLink}
     <nav
       style="margin-left: 0.73rem;"
@@ -765,7 +765,7 @@
     </nav>
   {/if}
 
-  <div class="mr-3 is-flex" style="gap: 12px">
+  <div class="mr-3 is-flex subnav-controls" style="gap: 12px">
     {#if selectedSubSubLink?.recurringIcons || selectedSubLink?.recurringIcons}
       <div class="flex gap-5 items-center has-text-grey">
         {#each RecurringIcons as icon}
@@ -968,8 +968,43 @@
     }
 
     .navbar-actions-row :global(.theme-toggle) {
-      --size: 2rem;
+      --size: 2.25rem;
       border-radius: 0.5rem;
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+    .navbar-actions-row :global(.theme-toggle) {
+      --size: 2.6rem;
+      min-width: 40px;
+      min-height: 40px;
+      border-radius: 0.5rem;
+    }
+
+    .subnav-bar {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding-left: 0.75rem !important;
+      padding-right: 0.75rem !important;
+    }
+
+    .subnav-bar :global(nav.app-breadcrumb) {
+      margin-left: 0 !important;
+      font-size: 0.95rem !important;
+    }
+
+    .subnav-bar :global(nav.app-breadcrumb ul) {
+      flex-wrap: wrap;
+      row-gap: 0.25rem;
+    }
+
+    .subnav-controls {
+      flex-wrap: wrap;
+      margin-right: 0 !important;
+      width: 100%;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 0.5rem !important;
     }
   }
 
@@ -987,14 +1022,23 @@
     .mobile-top-actions {
       flex: 1 1 100%;
       width: 100%;
+      max-width: 100%;
       margin-left: 0;
-      overflow: visible;
+      overflow-x: auto;
       padding: 0.15rem 0 0.1rem 0.15rem;
       justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .mobile-top-actions :global(.navbar-actions-strip) {
+      flex-wrap: wrap;
+      min-width: 0;
     }
 
     .navbar-actions-row :global(.theme-toggle) {
-      --size: 2.2rem;
+      --size: 2.6rem;
+      min-width: 40px;
+      min-height: 40px;
       border-radius: 0.5rem;
     }
   }

@@ -22,7 +22,7 @@
     <div>
       <div class="masonry-grid masonry-grid-500">
         {#each visible as t (t.id)}
-          <div class="mr-3 is-flex-grow-1">
+          <div class="mr-3 is-flex-grow-1 recent-tx-item">
             <TransactionCard {t} />
           </div>
         {/each}
@@ -39,7 +39,14 @@
   }
 
   .masonry-grid-500 {
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  }
+
+  @media screen and (max-width: 768px) {
+    .recent-tx-item {
+      margin-right: 0 !important;
+      min-width: 0;
+    }
   }
 
   p.subtitle {

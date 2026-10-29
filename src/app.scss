@@ -214,17 +214,167 @@ html {
 }
 
 @include mobile {
-  // Ensure minimum 44px touch targets on mobile
-  .select.is-small select {
-    min-height: 44px;
-    font-size: $body-size;
+  // Readability floor for small text & chart axes on mobile
+  .is-size-7 {
+    font-size: 0.85rem !important;
   }
 
+  .is-size-6-5 {
+    font-size: 0.9rem !important;
+  }
+
+  .axis text {
+    font-size: 0.8rem;
+  }
+
+  .axis.dark text,
+  .axis.link text {
+    font-size: 0.875rem;
+  }
+
+  // Ensure comfortable touch targets on mobile
+  .button,
   .button.is-small {
     min-height: 44px;
     padding-left: 0.75em;
     padding-right: 0.75em;
-    font-size: $body-size;
+    font-size: 0.95rem;
+  }
+
+  .input,
+  .input.is-small,
+  .select select,
+  .select.is-small select {
+    min-height: 44px;
+    font-size: 0.95rem;
+  }
+
+  .select:not(.is-multiple):not(.is-loading)::after {
+    top: 50%;
+  }
+
+  .du-tabs .du-tab,
+  .du-tabs-sm .du-tab {
+    min-height: 38px;
+    height: auto;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .svelte-select {
+    --height: 44px;
+    --max-height: 44px;
+    --font-size: 0.95rem;
+  }
+
+  .navbar-burger {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .navbar-menu a.navbar-item,
+  .navbar-menu .navbar-link {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+  }
+
+  .config-nav-item,
+  .du-menu a,
+  .du-menu summary,
+  .du-menu button {
+    min-height: 44px;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+    font-size: 0.95rem;
+  }
+
+  .month-picker .months {
+    width: 240px;
+
+    .month {
+      width: 33.33%;
+
+      button {
+        min-height: 40px;
+        width: 100%;
+        font-size: 0.95rem;
+      }
+    }
+  }
+
+  // Reclaim horizontal space and prevent horizontal overflow on mobile
+  .section {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .container.is-fluid {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .columns {
+    margin-left: -0.35rem;
+    margin-right: -0.35rem;
+
+    > .column {
+      padding-left: 0.35rem;
+      padding-right: 0.35rem;
+      min-width: 0;
+      max-width: 100%;
+    }
+  }
+
+  .tile.is-ancestor,
+  .tile.is-parent,
+  .tile.is-child {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  nav.level.grid-2 {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.5rem;
+
+    .level-item {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  table.table:not(.popup-table) {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .credit-card-container {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+
+  .credit-card {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .budget-card .md\:flex {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    > div:last-child {
+      flex-wrap: wrap;
+      min-width: 0 !important;
+      justify-content: flex-start !important;
+      margin-left: 0.5rem;
+      gap: 0.25rem 0.75rem;
+    }
   }
 }
 

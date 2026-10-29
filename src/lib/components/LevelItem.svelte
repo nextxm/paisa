@@ -69,6 +69,18 @@
     margin-bottom: 0 !important;
   }
 
+  @include mobile {
+    .title {
+      font-size: 1.45rem !important;
+      line-height: 1.75rem !important;
+      word-break: break-word;
+    }
+
+    .sub-title {
+      font-size: 0.85rem !important;
+    }
+  }
+
   @include widescreen {
     .title {
       font-size: 2.25rem !important;

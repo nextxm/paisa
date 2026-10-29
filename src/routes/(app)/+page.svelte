@@ -447,7 +447,10 @@
             {#if widget.id === "expenses"}
               <div class="tile is-parent is-12">
                 <article class="tile is-child">
-                  <p class="subtitle is-flex is-justify-content-space-between is-align-items-end">
+                  <p
+                    class="subtitle is-flex is-flex-wrap-wrap is-justify-content-space-between is-align-items-end"
+                    style="gap: 0.5rem"
+                  >
                     <span
                       ><a class="secondary-link has-text-grey" href="/expense/monthly">Expenses</a>
                       <span
@@ -602,7 +605,7 @@
   }
 
   .masonry-grid-400 {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   }
 
   p.subtitle {
