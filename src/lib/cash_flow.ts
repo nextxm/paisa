@@ -35,7 +35,7 @@ export function renderMonthlyFlow(
     margin = {
       top: rem(15),
       right: rem(30),
-      bottom: options.rotate ? rem(50) : rem(20),
+      bottom: options.rotate ? rem(60) : rem(25),
       left: rem(40)
     },
     width =
@@ -115,7 +115,7 @@ export function renderMonthlyFlow(
         d3
           .axisBottom(x)
           .ticks(5)
-          .tickFormat(skipTicks(30, x, (d) => d.toString()))
+          .tickFormat(skipTicks(options.rotate ? 35 : 70, x, (d) => d.toString()))
       )
       .selectAll("text")
       .attr("y", 10)

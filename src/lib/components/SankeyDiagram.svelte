@@ -54,13 +54,14 @@
 
     if (_.isEmpty(nodes) || _.isEmpty(links)) return;
 
+    const effectiveWidth = Math.max(containerWidth, 720);
     const margin = { top: rem(10), right: rem(120), bottom: rem(10), left: rem(120) };
-    const w = containerWidth - margin.left - margin.right;
+    const w = effectiveWidth - margin.left - margin.right;
     const h = height - margin.top - margin.bottom;
 
     if (w <= 0 || h <= 0) return;
 
-    svgSel.attr("width", containerWidth).attr("height", height);
+    svgSel.attr("width", effectiveWidth).attr("height", height);
 
     const g = svgSel.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -267,7 +268,7 @@
   });
 </script>
 
-<div bind:this={containerEl} style="width: 100%; position: relative;">
+<div bind:this={containerEl} style="width: 100%; position: relative; overflow-x: auto;">
   {#if loading}
     <div class="sankey-skeleton" aria-busy="true" aria-label="Loading Sankey diagram">
       {#each Array(5) as _}
@@ -280,12 +281,7 @@
       <p class="mt-2">{emptyMessage}</p>
     </div>
   {:else}
-    <svg
-      bind:this={svgEl}
-      role="img"
-      aria-label="Sankey flow diagram"
-      style="width: 100%; display: block;"
-    />
+    <svg bind:this={svgEl} role="img" aria-label="Sankey flow diagram" style="display: block;" />
   {/if}
 </div>
 

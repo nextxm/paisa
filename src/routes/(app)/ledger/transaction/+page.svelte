@@ -44,7 +44,7 @@
   const itemSize = (i: number) => {
     const t = filtered[i];
     const count = t.postings.length;
-    return 8 + count * 22 + (mobile ? 25 : 0);
+    return mobile ? 42 + count * 25 : 8 + count * 22;
   };
 
   async function fetchTransactions(currentFilters = filters) {
@@ -250,7 +250,7 @@
               itemCount={filtered.length}
               {itemSize}
             >
-              <div slot="item" let:index let:style {style}>
+              <div slot="item" let:index let:style style="{style} overflow: hidden;">
                 {@const t = filtered[index]}
                 <Transaction {t} />
               </div>

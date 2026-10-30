@@ -7,7 +7,7 @@
     nonZeroCurrencyLink,
     nonZeroFloatChange
   } from "$lib/table_formatters";
-  import { ajax, buildTree, type LiabilityBreakdown } from "$lib/utils";
+  import { ajax, buildTree, isMobile, type LiabilityBreakdown } from "$lib/utils";
   import _ from "lodash";
   import { onMount } from "svelte";
   import type { ColumnDefinition } from "tabulator-tables";
@@ -23,10 +23,14 @@
     }
   });
 
+  const mobile = isMobile();
+
   const columns: ColumnDefinition[] = [
     {
       title: "Account",
       field: "group",
+      width: mobile ? 140 : undefined,
+      maxWidth: mobile ? 155 : undefined,
       formatter: indendedLiabilityAccountName,
       frozen: true
     },

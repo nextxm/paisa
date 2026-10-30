@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { rem } from "$lib/utils";
+  import { isMobile, rem } from "$lib/utils";
   import { onDestroy } from "svelte";
   import { TabulatorFull as Tabulator, type ColumnDefinition } from "tabulator-tables";
 
@@ -43,18 +43,20 @@
       return;
     }
 
+    const mobile = isMobile();
+    const chevronMargin = mobile ? "mr-1" : "mr-3";
+
     tabulator = new Tabulator(el, {
       dataTree: props.tree,
       dataTreeStartExpanded: [true, true, false],
       dataTreeBranchElement: false,
-      dataTreeChildIndent: rem(30),
-      dataTreeCollapseElement:
-        "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-up'></i></span>",
-      dataTreeExpandElement:
-        "<span class='has-text-link icon is-small mr-3'><i class='fas fa-angle-down'></i></span>",
+      dataTreeChildIndent: mobile ? 10 : rem(30),
+      dataTreeCollapseElement: `<span class='has-text-link icon is-small ${chevronMargin}'><i class='fas fa-angle-up'></i></span>`,
+      dataTreeExpandElement: `<span class='has-text-link icon is-small ${chevronMargin}'><i class='fas fa-angle-down'></i></span>`,
       data: props.data || [],
       columns: props.columns,
-      layout: "fitDataTable"
+      layout: mobile ? "fitData" : "fitDataTable",
+      maxHeight: mobile ? "calc(100dvh - 210px)" : undefined
     });
 
     tabulator.on("tableBuilt", () => {

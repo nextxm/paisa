@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { ajax, type Log } from "$lib/utils";
+  import { ajax, isMobile, type Log } from "$lib/utils";
   import VirtualList from "svelte-tiny-virtual-list";
   import dayjs from "dayjs";
   import _ from "lodash";
 
   let logs: Log[] = $state([]);
-  const ITEM_SIZE = 20;
+  const ITEM_SIZE = isMobile() ? 26 : 20;
   const LIST_OFFSET = 130;
   const MIN_LIST_HEIGHT = 240;
   let viewportHeight = $state(MIN_LIST_HEIGHT + LIST_OFFSET);

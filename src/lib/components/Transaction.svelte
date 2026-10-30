@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { postingUrl, type Transaction } from "$lib/utils";
+  import { isMobile, postingUrl, type Transaction } from "$lib/utils";
   import Postings from "$lib/components/Postings.svelte";
   import _ from "lodash";
   import PostingStatus from "$lib/components/PostingStatus.svelte";
@@ -10,13 +10,15 @@
     t,
     highlightAccount = ""
   }: { compact?: boolean; t: Transaction; highlightAccount?: string } = $props();
+
+  const useCompact = $derived(compact || isMobile());
 </script>
 
-<div class="column is-12">
-  {#if compact}
-    <div class="columns is-flex-wrap-wrap transaction">
-      <div class="column is-12 py-0 truncate">
-        <div class="description is-size-7">
+<div class="column is-12" class:py-1={useCompact}>
+  {#if useCompact}
+    <div class="columns is-flex-wrap-wrap transaction" class:bordered={!compact}>
+      <div class="column is-12 py-0 truncate" style="line-height: 22px; height: 22px;">
+        <div class="description is-size-7" style="max-width: 100%;">
           <b>{t.date.format("DD MMM YYYY")}</b>
           <span title={t.payee}>
             <PostingStatus posting={t.postings[0]} />

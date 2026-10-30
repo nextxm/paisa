@@ -345,11 +345,15 @@ html {
     }
   }
 
-  table.table:not(.popup-table) {
-    display: block;
-    width: 100%;
+  .table-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+
+  .tabulator .tabulator-header .tabulator-col,
+  .tabulator .tabulator-row .tabulator-cell {
+    padding: 0.4rem 0.45rem;
   }
 
   .credit-card-container {

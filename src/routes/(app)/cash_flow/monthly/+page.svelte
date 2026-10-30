@@ -172,7 +172,10 @@
       {#if !_.isEmpty(cashFlows)}
         <div class="column is-12">
           <div class="box">
-            <div class="is-flex is-justify-content-space-between is-align-items-center mb-6 px-2">
+            <div
+              class="is-flex is-flex-wrap-wrap is-justify-content-space-between is-align-items-center mb-6 px-2"
+              style="gap: 0.75rem;"
+            >
               <h2 class="title is-4 mb-0">Monthly Breakdown</h2>
               <MonthPicker bind:value={selectedMonth} min={minDate} max={maxDate} />
             </div>
@@ -718,16 +721,63 @@
   }
 
   @media screen and (max-width: 768px) {
+    .summary-card {
+      padding: 0.75rem 0.85rem;
+
+      .icon {
+        display: none;
+      }
+    }
+
+    .summary-content {
+      padding-right: 0;
+    }
+
     .summary-values {
       min-height: auto;
+      gap: 0.25rem;
+    }
+
+    .summary-amount-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.15rem 0.35rem;
     }
 
     .summary-amount-value {
-      font-size: 1.55rem;
+      text-align: left;
+      font-size: 1.15rem;
+      word-break: break-word;
     }
 
     .summary-amount-commodity {
-      font-size: 0.95rem;
+      font-size: 0.8rem;
+      min-width: auto;
+    }
+
+    .cashflow-row-label {
+      width: 55%;
+      padding-right: 0.5rem;
+    }
+
+    .cashflow-row-value {
+      width: 45%;
+    }
+
+    .net-surplus-footer {
+      padding: 1rem;
+
+      .level.is-mobile {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+
+        .level-right {
+          margin-top: 0;
+          text-align: left !important;
+        }
+      }
     }
   }
 </style>

@@ -38,7 +38,7 @@
   const itemSize = (i: number) => {
     const t = filteredTransactions[i];
     const count = t.postings.length;
-    return 8 + count * 22 + (mobile ? 25 : 0);
+    return mobile ? 42 + count * 25 : 8 + count * 22;
   };
 
   onMount(async () => {
@@ -120,7 +120,7 @@
                 itemCount={filteredTransactions.length}
                 {itemSize}
               >
-                <div slot="item" let:index let:style {style}>
+                <div slot="item" let:index let:style style="{style} overflow: hidden;">
                   {@const t = filteredTransactions[index]}
                   <Transaction {t} highlightAccount={data.account} />
                 </div>

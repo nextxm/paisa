@@ -1,5 +1,5 @@
 import { type CellComponent } from "tabulator-tables";
-import { formatCurrency, formatFloat, formatPercentage, isZero, lastName } from "./utils";
+import { formatCurrency, formatFloat, formatPercentage, isMobile, isZero, lastName } from "./utils";
 import type { OriginalCurrencyBalance } from "./utils";
 import { iconText } from "./icon";
 
@@ -10,8 +10,9 @@ export function indendedAssetAccountName(cell: CellComponent) {
   if ((data._children?.length || 0) > 0) {
     children = `(${data._children?.length})`;
   }
+  const maxWidth = isMobile() ? "8.5rem" : "max(15rem, 33.33vw)";
   return `
-<span class="whitespace-nowrap" style="max-width: max(15rem, 33.33vw); overflow: hidden;">
+<span class="whitespace-nowrap" style="max-width: ${maxWidth}; overflow: hidden;">
   <span class="has-text-grey custom-icon">${iconText(account)}</span>
   <a href="/assets/gain/${account}">${lastName(account)}</a>
   <span class="has-text-grey-light is-size-7">${children}</span>
@@ -26,8 +27,9 @@ export function indendedLiabilityAccountName(cell: CellComponent) {
   if ((data._children?.length || 0) > 0) {
     children = `(${data._children?.length})`;
   }
+  const maxWidth = isMobile() ? "8.5rem" : "max(15rem, 33.33vw)";
   return `
-<span class="whitespace-nowrap" style="max-width: max(15rem, 33.33vw); overflow: hidden;">
+<span class="whitespace-nowrap" style="max-width: ${maxWidth}; overflow: hidden;">
   <span class="has-text-grey custom-icon">${iconText(account)}</span>
   <a href="/accounts/${encodeURIComponent(account)}/transactions">${lastName(account)}</a>
   <span class="has-text-grey-light is-size-7">${children}</span>
@@ -37,8 +39,9 @@ export function indendedLiabilityAccountName(cell: CellComponent) {
 
 export function accountName(cell: CellComponent) {
   const account = cell.getValue();
+  const maxWidth = isMobile() ? "8.5rem" : "max(15rem, 33.33vw)";
   return `
-<span class="whitespace-nowrap" style="max-width: max(15rem, 33.33vw); overflow: hidden;">
+<span class="whitespace-nowrap" style="max-width: ${maxWidth}; overflow: hidden;">
   <span class="has-text-grey custom-icon">${iconText(account)}</span>
   <a href="/assets/gain/${account}">${account}</a>
 </span>
@@ -93,5 +96,10 @@ export function formatCurrencyChange(cell: CellComponent) {
 export function formatOriginalBalances(cell: CellComponent) {
   const balances: OriginalCurrencyBalance[] = cell.getValue();
   if (!balances || balances.length === 0) return "";
-  return balances.map((b) => `${formatCurrency(b.amount)}&nbsp;${b.currency}`).join("<br>");
+  const formatted = balances.map((b) => `${formatCurrency(b.amount)}&nbsp;${b.currency}`);
+  if (isMobile() && formatted.length > 1) {
+    const tooltipHtml = formatted.join("<br>");
+    return `<span data-tippy-content="${tooltipHtml}">${formatted[0]} <span class="has-text-grey is-size-7">(+${formatted.length - 1})</span></span>`;
+  }
+  return formatted.join("<br>");
 }
