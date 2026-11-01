@@ -826,25 +826,29 @@
   .control-row {
     display: flex !important;
     align-items: center !important;
-    gap: 0.75rem;
+    gap: 0.5rem;
     width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
   .slider-input {
-    flex: 1 1 0% !important;
+    flex: 1 1 auto !important;
     min-width: 0 !important;
-    width: 100% !important;
+    width: auto !important;
     cursor: pointer;
+    box-sizing: border-box;
   }
   .number-input {
-    flex: 0 0 7.5rem !important;
-    width: 7.5rem !important;
-    max-width: 7.5rem !important;
-    min-width: 7.5rem !important;
+    flex: 0 0 6.5rem !important;
+    width: 6.5rem !important;
+    max-width: 6.5rem !important;
+    min-width: 6.5rem !important;
     height: 2rem !important;
     min-height: 2rem !important;
     padding: 0.25rem 0.5rem !important;
     font-size: 0.85rem !important;
     text-align: right;
+    box-sizing: border-box;
   }
   .dna-card {
     padding: 0.75rem;
