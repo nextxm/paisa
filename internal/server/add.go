@@ -184,7 +184,9 @@ func appendTransactionAndValidate(db *gorm.DB, req AddTransactionRequest) (strin
 	}
 	defer f.Close()
 
-	if _, err := f.WriteString(entryText); err != nil {
+	_, err = f.WriteString(entryText)
+	invalidateJournalDirtyCache()
+	if err != nil {
 		log.Warn("Failed to write to add journal file: ", err)
 		return "", nil, fmt.Errorf("failed to write file")
 	}
