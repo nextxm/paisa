@@ -164,6 +164,7 @@ func SaveFile(db *gorm.DB, file LedgerFile) gin.H {
 	}
 
 	err = os.WriteFile(filePath, []byte(file.Content), perm)
+	invalidateJournalDirtyCache()
 	if err != nil {
 		log.Warn(err)
 		return gin.H{"errors": errors, "saved": false, "message": "Failed to write file"}

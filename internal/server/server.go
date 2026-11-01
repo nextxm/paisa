@@ -16,7 +16,6 @@ import (
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/gen/paisa/v1/paisav1connect"
 	"github.com/ananthakumaran/paisa/internal/generator"
-	"github.com/ananthakumaran/paisa/internal/ledger"
 	"github.com/ananthakumaran/paisa/internal/model"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/session"
@@ -120,15 +119,8 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		}
 		lastPriceUpdate, _ := metadata.GetOrDefault(requestDB, model.LastPriceSyncKey, "")
 
-		// Check if journal is dirty
-		journalPath := config.GetJournalPath()
-		files, err := ledger.Cli().Files(journalPath)
-		if err != nil {
-			files = []string{journalPath}
-		}
-		currentHash, _ := utils.SHA256Files(files)
-		lastHash, _ := metadata.GetOrDefault(requestDB, model.JournalHashKey, "")
-		isJournalDirty := currentHash != lastHash
+		// Check if journal is dirty (cached; see journal_dirty.go)
+		isJournalDirty := isJournalDirty(requestDB)
 
 		telemetry.writeHeaders(c)
 		c.JSON(200, gin.H{
@@ -153,6 +145,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 			RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, err.Error())
 			return
 		}
+		invalidateJournalDirtyCache()
 
 		c.JSON(200, gin.H{"success": true})
 	})

@@ -83,13 +83,110 @@ func convertNetworthTimelineToReportCurrency(db *gorm.DB, timeline []Networth, r
 func GetCurrentNetworth(db *gorm.DB) gin.H {
 	postings := query.Init(db).Like("Assets:%", "Income:CapitalGains:%", "Liabilities:%").UntilToday().All()
 	postings = service.PopulateMarketPrice(db, postings)
-	networthTimeline := computeNetworthTimeline(db, postings, false, utils.ToDate(utils.Now()))
-	networth := Networth{}
-	if len(networthTimeline) > 0 {
-		networth = networthTimeline[len(networthTimeline)-1]
-	}
+	networth := computeNetworth(db, postings)
 	xirr := service.XIRR(db, postings)
 	return gin.H{"networth": networth, "xirr": xirr}
+}
+
+func hasForeignCommodityExposure(db *gorm.DB, postings []posting.Posting, asOfDate time.Time) bool {
+	seen := make(map[string]bool)
+	for _, p := range postings {
+		if seen[p.Commodity] {
+			continue
+		}
+		seen[p.Commodity] = true
+		_, _, _, _, trackFX := commodityFXState(db, p.Commodity, decimal.NewFromInt(1), asOfDate)
+		if trackFX {
+			return true
+		}
+	}
+	return false
+}
+
+func computeNetworthDirect(db *gorm.DB, postings []posting.Posting, asOfDate time.Time) Networth {
+	end := utils.EndOfDay(asOfDate)
+	accumulator := make(map[string]networthRunningSum)
+
+	for _, p := range postings {
+		if p.Date.After(end) {
+			continue
+		}
+		rs := accumulator[p.Commodity]
+		isInterest := service.IsInterest(db, p)
+		isInterestRepayment := service.IsInterestRepayment(db, p)
+		isStockSplit := service.IsStockSplit(db, p)
+		isCapitalGains := service.IsCapitalGains(p)
+		isInvestmentIncome := isInvestmentIncomePosting(p)
+
+		if isInterest || isInterestRepayment {
+			rs.balance = rs.balance.Add(p.Amount)
+		} else if isCapitalGains || isInvestmentIncome {
+			rs.withdrawal = rs.withdrawal.Add(p.Amount.Neg())
+		} else {
+			if p.Amount.GreaterThan(decimal.Zero) && !isStockSplit {
+				rs.investment = rs.investment.Add(service.GetMarketPrice(db, p, p.Date))
+			}
+
+			if p.Amount.LessThan(decimal.Zero) && !isStockSplit {
+				rs.withdrawal = rs.withdrawal.Add(service.GetMarketPrice(db, p, p.Date).Neg())
+			}
+
+			rs.balance = rs.balance.Add(service.GetMarketPrice(db, p, end))
+			rs.balanceUnits = rs.balanceUnits.Add(p.Quantity)
+		}
+
+		accumulator[p.Commodity] = rs
+	}
+
+	var investment decimal.Decimal = decimal.Zero
+	var withdrawal decimal.Decimal = decimal.Zero
+	var balance decimal.Decimal = decimal.Zero
+	var balanceUnits decimal.Decimal = decimal.Zero
+
+	for commodity, rs := range accumulator {
+		investment = investment.Add(rs.investment)
+		withdrawal = withdrawal.Add(rs.withdrawal)
+
+		if utils.IsCurrency(commodity) {
+			balance = balance.Add(rs.balance)
+		} else {
+			price := service.GetUnitPrice(db, commodity, end)
+			if !price.Value.Equal(decimal.Zero) {
+				balance = balance.Add(rs.balanceUnits.Mul(price.Value))
+			} else {
+				balance = balance.Add(rs.balance)
+			}
+		}
+	}
+
+	gain := balance.Add(withdrawal).Sub(investment)
+	netInvestment := investment.Sub(withdrawal)
+
+	date := asOfDate
+	if balance.Abs().LessThan(decimal.NewFromFloat(0.01)) {
+		var lastDate time.Time
+		for _, p := range postings {
+			if (lastDate.IsZero() || p.Date.After(lastDate)) && !p.Date.After(end) {
+				lastDate = p.Date
+			}
+		}
+		if !lastDate.IsZero() {
+			date = lastDate
+		}
+	}
+
+	return Networth{
+		Date:                date,
+		InvestmentAmount:    investment,
+		WithdrawalAmount:    withdrawal,
+		GainAmount:          gain,
+		Contribution:        netInvestment,
+		InvestmentReturn:    gain,
+		FXImpact:            decimal.Zero,
+		BalanceAmount:       balance,
+		BalanceUnits:        balanceUnits,
+		NetInvestmentAmount: netInvestment,
+	}
 }
 
 func computeNetworth(db *gorm.DB, postings []posting.Posting) Networth {
@@ -97,7 +194,12 @@ func computeNetworth(db *gorm.DB, postings []posting.Posting) Networth {
 		return Networth{}
 	}
 
-	networthTimeline := computeNetworthTimeline(db, postings, false, utils.ToDate(utils.Now()))
+	asOfDate := utils.ToDate(utils.Now())
+	if !hasForeignCommodityExposure(db, postings, asOfDate) {
+		return computeNetworthDirect(db, postings, asOfDate)
+	}
+
+	networthTimeline := computeNetworthTimeline(db, postings, false, asOfDate)
 	if len(networthTimeline) == 0 {
 		return Networth{}
 	}

@@ -13,7 +13,7 @@ import (
 )
 
 func GetRecurringTransactions(db *gorm.DB) gin.H {
-	return gin.H{"transaction_sequences": ComputeRecurringTransactions(query.Init(db).All())}
+	return gin.H{"transaction_sequences": ComputeRecurringTransactions(query.Init(db).Where("tag_recurring != '' AND tag_recurring IS NOT NULL").UntilToday().All())}
 }
 
 type TransactionSequence struct {

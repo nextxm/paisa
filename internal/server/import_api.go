@@ -154,7 +154,9 @@ func HandleCommitImport(db *gorm.DB) gin.HandlerFunc {
 		}
 		defer f.Close()
 
-		if _, err := f.WriteString(contentToAppend); err != nil {
+		_, err = f.WriteString(contentToAppend)
+		invalidateJournalDirtyCache()
+		if err != nil {
 			log.Warn("Failed to write to journal file: ", err)
 			RespondError(c, http.StatusInternalServerError, ErrCodeInternalError, "failed to append to journal")
 			return

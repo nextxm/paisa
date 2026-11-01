@@ -13,7 +13,6 @@ import (
 	"github.com/ananthakumaran/paisa/internal/config"
 	v1 "github.com/ananthakumaran/paisa/internal/gen/paisa/v1"
 	"github.com/ananthakumaran/paisa/internal/gen/paisa/v1/paisav1connect"
-	"github.com/ananthakumaran/paisa/internal/ledger"
 	"github.com/ananthakumaran/paisa/internal/model"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/utils"
@@ -55,14 +54,7 @@ func (s *paisaServiceServer) GetConfig(
 
 	lastPriceUpdate, _ := metadata.GetOrDefault(requestDB, model.LastPriceSyncKey, "")
 
-	journalPath := config.GetJournalPath()
-	files, err := ledger.Cli().Files(journalPath)
-	if err != nil {
-		files = []string{journalPath}
-	}
-	currentHash, _ := utils.SHA256Files(files)
-	lastHash, _ := metadata.GetOrDefault(requestDB, model.JournalHashKey, "")
-	isJournalDirty := currentHash != lastHash
+	isJournalDirty := isJournalDirty(requestDB)
 
 	configStruct, err := toProtoStruct(config.GetConfig())
 	if err != nil {
@@ -102,6 +94,7 @@ func (s *paisaServiceServer) UpdateConfig(
 		connectErr.Meta().Set("x-http-code", "400")
 		return nil, connectErr
 	}
+	invalidateJournalDirtyCache()
 
 	return connect.NewResponse(&v1.UpdateConfigResponse{Success: true}), nil
 }
