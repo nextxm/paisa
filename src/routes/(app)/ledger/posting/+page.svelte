@@ -17,7 +17,8 @@
     type Transaction,
     formatCurrency,
     formatFloat,
-    firstName
+    firstName,
+    isMobile
   } from "$lib/utils";
   import _ from "lodash";
   import { onMount } from "svelte";
@@ -104,14 +105,14 @@
             <VirtualList
               height={window.innerHeight - 245}
               itemCount={filteredPostings.length}
-              itemSize={27}
+              itemSize={isMobile() ? 32 : 27}
             >
               <div
                 slot="item"
                 class="px-3 pt-1 grid grid-cols-7x gap-1 posting-row items-baseline is-hoverable"
                 let:index
                 let:style
-                {style}
+                style="{style} overflow: hidden;"
               >
                 {@const p = filteredPostings[index]}
                 {@const c = change(p)}

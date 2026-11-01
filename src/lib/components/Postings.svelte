@@ -1,7 +1,13 @@
 <script lang="ts">
   import { accountColorStyle } from "$lib/colors";
   import { iconText } from "$lib/icon";
-  import { firstName, formatCurrency, formatFloatUptoPrecision, type Posting } from "$lib/utils";
+  import {
+    firstName,
+    formatCurrency,
+    formatFloatUptoPrecision,
+    isMobile,
+    type Posting
+  } from "$lib/utils";
 
   const unlessDefaultCurrency = (p: Posting) => {
     if (p.commodity == USER_CONFIG.default_currency) {
@@ -15,46 +21,87 @@
 
   let { postings, highlightAccount = "" }: { postings: Posting[]; highlightAccount?: string } =
     $props();
+
+  const mobile = isMobile();
 </script>
 
 <div style="margin: 4px 0;">
   {#each postings as p}
-    <div class="is-flex is-hoverable" style="margin: 1px 0;">
+    {@const conv = unlessDefaultCurrency(p)}
+    {#if mobile}
       <div
-        class="truncate custom-icon mr-2"
-        style="flex: 0 0 40%; max-width: 40%;"
-        title={p.account}
+        class="is-flex is-align-items-baseline is-hoverable"
+        style="margin: 1px 0; line-height: 22px; height: 22px; overflow: hidden;"
       >
-        <span style={accountColorStyle(firstName(p.account))}>{iconText(p.account)}</span>
-        <a class="secondary-link" href="/accounts/{encodeURIComponent(p.account)}/transactions"
-          >{p.account}</a
+        <div
+          class="truncate custom-icon mr-2"
+          style="flex: 1 1 0%; min-width: 0;"
+          title={p.account}
         >
-      </div>
-      <div
-        class="has-text-right has-text-grey is-size-7 truncate"
-        style="flex: 0 0 20%; max-width: 20%;"
-      >
-        {unlessDefaultCurrency(p)}
-      </div>
-      <div class="has-text-right" style="flex: 0 0 15%; max-width: 15%;">
-        {formatCurrency(p.amount, 2)}
-      </div>
-      {#if highlightAccount}
-        <div class="has-text-right" style="flex: 0 0 10%; max-width: 10%;">
-          {#if p.account === highlightAccount || p.account.startsWith(highlightAccount + ":")}
-            {formatFloatUptoPrecision(p.quantity, 2)}
-            {p.commodity}
-          {/if}
+          <span style={accountColorStyle(firstName(p.account))}>{iconText(p.account)}</span>
+          <a class="secondary-link" href="/accounts/{encodeURIComponent(p.account)}/transactions"
+            >{p.account}</a
+          >
         </div>
-        <div class="has-text-right has-text-grey" style="flex: 0 0 15%; max-width: 15%;">
-          {#if p.account === highlightAccount || p.account.startsWith(highlightAccount + ":")}
+        {#if conv && !highlightAccount}
+          <div
+            class="has-text-right has-text-grey is-size-7 truncate mr-2"
+            style="flex: 0 1 28%; min-width: 0;"
+          >
+            {conv}
+          </div>
+        {/if}
+        <div class="has-text-right" style="flex: 0 0 auto; white-space: nowrap;">
+          {formatCurrency(p.amount, 2)}
+        </div>
+        {#if highlightAccount && (p.account === highlightAccount || p.account.startsWith(highlightAccount + ":"))}
+          <div
+            class="has-text-right has-text-grey is-size-7 ml-2"
+            style="flex: 0 0 auto; white-space: nowrap;"
+          >
             {formatCurrency(p.balance)}
             {p.commodity}
-          {/if}
+          </div>
+        {/if}
+      </div>
+    {:else}
+      <div class="is-flex is-hoverable" style="margin: 1px 0;">
+        <div
+          class="truncate custom-icon mr-2"
+          style="flex: 0 0 40%; max-width: 40%;"
+          title={p.account}
+        >
+          <span style={accountColorStyle(firstName(p.account))}>{iconText(p.account)}</span>
+          <a class="secondary-link" href="/accounts/{encodeURIComponent(p.account)}/transactions"
+            >{p.account}</a
+          >
         </div>
-      {:else}
-        <div style="flex: 0 0 25%; max-width: 25%;"></div>
-      {/if}
-    </div>
+        <div
+          class="has-text-right has-text-grey is-size-7 truncate"
+          style="flex: 0 0 20%; max-width: 20%;"
+        >
+          {conv}
+        </div>
+        <div class="has-text-right" style="flex: 0 0 15%; max-width: 15%;">
+          {formatCurrency(p.amount, 2)}
+        </div>
+        {#if highlightAccount}
+          <div class="has-text-right" style="flex: 0 0 10%; max-width: 10%;">
+            {#if p.account === highlightAccount || p.account.startsWith(highlightAccount + ":")}
+              {formatFloatUptoPrecision(p.quantity, 2)}
+              {p.commodity}
+            {/if}
+          </div>
+          <div class="has-text-right has-text-grey" style="flex: 0 0 15%; max-width: 15%;">
+            {#if p.account === highlightAccount || p.account.startsWith(highlightAccount + ":")}
+              {formatCurrency(p.balance)}
+              {p.commodity}
+            {/if}
+          </div>
+        {:else}
+          <div style="flex: 0 0 25%; max-width: 25%;"></div>
+        {/if}
+      </div>
+    {/if}
   {/each}
 </div>

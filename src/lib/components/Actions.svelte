@@ -222,25 +222,34 @@
 
   @media screen and (max-width: 1023px) {
     .navbar-action-button {
-      width: 2rem;
-      height: 2rem;
+      width: 2.25rem;
+      height: 2.25rem;
       border-radius: 0.5rem;
     }
 
     .navbar-action-button :global(.icon) {
-      font-size: 1rem;
+      font-size: 1.05rem;
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+    .navbar-action-button {
+      width: 2.6rem;
+      height: 2.6rem;
+      min-width: 40px;
+      min-height: 40px;
+      border-radius: 0.5rem;
+    }
+
+    .navbar-action-button :global(.icon) {
+      font-size: 1.1rem;
     }
   }
 
   @media screen and (max-width: 640px) {
-    .navbar-action-button {
-      width: 1.9rem;
-      height: 1.9rem;
-      border-radius: 0.45rem;
-    }
-
-    .navbar-action-button :global(.icon) {
-      font-size: 0.95rem;
+    .navbar-actions-strip {
+      min-width: 0;
+      flex-wrap: wrap;
     }
   }
 

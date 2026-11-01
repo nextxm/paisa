@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type AssetBreakdown, buildTree } from "$lib/utils";
+  import { type AssetBreakdown, buildTree, isMobile } from "$lib/utils";
   import Table from "./Table.svelte";
   import type { ColumnDefinition } from "tabulator-tables";
   import {
@@ -18,70 +18,120 @@
     filterZero?: boolean;
   } = $props();
 
-  function accountName(account: string, indent: number) {
+  function accountName(account: string, indent: number, mobile: boolean) {
     const parts = account.split(":");
     const name = parts[parts.length - 1];
+    if (mobile) {
+      return `<span class="truncate is-inline-block" style="max-width: 100%; vertical-align: bottom;" title="${account}"><a href="/accounts/${encodeURIComponent(account)}/transactions">${name}</a></span>`;
+    }
     const padding = indent * 20;
     return `<span style="padding-left: ${padding}px"><a href="/accounts/${encodeURIComponent(account)}/transactions">${name}</a></span>`;
   }
 
   const columns: ColumnDefinition[] = $derived.by(() => {
     const indent = props.indent;
+    const mobile = isMobile();
+
+    const accountCol: ColumnDefinition = {
+      title: "Account",
+      field: "group",
+      headerSort: false,
+      width: mobile ? 140 : 300,
+      maxWidth: mobile ? 155 : undefined,
+      formatter: (cell) => {
+        const account = cell.getValue();
+        if (indent) {
+          return accountName(account, cell.getData().indent, mobile);
+        }
+        if (mobile) {
+          return `<span class="truncate is-inline-block" style="max-width: 100%; vertical-align: bottom;" title="${account}"><a href="/accounts/${encodeURIComponent(account)}/transactions">${account}</a></span>`;
+        }
+        return `<a href="/accounts/${encodeURIComponent(account)}/transactions">${account}</a>`;
+      },
+      frozen: true
+    };
+
+    const investmentCol: ColumnDefinition = {
+      title: "Investment Amount",
+      field: "investmentAmount",
+      hozAlign: "right",
+      vertAlign: "middle",
+      formatter: nonZeroCurrency
+    };
+
+    const withdrawalCol: ColumnDefinition = {
+      title: "Withdrawal Amount",
+      field: "withdrawalAmount",
+      hozAlign: "right",
+      formatter: nonZeroCurrency
+    };
+
+    const unitsCol: ColumnDefinition = {
+      title: "Balance Units",
+      field: "balanceUnits",
+      hozAlign: "right",
+      formatter: nonZeroCurrencyLink
+    };
+
+    const originalCol: ColumnDefinition = {
+      title: "Original Value",
+      field: "originalBalances",
+      hozAlign: "right",
+      formatter: formatOriginalBalances
+    };
+
+    const marketCol: ColumnDefinition = {
+      title: "Market Value",
+      field: "marketAmount",
+      hozAlign: "right",
+      formatter: nonZeroCurrencyLink
+    };
+
+    const changeCol: ColumnDefinition = {
+      title: "Change",
+      field: "gainAmount",
+      hozAlign: "right",
+      formatter: formatCurrencyChange
+    };
+
+    const xirrCol: ColumnDefinition = {
+      title: "XIRR",
+      field: "xirr",
+      hozAlign: "right",
+      formatter: nonZeroFloatChange
+    };
+
+    const returnCol: ColumnDefinition = {
+      title: "Absolute Return",
+      field: "absoluteReturn",
+      hozAlign: "right",
+      formatter: nonZeroPercentageChange
+    };
+
+    if (mobile) {
+      return [
+        accountCol,
+        marketCol,
+        changeCol,
+        xirrCol,
+        returnCol,
+        investmentCol,
+        withdrawalCol,
+        unitsCol,
+        originalCol
+      ];
+    }
 
     return [
-      {
-        title: "Account",
-        field: "group",
-        headerSort: false,
-        width: 300,
-        formatter: (cell) => {
-          const account = cell.getValue();
-          if (indent) {
-            return accountName(account, cell.getData().indent);
-          }
-          return `<a href="/accounts/${encodeURIComponent(account)}/transactions">${account}</a>`;
-        },
-        frozen: true
-      },
-      {
-        title: "Investment Amount",
-        field: "investmentAmount",
-        hozAlign: "right",
-        vertAlign: "middle",
-        formatter: nonZeroCurrency
-      },
-      {
-        title: "Withdrawal Amount",
-        field: "withdrawalAmount",
-        hozAlign: "right",
-        formatter: nonZeroCurrency
-      },
-      {
-        title: "Balance Units",
-        field: "balanceUnits",
-        hozAlign: "right",
-        formatter: nonZeroCurrencyLink
-      },
-      {
-        title: "Original Value",
-        field: "originalBalances",
-        hozAlign: "right",
-        formatter: formatOriginalBalances
-      },
-      {
-        title: "Market Value",
-        field: "marketAmount",
-        hozAlign: "right",
-        formatter: nonZeroCurrencyLink
-      },
-      { title: "Change", field: "gainAmount", hozAlign: "right", formatter: formatCurrencyChange },
-      { title: "XIRR", field: "xirr", hozAlign: "right", formatter: nonZeroFloatChange },
-      {
-        title: "Absolute Return",
-        field: "absoluteReturn",
-        hozAlign: "right",
-        formatter: nonZeroPercentageChange
-      }
+      accountCol,
+      investmentCol,
+      withdrawalCol,
+      unitsCol,
+      originalCol,
+      marketCol,
+      changeCol,
+      xirrCol,
+      returnCol
     ];
   });
 

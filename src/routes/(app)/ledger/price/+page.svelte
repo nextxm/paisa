@@ -1,7 +1,7 @@
 <script lang="ts">
   import ValueChange from "$lib/components/ValueChange.svelte";
   import { sync, startPolling } from "$lib/sync";
-  import { ajax, formatCurrency, type Price, type PriceFilters } from "$lib/utils";
+  import { ajax, formatCurrency, isMobile, type Price, type PriceFilters } from "$lib/utils";
   import { toast } from "bulma-toast";
   import _ from "lodash";
   import { onMount } from "svelte";
@@ -27,7 +27,7 @@
   let availableSources: string[] = $state([]);
   let exportModalOpen = $state(false);
 
-  const ITEM_SIZE = 18;
+  const ITEM_SIZE = isMobile() ? 24 : 18;
 
   const hasActiveFilters = $derived(
     filterBase !== "" || filterQuote !== "" || filterSource !== "" || reportCurrency !== ""

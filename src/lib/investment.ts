@@ -5,6 +5,7 @@ import {
   formatCurrency,
   formatCurrencyCrude,
   formatFloat,
+  isMobile,
   type Posting,
   secondName,
   skipTicks,
@@ -301,7 +302,13 @@ export function renderYearlyInvestmentTimeline(yearlyCards: InvestmentYearlyCard
   g.append("g")
     .attr("class", "axis y")
     .attr("transform", "translate(0," + height + ")")
-    .call(d3.axisBottom(x).tickSize(-height).tickFormat(formatCurrencyCrude));
+    .call(
+      d3
+        .axisBottom(x)
+        .ticks(isMobile() ? 5 : 10)
+        .tickSize(-height)
+        .tickFormat(formatCurrencyCrude)
+    );
 
   g.append("g").attr("class", "axis y dark").call(d3.axisLeft(y));
 
