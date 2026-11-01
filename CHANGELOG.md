@@ -2,6 +2,8 @@
 
 ### Unreleased — Future changes
 
+### 0.93-beta (2026-11-01) — Future changes
+
 ### 0.92-beta (2026-11-01) — Future changes
 
 ### 0.92-beta (2026-11-01) — Future changes
