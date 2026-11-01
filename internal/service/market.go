@@ -34,8 +34,9 @@ type rateCache struct {
 }
 
 var (
-	rcache   rateCache
-	rcacheMu sync.RWMutex
+	rcache       rateCache
+	rcacheMu     sync.RWMutex
+	rcacheLoadMu sync.Mutex
 )
 
 type priceCache struct {
@@ -46,9 +47,48 @@ type priceCache struct {
 }
 
 var (
-	pcache   priceCache
-	pcacheMu sync.RWMutex
+	pcache       priceCache
+	pcacheMu     sync.RWMutex
+	pcacheLoadMu sync.Mutex
 )
+
+func ensurePriceCacheLoaded(db *gorm.DB) {
+	pcacheMu.RLock()
+	loaded := pcache.loaded
+	pcacheMu.RUnlock()
+	if loaded {
+		return
+	}
+
+	pcacheLoadMu.Lock()
+	defer pcacheLoadMu.Unlock()
+
+	pcacheMu.RLock()
+	loaded = pcache.loaded
+	pcacheMu.RUnlock()
+	if !loaded {
+		loadPriceCache(db)
+	}
+}
+
+func ensureRateCacheLoaded(db *gorm.DB) {
+	rcacheMu.RLock()
+	loaded := rcache.loaded
+	rcacheMu.RUnlock()
+	if loaded {
+		return
+	}
+
+	rcacheLoadMu.Lock()
+	defer rcacheLoadMu.Unlock()
+
+	rcacheMu.RLock()
+	loaded = rcache.loaded
+	rcacheMu.RUnlock()
+	if !loaded {
+		loadRateCache(db)
+	}
+}
 
 func loadPriceCache(db *gorm.DB) {
 	pricesTree := make(map[string]*btree.BTree)
@@ -180,32 +220,13 @@ func ClearPriceCache() {
 
 func WarmCache(db *gorm.DB) {
 	go func() {
-		pcacheMu.Lock()
-		if !pcache.loaded {
-			pcacheMu.Unlock()
-			loadPriceCache(db)
-		} else {
-			pcacheMu.Unlock()
-		}
-
-		rcacheMu.Lock()
-		if !rcache.loaded {
-			rcacheMu.Unlock()
-			loadRateCache(db)
-		} else {
-			rcacheMu.Unlock()
-		}
+		ensurePriceCacheLoaded(db)
+		ensureRateCacheLoaded(db)
 	}()
 }
 
 func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {
-	pcacheMu.Lock()
-	if !pcache.loaded {
-		pcacheMu.Unlock()
-		loadPriceCache(db)
-	} else {
-		pcacheMu.Unlock()
-	}
+	ensurePriceCacheLoaded(db)
 
 	pcacheMu.RLock()
 	defer pcacheMu.RUnlock()

@@ -153,3 +153,49 @@ func mustFloat(d decimal.Decimal) float64 {
 	f, _ := d.Float64()
 	return f
 }
+
+func TestComputeNetworth_MatchesTimeline(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+
+	d1 := mustParseDate("2024-01-01")
+	d2 := mustParseDate("2024-01-05")
+	d3 := mustParseDate("2024-01-10")
+
+	postings := []posting.Posting{
+		{
+			Date:      d1,
+			Account:   "Assets:Checking",
+			Commodity: "INR",
+			Quantity:  decimal.NewFromInt(50000),
+			Amount:    decimal.NewFromInt(50000),
+		},
+		{
+			Date:      d2,
+			Account:   "Assets:Checking",
+			Commodity: "INR",
+			Quantity:  decimal.NewFromInt(-10000),
+			Amount:    decimal.NewFromInt(-10000),
+		},
+		{
+			Date:      d3,
+			Account:   "Assets:Checking",
+			Commodity: "INR",
+			Quantity:  decimal.NewFromInt(5000),
+			Amount:    decimal.NewFromInt(5000),
+		},
+	}
+
+	direct := computeNetworthDirect(db, postings, d3)
+	timeline := computeNetworthTimeline(db, postings, false, d3)
+	require.NotEmpty(t, timeline)
+	last := timeline[len(timeline)-1]
+
+	assert.True(t, direct.InvestmentAmount.Equal(last.InvestmentAmount), "InvestmentAmount must match")
+	assert.True(t, direct.WithdrawalAmount.Equal(last.WithdrawalAmount), "WithdrawalAmount must match")
+	assert.True(t, direct.BalanceAmount.Equal(last.BalanceAmount), "BalanceAmount must match")
+	assert.True(t, direct.GainAmount.Equal(last.GainAmount), "GainAmount must match")
+	assert.True(t, direct.Contribution.Equal(last.Contribution), "Contribution must match")
+	assert.True(t, direct.InvestmentReturn.Equal(last.InvestmentReturn), "InvestmentReturn must match")
+	assert.True(t, direct.FXImpact.Equal(last.FXImpact), "FXImpact must match")
+}

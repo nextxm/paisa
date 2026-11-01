@@ -47,6 +47,12 @@ func GetTransactionsHandler(db *gorm.DB, c *gin.Context) {
 	if filters.Account != "" {
 		q = q.AccountPrefix(filters.Account)
 	}
+	if filters.DateFrom != nil {
+		q = q.Where("date >= ?", *filters.DateFrom)
+	}
+	if filters.DateTo != nil {
+		q = q.Where("date <= ?", *filters.DateTo)
+	}
 	postings := q.All()
 	postings = accounting.PopulateBalance(postings)
 	transactions := transaction.Build(postings)
