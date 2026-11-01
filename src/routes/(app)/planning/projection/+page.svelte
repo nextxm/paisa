@@ -43,9 +43,10 @@
   type ProjectionTableRow = {
     year: number;
     startingCorpus: number;
-    expenses: number;
+    annualContribution: number;
     returnAmount: number;
     endingCorpus: number;
+    expenses: number;
   };
 
   type ProjectionScenarioTable = {
@@ -65,26 +66,66 @@
     const rows: ProjectionTableRow[] = [];
     let currentCorpus = startingCorpus;
     const annualContribution = monthlyContribution * 12;
-    const annualReturnRate = cagrPercent / 100;
+    const cagr = cagrPercent / 100;
+    const monthlyRate = Math.pow(1 + cagr, 1 / 12) - 1;
 
     for (let year = 1; year <= years; year++) {
       const inflatedExpenses =
         annualExpenses * Math.pow(1 + inflationPercent / 100, Math.max(year - 1, 0));
-      const investmentReturn = currentCorpus * annualReturnRate;
-      const endingCorpus = currentCorpus + investmentReturn + annualContribution - inflatedExpenses;
+      const yearStartCorpus = currentCorpus;
+      let yearlyReturn = 0;
+
+      for (let m = 0; m < 12; m++) {
+        const monthReturn = currentCorpus * monthlyRate;
+        yearlyReturn += monthReturn;
+        currentCorpus = currentCorpus + monthReturn + monthlyContribution;
+      }
+
+      const endingCorpus = currentCorpus;
 
       rows.push({
         year,
-        startingCorpus: currentCorpus,
-        expenses: inflatedExpenses,
-        returnAmount: investmentReturn,
-        endingCorpus
+        startingCorpus: yearStartCorpus,
+        annualContribution,
+        returnAmount: yearlyReturn,
+        endingCorpus,
+        expenses: inflatedExpenses
       });
-
-      currentCorpus = endingCorpus;
     }
 
     return rows;
+  }
+
+  function calibrateSliders() {
+    if (!dnaProfile) return;
+
+    if (dnaProfile.monthly_contribution !== undefined && dnaProfile.monthly_contribution !== null) {
+      monthlyContribution = Math.min(
+        1000000,
+        Math.max(-100000, Math.round(dnaProfile.monthly_contribution))
+      );
+    }
+
+    if (dnaProfile.price_months_covered >= 3 && dnaProfile.historical_return > 0) {
+      const returnVal = Math.round(dnaProfile.historical_return * 10) / 10;
+      expectedCagr = Math.min(35, Math.max(-5, returnVal));
+      const spread =
+        dnaProfile.return_volatility > 0 ? Math.round(dnaProfile.return_volatility * 10) / 10 : 3;
+      conservativeCagr = Math.min(30, Math.max(-5, Math.round((expectedCagr - spread) * 10) / 10));
+      optimisticCagr = Math.min(40, Math.max(-5, Math.round((expectedCagr + spread) * 10) / 10));
+    }
+
+    if (dnaProfile.expense_years_covered >= 2 && dnaProfile.expense_growth_rate > 0) {
+      const expenseRate = Math.round(dnaProfile.expense_growth_rate * 10) / 10;
+      inflationRate = Math.min(15, Math.max(0, expenseRate));
+    }
+
+    calcMonthlyContribution = monthlyContribution;
+    calcExpectedCagr = expectedCagr;
+    calcConservativeCagr = conservativeCagr;
+    calcOptimisticCagr = optimisticCagr;
+    calcInflationRate = inflationRate;
+    updateCalculations.flush();
   }
 
   const updateCalculations = debounce(() => {
@@ -512,12 +553,23 @@
 
     {#if dnaProfile}
       <div class="box mt-5">
-        <div class="content mb-4">
-          <h3 class="title is-5 mb-2">Your Financial DNA</h3>
-          <p class="is-size-7 has-text-grey">
-            Parameters inferred from your ledger history. These feed into the projection engine and
-            can be used to calibrate the sliders above.
-          </p>
+        <div
+          class="is-flex is-justify-content-space-between is-align-items-start is-flex-wrap-wrap gap-2 mb-4"
+        >
+          <div>
+            <h3 class="title is-5 mb-2">Your Financial DNA</h3>
+            <p class="is-size-7 has-text-grey">
+              Parameters inferred from your ledger history. These feed into the projection engine
+              and can be used to calibrate the sliders above.
+            </p>
+          </div>
+          <button
+            class="button is-small is-primary is-light"
+            type="button"
+            onclick={calibrateSliders}
+          >
+            Apply to Sliders
+          </button>
         </div>
         <div class="columns is-multiline">
           <div class="column is-3">
@@ -578,8 +630,9 @@
         <div class="content mb-4">
           <h3 class="title is-5 mb-2">Year-by-Year Projection Tables</h3>
           <p class="is-size-7 has-text-grey">
-            Expenses are inflated year over year using the selected inflation rate. Ending corpus is
-            calculated as starting corpus + return + annual contribution - annual expenses.
+            Annual contributions represent net savings after expenses. Ending corpus is calculated
+            as starting corpus + annual contribution + return. Inflated expenses show the annual
+            cost of living and FIRE benchmark adjusted for inflation.
           </p>
         </div>
 
@@ -596,9 +649,10 @@
                   <tr>
                     <th>Year</th>
                     <th class="has-text-right">Starting Corpus</th>
-                    <th class="has-text-right">Expenses</th>
+                    <th class="has-text-right">Annual Contribution</th>
                     <th class="has-text-right">Return</th>
                     <th class="has-text-right">Ending Corpus</th>
+                    <th class="has-text-right">Inflated Expenses</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -606,13 +660,14 @@
                     <tr>
                       <td>{row.year}</td>
                       <td class="has-text-right">{formatCurrency(row.startingCorpus)}</td>
-                      <td class="has-text-right">{formatCurrency(row.expenses)}</td>
+                      <td class="has-text-right">{formatCurrency(row.annualContribution)}</td>
                       <td
                         class={`has-text-right ${row.returnAmount >= 0 ? "has-text-success" : "has-text-danger"}`}
                       >
                         {formatCurrency(row.returnAmount)}
                       </td>
                       <td class="has-text-right">{formatCurrency(row.endingCorpus)}</td>
+                      <td class="has-text-right has-text-grey">{formatCurrency(row.expenses)}</td>
                     </tr>
                   {/each}
                 </tbody>
