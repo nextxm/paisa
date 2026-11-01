@@ -14,6 +14,53 @@ type ProjectionTableRow = {
   expenses: number;
 };
 
+type ProjectionScenarioTable = {
+  label: string;
+  cagr: number;
+  rows: ProjectionTableRow[];
+};
+
+function generateScenarioCSV(scenario: ProjectionScenarioTable): string {
+  const headers = [
+    "Year",
+    "Starting Corpus",
+    "Annual Contribution",
+    "Return",
+    "Ending Corpus",
+    "Inflated Expenses"
+  ];
+  const round = (val: number) => Math.round((val || 0) * 100) / 100;
+  const lines = [
+    headers.join(","),
+    ...scenario.rows.map((row) =>
+      [
+        row.year,
+        round(row.startingCorpus),
+        round(row.annualContribution),
+        round(row.returnAmount),
+        round(row.endingCorpus),
+        round(row.expenses)
+      ].join(",")
+    )
+  ];
+  return lines.join("\n");
+}
+
+function getScenarioCSVFilename(label: string): string {
+  const slug = label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+  return `paisa-projection-${slug || "scenario"}.csv`;
+}
+
+function parseVal(val: number | null | undefined, fallback: number): number {
+  if (val === null || val === undefined || isNaN(Number(val))) {
+    return fallback;
+  }
+  return Number(val);
+}
+
 function buildProjectionRows(
   startingCorpus: number,
   annualExpenses: number,
@@ -270,6 +317,103 @@ describe("Net Worth Projection", () => {
       expect(result.conservativeCagr).toBe(-5); // clamped to min -5
       expect(result.optimisticCagr).toBe(40); // clamped to max 40
       expect(result.inflationRate).toBe(15); // clamped to max 15
+    });
+  });
+
+  describe("CSV Export", () => {
+    test("generates proper CSV headers and formatted row values", () => {
+      const scenario: ProjectionScenarioTable = {
+        label: "Expected Scenario",
+        cagr: 9,
+        rows: [
+          {
+            year: 1,
+            startingCorpus: 1000000.456,
+            annualContribution: 51000,
+            returnAmount: 92345.678,
+            endingCorpus: 1143346.134,
+            expenses: 300000
+          },
+          {
+            year: 2,
+            startingCorpus: 1143346.134,
+            annualContribution: 51000,
+            returnAmount: 105678.912,
+            endingCorpus: 1300025.046,
+            expenses: 318000
+          }
+        ]
+      };
+
+      const csv = generateScenarioCSV(scenario);
+      const lines = csv.split("\n");
+
+      expect(lines[0]).toBe(
+        "Year,Starting Corpus,Annual Contribution,Return,Ending Corpus,Inflated Expenses"
+      );
+      expect(lines[1]).toBe("1,1000000.46,51000,92345.68,1143346.13,300000");
+      expect(lines[2]).toBe("2,1143346.13,51000,105678.91,1300025.05,318000");
+    });
+
+    test("handles negative returns and zero values correctly in CSV", () => {
+      const scenario: ProjectionScenarioTable = {
+        label: "Conservative Scenario",
+        cagr: -5,
+        rows: [
+          {
+            year: 1,
+            startingCorpus: 500000,
+            annualContribution: 0,
+            returnAmount: -25000.5,
+            endingCorpus: 474999.5,
+            expenses: 200000
+          }
+        ]
+      };
+
+      const csv = generateScenarioCSV(scenario);
+      const lines = csv.split("\n");
+      expect(lines.length).toBe(2);
+      expect(lines[1]).toBe("1,500000,0,-25000.5,474999.5,200000");
+    });
+
+    test("generates clean download filenames from scenario labels", () => {
+      expect(getScenarioCSVFilename("Conservative Scenario")).toBe(
+        "paisa-projection-conservative-scenario.csv"
+      );
+      expect(getScenarioCSVFilename("Expected Scenario")).toBe(
+        "paisa-projection-expected-scenario.csv"
+      );
+      expect(getScenarioCSVFilename("Optimistic Scenario")).toBe(
+        "paisa-projection-optimistic-scenario.csv"
+      );
+      expect(getScenarioCSVFilename("Custom FIRE 40%")).toBe("paisa-projection-custom-fire-40.csv");
+    });
+  });
+
+  describe("Precision Numeric Inputs & Dynamic Bounds", () => {
+    test("parseVal handles valid numbers, zero, negative numbers, and fallbacks", () => {
+      expect(parseVal(15, 15)).toBe(15);
+      expect(parseVal(0, 10)).toBe(0);
+      expect(parseVal(-5, 6)).toBe(-5);
+      expect(parseVal(4250, 0)).toBe(4250);
+      expect(parseVal(65000, 0)).toBe(65000);
+      expect(parseVal(null, 15)).toBe(15);
+      expect(parseVal(undefined, 9)).toBe(9);
+      expect(parseVal(NaN, 6)).toBe(6);
+    });
+
+    test("slider dynamic bounds expand to accommodate non-INR or high values", () => {
+      const highContribution = 2500000;
+      const minBound = Math.min(-100000, Number(highContribution) || 0);
+      const maxBound = Math.max(1000000, Number(highContribution) || 0);
+
+      expect(minBound).toBe(-100000);
+      expect(maxBound).toBe(2500000); // Expanded past default 1000000
+
+      const largeYears = 50;
+      const yearsMax = Math.max(40, Number(largeYears) || 40);
+      expect(yearsMax).toBe(50); // Expanded past default 40
     });
   });
 });

@@ -128,14 +128,58 @@
     updateCalculations.flush();
   }
 
+  function parseVal(val: number | null | undefined, fallback: number): number {
+    if (val === null || val === undefined || isNaN(Number(val))) {
+      return fallback;
+    }
+    return Number(val);
+  }
+
+  function exportScenarioCSV(scenario: ProjectionScenarioTable) {
+    const headers = [
+      "Year",
+      "Starting Corpus",
+      "Annual Contribution",
+      "Return",
+      "Ending Corpus",
+      "Inflated Expenses"
+    ];
+    const round = (val: number) => Math.round((val || 0) * 100) / 100;
+    const csvContent = [
+      headers.join(","),
+      ...scenario.rows.map((row) =>
+        [
+          row.year,
+          round(row.startingCorpus),
+          round(row.annualContribution),
+          round(row.returnAmount),
+          round(row.endingCorpus),
+          round(row.expenses)
+        ].join(",")
+      )
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const slug = scenario.label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+    link.href = url;
+    link.download = `paisa-projection-${slug || "scenario"}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   const updateCalculations = debounce(() => {
-    calcYears = years;
-    calcConservativeCagr = conservativeCagr;
-    calcExpectedCagr = expectedCagr;
-    calcOptimisticCagr = optimisticCagr;
-    calcMonthlyContribution = monthlyContribution;
-    calcSwr = swr;
-    calcInflationRate = inflationRate;
+    calcYears = Math.max(1, parseVal(years, 15));
+    calcConservativeCagr = parseVal(conservativeCagr, 6);
+    calcExpectedCagr = parseVal(expectedCagr, 9);
+    calcOptimisticCagr = parseVal(optimisticCagr, 12);
+    calcMonthlyContribution = parseVal(monthlyContribution, 0);
+    calcSwr = parseVal(swr, 4);
+    calcInflationRate = parseVal(inflationRate, 6);
   }, 100);
 
   $effect(() => {
@@ -458,88 +502,176 @@
         </div>
         <div class="box">
           <div class="field">
-            <label class="label is-size-7" for="projection-years">Projection Years: {years}</label>
-            <input
-              id="projection-years"
-              type="range"
-              min="1"
-              max="40"
-              step="1"
-              bind:value={years}
-            />
+            <label class="label is-size-7" for="projection-years"
+              >Projection Years: {years ?? ""}</label
+            >
+            <div class="is-flex is-align-items-center gap-2">
+              <input
+                id="projection-years"
+                class="slider-input"
+                type="range"
+                min="1"
+                max={Math.max(40, Number(years) || 40)}
+                step="1"
+                bind:value={years}
+              />
+              <input
+                id="projection-years-input"
+                class="input is-small number-input"
+                type="number"
+                min="1"
+                step="1"
+                bind:value={years}
+                aria-label="Projection Years"
+              />
+            </div>
           </div>
           <div class="field">
             <label class="label is-size-7" for="projection-conservative-cagr"
-              >Conservative CAGR: {formatFloat(conservativeCagr)}%</label
+              >Conservative CAGR: {formatFloat(conservativeCagr ?? 0)}%</label
             >
-
-            <input
-              id="projection-conservative-cagr"
-              type="range"
-              min="-5"
-              max="30"
-              step="0.5"
-              bind:value={conservativeCagr}
-            />
+            <div class="is-flex is-align-items-center gap-2">
+              <input
+                id="projection-conservative-cagr"
+                class="slider-input"
+                type="range"
+                min={Math.min(-5, Number(conservativeCagr) || -5)}
+                max={Math.max(30, Number(conservativeCagr) || 30)}
+                step="0.5"
+                bind:value={conservativeCagr}
+              />
+              <input
+                id="projection-conservative-cagr-input"
+                class="input is-small number-input"
+                type="number"
+                step="0.1"
+                bind:value={conservativeCagr}
+                aria-label="Conservative CAGR"
+              />
+            </div>
           </div>
 
           <div class="field">
             <label class="label is-size-7" for="projection-expected-cagr"
-              >Expected CAGR: {formatFloat(expectedCagr)}%</label
+              >Expected CAGR: {formatFloat(expectedCagr ?? 0)}%</label
             >
-            <input
-              id="projection-expected-cagr"
-              type="range"
-              min="-5"
-              max="35"
-              step="0.5"
-              bind:value={expectedCagr}
-            />
+            <div class="is-flex is-align-items-center gap-2">
+              <input
+                id="projection-expected-cagr"
+                class="slider-input"
+                type="range"
+                min={Math.min(-5, Number(expectedCagr) || -5)}
+                max={Math.max(35, Number(expectedCagr) || 35)}
+                step="0.5"
+                bind:value={expectedCagr}
+              />
+              <input
+                id="projection-expected-cagr-input"
+                class="input is-small number-input"
+                type="number"
+                step="0.1"
+                bind:value={expectedCagr}
+                aria-label="Expected CAGR"
+              />
+            </div>
           </div>
           <div class="field">
             <label class="label is-size-7" for="projection-optimistic-cagr"
-              >Optimistic CAGR: {formatFloat(optimisticCagr)}%</label
+              >Optimistic CAGR: {formatFloat(optimisticCagr ?? 0)}%</label
             >
-            <input
-              id="projection-optimistic-cagr"
-              type="range"
-              min="-5"
-              max="40"
-              step="0.5"
-              bind:value={optimisticCagr}
-            />
+            <div class="is-flex is-align-items-center gap-2">
+              <input
+                id="projection-optimistic-cagr"
+                class="slider-input"
+                type="range"
+                min={Math.min(-5, Number(optimisticCagr) || -5)}
+                max={Math.max(40, Number(optimisticCagr) || 40)}
+                step="0.5"
+                bind:value={optimisticCagr}
+              />
+              <input
+                id="projection-optimistic-cagr-input"
+                class="input is-small number-input"
+                type="number"
+                step="0.1"
+                bind:value={optimisticCagr}
+                aria-label="Optimistic CAGR"
+              />
+            </div>
           </div>
           <div class="field">
             <label class="label is-size-7" for="projection-monthly-contribution"
-              >Monthly Contribution: {formatCurrency(monthlyContribution)}</label
+              >Monthly Contribution: {formatCurrency(monthlyContribution ?? 0)}</label
             >
-            <input
-              id="projection-monthly-contribution"
-              type="range"
-              min="-100000"
-              max="1000000"
-              step="1000"
-              bind:value={monthlyContribution}
-            />
+            <div class="is-flex is-align-items-center gap-2">
+              <input
+                id="projection-monthly-contribution"
+                class="slider-input"
+                type="range"
+                min={Math.min(-100000, Number(monthlyContribution) || 0)}
+                max={Math.max(1000000, Number(monthlyContribution) || 0)}
+                step="1000"
+                bind:value={monthlyContribution}
+              />
+              <input
+                id="projection-monthly-contribution-input"
+                class="input is-small number-input"
+                type="number"
+                step="any"
+                bind:value={monthlyContribution}
+                aria-label="Monthly Contribution"
+              />
+            </div>
           </div>
           <div class="field">
             <label class="label is-size-7" for="projection-swr"
-              >Safe Withdrawal Rate (SWR): {formatFloat(swr)}%</label
+              >Safe Withdrawal Rate (SWR): {formatFloat(swr ?? 0)}%</label
             >
-            <input id="projection-swr" type="range" min="2" max="8" step="0.1" bind:value={swr} />
+            <div class="is-flex is-align-items-center gap-2">
+              <input
+                id="projection-swr"
+                class="slider-input"
+                type="range"
+                min={Math.min(2, Number(swr) || 2)}
+                max={Math.max(8, Number(swr) || 8)}
+                step="0.1"
+                bind:value={swr}
+              />
+              <input
+                id="projection-swr-input"
+                class="input is-small number-input"
+                type="number"
+                min="0"
+                step="0.1"
+                bind:value={swr}
+                aria-label="Safe Withdrawal Rate"
+              />
+            </div>
           </div>
           <div class="field">
             <label class="label is-size-7" for="projection-inflation"
-              >Inflation Rate: {formatFloat(inflationRate)}%</label
+              >Inflation Rate: {formatFloat(inflationRate ?? 0)}%</label
             >
-            <input
-              id="projection-inflation"
-              type="range"
-              min="0"
-              max="15"
-              step="0.1"
-              bind:value={inflationRate}
-            />
+            <div class="is-flex is-align-items-center gap-2">
+              <input
+                id="projection-inflation"
+                class="slider-input"
+                type="range"
+                min={Math.min(0, Number(inflationRate) || 0)}
+                max={Math.max(15, Number(inflationRate) || 15)}
+                step="0.1"
+                bind:value={inflationRate}
+              />
+              <input
+                id="projection-inflation-input"
+                class="input is-small number-input"
+                type="number"
+                min="0"
+                step="0.1"
+                bind:value={inflationRate}
+                aria-label="Inflation Rate"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -638,9 +770,19 @@
 
         {#each projectionScenarioTables as scenario}
           <div class="mb-5">
-            <div class="is-flex is-justify-content-space-between is-align-items-baseline mb-2">
+            <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
               <h4 class="title is-6 mb-0">{scenario.label}</h4>
-              <span class="tag is-light">{formatFloat(scenario.cagr)}% CAGR</span>
+              <div class="is-flex is-align-items-center gap-2">
+                <span class="tag is-light">{formatFloat(scenario.cagr)}% CAGR</span>
+                <button
+                  type="button"
+                  class="button is-small is-light"
+                  onclick={() => exportScenarioCSV(scenario)}
+                >
+                  <span class="icon is-small"><i class="fa-solid fa-file-csv"></i></span>
+                  <span>Export CSV</span>
+                </button>
+              </div>
             </div>
 
             <div class="table-container">
@@ -681,6 +823,14 @@
 </section>
 
 <style>
+  .slider-input {
+    flex: 1;
+    min-width: 0;
+  }
+  .number-input {
+    width: 6.5rem;
+    flex-shrink: 0;
+  }
   .dna-card {
     padding: 0.75rem;
     border-radius: 6px;
