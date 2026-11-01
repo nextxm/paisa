@@ -162,8 +162,21 @@ func computeNetworthDirect(db *gorm.DB, postings []posting.Posting, asOfDate tim
 	gain := balance.Add(withdrawal).Sub(investment)
 	netInvestment := investment.Sub(withdrawal)
 
+	date := asOfDate
+	if balance.Abs().LessThan(decimal.NewFromFloat(0.01)) {
+		var lastDate time.Time
+		for _, p := range postings {
+			if (lastDate.IsZero() || p.Date.After(lastDate)) && !p.Date.After(end) {
+				lastDate = p.Date
+			}
+		}
+		if !lastDate.IsZero() {
+			date = lastDate
+		}
+	}
+
 	return Networth{
-		Date:                asOfDate,
+		Date:                date,
 		InvestmentAmount:    investment,
 		WithdrawalAmount:    withdrawal,
 		GainAmount:          gain,

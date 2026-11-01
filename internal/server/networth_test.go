@@ -191,6 +191,7 @@ func TestComputeNetworth_MatchesTimeline(t *testing.T) {
 	require.NotEmpty(t, timeline)
 	last := timeline[len(timeline)-1]
 
+	assert.Equal(t, last.Date, direct.Date, "Date must match")
 	assert.True(t, direct.InvestmentAmount.Equal(last.InvestmentAmount), "InvestmentAmount must match")
 	assert.True(t, direct.WithdrawalAmount.Equal(last.WithdrawalAmount), "WithdrawalAmount must match")
 	assert.True(t, direct.BalanceAmount.Equal(last.BalanceAmount), "BalanceAmount must match")
@@ -198,4 +199,27 @@ func TestComputeNetworth_MatchesTimeline(t *testing.T) {
 	assert.True(t, direct.Contribution.Equal(last.Contribution), "Contribution must match")
 	assert.True(t, direct.InvestmentReturn.Equal(last.InvestmentReturn), "InvestmentReturn must match")
 	assert.True(t, direct.FXImpact.Equal(last.FXImpact), "FXImpact must match")
+
+	// Verify zero-balance case preserves the early-break date of the final posting
+	postingsZero := []posting.Posting{
+		{
+			Date:      d1,
+			Account:   "Assets:Checking",
+			Commodity: "INR",
+			Quantity:  decimal.NewFromInt(10000),
+			Amount:    decimal.NewFromInt(10000),
+		},
+		{
+			Date:      d2,
+			Account:   "Assets:Checking",
+			Commodity: "INR",
+			Quantity:  decimal.NewFromInt(-10000),
+			Amount:    decimal.NewFromInt(-10000),
+		},
+	}
+	directZero := computeNetworthDirect(db, postingsZero, d3)
+	timelineZero := computeNetworthTimeline(db, postingsZero, false, d3)
+	require.NotEmpty(t, timelineZero)
+	lastZero := timelineZero[len(timelineZero)-1]
+	assert.Equal(t, lastZero.Date, directZero.Date, "Zero-balance Date must match early-break timeline date")
 }

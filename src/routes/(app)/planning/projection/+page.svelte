@@ -505,7 +505,7 @@
             <label class="label is-size-7" for="projection-years"
               >Projection Years: {years ?? ""}</label
             >
-            <div class="is-flex is-align-items-center gap-2">
+            <div class="control-row">
               <input
                 id="projection-years"
                 class="slider-input"
@@ -530,7 +530,7 @@
             <label class="label is-size-7" for="projection-conservative-cagr"
               >Conservative CAGR: {formatFloat(conservativeCagr ?? 0)}%</label
             >
-            <div class="is-flex is-align-items-center gap-2">
+            <div class="control-row">
               <input
                 id="projection-conservative-cagr"
                 class="slider-input"
@@ -555,7 +555,7 @@
             <label class="label is-size-7" for="projection-expected-cagr"
               >Expected CAGR: {formatFloat(expectedCagr ?? 0)}%</label
             >
-            <div class="is-flex is-align-items-center gap-2">
+            <div class="control-row">
               <input
                 id="projection-expected-cagr"
                 class="slider-input"
@@ -579,7 +579,7 @@
             <label class="label is-size-7" for="projection-optimistic-cagr"
               >Optimistic CAGR: {formatFloat(optimisticCagr ?? 0)}%</label
             >
-            <div class="is-flex is-align-items-center gap-2">
+            <div class="control-row">
               <input
                 id="projection-optimistic-cagr"
                 class="slider-input"
@@ -603,14 +603,14 @@
             <label class="label is-size-7" for="projection-monthly-contribution"
               >Monthly Contribution: {formatCurrency(monthlyContribution ?? 0)}</label
             >
-            <div class="is-flex is-align-items-center gap-2">
+            <div class="control-row">
               <input
                 id="projection-monthly-contribution"
                 class="slider-input"
                 type="range"
                 min={Math.min(-100000, Number(monthlyContribution) || 0)}
                 max={Math.max(1000000, Number(monthlyContribution) || 0)}
-                step="1000"
+                step="any"
                 bind:value={monthlyContribution}
               />
               <input
@@ -627,7 +627,7 @@
             <label class="label is-size-7" for="projection-swr"
               >Safe Withdrawal Rate (SWR): {formatFloat(swr ?? 0)}%</label
             >
-            <div class="is-flex is-align-items-center gap-2">
+            <div class="control-row">
               <input
                 id="projection-swr"
                 class="slider-input"
@@ -652,7 +652,7 @@
             <label class="label is-size-7" for="projection-inflation"
               >Inflation Rate: {formatFloat(inflationRate ?? 0)}%</label
             >
-            <div class="is-flex is-align-items-center gap-2">
+            <div class="control-row">
               <input
                 id="projection-inflation"
                 class="slider-input"
@@ -823,13 +823,32 @@
 </section>
 
 <style>
-  .slider-input {
-    flex: 1;
+  .control-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem;
+    width: 100%;
     min-width: 0;
+    box-sizing: border-box;
+  }
+  .slider-input {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+    cursor: pointer;
+    box-sizing: border-box;
   }
   .number-input {
-    width: 6.5rem;
-    flex-shrink: 0;
+    flex: 0 0 6.5rem !important;
+    width: 6.5rem !important;
+    max-width: 6.5rem !important;
+    min-width: 6.5rem !important;
+    height: 2rem !important;
+    min-height: 2rem !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.85rem !important;
+    text-align: right;
+    box-sizing: border-box;
   }
   .dna-card {
     padding: 0.75rem;
