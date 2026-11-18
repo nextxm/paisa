@@ -572,7 +572,8 @@
             <a
               class="navbar-item"
               href={link.href}
-              data-sveltekit-preload-data={link.disablePreload ? "tap" : "hover"}
+              data-sveltekit-preload-code={link.disablePreload ? "tap" : "hover"}
+              data-sveltekit-preload-data="tap"
               class:is-active={normalizedPath == link.href}>{link.label}</a
             >
           {/if}
@@ -599,7 +600,8 @@
                   <a
                     class="navbar-item"
                     {href}
-                    data-sveltekit-preload-data={sublink.disablePreload ? "tap" : "hover"}
+                    data-sveltekit-preload-code={sublink.disablePreload ? "tap" : "hover"}
+                    data-sveltekit-preload-data="tap"
                     class:is-active={normalizedPath.startsWith(href)}
                   >
                     {sublink.label}
@@ -643,9 +645,10 @@
                           <a
                             href={subsubHref}
                             class="navbar-item"
-                            data-sveltekit-preload-data={subsublink.disablePreload
+                            data-sveltekit-preload-code={subsublink.disablePreload
                               ? "tap"
                               : "hover"}
+                            data-sveltekit-preload-data="tap"
                             class:is-active={normalizedPath == subsubHref}>{subsublink.label}</a
                           >
                         {/each}

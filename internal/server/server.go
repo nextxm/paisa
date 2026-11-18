@@ -76,6 +76,9 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.GET("/_app/*filepath", func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, "/_app/immutable/") {
+			c.Header("Cache-Control", "public, max-age=31536000, immutable")
+		}
 		c.FileFromFS("/static"+c.Request.URL.Path, http.FS(web.Static))
 	})
 
@@ -88,6 +91,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.GET("/sw.js", func(c *gin.Context) {
+		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 		c.FileFromFS("/static/sw.js", http.FS(web.Static))
 	})
 
@@ -697,6 +701,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.Any("/connect"+connectPath+"*action", gin.WrapH(http.StripPrefix("/connect", connectHandler)))
 
 	router.NoRoute(func(c *gin.Context) {
+		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(web.Index))
 	})
 

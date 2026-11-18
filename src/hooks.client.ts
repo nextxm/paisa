@@ -31,13 +31,6 @@ dayjs.extend(localeData);
 import updateLocale from "dayjs/plugin/updateLocale";
 dayjs.extend(updateLocale);
 
-import * as pdfjs from "pdfjs-dist";
-import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
-
-if (pdfjs.GlobalWorkerOptions) {
-  pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
-}
-
 import Handlebars from "handlebars";
 import helpers from "$lib/template_helpers";
 import * as toast from "bulma-toast";
@@ -68,6 +61,16 @@ async function cleanupStaleLocalServiceWorker() {
 }
 
 cleanupStaleLocalServiceWorker();
+
+if (typeof window !== "undefined") {
+  window.addEventListener("vite:preloadError", () => {
+    const key = "paisa:chunk-reload-attempted";
+    if (!sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, "1");
+      window.location.reload();
+    }
+  });
+}
 
 Handlebars.registerHelper(
   _.mapValues(helpers, (helper, name) => {

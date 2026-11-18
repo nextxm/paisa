@@ -116,11 +116,19 @@ const config = {
         cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff}"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
-        // Bind navigation fallback to a concrete, explicitly precached shell.
-        navigateFallback: "/index.html",
-        additionalManifestEntries: [{ url: "index.html", revision: null }],
-        navigateFallbackAllowlist: [/^(?!\/_app\/immutable).*$/],
+        navigateFallback: null,
         runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "html-navigation-cache",
+              networkTimeoutSeconds: 3,
+              cacheableResponse: {
+                statuses: [200]
+              }
+            }
+          },
           {
             urlPattern: /\.woff2$/i,
             handler: "CacheFirst",

@@ -1,5 +1,21 @@
-import * as pdfjs from "pdfjs-dist";
 import type { TextItem } from "pdfjs-dist/types/src/display/api";
+
+let pdfjsPromise: Promise<typeof import("pdfjs-dist")> | null = null;
+
+async function getPdfjs() {
+  if (!pdfjsPromise) {
+    pdfjsPromise = Promise.all([
+      import("pdfjs-dist"),
+      import("pdfjs-dist/build/pdf.worker.mjs?url")
+    ]).then(([pdfjs, workerModule]) => {
+      if (pdfjs.GlobalWorkerOptions) {
+        pdfjs.GlobalWorkerOptions.workerSrc = workerModule.default;
+      }
+      return pdfjs;
+    });
+  }
+  return pdfjsPromise;
+}
 
 export type TextItemWithPosition = TextItem & {
   x: number;
@@ -57,6 +73,7 @@ function makeRow(cells: TextItemWithPosition[]): string[] {
  * @param data
  */
 export async function pdf2array(data: ArrayBuffer): Promise<string[][]> {
+  const pdfjs = await getPdfjs();
   const loader = pdfjs.getDocument(data);
   loader.onPassword = (cb: any) => {
     const password = prompt(
