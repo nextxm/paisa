@@ -11,7 +11,7 @@ const (
 	// SnapshotName is the singleton dashboard snapshot row key.
 	SnapshotName = "dashboard"
 	// SchemaVersion tracks the snapshot payload contract persisted in SQLite.
-	SchemaVersion = 1
+	SchemaVersion = 2
 )
 
 // DashboardSnapshot stores the materialized /api/dashboard response payload.
