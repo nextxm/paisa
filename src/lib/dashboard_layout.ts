@@ -259,3 +259,76 @@ export function saveDashboardLayout(layout: DashboardLayout) {
 export function getWidgetMeta(id: DashboardWidgetId): DashboardWidgetMeta {
   return dashboardWidgetRegistry.find((widget) => widget.id === id)!;
 }
+
+export type DashboardPresetId = "overview" | "cashflow" | "investor" | "minimal";
+
+export interface DashboardPreset {
+  id: DashboardPresetId;
+  label: string;
+  description: string;
+  visibleIds: DashboardWidgetId[];
+}
+
+export const dashboardPresets: DashboardPreset[] = [
+  {
+    id: "overview",
+    label: "Overview",
+    description: "All widgets in default order",
+    visibleIds: [
+      "networth",
+      "checkingBalances",
+      "investmentIncome",
+      "cashFlow",
+      "budget",
+      "goals",
+      "expenses",
+      "recurring",
+      "recentTransactions"
+    ]
+  },
+  {
+    id: "cashflow",
+    label: "Cash Flow & Budget",
+    description: "Focus on monthly spending, budgets, bills, and checking",
+    visibleIds: [
+      "checkingBalances",
+      "cashFlow",
+      "budget",
+      "expenses",
+      "recurring",
+      "recentTransactions"
+    ]
+  },
+  {
+    id: "investor",
+    label: "Investor",
+    description: "Focus on net worth, investment income, goals, and cash flow",
+    visibleIds: ["networth", "investmentIncome", "goals", "cashFlow", "checkingBalances"]
+  },
+  {
+    id: "minimal",
+    label: "Minimal",
+    description: "Core snapshot: net worth, cash flow, expenses, and recent activity",
+    visibleIds: ["networth", "cashFlow", "expenses", "recentTransactions"]
+  }
+];
+
+export function applyDashboardPreset(presetId: DashboardPresetId): DashboardLayout {
+  const preset = dashboardPresets.find((entry) => entry.id === presetId);
+  const defaults = createDefaultDashboardLayout();
+  if (!preset) {
+    return defaults;
+  }
+
+  const visibleSet = new Set<DashboardWidgetId>(preset.visibleIds);
+  const applyColumn = (items: DashboardWidgetSetting[]) =>
+    items.map((widget) => ({
+      ...widget,
+      visible: visibleSet.has(widget.id)
+    }));
+
+  return {
+    left: applyColumn(defaults.left),
+    right: applyColumn(defaults.right)
+  };
+}

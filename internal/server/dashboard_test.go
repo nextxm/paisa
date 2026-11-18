@@ -72,6 +72,7 @@ func TestDashboardRoute_FallsBackWhenSnapshotPayloadInvalid(t *testing.T) {
 	assert.Contains(t, body, "transactions")
 	assert.Contains(t, body, "budget")
 	assert.Contains(t, body, "goalSummaries")
+	assert.Contains(t, body, "investmentIncome")
 }
 
 func TestDashboardRoute_RefreshesSnapshotWhenDirty(t *testing.T) {
@@ -96,4 +97,27 @@ func TestDashboardRoute_RefreshesSnapshotWhenDirty(t *testing.T) {
 	dirty, err := metadata.GetOrDefault(db, dashboardSnapshotDirtyKey, "false")
 	require.NoError(t, err)
 	assert.Equal(t, "false", dirty, "dirty marker should be cleared after lazy refresh")
+}
+
+func TestDashboardRoute_UpgradesSnapshotOnSchemaVersionMismatch(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+	router := Build(db, false)
+
+	require.NoError(t, db.Create(&dashboard_snapshot.DashboardSnapshot{
+		Name:          dashboard_snapshot.SnapshotName,
+		SchemaVersion: dashboard_snapshot.SchemaVersion - 1,
+		Payload:       []byte(`{"legacy":true}`),
+	}).Error)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/dashboard", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	assert.NotContains(t, rec.Body.String(), `"legacy":true`)
+
+	upgraded, err := dashboard_snapshot.Get(db)
+	require.NoError(t, err)
+	assert.Equal(t, dashboard_snapshot.SchemaVersion, upgraded.SchemaVersion)
 }

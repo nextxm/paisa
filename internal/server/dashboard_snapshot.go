@@ -39,8 +39,19 @@ func getDashboardSnapshotPayload(db *gorm.DB) ([]byte, bool) {
 	}
 	if snapshot.SchemaVersion != dashboard_snapshot.SchemaVersion {
 		log.WithField("schema_version", snapshot.SchemaVersion).
-			Warn("Dashboard snapshot schema version mismatch; falling back to live query path")
-		return nil, false
+			Info("Dashboard snapshot schema version mismatch; refreshing snapshot")
+		if err := RefreshDashboardSnapshot(db); err != nil {
+			log.WithError(err).Warn("Failed to refresh outdated dashboard snapshot; falling back to live query path")
+			return nil, false
+		}
+		if err := setSnapshotDirty(db, snapshotKindDashboard, false); err != nil {
+			log.WithError(err).Warn("Failed to clear dashboard snapshot dirty marker")
+		}
+		snapshot, err = dashboard_snapshot.Get(db)
+		if err != nil {
+			log.WithError(err).Warn("Failed to reload refreshed dashboard snapshot; falling back to live query path")
+			return nil, false
+		}
 	}
 	if len(snapshot.Payload) == 0 || !json.Valid(snapshot.Payload) {
 		log.Warn("Dashboard snapshot payload is invalid; falling back to live query path")

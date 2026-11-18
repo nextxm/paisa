@@ -222,13 +222,7 @@ func computeInvestmentIncomeTimeline(holdings []InvestmentIncomeHolding) []Inves
 	return timeline
 }
 
-func GetInvestmentIncome(db *gorm.DB, asOfDate time.Time) gin.H {
-	holdings := computeInvestmentIncomeByHolding(db, asOfDate)
-	timeline := computeInvestmentIncomeTimeline(holdings)
-	ttmTotal := utils.SumBy(holdings, func(h InvestmentIncomeHolding) decimal.Decimal {
-		return h.TTMIncome
-	})
-
+func summarizeTTMInvestmentIncome(holdings []InvestmentIncomeHolding) (decimal.Decimal, decimal.Decimal, decimal.Decimal) {
 	var ttmDividend, ttmInterest, ttmDistribution decimal.Decimal
 	for _, h := range holdings {
 		switch h.Type {
@@ -240,6 +234,27 @@ func GetInvestmentIncome(db *gorm.DB, asOfDate time.Time) gin.H {
 			ttmDistribution = ttmDistribution.Add(h.TTMIncome)
 		}
 	}
+	return ttmDividend, ttmInterest, ttmDistribution
+}
+
+// GetInvestmentIncomeSummary returns compact TTM dividend and interest totals for the dashboard.
+func GetInvestmentIncomeSummary(db *gorm.DB, asOfDate time.Time) gin.H {
+	holdings := computeInvestmentIncomeByHolding(db, asOfDate)
+	ttmDividend, ttmInterest, _ := summarizeTTMInvestmentIncome(holdings)
+	return gin.H{
+		"ttm_dividend": ttmDividend,
+		"ttm_interest": ttmInterest,
+	}
+}
+
+func GetInvestmentIncome(db *gorm.DB, asOfDate time.Time) gin.H {
+	holdings := computeInvestmentIncomeByHolding(db, asOfDate)
+	timeline := computeInvestmentIncomeTimeline(holdings)
+	ttmTotal := utils.SumBy(holdings, func(h InvestmentIncomeHolding) decimal.Decimal {
+		return h.TTMIncome
+	})
+
+	ttmDividend, ttmInterest, ttmDistribution := summarizeTTMInvestmentIncome(holdings)
 
 	byType := map[string][]InvestmentIncomeHolding{
 		"Dividend":     {},

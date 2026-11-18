@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
   DASHBOARD_LAYOUT_STORAGE_KEY,
+  applyDashboardPreset,
   createDefaultDashboardLayout,
   loadDashboardLayout,
   normalizeDashboardLayout,
@@ -59,5 +60,19 @@ describe("dashboard layout", () => {
     expect(loaded.right.map((widget) => widget.id)).toEqual(
       defaults.right.map((widget) => widget.id)
     );
+  });
+
+  test("applies built-in dashboard presets while preserving all widgets", () => {
+    const minimal = applyDashboardPreset("minimal");
+    const allMinimal = [...minimal.left, ...minimal.right];
+
+    expect(allMinimal.filter((w) => w.visible).map((w) => w.id)).toEqual([
+      "networth",
+      "cashFlow",
+      "expenses",
+      "recentTransactions"
+    ]);
+    expect(allMinimal.find((w) => w.id === "budget")?.visible).toBe(false);
+    expect(allMinimal.length).toBe(9);
   });
 });
