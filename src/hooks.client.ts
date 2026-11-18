@@ -31,13 +31,6 @@ dayjs.extend(localeData);
 import updateLocale from "dayjs/plugin/updateLocale";
 dayjs.extend(updateLocale);
 
-import * as pdfjs from "pdfjs-dist";
-import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
-
-if (pdfjs.GlobalWorkerOptions) {
-  pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
-}
-
 import Handlebars from "handlebars";
 import helpers from "$lib/template_helpers";
 import * as toast from "bulma-toast";
