@@ -181,5 +181,9 @@
       "fileName": "main.ledger",
       "note": ""
     }
-  ]
+  ],
+  "investmentIncome": {
+    "ttm_dividend": 0,
+    "ttm_interest": 0
+  }
 }

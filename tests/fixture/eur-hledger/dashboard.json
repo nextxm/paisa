@@ -50,18 +50,22 @@
   },
   "expenses": {},
   "goalSummaries": [],
+  "investmentIncome": {
+    "ttm_dividend": 0,
+    "ttm_interest": 0
+  },
   "networth": {
     "networth": {
       "date": "2022-02-07T00:00:00Z",
       "investmentAmount": 21005.05,
       "withdrawalAmount": 10005.05,
       "gainAmount": 20,
+      "contribution": 11000,
+      "investment_return": 20,
+      "fx_impact": 0,
       "balanceAmount": 11020,
       "balanceUnits": 0,
-      "netInvestmentAmount": 11000,
-      "contribution": 11000,
-      "fx_impact": 0,
-      "investment_return": 20
+      "netInvestmentAmount": 11000
     },
     "xirr": 1.76
   },
@@ -73,7 +77,7 @@
       "payee": "Buy stock",
       "postings": [
         {
-          "id": 79,
+          "id": 3,
           "transaction_id": "2",
           "date": "2022-01-05T00:00:00Z",
           "payee": "Buy stock",
@@ -95,7 +99,7 @@
           "balance": 1
         },
         {
-          "id": 80,
+          "id": 4,
           "transaction_id": "2",
           "date": "2022-01-05T00:00:00Z",
           "payee": "Buy stock",
@@ -130,7 +134,7 @@
       "payee": "Salary",
       "postings": [
         {
-          "id": 77,
+          "id": 1,
           "transaction_id": "1",
           "date": "2022-01-01T00:00:00Z",
           "payee": "Salary",
@@ -152,7 +156,7 @@
           "balance": -11000
         },
         {
-          "id": 78,
+          "id": 2,
           "transaction_id": "1",
           "date": "2022-01-01T00:00:00Z",
           "payee": "Salary",

@@ -244,9 +244,9 @@
           "payee": "Purchased 0.00000001 BTC",
           "account": "Assets:Coinbase:BTC",
           "commodity": "BTC",
-          "quantity": 1e-08,
+          "quantity": 1e-8,
           "amount": 0,
-          "original_amount": 1e-08,
+          "original_amount": 1e-8,
           "status": "cleared",
           "tag_recurring": "",
           "tag_period": "",
@@ -257,7 +257,7 @@
           "note": "",
           "transaction_note": "",
           "market_amount": 0,
-          "balance": 1e-08
+          "balance": 1e-8
         },
         {
           "id": 21,
@@ -811,5 +811,9 @@
       "fileName": "main.beancount",
       "note": ""
     }
-  ]
+  ],
+  "investmentIncome": {
+    "ttm_dividend": 0,
+    "ttm_interest": 1000
+  }
 }
