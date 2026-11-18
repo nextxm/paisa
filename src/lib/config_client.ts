@@ -13,13 +13,34 @@ export type ConnectConfigResponse = {
   is_journal_dirty: boolean;
 };
 
-export async function fetchConfig(opts?: { background?: boolean }): Promise<ConnectConfigResponse> {
+export type FetchConfigOptions = {
+  background?: boolean;
+  force?: boolean;
+};
+
+let cachedConfig: ConnectConfigResponse | null = null;
+let inFlightConfig: Promise<ConnectConfigResponse> | null = null;
+
+export function invalidateConfigCache(): void {
+  cachedConfig = null;
+}
+
+export async function fetchConfig(opts?: FetchConfigOptions): Promise<ConnectConfigResponse> {
+  if (!opts?.force && cachedConfig) {
+    return cachedConfig;
+  }
+
+  if (!opts?.force && inFlightConfig) {
+    return inFlightConfig;
+  }
+
   if (!opts?.background) {
     loading.set(true);
   }
-  try {
+
+  const requestPromise = (async () => {
     const response = await paisaClient.getConfig({});
-    return {
+    const mapped: ConnectConfigResponse = {
       config: (response.config ?? {}) as unknown as UserConfig,
       schema: (response.schema ?? {}) as JSONSchema7,
       now: response.now ? dayjs(response.now) : undefined,
@@ -27,7 +48,18 @@ export async function fetchConfig(opts?: { background?: boolean }): Promise<Conn
       last_price_update: response.lastPriceUpdate,
       is_journal_dirty: response.isJournalDirty
     };
+    cachedConfig = mapped;
+    return mapped;
+  })();
+
+  inFlightConfig = requestPromise;
+
+  try {
+    return await requestPromise;
   } finally {
+    if (inFlightConfig === requestPromise) {
+      inFlightConfig = null;
+    }
     if (!opts?.background) {
       loading.set(false);
     }
@@ -43,6 +75,9 @@ export async function updateConfig(
   }
   try {
     const response = await paisaClient.updateConfig({ config: config as unknown as JsonObject });
+    if (response.success) {
+      invalidateConfigCache();
+    }
     return { success: response.success };
   } catch (e: any) {
     return { success: false, error: e?.message || "Failed to update config" };

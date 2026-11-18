@@ -14,14 +14,12 @@
   let { children }: { children: Snippet; data?: any } = $props();
   let isBurger: boolean | null = $state(null);
 
-  onMount(() => {});
-
   function clearTippy() {
     hideAll();
   }
 
   function setupTippy() {
-    delegate("body", {
+    return delegate("body", {
       target: "[data-tippy-content]",
       theme: "light",
       onShow: (instance) => {
@@ -50,29 +48,36 @@
     });
   }
 
-  willClearTippy.subscribe(clearTippy);
-  beforeNavigate(clearTippy);
-  willRefresh.subscribe(() => {
-    clearTippy();
-    setupTippy();
+  onMount(() => {
+    const tippyDelegate = setupTippy();
+    const unsubClear = willClearTippy.subscribe(clearTippy);
+    const unsubRefresh = willRefresh.subscribe(clearTippy);
+
+    return () => {
+      unsubClear();
+      unsubRefresh();
+      const delegates = Array.isArray(tippyDelegate) ? tippyDelegate : [tippyDelegate];
+      delegates.forEach((instance) => instance.destroy());
+    };
   });
+
+  beforeNavigate(clearTippy);
 
   afterNavigate(() => {
     isBurger = null;
-    setupTippy();
   });
 </script>
 
-{#key $willRefresh}
-  <Navbar bind:isBurger />
+<Navbar bind:isBurger />
 
-  <Spinner>
-    {#if $navigating}
-      <div class="route-loading-overlay">Loading…</div>
-    {/if}
+<Spinner>
+  {#if $navigating}
+    <div class="route-loading-overlay">Loading…</div>
+  {/if}
+  {#key $willRefresh}
     {@render children()}
-  </Spinner>
-{/key}
+  {/key}
+</Spinner>
 
 <CommandPalette />
 <ReloadPrompt />
