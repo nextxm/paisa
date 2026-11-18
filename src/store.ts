@@ -179,6 +179,12 @@ export async function refresh() {
     }
   }
   try {
+    const { invalidateConfigCache } = await import("$lib/config_client");
+    invalidateConfigCache();
+  } catch (e) {
+    // Ignore if config_client cannot be resolved in isolated test environments
+  }
+  try {
     const { invalidateAll } = await import("$app/navigation");
     await invalidateAll();
   } catch (e) {

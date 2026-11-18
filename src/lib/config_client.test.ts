@@ -68,10 +68,11 @@ mock.module("$lib/connect_client", () => ({
   }
 }));
 
-const { fetchConfig, updateConfig } = await import("./config_client");
+const { fetchConfig, updateConfig, invalidateConfigCache } = await import("./config_client");
 
 describe("config_client", () => {
   beforeEach(() => {
+    invalidateConfigCache();
     loadingSet.mockClear();
     getConfigImpl = mock(async (_request?: unknown) => ({}));
     updateConfigImpl = mock(async (_request?: unknown) => ({ success: true }));
@@ -120,6 +121,51 @@ describe("config_client", () => {
 
     const result = await updateConfig({ default_currency: "INR" } as UserConfig);
     expect(result).toEqual({ success: false, error: "invalid config" });
+  });
+
+  test("fetchConfig caches subsequent calls and deduplicates concurrent requests", async () => {
+    const getConfigMock = mock(async () => ({
+      config: { default_currency: "USD" },
+      schema: {},
+      accounts: ["Assets:Bank"],
+      lastPriceUpdate: "",
+      isJournalDirty: false
+    }));
+    getConfigImpl = getConfigMock;
+
+    const [first, second] = await Promise.all([fetchConfig(), fetchConfig()]);
+    const third = await fetchConfig();
+
+    expect(getConfigMock).toHaveBeenCalledTimes(1);
+    expect(first.config.default_currency).toBe("USD");
+    expect(second).toBe(first);
+    expect(third).toBe(first);
+    expect(loadingSet).toHaveBeenCalledTimes(2);
+  });
+
+  test("fetchConfig force option bypasses cache and updateConfig invalidates cache", async () => {
+    let calls = 0;
+    getConfigImpl = mock(async () => {
+      calls += 1;
+      return {
+        config: { default_currency: calls === 1 ? "INR" : "EUR" },
+        schema: {},
+        accounts: [],
+        lastPriceUpdate: "",
+        isJournalDirty: false
+      };
+    });
+
+    const initial = await fetchConfig();
+    expect(initial.config.default_currency).toBe("INR");
+
+    const forced = await fetchConfig({ force: true });
+    expect(forced.config.default_currency).toBe("EUR");
+    expect(calls).toBe(2);
+
+    await updateConfig({ default_currency: "GBP" } as UserConfig);
+    await fetchConfig();
+    expect(calls).toBe(3);
   });
 
   afterAll(() => {

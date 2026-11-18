@@ -32,7 +32,7 @@
   });
 
   onMount(async () => {
-    ({ config, schema, accounts } = await fetchConfig());
+    ({ config, schema, accounts } = await fetchConfig({ force: true }));
     lastConfig = _.cloneDeep(config);
   });
 
