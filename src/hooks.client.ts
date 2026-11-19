@@ -62,6 +62,16 @@ async function cleanupStaleLocalServiceWorker() {
 
 cleanupStaleLocalServiceWorker();
 
+if (typeof window !== "undefined") {
+  window.addEventListener("vite:preloadError", () => {
+    const key = "paisa:chunk-reload-attempted";
+    if (!sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, "1");
+      window.location.reload();
+    }
+  });
+}
+
 Handlebars.registerHelper(
   _.mapValues(helpers, (helper, name) => {
     return function (this: unknown, ...args: any[]) {
