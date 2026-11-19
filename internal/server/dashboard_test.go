@@ -72,6 +72,7 @@ func TestDashboardRoute_FallsBackWhenSnapshotPayloadInvalid(t *testing.T) {
 	assert.Contains(t, body, "transactions")
 	assert.Contains(t, body, "budget")
 	assert.Contains(t, body, "goalSummaries")
+	assert.Contains(t, body, "investmentIncome")
 }
 
 func TestDashboardRoute_RefreshesSnapshotWhenDirty(t *testing.T) {

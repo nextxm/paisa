@@ -16,7 +16,6 @@ import (
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/gen/paisa/v1/paisav1connect"
 	"github.com/ananthakumaran/paisa/internal/generator"
-	"github.com/ananthakumaran/paisa/internal/ledger"
 	"github.com/ananthakumaran/paisa/internal/model"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	"github.com/ananthakumaran/paisa/internal/model/session"
@@ -77,6 +76,9 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.GET("/_app/*filepath", func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, "/_app/immutable/") {
+			c.Header("Cache-Control", "public, max-age=31536000, immutable")
+		}
 		c.FileFromFS("/static"+c.Request.URL.Path, http.FS(web.Static))
 	})
 
@@ -89,6 +91,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.GET("/sw.js", func(c *gin.Context) {
+		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 		c.FileFromFS("/static/sw.js", http.FS(web.Static))
 	})
 
@@ -120,15 +123,8 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		}
 		lastPriceUpdate, _ := metadata.GetOrDefault(requestDB, model.LastPriceSyncKey, "")
 
-		// Check if journal is dirty
-		journalPath := config.GetJournalPath()
-		files, err := ledger.Cli().Files(journalPath)
-		if err != nil {
-			files = []string{journalPath}
-		}
-		currentHash, _ := utils.SHA256Files(files)
-		lastHash, _ := metadata.GetOrDefault(requestDB, model.JournalHashKey, "")
-		isJournalDirty := currentHash != lastHash
+		// Check if journal is dirty (cached; see journal_dirty.go)
+		isJournalDirty := isJournalDirty(requestDB)
 
 		telemetry.writeHeaders(c)
 		c.JSON(200, gin.H{
@@ -153,6 +149,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 			RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, err.Error())
 			return
 		}
+		invalidateJournalDirtyCache()
 
 		c.JSON(200, gin.H{"success": true})
 	})
@@ -704,6 +701,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.Any("/connect"+connectPath+"*action", gin.WrapH(http.StripPrefix("/connect", connectHandler)))
 
 	router.NoRoute(func(c *gin.Context) {
+		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(web.Index))
 	})
 

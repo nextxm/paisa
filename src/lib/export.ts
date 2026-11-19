@@ -1,6 +1,5 @@
 import type { AssetBreakdown, BalancedPosting } from "./utils";
 import Papa from "papaparse";
-import * as XLSX from "xlsx";
 
 export function download(balancedPostings: BalancedPosting[]) {
   const rows = balancedPostings.map((balancedPosting) => {
@@ -151,12 +150,13 @@ export function downloadAssetBalanceCSV(
   downloadLink.click();
 }
 
-export function downloadAssetBalanceExcel(
+export async function downloadAssetBalanceExcel(
   breakdowns: Record<string, AssetBreakdown>,
   flat: boolean,
   filterInactive = false,
   filterZero = false
 ) {
+  const XLSX = await import("xlsx");
   const rows = buildAssetBalanceExportRows(breakdowns, flat, filterInactive, filterZero);
   const worksheet = XLSX.utils.json_to_sheet(rows);
   const workbook = XLSX.utils.book_new();

@@ -2,6 +2,7 @@ package dna
 
 import (
 	"math"
+	"sort"
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/accounting"
@@ -171,57 +172,39 @@ func computeSavingsMetrics(db *gorm.DB, now time.Time) (monthlyContribution, sav
 
 // computeReturnMetrics calculates portfolio-weighted historical return and
 // volatility from commodity price history.
+//
+// All non-checking asset postings up to now are loaded with a single query and
+// then sliced in memory for each month of the 24-month window. Market values
+// are computed once per month boundary (the end of month N is the start of
+// month N+1) using the in-memory price cache, so no per-month SQLite queries
+// are issued.
 func computeReturnMetrics(db *gorm.DB, now time.Time) (annualReturn, volatility decimal.Decimal, monthsCovered int) {
-	// Get all commodity prices to compute monthly returns
-	allPrices, err := price.FindFiltered(db, price.PriceFilter{})
-	if err != nil || len(allPrices) == 0 {
+	// Without any commodity prices there is nothing to derive returns from.
+	if !hasAnyPrice(db) {
 		return decimal.Zero, decimal.Zero, 0
-	}
-
-	// Group prices by commodity
-	pricesByCommodity := make(map[string][]price.Price)
-	for _, p := range allPrices {
-		pricesByCommodity[p.CommodityName] = append(pricesByCommodity[p.CommodityName], p)
 	}
 
 	// Compute monthly returns across all commodities (portfolio-level)
 	// Use a simple approach: compute monthly returns for the overall portfolio
 	// by looking at net worth changes
 	twoYearsAgo := utils.BeginningOfMonth(now).AddDate(-2, 0, 0)
-	var monthlyReturns []float64
-
-	for monthStart := twoYearsAgo; monthStart.Before(now); monthStart = monthStart.AddDate(0, 1, 0) {
-		monthEnd := monthStart.AddDate(0, 1, 0)
-		if monthEnd.After(now) {
-			break
-		}
-
-		startPostings := query.Init(db).Like("Assets:%").
-			NotAccountPrefix("Assets:Checking").
-			Where("date between ? AND ?", time.Time{}, monthStart).All()
-		startPostings = service.PopulateMarketPriceAt(db, startPostings, monthStart)
-
-		endPostings := query.Init(db).Like("Assets:%").
-			NotAccountPrefix("Assets:Checking").
-			Where("date between ? AND ?", time.Time{}, monthEnd).All()
-		endPostings = service.PopulateMarketPriceAt(db, endPostings, monthEnd)
-
-		// New contributions during the month
-		newContribs := query.Init(db).Like("Assets:%").
-			NotAccountPrefix("Assets:Checking").
-			Where("date between ? AND ?", monthStart, monthEnd).All()
-		contribAmount := accounting.CostSum(newContribs)
-
-		startValue := accounting.CurrentBalance(startPostings)
-		endValue := accounting.CurrentBalance(endPostings)
-
-		if startValue.GreaterThan(decimal.Zero) {
-			// Time-weighted return: (end - start - contributions) / start
-			returnPct := endValue.Sub(startValue).Sub(contribAmount).Div(startValue)
-			r, _ := returnPct.Float64()
-			monthlyReturns = append(monthlyReturns, r)
-		}
+	boundaries := monthBoundaries(twoYearsAgo, now)
+	if len(boundaries) < 2 {
+		return decimal.Zero, decimal.Zero, 0
 	}
+
+	// Single query: every non-checking asset posting up to the last boundary,
+	// ordered by date ascending. UntilDate is used (rather than
+	// "date between time.Time{} AND x") because a zero lower bound is mapped
+	// to NULL by the sqlc query path and would match no rows.
+	assetPostings := query.Init(db).Like("Assets:%").
+		NotAccountPrefix("Assets:Checking").
+		UntilDate(boundaries[len(boundaries)-1]).All()
+
+	valueAt := func(ps []posting.Posting, date time.Time) decimal.Decimal {
+		return accounting.CurrentBalance(service.PopulateMarketPriceAt(db, ps, date))
+	}
+	monthlyReturns := monthlyReturnsFromPostings(assetPostings, boundaries, valueAt)
 
 	monthsCovered = len(monthlyReturns)
 	if monthsCovered < 3 {
@@ -253,6 +236,86 @@ func computeReturnMetrics(db *gorm.DB, now time.Time) (annualReturn, volatility 
 }
 
 // --- Helper functions ---
+
+// hasAnyPrice reports whether at least one commodity price row exists. Query
+// errors are treated as "no prices" so callers fall back to zero metrics.
+func hasAnyPrice(db *gorm.DB) bool {
+	var ids []uint
+	if err := db.Model(&price.Price{}).Limit(1).Pluck("id", &ids).Error; err != nil {
+		return false
+	}
+	return len(ids) > 0
+}
+
+// monthBoundaries returns the month-start dates from start up to and including
+// the last month end that does not exceed now. Consecutive pairs
+// (boundaries[i], boundaries[i+1]) describe the complete months in the window.
+func monthBoundaries(start, now time.Time) []time.Time {
+	var boundaries []time.Time
+	for monthStart := start; monthStart.Before(now); monthStart = monthStart.AddDate(0, 1, 0) {
+		monthEnd := monthStart.AddDate(0, 1, 0)
+		if monthEnd.After(now) {
+			break
+		}
+		if len(boundaries) == 0 {
+			boundaries = append(boundaries, monthStart)
+		}
+		boundaries = append(boundaries, monthEnd)
+	}
+	return boundaries
+}
+
+// monthlyReturnsFromPostings computes time-weighted monthly returns for each
+// consecutive pair of boundaries using a pre-fetched slice of postings.
+//
+// For month i (boundaries[i] .. boundaries[i+1]):
+//   - start value: market value of postings with date <= boundaries[i]
+//   - end value:   market value of postings with date <= boundaries[i+1]
+//   - contribution: cost of postings with boundaries[i] <= date <= boundaries[i+1]
+//     (inclusive on both ends, matching SQL BETWEEN semantics)
+//
+// valueAt is evaluated exactly once per boundary because the end of one month
+// is the start of the next.
+func monthlyReturnsFromPostings(postings []posting.Posting, boundaries []time.Time, valueAt func([]posting.Posting, time.Time) decimal.Decimal) []float64 {
+	if len(boundaries) < 2 {
+		return nil
+	}
+
+	sorted := make([]posting.Posting, len(postings))
+	copy(sorted, postings)
+	sort.SliceStable(sorted, func(i, j int) bool { return sorted[i].Date.Before(sorted[j].Date) })
+
+	// upTo returns the number of postings with date <= d.
+	upTo := func(d time.Time) int {
+		return sort.Search(len(sorted), func(i int) bool { return sorted[i].Date.After(d) })
+	}
+	// from returns the index of the first posting with date >= d.
+	from := func(d time.Time) int {
+		return sort.Search(len(sorted), func(i int) bool { return !sorted[i].Date.Before(d) })
+	}
+
+	values := make([]decimal.Decimal, len(boundaries))
+	ends := make([]int, len(boundaries))
+	for i, b := range boundaries {
+		ends[i] = upTo(b)
+		values[i] = valueAt(sorted[:ends[i]], b)
+	}
+
+	var monthlyReturns []float64
+	for i := 0; i+1 < len(boundaries); i++ {
+		startValue := values[i]
+		endValue := values[i+1]
+		contribAmount := accounting.CostSum(sorted[from(boundaries[i]):ends[i+1]])
+
+		if startValue.GreaterThan(decimal.Zero) {
+			// Time-weighted return: (end - start - contributions) / start
+			returnPct := endValue.Sub(startValue).Sub(contribAmount).Div(startValue)
+			r, _ := returnPct.Float64()
+			monthlyReturns = append(monthlyReturns, r)
+		}
+	}
+	return monthlyReturns
+}
 
 // groupByYear groups postings by calendar year and sums their amounts.
 func groupByYear(postings []posting.Posting, now time.Time) map[int]decimal.Decimal {

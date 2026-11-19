@@ -1,9 +1,7 @@
 import Papa from "papaparse";
-import * as XLSX from "xlsx";
 import _ from "lodash";
 import { format } from "./journal";
 import { pdf2array } from "./pdf";
-import * as XlsxPopulate from "xlsx-populate";
 
 interface Result {
   data: string[][];
@@ -295,6 +293,7 @@ function parseCSV(file: File): Promise<Result> {
 
 async function parseXLSX(file: File): Promise<Result> {
   const buffer = await readFile(file);
+  const XLSX = await import("xlsx");
   try {
     const sheet = XLSX.read(buffer, { type: "binary" });
     const json = XLSX.utils.sheet_to_json<string[]>(sheet.Sheets[sheet.SheetNames[0]], {
@@ -313,6 +312,8 @@ async function parseXLSX(file: File): Promise<Result> {
       }
 
       try {
+        const xlsxPopulateModule = await import("xlsx-populate");
+        const XlsxPopulate = (xlsxPopulateModule as any).default ?? xlsxPopulateModule;
         const workbook = await XlsxPopulate.fromDataAsync(buffer, { password });
         const sheet = workbook.sheet(0);
         if (sheet) {

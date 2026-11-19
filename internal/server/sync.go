@@ -30,6 +30,7 @@ type SyncRequest struct {
 // not needed (e.g. the one-shot /api/init bootstrap).
 func Sync(db *gorm.DB, request SyncRequest, progressFn func(completed, total int)) (gin.H, []string) {
 	cache.Clear()
+	invalidateJournalDirtyCache()
 
 	var journalResult model.SyncResult
 	var details []string

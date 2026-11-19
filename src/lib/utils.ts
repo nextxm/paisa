@@ -1080,6 +1080,10 @@ export function ajax(route: "/api/dashboard"): Promise<{
     budgetsByMonth: { [key: string]: Budget };
   };
   goalSummaries: GoalSummary[];
+  investmentIncome?: {
+    ttm_dividend?: number;
+    ttm_interest?: number;
+  };
 }>;
 
 export function ajax(

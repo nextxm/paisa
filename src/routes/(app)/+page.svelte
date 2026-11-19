@@ -7,10 +7,14 @@
   import { flip } from "svelte/animate";
   import * as expense from "$lib/expense/monthly";
   import {
+    applyDashboardPreset,
+    createDefaultDashboardLayout,
+    dashboardPresets,
     getWidgetMeta,
     loadDashboardLayout,
     saveDashboardLayout,
     type DashboardLayout,
+    type DashboardPresetId,
     type DashboardWidgetColumn,
     type DashboardWidgetConfigOption,
     type DashboardWidgetId,
@@ -77,9 +81,9 @@
   let checkingBalances: Record<string, AssetBreakdown> = $derived(
     data.dashboard.checkingBalances.asset_breakdowns
   );
-  let investmentIncomeDividendTTM = $state(0);
-  let investmentIncomeInterestTTM = $state(0);
-  let investmentIncomeLoading = $state(true);
+  let investmentIncome: InvestmentIncomeSummary = $derived(data.dashboard.investmentIncome || {});
+  let investmentIncomeDividendTTM = $derived(Number(investmentIncome.ttm_dividend || 0));
+  let investmentIncomeInterestTTM = $derived(Number(investmentIncome.ttm_interest || 0));
   const widgetColumns: DashboardWidgetColumn[] = ["left", "right"];
   const leftWidgets = $derived(dashboardLayout.left);
   const rightWidgets = $derived(dashboardLayout.right);
@@ -119,18 +123,12 @@
     refresh();
   }
 
-  async function loadInvestmentIncome() {
-    const route: string = "/api/income/investment";
-    try {
-      const response = (await ajax(route, { background: true })) as InvestmentIncomeSummary;
-      investmentIncomeDividendTTM = response.ttm_dividend || 0;
-      investmentIncomeInterestTTM = response.ttm_interest || 0;
-    } catch {
-      investmentIncomeDividendTTM = 0;
-      investmentIncomeInterestTTM = 0;
-    } finally {
-      investmentIncomeLoading = false;
-    }
+  function selectPreset(presetId: DashboardPresetId) {
+    updateDashboardLayout(applyDashboardPreset(presetId));
+  }
+
+  function resetDashboardLayout() {
+    updateDashboardLayout(createDefaultDashboardLayout());
   }
 
   function updateDashboardLayout(nextLayout: DashboardLayout) {
@@ -222,8 +220,6 @@
     );
     cashflowRenderer(cashFlows);
     cashflowLegends = legends;
-
-    void loadInvestmentIncome();
   });
 </script>
 
@@ -365,18 +361,14 @@
                         <LevelItem
                           narrow
                           title="TTM Dividend"
-                          color={investmentIncomeLoading ? undefined : COLORS.gainText}
-                          value={investmentIncomeLoading
-                            ? "—"
-                            : formatCurrency(investmentIncomeDividendTTM)}
+                          color={COLORS.gainText}
+                          value={formatCurrency(investmentIncomeDividendTTM)}
                         />
                         <LevelItem
                           narrow
                           title="TTM Interest"
-                          color={investmentIncomeLoading ? undefined : COLORS.gainText}
-                          value={investmentIncomeLoading
-                            ? "—"
-                            : formatCurrency(investmentIncomeInterestTTM)}
+                          color={COLORS.gainText}
+                          value={formatCurrency(investmentIncomeInterestTTM)}
                         />
                       </nav>
                     </div>
@@ -517,6 +509,26 @@
     </button>
   {/snippet}
   {#snippet body()}
+    <div
+      class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-space-between mb-3"
+      style="gap: 0.5rem;"
+    >
+      <div class="buttons are-small mb-0">
+        {#each dashboardPresets as preset}
+          <button
+            type="button"
+            class="button is-light"
+            title={preset.description}
+            onclick={() => selectPreset(preset.id)}
+          >
+            {preset.label}
+          </button>
+        {/each}
+      </div>
+      <button type="button" class="button is-small is-ghost" onclick={resetDashboardLayout}>
+        Reset to default
+      </button>
+    </div>
     <p class="mb-3 has-text-grey is-size-7">
       Drag widgets to reorder them. Toggle visibility and adjust per-widget options below.
     </p>

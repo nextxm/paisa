@@ -9,6 +9,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/query"
 	"github.com/ananthakumaran/paisa/internal/server/assets"
 	"github.com/ananthakumaran/paisa/internal/server/goal"
+	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -26,14 +27,17 @@ func buildDashboardWithTimings(db *gorm.DB) (gin.H, dashboardStageTimings) {
 	}
 
 	result := gin.H{
-		"checkingBalances":     measure("checkingBalances", func() any { return assets.GetCheckingBalance(db, "") }),
-		"networth":             measure("networth", func() any { return GetCurrentNetworth(db) }),
-		"expenses":             measure("expenses", func() any { return GetCurrentExpense(db) }),
-		"cashFlows":            measure("cashFlows", func() any { return GetCurrentCashFlow(db) }),
-		"transactionSequences": measure("transactionSequences", func() any { return ComputeRecurringTransactions(query.Init(db).All()) }),
-		"transactions":         measure("transactions", func() any { return GetLatestTransactions(db) }),
-		"budget":               measure("budget", func() any { return GetCurrentBudget(db) }),
-		"goalSummaries":        measure("goalSummaries", func() any { return goal.GetGoalSummaries(db) }),
+		"checkingBalances": measure("checkingBalances", func() any { return assets.GetCheckingBalance(db, "") }),
+		"networth":         measure("networth", func() any { return GetCurrentNetworth(db) }),
+		"expenses":         measure("expenses", func() any { return GetCurrentExpense(db) }),
+		"cashFlows":        measure("cashFlows", func() any { return GetCurrentCashFlow(db) }),
+		"transactionSequences": measure("transactionSequences", func() any {
+			return ComputeRecurringTransactions(query.Init(db).Where("tag_recurring != '' AND tag_recurring IS NOT NULL").UntilToday().All())
+		}),
+		"transactions":     measure("transactions", func() any { return GetLatestTransactions(db) }),
+		"budget":           measure("budget", func() any { return GetCurrentBudget(db) }),
+		"goalSummaries":    measure("goalSummaries", func() any { return goal.GetGoalSummaries(db) }),
+		"investmentIncome": measure("investmentIncome", func() any { return GetInvestmentIncomeSummary(db, utils.Now()) }),
 	}
 
 	return result, timings
