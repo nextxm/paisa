@@ -578,13 +578,13 @@
     const lines: string[] = [];
 
     const writeSingleTx = (tx: StagedTransaction) => {
-      const dateFormatted = tx.date.replaceAll("-", "/");
+      const dateFormatted = tx.date.replaceAll("/", "-");
       const shortNote = extractShortNote(tx.payee, tx.memo) || "Transaction";
       const curr = (tx.currency || defaultCurrency || "INR").trim();
       const amtStr = `${tx.amount.toFixed(2)} ${curr}`;
       const tagStr = tx.tags && tx.tags.length > 0 ? `  ; ${tx.tags.join(" ")}` : "";
 
-      lines.push(`${dateFormatted} * ${shortNote}${tagStr}`);
+      lines.push(`${dateFormatted} * ${JSON.stringify(shortNote)}${tagStr}`);
       if (tx.is_debit) {
         lines.push(`    ${baseAccount.padEnd(40)}  -${amtStr}`);
         lines.push(`    ${(tx.selected_account || "Expenses:Unknown").padEnd(40)}   ${amtStr}`);
@@ -618,8 +618,8 @@
           continue;
         }
         const [date, curr] = key.split("__");
-        const dateFormatted = date.replaceAll("-", "/");
-        lines.push(`${dateFormatted} * Consolidated Debits (${txs.length} items)`);
+        const dateFormatted = date.replaceAll("/", "-");
+        lines.push(`${dateFormatted} * "Consolidated Debits (${txs.length} items)"`);
         let total = 0;
         for (const tx of txs) {
           total += tx.amount;

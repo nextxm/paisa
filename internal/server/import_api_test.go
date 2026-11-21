@@ -123,14 +123,14 @@ func TestFormatTransactionsForCommit_GroupByDate(t *testing.T) {
 	}
 
 	out := formatTransactionsForCommit(db, req, "INR")
-	assert.Contains(t, out, "2026/10/11 * Consolidated Debits (2 items)")
+	assert.Contains(t, out, `2026-10-11 * "Consolidated Debits (2 items)"`)
 	assert.Contains(t, out, "366.55 INR  ; Smart Ba")
 	assert.NotContains(t, out, "14336279452")
 	assert.NotContains(t, out, "REF998877")
 	assert.Contains(t, out, "309.00 INR  ; SWIGGY")
 	assert.NotContains(t, out, "swiggy@icici")
 	assert.Contains(t, out, "-675.55 INR")
-	assert.Contains(t, out, "2026/09/26 * Payment received")
+	assert.Contains(t, out, `2026-09-26 * "Payment received"`)
 	assert.NotContains(t, out, "14238609506")
 	assert.Contains(t, out, "4083.00 INR")
 }
@@ -194,7 +194,7 @@ func TestFormatTransactionsForCommit_ComplexBankStatementUPIStrings(t *testing.T
 	}
 
 	out := formatTransactionsForCommit(db, req, "INR")
-	assert.Contains(t, out, "2026/10/11 * Consolidated Debits (6 items)")
+	assert.Contains(t, out, `2026-10-11 * "Consolidated Debits (6 items)"`)
 	assert.Contains(t, out, "366.55 INR  ; Smart Ba")
 	assert.Contains(t, out, "427.00 INR  ; ZEPTONOW")
 	assert.Contains(t, out, "309.00 INR  ; SWIGGY")

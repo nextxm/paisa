@@ -217,13 +217,14 @@ func formatTransactionsForCommit(db *gorm.DB, req CommitImportRequest, defaultCo
 
 		for _, k := range debitKeys {
 			txs := debitGroups[k]
-			dateStr := strings.ReplaceAll(k.date, "-", "/")
+			dateStr := strings.ReplaceAll(k.date, "/", "-")
 			if len(txs) == 1 {
 				writeSingleLedgerEntry(&sb, db, baseAcc, txs[0], k.currency, dialect)
 				continue
 			}
 
-			sb.WriteString(fmt.Sprintf("%s * Consolidated Debits (%d items)\n", dateStr, len(txs)))
+			desc := fmt.Sprintf("Consolidated Debits (%d items)", len(txs))
+			sb.WriteString(fmt.Sprintf("%s * %q\n", dateStr, desc))
 			var total float64
 			for _, tx := range txs {
 				offsetAcc, _ := matchAccount(db, tx.SelectedAccount)
@@ -283,8 +284,9 @@ func writeSingleLedgerEntry(sb *strings.Builder, db *gorm.DB, baseAcc string, tx
 	}
 	amtStr := fmt.Sprintf("%.2f", tx.Amount)
 
+	dateStr := strings.ReplaceAll(tx.Date, "/", "-")
 	if dialect == "beancount" {
-		sb.WriteString(tx.Date)
+		sb.WriteString(dateStr)
 		sb.WriteString(" * ")
 		if shortNote != "" {
 			sb.WriteString(fmt.Sprintf("%q", shortNote))
@@ -295,10 +297,11 @@ func writeSingleLedgerEntry(sb *strings.Builder, db *gorm.DB, baseAcc string, tx
 		}
 		sb.WriteString("\n")
 	} else {
-		dateStr := strings.ReplaceAll(tx.Date, "-", "/")
 		sb.WriteString(dateStr)
 		sb.WriteString(" * ")
-		sb.WriteString(shortNote)
+		if shortNote != "" {
+			sb.WriteString(fmt.Sprintf("%q", shortNote))
+		}
 		if len(tx.Tags) > 0 {
 			sb.WriteString("  ; " + strings.Join(tx.Tags, " "))
 		}
