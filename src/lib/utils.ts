@@ -848,11 +848,23 @@ export interface StagedTransaction {
   duplicate_reason?: string;
 }
 
+export interface ColumnMapping {
+  header_row: number;
+  date: number;
+  description: number;
+  debit: number;
+  credit: number;
+  amount: number;
+  dr_cr: number;
+  currency: number;
+}
+
 export interface IngestionResult {
   total_parsed: number;
   auto_categorized: number;
   possible_duplicates: number;
   transactions: StagedTransaction[];
+  detected_mapping?: ColumnMapping;
 }
 
 export { cleanPayee } from "./clean_payee";

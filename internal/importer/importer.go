@@ -53,6 +53,19 @@ type StagedTransaction struct {
 	DuplicateReason  string `json:"duplicate_reason,omitempty"`
 }
 
+// ColumnMapping specifies 0-based header row and column indices for tabular statement ingestion.
+// Negative values indicate unmapped columns.
+type ColumnMapping struct {
+	HeaderRow   int `json:"header_row"`
+	Date        int `json:"date"`
+	Description int `json:"description"`
+	Debit       int `json:"debit"`
+	Credit      int `json:"credit"`
+	Amount      int `json:"amount"`
+	DrCr        int `json:"dr_cr"`
+	Currency    int `json:"currency"`
+}
+
 // IngestionRequest specifies payload for statement parsing.
 type IngestionRequest struct {
 	Format        IngestionFormat `json:"format"`
@@ -61,6 +74,7 @@ type IngestionRequest struct {
 	PresetName    string          `json:"preset_name,omitempty"`
 	BaseAccount   string          `json:"base_account,omitempty"` // e.g., Assets:Checking:Chase
 	SourceAccount string          `json:"source_account,omitempty"`
+	ColumnMapping *ColumnMapping  `json:"column_mapping,omitempty"`
 }
 
 // IngestionResult returns the staged candidate list.
@@ -69,11 +83,13 @@ type IngestionResult struct {
 	AutoCategorized    int                 `json:"auto_categorized"`
 	PossibleDuplicates int                 `json:"possible_duplicates"`
 	Transactions       []StagedTransaction `json:"transactions"`
+	DetectedMapping    *ColumnMapping      `json:"detected_mapping,omitempty"`
 }
 
 // Ingest parses input and enriches every transaction with rules and duplicate checks.
 func Ingest(db *gorm.DB, req IngestionRequest) (*IngestionResult, error) {
 	var candidates []import_rule.CandidateTransaction
+	var detectedMapping *ColumnMapping
 
 	switch strings.ToLower(string(req.Format)) {
 	case string(FormatOFX), string(FormatQFX):
@@ -93,11 +109,12 @@ func Ingest(db *gorm.DB, req IngestionRequest) (*IngestionResult, error) {
 		}
 
 	case string(FormatCSV), string(FormatExcel), string(FormatPDF), "":
-		parsed, err := parseCSVRows(req.Content, req.Delimiter, req.PresetName, db)
+		parsed, mapping, err := parseCSVRows(req.Content, req.Delimiter, req.PresetName, req.ColumnMapping, db)
 		if err != nil {
 			return nil, err
 		}
 		candidates = parsed
+		detectedMapping = mapping
 
 	default:
 		return nil, fmt.Errorf("unsupported format %q", req.Format)
@@ -183,10 +200,11 @@ func Ingest(db *gorm.DB, req IngestionRequest) (*IngestionResult, error) {
 		AutoCategorized:    autoCatCount,
 		PossibleDuplicates: duplicateCount,
 		Transactions:       staged,
+		DetectedMapping:    detectedMapping,
 	}, nil
 }
 
-func parseCSVRows(content, delimiter, presetName string, db *gorm.DB) ([]import_rule.CandidateTransaction, error) {
+func parseCSVRows(content, delimiter, presetName string, override *ColumnMapping, db *gorm.DB) ([]import_rule.CandidateTransaction, *ColumnMapping, error) {
 	reader := csv.NewReader(strings.NewReader(content))
 	reader.FieldsPerRecord = -1
 	if delimiter != "" {
@@ -198,15 +216,57 @@ func parseCSVRows(content, delimiter, presetName string, db *gorm.DB) ([]import_
 
 	records, err := reader.ReadAll()
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse CSV: %w", err)
+		return nil, nil, fmt.Errorf("failed to parse CSV: %w", err)
 	}
 	if len(records) < 2 {
-		return nil, fmt.Errorf("statement must have at least a header and one data row")
+		return nil, nil, fmt.Errorf("statement must have at least a header and one data row")
 	}
 
-	headerIdx, dateIdx, descIdx, debitIdx, creditIdx, amountIdx, drCrIdx, currIdx, fallbackDateIdx, stmtCurrency := detectHeaderRow(records)
-	if headerIdx < 0 || dateIdx < 0 || (debitIdx < 0 && creditIdx < 0 && amountIdx < 0) {
-		return nil, fmt.Errorf("could not detect valid transaction table header in statement")
+	var headerIdx, dateIdx, descIdx, debitIdx, creditIdx, amountIdx, drCrIdx, currIdx, fallbackDateIdx int
+	var stmtCurrency string
+
+	if override != nil {
+		if override.HeaderRow < 0 || override.HeaderRow >= len(records) {
+			return nil, nil, fmt.Errorf("invalid header row index %d", override.HeaderRow)
+		}
+		if override.Date < 0 || (override.Debit < 0 && override.Credit < 0 && override.Amount < 0) {
+			return nil, nil, fmt.Errorf("column mapping must specify a Date column and at least one Amount/Debit/Credit column")
+		}
+		headerIdx = override.HeaderRow
+		dateIdx = override.Date
+		descIdx = override.Description
+		debitIdx = override.Debit
+		creditIdx = override.Credit
+		amountIdx = override.Amount
+		drCrIdx = override.DrCr
+		currIdx = override.Currency
+		fallbackDateIdx = -1
+		for _, cell := range records[headerIdx] {
+			if m := headerCurrencyRe.FindStringSubmatch(cell); len(m) > 0 {
+				if m[1] != "" {
+					stmtCurrency = strings.ToUpper(m[1])
+				} else if m[2] != "" {
+					stmtCurrency = strings.ToUpper(m[2])
+				}
+				break
+			}
+		}
+	} else {
+		headerIdx, dateIdx, descIdx, debitIdx, creditIdx, amountIdx, drCrIdx, currIdx, fallbackDateIdx, stmtCurrency = detectHeaderRow(records)
+		if headerIdx < 0 || dateIdx < 0 || (debitIdx < 0 && creditIdx < 0 && amountIdx < 0) {
+			return nil, nil, fmt.Errorf("could not detect valid transaction table header in statement")
+		}
+	}
+
+	detected := &ColumnMapping{
+		HeaderRow:   headerIdx,
+		Date:        dateIdx,
+		Description: descIdx,
+		Debit:       debitIdx,
+		Credit:      creditIdx,
+		Amount:      amountIdx,
+		DrCr:        drCrIdx,
+		Currency:    currIdx,
 	}
 
 	var candidates []import_rule.CandidateTransaction
@@ -314,7 +374,7 @@ func parseCSVRows(content, delimiter, presetName string, db *gorm.DB) ([]import_
 		}
 	}
 
-	return candidates, nil
+	return candidates, detected, nil
 }
 
 var headerCurrencyRe = regexp.MustCompile(`(?i)\(([A-Z]{3})\)|\b(INR|USD|EUR|GBP|CAD|AUD|SGD|JPY|CHF|AED)\b`)

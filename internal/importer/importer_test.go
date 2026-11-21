@@ -316,4 +316,55 @@ func TestIngestKotakStatement_SampleCSV(t *testing.T) {
 	}
 	assert.Equal(t, 18, debits)
 	assert.Equal(t, 7, credits)
+	require.NotNil(t, result.DetectedMapping)
+	assert.GreaterOrEqual(t, result.DetectedMapping.HeaderRow, 0)
+	assert.GreaterOrEqual(t, result.DetectedMapping.Date, 0)
+}
+
+func TestIngestNonConformingCSV_WithExplicitColumnMapping(t *testing.T) {
+	db := openTestDB(t)
+
+	nonConformingCSV := `Account Summary,ACME Bank
+Statement Period,Oct 2026
+Txn Dt,Particulars,Outflow,Inflow,CCY
+2026-10-05,Coffee Shop,150.00,,INR
+2026-10-06,Employer Payroll,,50000.00,INR`
+
+	// Auto-detection fails because headers use non-standard labels
+	_, err := Ingest(db, IngestionRequest{
+		Format:  FormatCSV,
+		Content: nonConformingCSV,
+	})
+	require.Error(t, err)
+
+	// Explicit column mapping succeeds
+	result, err := Ingest(db, IngestionRequest{
+		Format:  FormatCSV,
+		Content: nonConformingCSV,
+		ColumnMapping: &ColumnMapping{
+			HeaderRow:   2,
+			Date:        0,
+			Description: 1,
+			Debit:       2,
+			Credit:      3,
+			Amount:      -1,
+			DrCr:        -1,
+			Currency:    4,
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 2, result.TotalParsed)
+	require.NotNil(t, result.DetectedMapping)
+	assert.Equal(t, 2, result.DetectedMapping.HeaderRow)
+
+	assert.Equal(t, "2026-10-05", result.Transactions[0].Date)
+	assert.Equal(t, "Coffee Shop", result.Transactions[0].Payee)
+	assert.Equal(t, 150.0, result.Transactions[0].Amount)
+	assert.True(t, result.Transactions[0].IsDebit)
+	assert.Equal(t, "INR", result.Transactions[0].Currency)
+
+	assert.Equal(t, "2026-10-06", result.Transactions[1].Date)
+	assert.Equal(t, "Employer Payroll", result.Transactions[1].Payee)
+	assert.Equal(t, 50000.0, result.Transactions[1].Amount)
+	assert.False(t, result.Transactions[1].IsDebit)
 }

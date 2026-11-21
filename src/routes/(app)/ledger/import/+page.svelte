@@ -20,6 +20,7 @@
   import { onMount } from "svelte";
   import {
     ajax,
+    type ColumnMapping,
     type ImportPreset,
     type ImportPreviewRow,
     type ImportTemplate,
@@ -72,6 +73,19 @@
   let rawFileContent: string = $state("");
   let uploadedFileName: string = $state("");
   let detectedFormat: "csv" | "ofx" | "qfx" | "excel" | "pdf" = $state("csv");
+  let columnMapping: ColumnMapping | null = $state(null);
+  let showColumnMapper: boolean = $state(false);
+  let mapperAmountMode: "split" | "single" = $state("split");
+  let mapperDraft: ColumnMapping = $state({
+    header_row: 0,
+    date: 0,
+    description: -1,
+    debit: -1,
+    credit: -1,
+    amount: -1,
+    dr_cr: -1,
+    currency: -1
+  });
 
   let templateEditorDom: Element | undefined = $state();
   let templateEditor: EditorView | undefined = $state();
@@ -344,6 +358,9 @@
     const ext = file.name.split(".").pop()?.toLowerCase();
 
     // OFX / QFX statement check
+    columnMapping = null;
+    showColumnMapper = false;
+    parseErrorMessage = null;
     if (ext === "ofx" || ext === "qfx") {
       rawFileContent = await file.text();
       detectedFormat = ext === "qfx" ? "qfx" : "ofx";
@@ -422,8 +439,73 @@
     }
   }
 
+  function syncMapperDraft(mapping?: ColumnMapping | null) {
+    if (mapping) {
+      mapperDraft = { ...mapping };
+      mapperAmountMode =
+        mapping.amount >= 0 && mapping.debit < 0 && mapping.credit < 0 ? "single" : "split";
+      return;
+    }
+    const firstNonEmpty = Math.max(
+      0,
+      data.findIndex((row) => Array.isArray(row) && row.some((c) => String(c ?? "").trim() !== ""))
+    );
+    mapperDraft = {
+      header_row: firstNonEmpty,
+      date: 0,
+      description: columnCount > 1 ? 1 : -1,
+      debit: columnCount > 2 ? 2 : -1,
+      credit: columnCount > 3 ? 3 : -1,
+      amount: -1,
+      dr_cr: -1,
+      currency: -1
+    };
+    mapperAmountMode = "split";
+  }
+
+  function openColumnMapper() {
+    syncMapperDraft(columnMapping || mapperDraft);
+    showColumnMapper = true;
+  }
+
+  async function applyColumnMapping() {
+    const next: ColumnMapping = {
+      ...mapperDraft,
+      debit: mapperAmountMode === "split" ? mapperDraft.debit : -1,
+      credit: mapperAmountMode === "split" ? mapperDraft.credit : -1,
+      amount: mapperAmountMode === "single" ? mapperDraft.amount : -1,
+      dr_cr: mapperAmountMode === "single" ? mapperDraft.dr_cr : -1
+    };
+    columnMapping = next;
+    await runSmartIngest();
+    if (!parseErrorMessage) {
+      showColumnMapper = false;
+    }
+  }
+
+  async function resetColumnMapping() {
+    columnMapping = null;
+    await runSmartIngest();
+    if (!parseErrorMessage) {
+      showColumnMapper = false;
+    }
+  }
+
+  const mapperHeaderColumns = $derived.by(() => {
+    const row = data[mapperDraft.header_row] || [];
+    const len = Math.max(row.length, columnCount);
+    return Array.from({ length: len }, (_, idx) => {
+      const label = String(row[idx] ?? "").trim();
+      return {
+        index: idx,
+        label: label ? `Col ${idx + 1}: ${label}` : `Col ${idx + 1} (empty)`
+      };
+    });
+  });
+
   async function runSmartIngest() {
     if (!rawFileContent && _.isEmpty(data)) return;
+    parseErrorMessage = null;
 
     let contentToIngest = rawFileContent;
     if (
@@ -440,10 +522,15 @@
           format: detectedFormat,
           content: contentToIngest,
           delimiter,
-          base_account: baseAccount
+          base_account: baseAccount,
+          column_mapping: columnMapping ?? undefined
         }),
         background: true
       });
+
+      if (response.detected_mapping) {
+        syncMapperDraft(response.detected_mapping);
+      }
 
       stagedTransactions = (response.transactions || []).map((tx) => {
         // If not already categorized by a user rule or backend suggester, predict using TF-IDF cosine similarity
@@ -507,8 +594,23 @@
         type: "is-info",
         duration: 4000
       });
+      if (
+        response.total_parsed === 0 &&
+        !_.isEmpty(data) &&
+        (detectedFormat === "csv" || detectedFormat === "excel" || detectedFormat === "pdf")
+      ) {
+        syncMapperDraft(response.detected_mapping || columnMapping);
+        showColumnMapper = true;
+      }
     } catch (e: any) {
       parseErrorMessage = e.message;
+      if (
+        !_.isEmpty(data) &&
+        (detectedFormat === "csv" || detectedFormat === "excel" || detectedFormat === "pdf")
+      ) {
+        syncMapperDraft(columnMapping);
+        showColumnMapper = true;
+      }
     }
   }
 
@@ -954,6 +1056,176 @@
   {/snippet}
 </Modal>
 
+<Modal bind:active={showColumnMapper} width="min(920px, 100vw)">
+  {#snippet head(close)}
+    <p class="text-base font-semibold flex-1">Map Statement Columns</p>
+    <button
+      class="du-btn du-btn-sm du-btn-circle du-btn-ghost"
+      aria-label="Close"
+      onclick={() => close()}
+    >
+      <i class="fas fa-times" aria-hidden="true"></i>
+    </button>
+  {/snippet}
+  {#snippet body()}
+    <p class="is-size-7 has-text-grey mb-3">
+      Select the header row from your file and map the columns to the required transaction fields.
+    </p>
+
+    <div class="mb-4">
+      <p class="label is-small mb-1">1. Header Row (click a row to select)</p>
+      <div class="table-container border rounded" style="max-height: 200px; overflow: auto;">
+        <table class="table is-narrow is-fullwidth is-hoverable is-size-7 mb-0">
+          <tbody>
+            {#each data.slice(0, 12) as row, idx}
+              <tr
+                class={mapperDraft.header_row === idx ? "is-selected" : ""}
+                style="cursor: pointer;"
+                onclick={() => (mapperDraft.header_row = idx)}
+              >
+                <td class="has-text-weight-semibold" style="width: 56px;">Row {idx + 1}</td>
+                {#each row.slice(0, 8) as cell}
+                  <td class="truncate" style="max-width: 140px;">{cell ?? ""}</td>
+                {/each}
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="columns is-multiline">
+      <div class="column is-6">
+        <label class="label is-small" for="map-date">Date Column (required)</label>
+        <div class="select is-small is-fullwidth">
+          <select id="map-date" bind:value={mapperDraft.date}>
+            {#each mapperHeaderColumns as col}
+              <option value={col.index}>{col.label}</option>
+            {/each}
+          </select>
+        </div>
+      </div>
+
+      <div class="column is-6">
+        <label class="label is-small" for="map-desc">Description / Payee Column</label>
+        <div class="select is-small is-fullwidth">
+          <select id="map-desc" bind:value={mapperDraft.description}>
+            <option value={-1}>— None —</option>
+            {#each mapperHeaderColumns as col}
+              <option value={col.index}>{col.label}</option>
+            {/each}
+          </select>
+        </div>
+      </div>
+
+      <div class="column is-12 py-1">
+        <span class="label is-small mb-1">Amount Format</span>
+        <div class="control is-size-7">
+          <label class="radio mr-4">
+            <input
+              type="radio"
+              name="mapper-amount-mode"
+              value="split"
+              bind:group={mapperAmountMode}
+            />
+            Separate Debit &amp; Credit columns
+          </label>
+          <label class="radio">
+            <input
+              type="radio"
+              name="mapper-amount-mode"
+              value="single"
+              bind:group={mapperAmountMode}
+            />
+            Single Amount column (+ optional Dr/Cr)
+          </label>
+        </div>
+      </div>
+
+      {#if mapperAmountMode === "split"}
+        <div class="column is-6">
+          <label class="label is-small" for="map-debit">Debit / Outflow Column</label>
+          <div class="select is-small is-fullwidth">
+            <select id="map-debit" bind:value={mapperDraft.debit}>
+              <option value={-1}>— None —</option>
+              {#each mapperHeaderColumns as col}
+                <option value={col.index}>{col.label}</option>
+              {/each}
+            </select>
+          </div>
+        </div>
+        <div class="column is-6">
+          <label class="label is-small" for="map-credit">Credit / Inflow Column</label>
+          <div class="select is-small is-fullwidth">
+            <select id="map-credit" bind:value={mapperDraft.credit}>
+              <option value={-1}>— None —</option>
+              {#each mapperHeaderColumns as col}
+                <option value={col.index}>{col.label}</option>
+              {/each}
+            </select>
+          </div>
+        </div>
+      {:else}
+        <div class="column is-6">
+          <label class="label is-small" for="map-amount">Amount Column (required)</label>
+          <div class="select is-small is-fullwidth">
+            <select id="map-amount" bind:value={mapperDraft.amount}>
+              <option value={-1}>— None —</option>
+              {#each mapperHeaderColumns as col}
+                <option value={col.index}>{col.label}</option>
+              {/each}
+            </select>
+          </div>
+        </div>
+        <div class="column is-6">
+          <label class="label is-small" for="map-drcr">Dr / Cr Indicator Column (optional)</label>
+          <div class="select is-small is-fullwidth">
+            <select id="map-drcr" bind:value={mapperDraft.dr_cr}>
+              <option value={-1}>— None —</option>
+              {#each mapperHeaderColumns as col}
+                <option value={col.index}>{col.label}</option>
+              {/each}
+            </select>
+          </div>
+        </div>
+      {/if}
+
+      <div class="column is-6">
+        <label class="label is-small" for="map-curr">Currency Column (optional)</label>
+        <div class="select is-small is-fullwidth">
+          <select id="map-curr" bind:value={mapperDraft.currency}>
+            <option value={-1}>— Default ({defaultCurrency}) —</option>
+            {#each mapperHeaderColumns as col}
+              <option value={col.index}>{col.label}</option>
+            {/each}
+          </select>
+        </div>
+      </div>
+    </div>
+  {/snippet}
+  {#snippet foot(close)}
+    <button
+      type="button"
+      class="du-btn du-btn-ghost du-btn-sm mr-auto"
+      onclick={resetColumnMapping}
+    >
+      Reset to Auto-Detect
+    </button>
+    <button
+      type="button"
+      class="du-btn du-btn-primary du-btn-sm"
+      disabled={mapperDraft.date < 0 ||
+        (mapperAmountMode === "split"
+          ? mapperDraft.debit < 0 && mapperDraft.credit < 0
+          : mapperDraft.amount < 0)}
+      onclick={applyColumnMapping}
+    >
+      Apply &amp; Parse
+    </button>
+    <button type="button" class="du-btn du-btn-sm" onclick={() => close()}>Cancel</button>
+  {/snippet}
+</Modal>
+
 <section class="section tab-import" style="padding-bottom: 0 !important">
   <div class="container is-fluid">
     <!-- Pipeline Header & Mode Switcher -->
@@ -1070,13 +1342,24 @@
                   onblur={() => runSmartIngest()}
                 />
               </div>
-              <button
-                class="button is-small ml-auto"
-                disabled={_.isEmpty(data) && !rawFileContent}
-                onclick={() => runSmartIngest()}
-              >
-                Re-analyze
-              </button>
+              <div class="buttons are-small ml-auto mb-0">
+                {#if !_.isEmpty(data) && (detectedFormat === "csv" || detectedFormat === "excel" || detectedFormat === "pdf")}
+                  <button
+                    type="button"
+                    class="button is-light {columnMapping ? 'is-info' : ''}"
+                    onclick={openColumnMapper}
+                  >
+                    Map Columns
+                  </button>
+                {/if}
+                <button
+                  class="button is-small"
+                  disabled={_.isEmpty(data) && !rawFileContent}
+                  onclick={() => runSmartIngest()}
+                >
+                  Re-analyze
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1127,7 +1410,20 @@
           {#if parseErrorMessage}
             <div class="message invertable is-danger mb-3">
               <div class="message-header">Ingestion Warning</div>
-              <div class="message-body">{parseErrorMessage}</div>
+              <div
+                class="message-body is-flex is-justify-content-space-between is-align-items-center"
+              >
+                <span>{parseErrorMessage}</span>
+                {#if !_.isEmpty(data) && (detectedFormat === "csv" || detectedFormat === "excel" || detectedFormat === "pdf")}
+                  <button
+                    type="button"
+                    class="button is-small is-danger is-light ml-3"
+                    onclick={openColumnMapper}
+                  >
+                    Map Columns
+                  </button>
+                {/if}
+              </div>
             </div>
           {/if}
 
