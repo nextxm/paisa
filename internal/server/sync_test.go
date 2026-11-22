@@ -26,7 +26,7 @@ func configWithBrokenJournalPath(t *testing.T) {
 	require.NoError(t, config.LoadConfig([]byte(yaml), ""))
 	t.Cleanup(func() {
 		_ = config.LoadConfig(
-			[]byte(fmt.Sprintf("journal_path: %s\ndb_path: %s", orig.JournalPath, orig.DBPath)),
+			fmt.Appendf(nil, "journal_path: %s\ndb_path: %s", orig.JournalPath, orig.DBPath),
 			"",
 		)
 	})

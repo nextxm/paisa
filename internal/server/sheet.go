@@ -50,7 +50,11 @@ func GetSheets(db *gorm.DB) gin.H {
 
 func GetSheet(file SheetFile) (gin.H, error) {
 	dir := config.GetSheetDir()
-	sheetFile, err := readSheetFile(dir, filepath.Join(dir, file.Name))
+	filePath, err := utils.BuildSubPath(dir, file.Name)
+	if err != nil {
+		return gin.H{"message": "Invalid file name"}, nil
+	}
+	sheetFile, err := readSheetFile(dir, filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -59,9 +63,13 @@ func GetSheet(file SheetFile) (gin.H, error) {
 
 func DeleteSheetBackups(file SheetFile) (gin.H, error) {
 	dir := config.GetSheetDir()
+	filePath, err := utils.BuildSubPath(dir, file.Name)
+	if err != nil {
+		return gin.H{"message": "Invalid file name"}, nil
+	}
 
 	if !config.GetConfig().Readonly {
-		versions, _ := filepath.Glob(filepath.Join(dir, file.Name+".backup.*"))
+		versions := utils.Glob(filePath, ".backup.*")
 		for _, version := range versions {
 			err := os.Remove(version)
 			if err != nil {
@@ -70,7 +78,7 @@ func DeleteSheetBackups(file SheetFile) (gin.H, error) {
 		}
 	}
 
-	sheetFile, err := readSheetFileWithVersions(dir, filepath.Join(dir, file.Name))
+	sheetFile, err := readSheetFileWithVersions(dir, filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +88,6 @@ func DeleteSheetBackups(file SheetFile) (gin.H, error) {
 func SaveSheetFile(db *gorm.DB, file SheetFile) gin.H {
 	dir := config.GetSheetDir()
 
-	filePath := filepath.Join(dir, file.Name)
 	filePath, err := utils.BuildSubPath(dir, file.Name)
 	if err != nil {
 		log.Warn(err)
@@ -158,7 +165,7 @@ func readSheetFileWithVersions(dir string, path string) (*SheetFile, error) {
 		return nil, fmt.Errorf("failed to read file %s: %w", path, err)
 	}
 
-	versions, _ := filepath.Glob(filepath.Join(filepath.Dir(path), filepath.Base(path)+".backup.*"))
+	versions := utils.Glob(path, ".backup.*")
 	versionPaths := lo.FilterMap(versions, func(vPath string, _ int) (string, bool) {
 		name, err := filepath.Rel(dir, vPath)
 		if err != nil {

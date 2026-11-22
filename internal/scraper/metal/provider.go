@@ -81,6 +81,11 @@ func (p *PriceProvider) GetPrices(code string, commodityName string, since time.
 		return nil, err
 	}
 
+	gramsPerQuote := decimal.NewFromInt(10)
+	if code == "silver-999" {
+		gramsPerQuote = decimal.NewFromInt(1000)
+	}
+
 	var prices []*price.Price
 	for _, data := range result.Data {
 		date, err := time.ParseInLocation("2006-01-02", data.Date, config.TimeZone())
@@ -88,7 +93,7 @@ func (p *PriceProvider) GetPrices(code string, commodityName string, since time.
 			return nil, err
 		}
 
-		price := price.Price{Date: date, CommodityType: config.Metal, CommodityID: code, CommodityName: commodityName, Value: data.Close.Div(decimal.NewFromInt(10)), QuoteCommodity: "INR"}
+		price := price.Price{Date: date, CommodityType: config.Metal, CommodityID: code, CommodityName: commodityName, Value: data.Close.Div(gramsPerQuote), QuoteCommodity: "INR"}
 		prices = append(prices, &price)
 	}
 	return price.FilterSince(prices, since), nil

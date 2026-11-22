@@ -29,7 +29,7 @@
 
   let buldEditOpen = $state(false);
   let selectedTransaction = $state<T | null>(null);
-  let transactions: T[] = $state(null);
+  let transactions: T[] | null = $state(null);
   let filtered: T[] = $state([]);
   let files: LedgerFile[] = $state([]);
   let newFiles: LedgerFile[] = $state([]);

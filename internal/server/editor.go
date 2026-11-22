@@ -86,7 +86,11 @@ func sortEditorFileResponse(files []*LedgerFile) {
 func GetFile(file LedgerFile) (gin.H, error) {
 	path := config.GetJournalPath()
 	dir := filepath.Dir(path)
-	ledgerFile, err := readLedgerFile(dir, filepath.Join(dir, file.Name))
+	filePath, err := utils.BuildSubPath(dir, file.Name)
+	if err != nil {
+		return gin.H{"message": "Invalid file name"}, nil
+	}
+	ledgerFile, err := readLedgerFile(dir, filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -96,9 +100,13 @@ func GetFile(file LedgerFile) (gin.H, error) {
 func DeleteBackups(file LedgerFile) (gin.H, error) {
 	path := config.GetJournalPath()
 	dir := filepath.Dir(path)
+	filePath, err := utils.BuildSubPath(dir, file.Name)
+	if err != nil {
+		return gin.H{"message": "Invalid file name"}, nil
+	}
 
 	if !config.GetConfig().Readonly {
-		versions, _ := filepath.Glob(filepath.Join(dir, file.Name+".backup.*"))
+		versions := utils.Glob(filePath, ".backup.*")
 		for _, version := range versions {
 			err := os.Remove(version)
 			if err != nil {
@@ -107,7 +115,7 @@ func DeleteBackups(file LedgerFile) (gin.H, error) {
 		}
 	}
 
-	ledgerFile, err := readLedgerFileWithVersions(dir, filepath.Join(dir, file.Name))
+	ledgerFile, err := readLedgerFileWithVersions(dir, filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -115,12 +123,15 @@ func DeleteBackups(file LedgerFile) (gin.H, error) {
 }
 
 func SaveFile(db *gorm.DB, file LedgerFile) gin.H {
+	path := config.GetJournalPath()
+	if extension := filepath.Ext(path); extension != "" && filepath.Ext(file.Name) != extension {
+		return gin.H{"errors": []ledger.LedgerFileError{}, "saved": false, "message": "File name must end with " + extension}
+	}
 	errors, _, err := validateFile(file)
 	if err != nil || len(errors) > 0 {
 		return gin.H{"errors": errors, "saved": false, "message": "Validation failed"}
 	}
 
-	path := config.GetJournalPath()
 	dir := filepath.Dir(path)
 
 	filePath, err := utils.BuildSubPath(dir, file.Name)
@@ -187,11 +198,22 @@ func ValidateFile(file LedgerFile) (gin.H, error) {
 }
 
 func validateFile(file LedgerFile) ([]ledger.LedgerFileError, string, error) {
-	dir := filepath.Dir(filepath.Dir(config.GetJournalPath()) + "/" + file.Name)
+	path := config.GetJournalPath()
+	if file.Name != "" {
+		filePath, err := utils.BuildSubPath(filepath.Dir(path), file.Name)
+		if err != nil || filePath == filepath.Clean(filepath.Dir(path)) {
+			return []ledger.LedgerFileError{{LineFrom: 1, LineTo: 1, Message: "Invalid file name"}}, "", os.ErrInvalid
+		}
+		path = filePath
+	}
 
-	tmpfile, err := os.CreateTemp(dir, "paisa-tmp-")
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return []ledger.LedgerFileError{{LineFrom: 1, LineTo: 1, Message: err.Error()}}, "", err
+	}
+
+	tmpfile, err := os.CreateTemp(filepath.Dir(path), "paisa-tmp-")
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to create temp file: %w", err)
+		return []ledger.LedgerFileError{{LineFrom: 1, LineTo: 1, Message: err.Error()}}, "", err
 	}
 
 	defer os.Remove(tmpfile.Name())
@@ -230,7 +252,7 @@ func readLedgerFileWithVersions(dir string, path string) (*LedgerFile, error) {
 		return nil, fmt.Errorf("failed to read file %s: %w", path, err)
 	}
 
-	versions, _ := filepath.Glob(filepath.Join(filepath.Dir(path), filepath.Base(path)+".backup.*"))
+	versions := utils.Glob(path, ".backup.*")
 	versionPaths := lo.FilterMap(versions, func(vPath string, _ int) (string, bool) {
 		name, err := filepath.Rel(dir, vPath)
 		if err != nil {

@@ -232,11 +232,21 @@ export function parse(file: File): Promise<Result> {
   throw new Error(`Unsupported file type ${extension}`);
 }
 
+export function columnName(index: number): string {
+  let name = "";
+  let n = index;
+  while (n >= 0) {
+    name = String.fromCharCode((n % 26) + 65) + name;
+    n = Math.floor(n / 26) - 1;
+  }
+  return name;
+}
+
 export function asRows(result: Result): Array<Record<string, any>> {
   return _.map(result.data, (row, i) => {
     return _.chain(row)
       .map((cell, j) => {
-        return [String.fromCharCode(65 + j), cell];
+        return [columnName(j), cell];
       })
       .concat([["index", i as any]])
       .fromPairs()
@@ -244,20 +254,17 @@ export function asRows(result: Result): Array<Record<string, any>> {
   });
 }
 
-const COLUMN_REFS = _.chain(_.range(65, 90))
-  .map((i) => String.fromCharCode(i))
-  .map((a) => [a, a])
-  .fromPairs()
-  .value();
-
 export function render(
   rows: Array<Record<string, any>>,
   template: Handlebars.TemplateDelegate,
   options: { reverse?: boolean; trim?: boolean } = {}
 ) {
+  const widestRow = _.maxBy(rows, _.size);
+  const columns = _.range(Math.max(26, _.size(widestRow) - 1)).map(columnName);
+  const columnRefs = _.zipObject(columns, columns);
   const output: string[] = [];
   _.each(rows, (row) => {
-    let rendered = template(_.assign({ ROW: row, SHEET: rows }, COLUMN_REFS));
+    let rendered = template(_.assign({ ROW: row, SHEET: rows }, columnRefs));
     if (options.trim) {
       rendered = _.trim(rendered);
     }

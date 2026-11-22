@@ -13,7 +13,7 @@
   import PresetSelector from "$lib/components/PresetSelector.svelte";
   import RuleStudioModal from "$lib/components/RuleStudioModal.svelte";
   import TransactionStagingTable from "$lib/components/TransactionStagingTable.svelte";
-  import { parse, asRows, render as renderJournal } from "$lib/spreadsheet";
+  import { parse, asRows, columnName, render as renderJournal } from "$lib/spreadsheet";
   import { findMatch } from "$lib/template_helpers";
   import _ from "lodash";
   import type { EditorView } from "codemirror";
@@ -272,7 +272,7 @@
     }
 
     ({ templates } = await ajax("/api/templates", { background: true }));
-    selectedTemplate = _.find(templates, { id: template.id });
+    selectedTemplate = _.find(templates, { id: template.id }) ?? null;
     saveAsName = selectedTemplate?.name || "";
     toast.toast({
       message: `Saved ${saveAsName}`,
@@ -908,7 +908,7 @@
 
     const columnMappings = _.fromPairs(
       _.range(0, columnCount).map((index) => {
-        const col = String.fromCharCode(65 + index);
+        const col = columnName(index);
         return [col, col];
       })
     );
@@ -934,7 +934,7 @@
     }
 
     ({ presets: importPresets } = await ajax("/api/import/presets", { background: true }));
-    selectedPreset = _.find(importPresets, { id: response.preset.id });
+    selectedPreset = _.find(importPresets, { id: response.preset.id }) ?? null;
     toast.toast({
       message: `Saved preset ${name}`,
       type: "is-success"

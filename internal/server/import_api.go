@@ -293,7 +293,8 @@ func writeSingleLedgerEntry(sb *strings.Builder, db *gorm.DB, baseAcc string, tx
 		}
 		for _, tag := range tx.Tags {
 			cleanTag := strings.TrimPrefix(tag, "#")
-			sb.WriteString(" #" + cleanTag)
+			sb.WriteString(" #")
+			sb.WriteString(cleanTag)
 		}
 		sb.WriteString("\n")
 	} else {
@@ -303,7 +304,8 @@ func writeSingleLedgerEntry(sb *strings.Builder, db *gorm.DB, baseAcc string, tx
 			sb.WriteString(fmt.Sprintf("%q", shortNote))
 		}
 		if len(tx.Tags) > 0 {
-			sb.WriteString("  ; " + strings.Join(tx.Tags, " "))
+			sb.WriteString("  ; ")
+			sb.WriteString(strings.Join(tx.Tags, " "))
 		}
 		sb.WriteString("\n")
 	}

@@ -149,7 +149,7 @@
                 </div>
                 <div class="custom-icon truncate" title={p.account}>
                   <div class="flex">
-                    <span class="mr-1" style={accountColorStyle(firstName(p.account))}
+                    <span class="mr-1" style={accountColorStyle(firstName(p.account) ?? "")}
                       >{iconText(p.account)}</span
                     >
                     <a

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	_ "embed"
+	_ "time/tzdata"
 
 	log "github.com/sirupsen/logrus"
 
@@ -22,6 +23,7 @@ type TaxCategoryType string
 
 const (
 	Debt           TaxCategoryType = "debt"
+	ListedDebt     TaxCategoryType = "listed_debt"
 	Equity         TaxCategoryType = "equity"
 	Equity65       TaxCategoryType = "equity65"
 	Equity35       TaxCategoryType = "equity35"

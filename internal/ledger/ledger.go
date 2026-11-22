@@ -28,10 +28,22 @@ import (
 )
 
 type LedgerFileError struct {
+	FileName string `json:"file_name,omitempty"`
 	LineFrom uint64 `json:"line_from"`
 	LineTo   uint64 `json:"line_to"`
 	Error    string `json:"error"`
 	Message  string `json:"message"`
+}
+
+func (e LedgerFileError) String() string {
+	if e.FileName == "" {
+		return e.Message
+	}
+	location := fmt.Sprintf("%s:%d", e.FileName, e.LineFrom)
+	if e.LineTo > e.LineFrom {
+		location += fmt.Sprintf("-%d", e.LineTo)
+	}
+	return location + "\n" + e.Message
 }
 
 type Ledger interface {
@@ -76,14 +88,7 @@ func (LedgerCLI) ValidateFile(journalPath string) ([]LedgerFileError, string, er
 		return errors, utils.Dos2Unix(output.String()), nil
 	}
 
-	re := regexp.MustCompile(`(?m)While parsing file "[^"]+", line ([0-9]+):\s*\n(?:(?:While|>).*\n)*((?:.*\n)*?Error: .*\n)`)
-
-	matches := re.FindAllStringSubmatch(utils.Dos2Unix(errBuf.String()), -1)
-
-	for _, match := range matches {
-		line, _ := strconv.ParseUint(match[1], 10, 64)
-		errors = append(errors, LedgerFileError{LineFrom: line, LineTo: line, Message: match[2]})
-	}
+	errors = parseLedgerErrors(utils.Dos2Unix(errBuf.String()), journalPath)
 
 	if len(errors) == 0 {
 		if stderr := strings.TrimSpace(utils.Dos2Unix(errBuf.String())); stderr != "" {
@@ -92,6 +97,31 @@ func (LedgerCLI) ValidateFile(journalPath string) ([]LedgerFileError, string, er
 	}
 
 	return errors, "", nil
+}
+
+func parseLedgerErrors(output string, journalPath string) []LedgerFileError {
+	errors := []LedgerFileError{}
+	journalDir, dirErr := filepath.Abs(filepath.Dir(journalPath))
+	re := regexp.MustCompile(`(?m)While parsing file "([^"]+)", line ([0-9]+):\s*\n(?:(?:While|>).*\n)*((?:.*\n)*?Error: .*\n)`)
+	transactionRE := regexp.MustCompile(`While balancing transaction from "([^"]+)", lines ([0-9]+)-([0-9]+):`)
+
+	for _, match := range re.FindAllStringSubmatch(output, -1) {
+		fileName := match[1]
+		lineFrom, _ := strconv.ParseUint(match[2], 10, 64)
+		lineTo := lineFrom
+		if transaction := transactionRE.FindStringSubmatch(match[0]); transaction != nil {
+			fileName = transaction[1]
+			lineFrom, _ = strconv.ParseUint(transaction[2], 10, 64)
+			lineTo, _ = strconv.ParseUint(transaction[3], 10, 64)
+		}
+		if dirErr == nil && filepath.IsAbs(fileName) {
+			if relativePath, err := filepath.Rel(journalDir, fileName); err == nil {
+				fileName = relativePath
+			}
+		}
+		errors = append(errors, LedgerFileError{FileName: fileName, LineFrom: lineFrom, LineTo: lineTo, Message: match[3]})
+	}
+	return errors
 }
 
 func (LedgerCLI) Parse(journalPath string, _prices []price.Price) ([]*posting.Posting, error) {
@@ -313,6 +343,13 @@ func (Beancount) ValidateFile(journalPath string) ([]LedgerFileError, string, er
 	return errors, "", nil
 }
 
+func parseBeancountNumber(value string) (decimal.Decimal, error) {
+	value = strings.TrimSpace(value)
+	value = strings.TrimPrefix(value, "Decimal('")
+	value = strings.TrimSuffix(value, "')")
+	return decimal.NewFromString(value)
+}
+
 func (Beancount) Parse(journalPath string, prices []price.Price) ([]*posting.Posting, error) {
 	pricesTree := buildPricesTree(prices)
 
@@ -332,6 +369,7 @@ func (Beancount) Parse(journalPath string, prices []price.Price) ([]*posting.Pos
 		Commodity
 		Quantity
 		Amount
+		CostCurrency
 		FileName
 		Location
 		TransactionID
@@ -339,7 +377,8 @@ func (Beancount) Parse(journalPath string, prices []price.Price) ([]*posting.Pos
 		TagRecurring
 		TagPeriod
 	)
-	args := []string{"-f", "csv", journalPath, "select date,payee,narration,account,currency,units(position),cost(position),filename,location,id,flag,ANY_META('recurring'),ANY_META('period')"}
+	// Stringify decimals to bypass bean-query's precision-losing numeric CSV renderer.
+	args := []string{"-f", "csv", journalPath, "select date,payee,narration,account,currency,str(number(units(position))),str(number(cost(position))),currency(cost(position)),filename,location,id,flag,ANY_META('recurring'),ANY_META('period')"}
 
 	path, err := binary.BeancountBinaryPath("bean-query")
 	if err != nil {
@@ -369,15 +408,17 @@ func (Beancount) Parse(journalPath string, prices []price.Price) ([]*posting.Pos
 			return nil, err
 		}
 
-		_, quantity, err := parseAmount(strings.TrimSpace(record[Quantity]))
+		quantity, err := parseBeancountNumber(record[Quantity])
 		if err != nil {
 			return nil, err
 		}
 
-		costCurrency, amount, err := parseAmount(strings.TrimSpace(record[Amount]))
+		amount, err := parseBeancountNumber(record[Amount])
 		if err != nil {
 			return nil, err
 		}
+
+		costCurrency := strings.TrimSpace(record[CostCurrency])
 
 		if costCurrency != config.DefaultCurrency() {
 			pr := lookupPrice(pricesTree, costCurrency, date)
@@ -575,9 +616,12 @@ func parseHLedgerCommodities(journalPath string) ([]string, error) {
 	return commodities, nil
 }
 
+// A quote starts a quoted commodity, never a bare one.
+const priceCommodityPattern = `("[^"\r\n]+"|[^\s\d."-]+)`
+
 func parseLedgerPrices(output string) ([]price.Price, error) {
 	var prices []price.Price
-	re := regexp.MustCompile(`P (\d{4}\/\d{2}\/\d{2}) (?:\d{2}:\d{2}:\d{2}) ([^\s\d.-]+|"[^"]+") ([^\n]+)\n`)
+	re := regexp.MustCompile(`P (\d{4}/\d{2}/\d{2}) (?:\d{2}:\d{2}:\d{2}) ` + priceCommodityPattern + ` ([^\n]+)\n`)
 	matches := re.FindAllStringSubmatch(output, -1)
 
 	for _, match := range matches {
@@ -601,7 +645,7 @@ func parseLedgerPrices(output string) ([]price.Price, error) {
 
 func parseHLedgerPrices(output string) ([]price.Price, error) {
 	var prices []price.Price
-	re := regexp.MustCompile(`P (\d{4}-\d{2}-\d{2}) ([^\s\d.-]+|"[^"]+") ([^\n]+)\n`)
+	re := regexp.MustCompile(`P (\d{4}-\d{2}-\d{2}) ` + priceCommodityPattern + ` ([^\n]+)\n`)
 	matches := re.FindAllStringSubmatch(output, -1)
 
 	for _, match := range matches {

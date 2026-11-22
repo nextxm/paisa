@@ -27,15 +27,15 @@
       : { from: localDateMax.subtract(localRangeOption, "year"), to: localDateMax }
   );
 
-  const filteredTransactions = $derived(
-    transactions === null
-      ? []
-      : transactions.filter(
-          (t) =>
-            t.date.isSameOrAfter(localDateRange.from, "day") &&
-            t.date.isSameOrBefore(localDateRange.to, "day")
-        )
-  );
+  const filteredTransactions = $derived.by(() => {
+    const txs = transactions;
+    if (!txs) return [];
+    return txs.filter(
+      (t) =>
+        t.date.isSameOrAfter(localDateRange.from, "day") &&
+        t.date.isSameOrBefore(localDateRange.to, "day")
+    );
+  });
 
   const itemSize = (i: number) => {
     const t = filteredTransactions[i];
@@ -50,7 +50,9 @@
 
   onMount(async () => {
     await loadAccountTransactions();
-    const noteResult = await ajax("/api/account_notes/:account", null, { account: data.account });
+    const noteResult = await ajax("/api/account_notes/:account", undefined, {
+      account: data.account
+    });
     accountNote = noteResult.account_note;
 
     if (transactions && transactions.length > 0) {

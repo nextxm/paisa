@@ -23,7 +23,7 @@
 
   let legends: Legend[] = $state([]);
   let cashFlows: CashFlow[] = $state([]);
-  let renderer: (cashflows: CashFlow[]) => void = $state();
+  let renderer: ((cashflows: CashFlow[]) => void) | undefined = $state();
 
   let expenseData: {
     month_wise: {
@@ -54,8 +54,9 @@
   });
 
   $effect(() => {
-    if (!_.isEmpty(cashFlows) && !selectedMonth) {
-      selectedMonth = _.last(cashFlows).date.format("YYYY-MM");
+    const last = _.last(cashFlows);
+    if (last && !selectedMonth) {
+      selectedMonth = last.date.format("YYYY-MM");
     }
   });
 

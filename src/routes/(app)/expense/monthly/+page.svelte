@@ -34,20 +34,20 @@
   import LegendCard from "$lib/components/LegendCard.svelte";
 
   let groups = writable([]);
-  let z: d3.ScaleOrdinal<string, string, never> = $state(null),
-    renderer: (ps: Posting[]) => void = $state(),
-    expenses: Posting[] = $state(null),
-    grouped_expenses: Record<string, Posting[]> = $state(null),
-    grouped_incomes: Record<string, Posting[]> = $state(null),
-    grouped_investments: Record<string, Posting[]> = $state(null),
-    grouped_taxes: Record<string, Posting[]> = $state(null),
+  let z: d3.ScaleOrdinal<string, string, never> | null = $state(null),
+    renderer: ((ps: Posting[]) => void) | undefined = $state(),
+    expenses: Posting[] | null = $state(null),
+    grouped_expenses: Record<string, Posting[]> | null = $state(null),
+    grouped_incomes: Record<string, Posting[]> | null = $state(null),
+    grouped_investments: Record<string, Posting[]> | null = $state(null),
+    grouped_taxes: Record<string, Posting[]> | null = $state(null),
     trends: ExpenseTrend[] = $state([]),
-    destroy: () => void = $state();
+    destroy: (() => void) | undefined = $state();
 
   let legends: Legend[] = $state([]);
 
   let current_month_expenses = $derived(
-    _.chain((grouped_expenses && grouped_expenses[$month]) || [])
+    _.chain(grouped_expenses?.[$month] ?? ([] as Posting[]))
       .filter((e) => _.includes($groups, secondName(e.account)))
       .sortBy((e) => e.date)
       .reverse()

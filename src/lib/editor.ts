@@ -22,9 +22,9 @@ import dayjs from "dayjs";
 
 export { editorState } from "../store";
 
-async function lint(editor: EditorView): Promise<Diagnostic[]> {
+async function lint(editor: EditorView, name?: string): Promise<Diagnostic[]> {
   const doc = editor.state.doc;
-  const fileName = get(editorState).fileName;
+  const fileName = name ?? get(editorState).fileName;
   try {
     const response = await ajax("/api/editor/validate", {
       method: "POST",
@@ -59,14 +59,14 @@ async function lint(editor: EditorView): Promise<Diagnostic[]> {
   }
 }
 
-export function createDiffEditor(oldContent: string, newContent: string, dom: Element) {
+export function createDiffEditor(oldContent: string, newContent: string, dom: Element, name = "") {
   const extensions = [
     basicSetup,
     State.readOnly.of(true),
     StreamLanguage.define(ledger),
     EditorView.contentAttributes.of({ "data-enable-grammarly": "false" }),
     lintGutter(),
-    linter(lint)
+    linter((editor) => lint(editor, name))
   ];
   return new MergeView({
     a: { extensions: extensions, doc: oldContent },

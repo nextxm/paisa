@@ -20,18 +20,20 @@
   import type { PageData } from "./$types";
 
   let { data }: { data: PageData } = $props();
-  let svg: SVGElement = $state();
+  let svg: SVGElement | undefined = $state();
 
-  let creditCard: CreditCardSummary = $state(null);
-  let currentBill: CreditCardBill = $state(null);
+  let creditCard: CreditCardSummary | null = $state(null);
+  let currentBill: CreditCardBill | null = $state(null);
   let found = $state(false);
   let small = $state(true);
   let rendered = $state(false);
 
-  function lastBill(creditCard: CreditCardSummary): CreditCardBill {
-    return _.find(_.reverse(_.clone(creditCard.bills)), (b) => {
-      return b.statementEndDate.isSameOrBefore(now());
-    });
+  function lastBill(creditCard: CreditCardSummary): CreditCardBill | null {
+    return (
+      _.find(_.reverse(_.clone(creditCard.bills)), (b) => {
+        return b.statementEndDate.isSameOrBefore(now());
+      }) ?? null
+    );
   }
 
   $effect(() => {
@@ -42,7 +44,7 @@
   });
 
   onMount(async () => {
-    ({ creditCard, found } = await ajax("/api/credit_cards/:account", null, data));
+    ({ creditCard, found } = await ajax("/api/credit_cards/:account", undefined, data));
     if (!found) {
       return goto("/liabilities/credit_cards");
     }
@@ -104,7 +106,7 @@
         {/if}
       </div>
       <div class="column is-9-widescreen is-8">
-        {#if currentBill}
+        {#if creditCard && currentBill}
           <div class="flex flex-wrap gap-4 mb-4">
             <div
               class="box py-2 m-0 flex-grow overflow-x-auto"
@@ -117,7 +119,11 @@
                 <div class="ml-3 whitespace-nowrap">
                   <span class="mr-1 is-size-7 has-text-grey">Payment</span>
                   <span
-                    ><DueDate dueDate={currentBill.dueDate} paidDate={currentBill.paidDate} /></span
+                    ><DueDate
+                      dueDate={currentBill.dueDate}
+                      paidDate={currentBill.paidDate}
+                      amountDue={currentBill.closingBalance}
+                    /></span
                   >
                 </div>
               </div>

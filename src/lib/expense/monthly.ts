@@ -4,7 +4,6 @@ import chroma from "chroma-js";
 import _ from "lodash";
 import {
   forEachMonth,
-  formatFixedWidthFloat,
   formatCurrency,
   formatCurrencyCrude,
   type Posting,
@@ -19,7 +18,13 @@ import {
 import COLORS, { generateColorScheme, white } from "$lib/colors";
 import { get, type Readable, type Unsubscriber, type Writable } from "svelte/store";
 import { iconify } from "$lib/icon";
-import { byExpenseGroup, expenseGroup, pieData } from "$lib/expense";
+import {
+  byExpenseGroup,
+  expenseGroup,
+  pieData,
+  formatBreakdownLabel,
+  breakdownLabelWidth
+} from "$lib/expense";
 
 export function renderCalendar(
   month: string,
@@ -424,19 +429,17 @@ export function renderMonthlyExpensesTimeline(
 export function renderCurrentExpensesBreakdown(z: d3.ScaleOrdinal<string, string, never>) {
   const id = "#d3-current-month-breakdown";
   const BAR_HEIGHT = rem(20);
-  const TEXT_WIDTH = rem(135);
   const svg = d3.select(id),
-    margin = { top: 0, right: rem(160), bottom: rem(20), left: rem(100) },
+    margin = { top: 0, right: rem(25), bottom: rem(20), left: rem(100) },
     el = document.getElementById(id.substring(1));
 
   if (!el || !el.parentElement) {
     return (postings: Posting[]) => {};
   }
 
-  const width = el.parentElement.clientWidth - margin.left - margin.right,
-    g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  const g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-  const x = d3.scaleLinear().range([0, width]);
+  const x = d3.scaleLinear();
   const y = d3.scaleBand().paddingInner(0.1).paddingOuter(0);
 
   const xAxis = g.append("g").attr("class", "axis y");
@@ -459,6 +462,13 @@ export function renderCurrentExpensesBreakdown(z: d3.ScaleOrdinal<string, string
 
     const points = _.values(categories);
     const total = _.sumBy(points, (p) => p.total);
+    const rightLabel = (d: Point) => formatBreakdownLabel(d.total, total);
+    const textWidth = breakdownLabelWidth(points.map(rightLabel), rem(135));
+    const width = Math.max(
+      0,
+      el.parentElement.clientWidth - margin.left - margin.right - textWidth
+    );
+    x.range([0, width]);
 
     const height = BAR_HEIGHT * keys.length;
     svg.attr("height", height + margin.top + margin.bottom);
@@ -539,9 +549,6 @@ export function renderCurrentExpensesBreakdown(z: d3.ScaleOrdinal<string, string
         (exit) => exit.remove()
       );
 
-    const rightLabel = (d: Point) =>
-      `${formatCurrency(d.total)} ${formatFixedWidthFloat((d.total / total) * 100, 6)}%`;
-
     bar
       .selectAll("text")
       .data(points, (p: any) => p.category)
@@ -554,7 +561,7 @@ export function renderCurrentExpensesBreakdown(z: d3.ScaleOrdinal<string, string
             .attr("y", function (d) {
               return y(d.category) + y.bandwidth() / 2;
             })
-            .attr("x", width + TEXT_WIDTH)
+            .attr("x", width + textWidth)
             .style("white-space", "pre")
             .style("font-size", "0.928rem")
             .style("font-weight", "bold")
@@ -567,6 +574,7 @@ export function renderCurrentExpensesBreakdown(z: d3.ScaleOrdinal<string, string
           update
             .text(rightLabel)
             .transition(t)
+            .attr("x", width + textWidth)
             .attr("y", function (d) {
               return y(d.category) + y.bandwidth() / 2;
             }),

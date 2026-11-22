@@ -12,6 +12,7 @@ import (
 )
 
 var port int
+var host string
 
 var serveCmd = &cobra.Command{
 	Use:   "serve",
@@ -31,11 +32,12 @@ var serveCmd = &cobra.Command{
 		}
 
 		service.WarmCache(db)
-		server.Listen(db, port)
+		server.Listen(db, host, port)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
 	serveCmd.Flags().IntVarP(&port, "port", "p", 7500, "port to listen on")
+	serveCmd.Flags().StringVar(&host, "host", "", "host to listen on (default is all interfaces)")
 }

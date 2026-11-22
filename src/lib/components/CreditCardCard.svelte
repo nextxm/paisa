@@ -14,7 +14,7 @@
 
   let { creditCard }: { creditCard: CreditCardSummary } = $props();
 
-  function lastBill(creditCard: CreditCardSummary): CreditCardBill {
+  function lastBill(creditCard: CreditCardSummary): CreditCardBill | undefined {
     return _.find(_.reverse(_.clone(creditCard.bills)), (b) => {
       return b.statementEndDate.isSameOrBefore(now());
     });
@@ -74,7 +74,11 @@
           <span class="is-size-7 has-text-grey ml-2">{creditCard.currency}</span>
         </div>
         <div class="is-size-7 has-text-grey">
-          <DueDate dueDate={bill.dueDate} paidDate={bill.paidDate} />
+          <DueDate
+            dueDate={bill.dueDate}
+            paidDate={bill.paidDate}
+            amountDue={bill.closingBalance}
+          />
         </div>
       {/if}
     </div>

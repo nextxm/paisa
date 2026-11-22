@@ -62,7 +62,7 @@
         <span class="icon is-small">
           <i class="fas {arrowIcon}"></i>
         </span>
-        {Math.abs(trend.variance_pct).toFixed(2)}%
+        {Math.abs(trend.variance_pct ?? 0).toFixed(2)}%
       </div>
     {/if}
   </div>
