@@ -2,6 +2,8 @@
 
 ### Unreleased — Future changes
 
+### 0.95-beta (2026-11-22) — Future changes
+
 #### Features
 
 - **Monthly Expenses mobile widget-first layout & Calendar Month Spending Trends** — Improved mobile ergonomics and trend comparison flexibility on `/expense/monthly`.
