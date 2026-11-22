@@ -35,16 +35,7 @@ journal. For example, when you enter the second NPS transaction on
 `#!ledger 2019/02/21`, the valuation of your existing holdings will be
 adjusted based on the new purchase price.
 
-To link a commodity with a commodity price provider, Go to `Configuration`
-page and expand the `Commodities` section. You can click the
-:fontawesome-solid-circle-plus: icon to add a new one. Edit the name
-to commodity name. Click the :fontawesome-solid-pen-to-square: icon
-near Price section and select the price provider details. Once done,
-save the configuration and click the `Update Prices` from the top right hand
-side menu. If you had done everything correctly, you would see the
-latest price of the commodity under `Assets` :material-chevron-right:
-`Balance`. You can also view the full price history on `Ledger`
-:material-chevron-right: `Price`
+To link a commodity with a price provider, open **Tools → Configuration → Finance → Commodities & Prices** (`/more/config/commodities`), click the :fontawesome-solid-circle-plus: icon to add an entry, set the commodity name, and choose the price provider details. Save your configuration and click **Sync → Sync Commodity Prices** from the top-right action strip. Once synced, you can inspect valuations under **Net Worth → Net Worth → Asset Balances** (Classic: **Assets → Balance**, `/assets/balance`) and browse full price history under **Ledger → Commodity Prices** (Classic: **Ledger → Price**, `/ledger/price`).
 
 ## MF API Mutual Fund <sub>:flag_in:</sub>
 
@@ -225,6 +216,10 @@ For commodities whose prices are maintained manually or sourced from a custom
 tool, you can supply a plain JSON file on the local filesystem.  No network
 access is required; Paisa reads the file each time prices are updated.
 
+!!! note "Configuration UI note"
+
+    While `local-json` is supported by the backend sync engine, it is not currently listed in the Configuration UI's schema dropdown (`schema.json`). Add `provider: local-json` directly in `paisa.yaml` if you use a local JSON price file.
+
 ### Configuration
 
 ```yaml
@@ -298,19 +293,19 @@ the commodity for that sync run.  Common mistakes:
 ## Update
 
 Paisa fetches the latest price of the commodities only when you
-**update** the prices. This can be done via UI using the dropdown in
-the top right hand side corner or via `paisa update` command. Make
-sure to update the prices after you make any changes to your journal
-file or you want to fetch the latest value of the commodities.
+**update** the prices. This can be done via the UI using the **Sync**
+menu in the top-right action strip or via the `paisa update` command. Make
+sure to update prices after making changes to your journal or when you
+want to fetch the latest valuations.
 
-If you need to discard incremental sync state and rebuild the entire
-commodity price history, use the **Force Refresh** button on the
-**Ledger → Price** page. It triggers a full price sync from the UI.
+On **Ledger → Commodity Prices** (Classic: **Ledger → Price**, `/ledger/price`), you can filter rows by **Base** (`base`), **Quote** (`quote`), **Source** (`source`), convert values into a chosen **Report Currency** (`report_currency`), toggle between **latest** and **all** history modes, or use the top controls:
+
+- **Clear Price Cache**: Removes cached prices from the database.
+- **Force Refresh**: Discards incremental sync state and triggers a full price sync from scratch.
 
 ## Price Export
 
-You can export your commodity price history from the **Ledger → Price**
-page.  The export is available in three formats:
+You can export your commodity price history from the **Ledger → Commodity Prices** (Classic: **Ledger → Price**) page via the **Export** button or from the command line using `paisa export`:
 
 | Format | Description |
 |--------|-------------|
@@ -318,6 +313,17 @@ page.  The export is available in three formats:
 | **hLedger** | `P YYYY-MM-DD SYMBOL AMOUNT CURRENCY` directives |
 | **Beancount** | `YYYY-MM-DD price SYMBOL AMOUNT CURRENCY` directives |
 
-You can optionally filter the export to a specific commodity before
-downloading.  When more than one commodity is selected, Paisa offers a
-**multi-file ZIP** option in addition to the single-file download.
+In the UI, you can filter the export to a specific commodity (`base`, `quote`, `source`) before downloading and choose a **multi-file ZIP** when exporting more than one commodity.
+
+### CLI Export (`paisa export`)
+
+You can also export deterministic plain-text price directives directly to stdout for appending to or piping into journal files:
+
+```console
+paisa export                            # full history, ledger format
+paisa export --format hledger           # hledger P directives
+paisa export --format beancount         # beancount price directives
+paisa export --base USD --quote INR     # only USD/INR prices
+paisa export --from 2024-01-01 --to 2024-12-31
+paisa export --source journal           # only journal-sourced prices
+```

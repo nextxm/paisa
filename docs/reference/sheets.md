@@ -5,6 +5,8 @@ status: new
 
 # Sheets
 
+Open **Tools → Sheets** (Classic: **More → Sheets**, `/more/sheets`) to launch Paisa's interactive financial notepad calculator. Sheet files are stored in `sheets_directory` (configurable under **Tools → Configuration → General → Core Setup**) and are automatically included in `.zip` archives created via **Backup & Export**.
+
 ## Introduction
 
 Sheet is a notepad calculator that computes the answer as you type.
@@ -115,7 +117,7 @@ immovable = cost_basis({account = Assets:House})
 metal = 0
 art = 0
 vehicle = 0
-bank = cost_basis({account = /^Assets:Checking/})
+bank = cost_basis({account =~ /^Assets:Checking/})
 share = cost_basis({account =~ /^Assets:Equity:.*/ OR
                     account =~ /^Assets:Debt:.*/})
 insurance = 0

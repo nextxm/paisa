@@ -1,54 +1,22 @@
 ---
-description: "The Analysis page shows you what securities you own along with their amount and percentage. It also categorizes the securities by their industry and rating."
+description: "The Underlying Portfolio page unwraps container commodities such as mutual funds to show underlying securities, industries, and credit ratings."
 ---
 
-# Analysis
+# Underlying Portfolio
 
-Ledger represents everything except currency as commodities. A
-commodity could represent physical object like Gold or certificates
-like Stock, Bond etc. Some commodities like Mutual Fund is a container
-for Securities. When you own a mutual fund unit, you indirectly own
-these securities.
+Route: `/assets/portfolio` (Grouped: `Net Worth → Investments & Portfolio → Underlying Portfolio`; Classic: `Assets → Portfolio`) *(formerly `Analysis`; `/assets/analysis` redirects here with HTTP 301)*
 
-The Analysis page unwraps the container and shows you what securities
-you own along with their amount and percentage. It also categorizes
-the securities by their industry and rating.
+Ledger represents everything except currency as commodities. A commodity can represent a physical asset like gold or a security like a stock or bond. Container commodities such as mutual funds hold baskets of underlying securities. When you own a mutual fund unit, you indirectly own those underlying holdings.
 
-!!! example "Experimental"
-    The data that powers this page comes from various sources and might
-    not be 100% accurate. Before you make any decision based on this
-    information, double check via different source.
+The **Underlying Portfolio** page unwraps supported container commodities and shows the underlying securities you hold along with their amounts and portfolio percentages, categorized by industry and rating.
 
-## Year-over-Year Comparison
+!!! example "Alpha / Experimental"
+    The underlying holdings data that powers this page comes from external sources and might
+    not be 100% accurate. Double-check against an official fund factsheet before making investment decisions.
 
-The **Year-over-Year (YoY)** page at `/analysis/yoy` lets you compare
-spending and income trends across multiple calendar years side-by-side.
+## Looking for YoY or MoM Expense Analysis?
 
-### Configuring the Year Range
+The **Year-over-Year (YoY)** and **Month-over-Month (MoM)** analysis pages were moved under **Expenses**:
 
-Use the year-range selector at the top of the page to choose between
-2 and 5 years of history.
-
-### Charts
-
-| Chart | Description |
-|-------|-------------|
-| **Spending YoY** | Monthly spending per year, Jan–Dec aligned.  Supports line and grouped-bar toggle. |
-| **Income YoY** | Monthly income per year, Jan–Dec aligned. |
-| **Category YoY** | Per-expense-category monthly totals across selected years (line/bar toggle). |
-
-Hovering over a data point shows a tooltip with the month-level
-amounts for all selected years.  A legend identifies each year by
-colour.
-
-### YoY Insights
-
-Below the charts, computed insights highlight the year with the
-highest/lowest total spend, the month with the greatest variance
-across years, and the overall YoY change percentage.
-
-### CSV Export
-
-Click the **Export CSV** button to download the currently displayed
-dataset (spending or income, for the selected years and categories) as
-a comma-separated file.
+- [Expenses – Year-over-Year (YoY)](./expenses.md#year-over-year-yoy) (`/expense/yoy`; legacy `/analysis/yoy` redirects here)
+- [Expenses – Month-over-Month (MoM)](./expenses.md#month-over-month-mom) (`/expense/mom`; legacy `/analysis/mom` redirects here)

@@ -4,8 +4,8 @@ description: "How to configure your savings goal in Paisa"
 
 # Savings
 
-Savings represents a general financial objective that you want to
-achieve, like buying a car, or a house, or a vacation.
+Savings represents a financial objective that you want to
+achieve, such as buying a car or house, funding a vacation, or building an emergency fund. View configured savings goals under **Planning → Financial Goals → Retirement & Savings Goals** (`/planning/goals`; Classic: **Planning → Goals**) and configure them in **Tools → Configuration → Planning → Goals** (`/more/config/goals`) or `paisa.yaml`.
 
 ```yaml
 goals:
@@ -13,13 +13,15 @@ goals:
     - name: House
       target: 5000000
       icon: fluent-emoji-high-contrast:house-with-garden
+      priority: 5
       accounts:
         - Assets:Equity:*
         - Assets:Debt:*
 ```
 
-Specify the target amount, and the accounts that you keep the money
-in.
+Specify the `target` amount and the `accounts` holding the earmarked funds. You can optionally set an integer `priority` (higher-priority goals are displayed first).
+
+For modeling future outflows inside stochastic Monte Carlo projections, see [Milestone & Recurring Life Goals](../planning.md#3-milestone-recurring-life-goals).
 
 ### Forecast
 

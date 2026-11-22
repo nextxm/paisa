@@ -1,6 +1,10 @@
-# Natural Language Parser API
+# Quick Add & Natural Language Parser API
 
-This document describes the Phase 2 backend APIs for natural-language transaction parsing.
+You can open the **Quick Add Transaction** dialog from the **+** icon in the top-right action strip or via the Command Palette (`Ctrl+K` → **Quick Add Transaction**). It lets you either enter a transaction directly (`POST /api/add`) or paste free-form text, click **Parse Text**, review suggestions/confidence scores, and save into `add_journal_path` (`POST /api/parser/create-transaction`).
+
+## Natural Language Input Patterns
+
+The parser recognizes dates (`2026-05-10`, `20 Apr`, `10 May 2026`, `today`, `yesterday`, `last friday`), prefix/suffix/word amounts (`$15.50`, `15 USD`, `twenty rupees`), account/payment hints (`using bmo cc`, `from checking`), and payee markers (`at no frills`).
 
 ## Endpoints
 
@@ -45,7 +49,7 @@ Response body:
 ```
 
 ### `POST /api/parser/create-transaction`
-Parses free-form text, applies optional user overrides, appends a transaction to `add_journal_path`, triggers journal sync, and asynchronously logs training data.
+Parses free-form text, applies optional user overrides (including narration and multi-currency conversion fields), appends and validates the transaction in `add_journal_path`, and asynchronously logs training feedback. Note: this endpoint writes and validates the file on disk and does **not** trigger a sync automatically — trigger a journal sync afterward to refresh reports.
 
 Request body:
 
@@ -54,14 +58,20 @@ Request body:
   "text": "paid $20 for lunch using debit",
   "date": "2026-05-10",
   "payee": "Lunch",
+  "narration": "Team lunch",
   "from_account": "Assets:Checking",
   "to_account": "Expenses:Dining",
   "amount": "20",
   "commodity": "USD",
+  "to_amount": "1670",
+  "to_commodity": "INR",
+  "exchange_rate": "83.5",
   "suggestion_used": 1,
   "time_to_confirm_ms": 1200
 }
 ```
+
+`narration`, `to_amount`, `to_commodity`, and `exchange_rate` are optional.
 
 Response body:
 
@@ -69,6 +79,7 @@ Response body:
 {
   "success": true,
   "entry": "2026/05/10 * Lunch\n  Assets:Checking  -20 USD\n  Expenses:Dining   20 USD\n",
+  "errors": [],
   "final_transaction": {
     "date": "2026-05-10",
     "payee": "Lunch",

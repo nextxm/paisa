@@ -4,9 +4,11 @@ description: "How to configure recurring transactions in Paisa"
 
 # Recurring
 
+Open **Cash Flow → Flows & Recurring → Recurring Bills** (Classic: **Cash Flow → Recurring**, `/cash_flow/recurring`) to track expected bills, EMIs, and periodic income or investments.
+
 Some of the transactions recur on a regular interval and it might be
-useful to know the next due date for such transactions. Recurring page
-shows the upcoming or recently missed transactions.
+useful to know the next due date for such transactions. The Recurring page
+shows upcoming, cleared, and recently missed transactions alongside a navbar status legend (**Cleared**, **Cleared late**, **Past due**, and **Upcoming**). You can also monitor recurring schedules directly from the **Recurring** widget on your [Dashboard](./dashboard.md) (configurable `1–30` items, default `16`).
 
 Paisa depends on the posting metadata to identify which transactions
 are recurring. This metadata can be added in couple of ways. Let's say
@@ -139,5 +141,5 @@ valid and the next 3 schedules if valid.
 
     Recurring page will only display a transaction as recurring if there
     is more than **one transaction** with the same tag name. If you
-    have only one transaction, wait untill the next transaction is added
+    have only one transaction, wait until the next transaction is added
     to see it on the recurring page.

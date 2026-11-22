@@ -1,119 +1,97 @@
+---
+description: "Synchronizing journals, market prices, portfolios, and external integrations in Paisa"
+---
+
 # Data Synchronization
 
-Paisa needs to periodically pull new data from external price providers and your journal file.
+Paisa keeps its SQLite read model synchronized with your plain-text journal files and external market price providers.
 
-## Manual Sync
+## Manual & Background Sync
 
-When using the Paisa web interface, you can manually trigger a sync at any time using the action buttons in the navigation bar. This ensures your dashboard displays the latest available market data and recent journal modifications.
+Trigger synchronization anytime from the top-right action bar:
+
+- **Sync Journal**: Re-parses your journal files and updates postings and snapshots.
+- **Update Prices**: Fetches latest quotes from configured [price providers](./commodities.md). Use **Force Refresh** on **Ledger → Commodity Prices** (`/ledger/price`) to pass `force_prices: true` and rebuild full price history.
+- **Update Mutual Fund Portfolios**: Updates underlying fund portfolio compositions.
 
 ### Async Sync & Job Tracking
 
-`POST /api/sync` returns `202 Accepted` immediately with a job ID
-(`{ "job_id": "<uuid>" }`) rather than blocking until the sync
-completes. The work is performed in the background and tracked in a
-SQLite-backed queue, so in-flight jobs survive process restarts. The UI
-subscribes to `GET /api/jobs/stream` (Server-Sent Events) for live
-status/progress updates instead of polling.
+`POST /api/sync` returns `202 Accepted` immediately with a job ID (`{ "job_id": "<uuid>" }`). Work runs asynchronously in a SQLite-backed queue so in-flight jobs survive process restarts, while the UI subscribes to Server-Sent Events (`GET /api/jobs/stream`) for live progress updates.
+
+#### Lazy Snapshot Refresh
+
+To minimize wall-clock sync latency, Paisa marks cached read-model snapshots (`dashboard`, `projection`, `investment_income`) dirty when journal or price data changes and lazily rebuilds each snapshot on first access (or prioritizes the active view via `active_snapshot`).
+
+#### Incremental Price Sync Optimization
+
+Price providers use incremental fetching to keep updates fast:
+
+- **Yahoo Finance** (`com-yahoo`) passes incremental `period1` timestamps since the last cached price date.
+- **Alpha Vantage** (`co-alphavantage`) switches to `outputsize=compact` when incremental history is within 80 days.
+- Database writes use batched SQLite upserts.
 
 #### Sync History Overlay
 
-Click the clock-rotate-left icon in the header action bar to open the
-**Sync History** overlay.  The overlay lists all background jobs in
-reverse-chronological order and shows for each job:
+Click the clock-rotate-left icon in the top-right action bar to open **Sync History**. It displays jobs in reverse-chronological order with status badges, timestamps, live-ticking wall-clock durations for active jobs, commodity progress counts, error snippets, and expandable step details.
 
-- A colour-coded status badge (success / running / failed / pending).
-- The creation, start, and finish timestamps and wall-clock duration.
-- An error message snippet for failed jobs.
-- An expandable list of per-step details.
+Clicking **Clear history** calls `POST /api/jobs/clear` to remove terminal (completed/failed) jobs from both the server queue and the UI.
 
-A **Clear history** button resets the client-side view. The persisted
-job queue remains available on the server and is replayed into the UI
-stream after reconnect. The overlay can
-be opened and closed at any time without interrupting an in-progress
-sync.
+### Automatic Freshness & External File Change Detection
 
-### Price & Journal Freshness Indicators
+The top-right action bar shows live freshness indicators:
 
-The navigation bar shows visual freshness indicators at a glance:
-
-- **Update Prices icon** – turns **amber** when the last price update
-  is more than 24 hours ago and **red** when it is more than 48 hours
-  ago.
-- **Sync Journal icon** – turns **amber** whenever one or more journal
-  files have been modified on disk since the last sync.
+- **Update Prices icon**: Turns **amber** when the last price sync is $\ge 24$ hours old and **red** when it is $\ge 48$ hours old (or never run).
+- **Sync Journal icon**: Turns **amber** whenever journal files change on disk. Paisa runs a background `JournalWatcher` (comparing file modification times and SHA-256 hashes across your main journal and all `include`d files) while the UI polls `GET /api/journal/status` every 30 seconds and on tab focus (`visibilitychange`), surfacing external edits made in your editor or via Git without needing a manual check.
 
 ## Scheduled Sync via CLI
 
-For automated periodic updates outside of the running application (e.g., pulling nightly mutual fund prices or syncing an external ledger file), you can schedule the `paisa update` command using your operating system's built-in tools.
+Schedule automated syncs outside the web UI using `paisa update`:
 
 ```bash
-# Sync journal, commodities, and portfolios
+# Sync journal, commodities, portfolios, and CII index
 paisa update
 
-# Sync only commodities
-paisa update --commodity
+# Sync individual targets
+paisa update --journal      # -j
+paisa update --commodity    # -c
+paisa update --portfolio    # -p
 ```
 
 ### Automation Examples
 
-- **Windows**: Use **Task Scheduler** to create a basic task that runs daily at a specific time, executing `paisa.exe update --commodity`.
-- **Linux / macOS**: Add a cron job (`crontab -e`) to run it daily: 
-  `0 18 * * * /path/to/paisa update --commodity`
-- **Docker**: If hosting via Docker, use your host machine's cron to execute `docker exec <container_name> paisa update -c`.
+- **Windows**: Use **Task Scheduler** to run `paisa.exe update --commodity` daily.
+- **Linux / macOS**: Add a cron job (`crontab -e`): `0 18 * * * /path/to/paisa update --commodity`.
+- **Docker**: Execute from host cron: `docker exec <container_name> paisa update -c`.
 
 ## Firefly III Webhook Integration
 
-Paisa can receive transaction webhooks from
-[Firefly III](https://www.firefly-iii.org/) and automatically append
-the imported transactions to your journal.
+Paisa can receive transaction webhooks from [Firefly III](https://www.firefly-iii.org/) and automatically append new entries to `add_journal_path`.
 
 ### Setup
 
-1. In `paisa.yaml`, set `add_journal_path` to the file that should
-   receive webhook-imported transactions:
+1. In `paisa.yaml`, set `add_journal_path` (Paisa creates parent directories and the file automatically if missing; make sure your main journal `include`s it):
 
     ```yaml
     add_journal_path: /home/john/Documents/paisa/added.ledger
     ```
 
-2. In Firefly III, create a webhook pointing at:
-
-    ```
-    http://<paisa-host>:7500/api/webhooks/firefly
-    ```
-
-    Trigger: **After transaction creation** (or update/destroy as
-    needed).
-
-3. Paisa parses the incoming payload and appends well-formed ledger
-   entries to `add_journal_path`.  Run **Sync Journal** afterward (or
-   let the scheduled sync pick them up) to see the new transactions in
-   the UI.
-
-!!! note
-    The `add_journal_path` file must already exist; Paisa will not
-    create it automatically.
+2. In Firefly III, create a webhook pointing at `http://<paisa-host>:7500/api/webhooks/firefly` with the **After transaction creation** trigger (`STORE_TRANSACTION` events are processed; other webhook event types are ignored).
+3. Run **Sync Journal** (or scheduled `paisa update --journal`) to ingest the appended entries.
 
 ## Firefly III Reconciliation (Labs)
 
 !!! example "Labs Feature"
-    This feature is hidden by default.  Enable it with
-    `labs.firefly_reconcile: true` in `paisa.yaml` (see
-    [Configuration](config.md)).
+    Hidden by default. Enable `labs.firefly_reconcile: true` in `paisa.yaml` (or under **Tools → Configuration → Tools → Labs**).
 
-When enabled, a balance-reconciliation tool lets you compare your
-Paisa (Ledger) account balances with the corresponding account
-balances in Firefly III.  Discrepancies are highlighted in the UI.
-
-Configuration options in `paisa.yaml`:
+When enabled, **Tools → Reconciliation** (`/more/reconciliation`; Classic: **More → Reconciliation**) compares your Paisa account balances against Firefly III and highlights discrepancies.
 
 ```yaml
 firefly:
-  url: https://firefly.example.com   # Firefly III base URL
-  token: your-personal-access-token  # Personal Access Token
-  ignore_accounts:                   # Accounts to skip during reconciliation
+  url: https://firefly.example.com
+  token: your-personal-access-token
+  ignore_accounts:
     - Assets:Cash
 
 labs:
-  firefly_reconcile: true            # Enable the reconciliation tool
+  firefly_reconcile: true
 ```

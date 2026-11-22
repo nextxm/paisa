@@ -4,17 +4,14 @@ description: "How to secure Paisa by adding user account"
 
 # User Authentication
 
-You can setup username and password to make sure only you can access
-the application. Go to `Configuration` page and expand the `User
-Accounts` section. You can click the :fontawesome-solid-circle-plus:
-icon to add a new username and password. Once you save the
-configuration, you will get logged out if you had not logged in
-earlier via another account.
+You can setup username and password accounts to restrict access to
+the application. Open **Tools → Configuration → General → Security & Auth**
+(`/more/config/security`), expand **User Accounts**, and click the
+:fontawesome-solid-circle-plus: icon to add a new username and password. Once you save the
+configuration, you will be logged out if you had not already signed
+in with an account.
 
-It is important to understand that authentication only protects the
-application user interface. If someone can access your computer and
-they can access the folder where Paisa stores the ledger and database
-files, they will be able to view your data.
+Authentication guards all protected API routes under `/api/*` and Connect-RPC endpoints under `/connect/*` (except `/api/ping`, `/api/auth/login`, and `/api/auth/logout`). If someone has shell or filesystem access to the host directory containing your journal files, `paisa.yaml`, or `paisa.db`, they can still read those files directly.
 
 !!! danger "HTTPS is required for internet-facing deployments"
 
@@ -46,9 +43,10 @@ remaining lifetime.
 
 | Threat | Mitigation |
 |---|---|
-| Password guessing / brute-force | Login endpoint is rate-limited to 6 requests per minute per IP address |
+| Invalid token / failed auth probing | Failed authentication attempts on protected `/api/*` and `/connect/*` endpoints are throttled by `TokenAuthMiddleware` (6 requests per minute, burst 3). Note that `POST /api/auth/login` itself is not rate-limited by Paisa — configure rate limiting at your reverse proxy for internet-facing deployments. |
 | Token theft over the network | Tokens must only ever be transmitted over HTTPS (see warning above) |
 | Token theft from config file | Tokens are **not** stored in `paisa.yaml`; only password hashes are |
+| Exposure via backup archives | `.zip` downloads from **Tools → Configuration → Tools → Backup & Export** replace `user_accounts` passwords with `[REDACTED]` by default unless you explicitly opt in to include secrets |
 | Session fixation / forgery | Tokens are cryptographically random UUIDs issued only after a successful login |
 | Persistent access after logout | Logout deletes the token from the database immediately |
 | Offline password cracking (stolen config file) | Passwords are hashed with SHA-256. While this prevents casual inspection, a determined attacker with access to `paisa.yaml` could attempt offline brute-force. Use a long, randomly-generated password and restrict file-system access to `paisa.yaml` to limit this risk. |

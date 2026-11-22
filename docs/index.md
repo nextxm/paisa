@@ -68,26 +68,24 @@ hide:
 
 
 <p style="text-align: center; margin-bottom: 3rem">
-  <a class="md-button md-button--primary" href="/getting-started/installation/">Install</a>
+  <a class="md-button md-button--primary" href="./getting-started/installation/">Install</a>
 </p>
 
 <div class="features-container" markdown>
 <div class="features" markdown>
-- :fontawesome-regular-file-lines: Builds on top of the **[ledger](https://www.ledger-cli.org/)** double entry accounting tool.
+- :fontawesome-regular-file-lines: Builds on top of **[ledger](https://www.ledger-cli.org/)**, **[hledger](https://hledger.org/)**, and **[Beancount](https://beancount.github.io/)** double-entry accounting tools.
 - :octicons-shield-lock-16: Your financial **data** never leaves your system.
-- :simple-git: The journal and configuration information are stored in **plain text** files
-  that can be easily version controlled. You can collaborate with
-  others by giving access to the files.
-- :octicons-graph-24: Track the latest market **price** of your Mutual Fund, NPS Fund
-  and Stock holdings.
-- :fontawesome-regular-credit-card: Track and **budget** your **Expenses**.
-- :material-microsoft-excel: **Convert** CSV, Excel and PDF files to Ledger journal.
-- :fontawesome-solid-calculator: **Calculate** your taxes, emis, etc using **[sheets](./reference/sheets.md)**.
-- :octicons-goal-16: Track your **goals**.
-- :material-timer-sync: View your **recurring** transactions and **credit card** bills.
-- :material-beach: Plan your **retirement**.
-- :material-chart-bar: And many more **visualizations** to help you make any financial
-  decisions.
+- :simple-git: Your journal and configuration live in **plain text** files for easy version control and full `.zip` **[backup & export](./reference/config.md#backup-export)**.
+- :octicons-graph-24: Track market **prices** and **FX rates** across mutual funds, stocks, NPS, metals, and multi-currency holdings.
+- :fontawesome-regular-credit-card: Analyze and **budget** your **[expenses](./reference/expenses.md)** with Monthly/Calendar trends, Spending Heatmap, MoM, YoY, and Sankey flows.
+- :material-microsoft-excel: **Smart Import** bank and card statements (`CSV`, `TXT`, `XLS`, `XLSX`, `PDF`, `OFX`, `QFX`) with visual column mapping, classification rules, duplicate detection, or custom Handlebars templates.
+- :material-chart-pie: Monitor portfolio drift and compute tax-aware cash deployments with **[Target Asset Allocation & Rebalancing](./reference/allocation-targets.md)**.
+- :material-stethoscope: Catch accounting errors, missing prices, potential duplicates, and statistical outliers in **[Data Health (Doctor)](./reference/doctor.md)**.
+- :fontawesome-solid-calculator: **Calculate** taxes, EMIs, and custom queries using **[Sheets](./reference/sheets.md)** or log entries rapidly with **Natural Language Quick Add** and the **`Ctrl+K` Command Palette**.
+- :octicons-goal-16: Track retirement, savings, and milestone **[goals](./reference/goals/index.md)** plus **Dividends & Investment Income**.
+- :material-timer-sync: Monitor **[recurring bills](./reference/recurring.md)** and **[credit card](./reference/credit-cards.md)** cycles and due dates.
+- :material-beach: Plan retirement with **[Financial DNA, Monte Carlo projections, What-If scenarios, and Tax-Aware Drawdown](./reference/planning.md)**.
+- :material-chart-bar: Customize your **[Dashboard](./reference/dashboard.md)** layout, switch between Grouped & Classic navigation, and toggle privacy mode on desktop or mobile.
 </div>
 
 
@@ -164,12 +162,7 @@ category and make sure you don't overspend.
 <div class="feature-card-right" markdown>
 # Data Import
 
-You don't have to sit and manually enter all your transactions. You
-can get the account statements from your bank or credit card provider
-and import them into paisa. Paisa [import](./reference/import.md) system is flexible
-enough to handle most of the formats out there in the wild. Once you
-setup the import template, it will hardly take 5 minutes to import and
-categorize all your transactions each month.
+You don't have to manually enter all your transactions. Upload statements from your bank or credit card in `CSV`, `TXT`, `XLS`, `XLSX`, `PDF`, `OFX`, or `QFX` formats. Paisa's **[Smart Importer](./reference/import.md)** auto-detects columns and bank accounts, applies custom **Visual Rule Studio** patterns and TF-IDF suggestions, flags potential duplicates, and writes clean Ledger or Beancount entries—while still supporting extensible **Handlebars templates** for custom workflows.
 </div>
 
 </div>
@@ -196,14 +189,9 @@ and will update automatically when you change the data in your ledger.
 :octicons-goal-16:{ .feature-card-icon }
 </div>
 <div class="feature-card-right" markdown>
-# Goals
+# Goals & Financial Planning
 
-Want to know how much you need to save for your next vacation? or how
-long it will take to buy a new car? Paisa can help you with planning
-and tracking your [goals](./reference/goals/index.md). If you know how much you can afford to
-save each month, paisa can tell you when you can achieve your goal. On
-the other hand, if you have a deadline, paisa can tell you how much
-you need to save each month to achieve your goal.
+Track **[savings and retirement goals](./reference/goals/index.md)** or model your long-term wealth using Paisa's **[Planning suite](./reference/planning.md)**: extract your **Financial DNA**, run **Monte Carlo** simulations with **Milestone Life Goals**, test **What-If scenarios**, and optimize withdrawals with **Tax-Aware Drawdown**.
 </div>
 
 </div>

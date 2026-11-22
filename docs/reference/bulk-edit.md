@@ -2,16 +2,30 @@
 description: "Documentation on how to search and edit transactions in bulk in Paisa, an open source personal finance manager"
 ---
 
-# Bulk Edit
+# Transactions, Filtering & Bulk Edit
 
-Paisa provides bulk transaction editor to search and modify multiple
-transactions at once. The interface is made of two parts:
+Open **Ledger → Transactions** (`/ledger/transaction`) or **Ledger → Postings Register** (Classic: **Ledger → Postings**, `/ledger/posting`) to inspect, filter, export, and bulk-modify journal entries. You can also press `Ctrl+K` anywhere and select **Search Transactions** to jump directly to `/ledger/transaction` with the search bar focused.
 
-1) Search input box allows you to narrow down the transactions you are
-interested in making changes
+## Transaction Filter Bar & Saved Searches
 
-2) Bulk Edit form allows you to make changes to the narrowed down set
-of transactions.
+Both the Transactions and Postings views include a filter bar with instant filtering and optional advanced filters:
+
+- **Search bar (`q`)**: Filter by payee or narration text.
+- **Expandable Filters** (`Filters` button): Filter by **Min amount** (`amount_min`), **Max amount** (`amount_max`), **From/To date** (`date_from`, `date_to`), **Account** (`account`), and **Commodity** (`commodity`).
+- **Shareable URL query parameters**: `/ledger/transaction` reads `q`, `amount_min`, `amount_max`, `account`, `commodity`, `date_from`, and `date_to` from the URL query string on load.
+- **Saved Searches** (`/ledger/transaction`): Click the bookmark icon to save the current filter set under a custom name (stored locally in your browser) and reload saved searches from the dropdown.
+
+On **Ledger → Transactions**, the top bar also provides:
+
+- **Download**: Exports balanced postings to CSV (`paisa-transactions.csv`).
+- **Force Full Sync**: Re-parses the journal and replaces all postings in the database, bypassing incremental-sync caches.
+
+## Bulk Edit Interface
+
+Paisa's bulk transaction editor helps you review and modify multiple transactions at once:
+
+1. Use the Transaction Filter Bar to narrow down the set of transactions you want to change.
+2. Expand **Bulk Edit** to configure a batch operation and click preview to inspect a side-by-side diff before saving.
 
 ## Search
 

@@ -1,44 +1,44 @@
 # Tax Harvesting
 
-Gains from asset types like Mutual Fund, Stock are subject to capital
-gains tax. The taxation rate itself differs based on how long you hold
-your investment, whether it's debt or equity, whether you have more
-than 1 Lakh gains in a year etc. To further complicate things, there
-might be exit load applicable.
+Open **Planning → Tax → Tax Harvesting** (Classic: **Planning → Tax → Harvest**, `/planning/tax/harvest`; shown when `default_currency` is `INR`) to view holdings eligible for tax-loss or tax-gain harvesting.
 
-Paisa takes a generic approach and let the user configure when a
-commodity is safe to harvest. There are two fields related to tax
-harvesting.
+Gains from asset types like Mutual Funds and Stocks are subject to capital
+gains tax. The taxation rate differs based on holding period, whether
+the asset is debt or equity, and annual exemption limits, and exit loads may also apply.
 
-1. harvest - specifies the number of days after which the commodity is
-   eligible for tax harvesting. This should be set based on fund exit
-   load, fund category etc
+Paisa takes a flexible approach and lets you configure when each commodity is
+eligible to harvest under **Tools → Configuration → Finance → Commodities & Prices** (`/more/config/commodities`) or in `paisa.yaml`:
 
-2. tax_category - This defines how the taxes are calculated as the
-   government usually tweaks the tax code regularly with various rules
-   like grandfathering, cost inflation index adjustment, etc.
+1. `harvest` - specifies the number of holding days after which a lot is
+   eligible for tax harvesting (for example, based on exit load and LTCG period).
 
-    1. `equity65` - This is for 65% or more investment in Indian
-       equity.
+2. `tax_category` - defines how capital gains taxes are computed (applying
+   applicable grandfathering, indexation, or slab rules):
 
-    2. `equity35` - This if for 35% or more investment in India equity
-       but less than 65%
+    1. `equity` - Listed Indian equity shares and equity-oriented instruments.
 
-    3. `debt` - This is for debt funds.
+    2. `equity65` - Funds with 65% or more invested in Indian equity.
 
-    4. `unlisted_equity` - This is for unlisted foreign on Indian equity.
+    3. `equity35` - Funds with 35% or more (and less than 65%) invested in Indian equity.
 
+    4. `debt` - Debt mutual funds and fixed-income instruments.
+
+    5. `unlisted_equity` - Unlisted foreign or Indian equity.
 
 ```yaml
 commodities:
   - name: NIFTY
     type: mutualfund
-    code: 120716
+    price:
+      provider: in-mfapi
+      code: 120716
     harvest: 365
     tax_category: equity65
-  - name: ABSTF
+  - name: ABCBF
     type: mutualfund
-    code: 119533
+    price:
+      provider: in-mfapi
+      code: 119533
     harvest: 1095
     tax_category: debt
 ```

@@ -132,14 +132,14 @@ related files in a folder named `paisa` which will be located in your
     ```
 
 Go to [http://localhost:7500](http://localhost:7500). Read the [tutorial](./tutorial.md) to learn
-more.
+more. The CLI also includes `paisa update` for scheduled syncs and `paisa export` to export stored price histories.
 
 ## Docker
 
 Paisa CLI is available on [dockerhub](https://hub.docker.com/r/nextxm/paisa). The default image only
-supports ledger. `paisa:<version>-hledger`,
-`paisa:<version>-beancount` or `paisa:<version>-all` image variants
-can be used if you want to use paisa with others.
+supports ledger. `nextxm/paisa:<version>-hledger`,
+`nextxm/paisa:<version>-beancount`, or `nextxm/paisa:<version>-all` image variants
+can be used if you want to use paisa with others. See [Deployment](../reference/deployment.md) for HTTPS reverse-proxy setup when hosting remotely.
 
 === "Linux"
 

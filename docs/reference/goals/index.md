@@ -1,34 +1,17 @@
 ---
-description: "How to configure goals in Paisa to track your financial objectives"
+description: "How to configure goals in Paisa to track retirement, savings targets, and milestone life events"
 ---
 
 # Goals
 
-Goal helps you track your financial objective and progress. You can
-create a goal for any financial objective you have, such as saving for
-a vacation, or building an emergency fund or planning for retirement.
+Goals help you track financial objectives and measure progress against your real ledger balances. Paisa supports three complementary goal systems:
 
-Paisa currently supports two types of goals:
+1. **[Retirement](./retirement.md)** — Target corpus calculated from Safe Withdrawal Rate (SWR) and yearly expenses (`/planning/goals`).
+2. **[Savings](./savings.md)** — Fixed target amount with either a target date or planned periodic contribution (`/planning/goals`).
+3. **Milestone & Recurring Life Goals** — One-off milestones (`milestone`) and recurring cash outflows (`recurring`) modeled inside the Monte Carlo [Life Plan](../planning.md#3-milestone-recurring-life-goals) (`/planning/life/goals`).
 
-1. [Retirement](./retirement.md)
-2. [Savings](./savings.md)
+## Viewing & Managing Goals
 
-
-More goal types will be added in the future. Feel free to create a
-[discussion](https://github.com/nextxm/paisa/discussions) if you have any suggestions.
-
-
-### Create Goal
-
-To add a new goal, go to the `Configuration` page and expand the goals
-section. You would see a list of goal types. Expand the type you want
-to add and click on the :fontawesome-solid-circle-plus: icon to add a
-new goal. The configuration details are available in the respective
-goal type pages.
-
-
-!!! example "Under Development"
-
-    Goals is currently under development and you might see changes
-    with every new release. If you want to share feedback, this is a
-    good time to do so.
+- **Retirement & Savings Goals**: Open **Planning → Financial Goals → Retirement & Savings Goals** (`/planning/goals`; Classic: **Planning → Goals**) to inspect progress, drag to reorder priority, or click into each goal's detailed projection chart. Configure them in **Tools → Configuration → Planning → Goals** (`/more/config/goals`) or directly under `goals:` in `paisa.yaml`.
+- **Milestone Life Goals**: Open **Planning → Financial Goals → Milestone Life Goals** (`/planning/life/goals`) to add, edit, reorder, and save life goals directly in the UI.
+- **Dashboard Widget**: Configured retirement and savings goals can also be pinned to your [Dashboard](../dashboard.md) (configurable `1–12` items, ordered by descending priority).

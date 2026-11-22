@@ -1,27 +1,66 @@
 ---
-description: "How to import CSV, TXT, XLS, XLSX or PDF files into Paisa"
+description: "How to import CSV, TXT, OFX, QFX, XLS, XLSX, or PDF statements into Paisa using Smart Ingestion or Handlebars templates"
 ---
 
 # Import
 
-Paisa provides ability to convert **CSV**, **TXT**, **XLS**, **XLSX**
-or **PDF** files to Ledger file format. The import page is made of
-three components.
+Route: `/ledger/import` (**Ledger → Import**)
+
+Paisa lets you import bank and credit card statements in **CSV**, **TXT**, **OFX**, **QFX**, **XLS**, **XLSX**, or **PDF** format directly into your journal. The Import page supports two modes:
+
+1. **Smart Ingestion & Reconciliation** *(default)* — automatic column detection, custom column mapping, rule-based and TF-IDF account categorization, duplicate flagging, and direct commit to your journal.
+2. **Classic Template Editor** — Handlebars template-based conversion with live preview and file export.
 
 !!! example "Experimental"
-    PDF support is in an experimental stage and may not accurately detect rows.
+    PDF support is in an experimental stage and may not accurately detect rows on complex layouts.
 
+---
 
-1) File Preview - You can drag and drop files here to preview the
-contents.
+## Part 1: Smart Ingestion & Reconciliation (Default Mode)
 
-2) Ledger Preview - This is where the converted ledger file will be
-shown.
+### 1. Upload Statement
 
-3) Template Editor - This is where you can edit the template.
+Drag and drop any `.csv`, `.txt`, `.ofx`, `.qfx`, `.xls`, `.xlsx`, or `.pdf` file into the upload dropzone. Paisa parses the statement (`POST /api/import/statement`), extracts candidate transactions, and detects the source bank or card account from header/footer text (including built-in hints for accounts matching `kotak`/`811`, `icici`, `axis`, `hdfc`, and `sbi` as well as your existing chart of accounts).
 
-Each row in the CSV file is converted to a transaction in the
-ledger. This conversion is controlled by the template.
+### 2. Custom Column Mapping (**Map Columns**)
+
+If a CSV, Excel, or PDF statement uses non-standard column headers or multi-row bank banners:
+
+- Click **Map Columns** (this modal also opens automatically if auto-detection finds zero transactions).
+- Select the **Header Row** from the first 12 rows of the file.
+- Map **Date Column** (required), **Description / Payee Column**, **Amount Format** (**Separate Debit & Credit columns** or **Single Amount column + optional Dr/Cr indicator**), and optional **Currency Column**.
+- Click **Apply & Parse** (or **Reset to Auto-Detect** to clear overrides).
+
+### 3. Visual Rule Studio & Account Suggestions
+
+Paisa categorizes each staged transaction in order of confidence:
+
+1. **User Classification Rules (`Rule Studio`)**: Click **Rule Studio** (`GET/POST/DELETE /api/rules`) to define priority-ordered rules matching payee or memo patterns (`contains`, `exact`, or `regex`) and optional transaction direction (`any`, `debit`, `credit`), assigning a target account, tags, and an optional **Flag for Review** marker. You can also save rules inline from any staged transaction row via **Quick Save Rule**.
+2. **Historical Payee & Merchant Taxonomy**: Matches normalized descriptions against your past ledger postings and a built-in merchant taxonomy.
+3. **TF-IDF Similarity**: Computes cosine similarity in the browser against your existing transactions to suggest the likeliest expense/income/liability account.
+
+### 4. Duplicate Detection
+
+During ingestion, staged rows are scored against existing journal postings. Rows scoring `70` or higher (same amount, close date within 7 days, and matching payee/memo context) are flagged as **Possible Duplicates** and deselected by default so you do not accidentally double-import an already recorded transaction.
+
+### 5. Review & Commit to Ledger
+
+1. Select your **Source / Bank Account** (e.g., `Assets:Checking:ICICI` or `Liabilities:CreditCard:Freedom`).
+2. Check or uncheck staged transactions and adjust any target accounts.
+3. Click **Review & Commit** to open **Review Generated Ledger Entries**, where you can inspect or edit the generated transactions and toggle **Club debits by date** (groups multiple same-day debits into one consolidated multi-posting transaction for Ledger/hledger; skipped automatically for Beancount).
+4. Click **Confirm & Append to Ledger** (`POST /api/import/commit`) to append the entries to `add_journal_path` (falling back to `journal_path` when `add_journal_path` is not configured) and validate the journal. Remember to **Sync Journal** afterward so the newly appended transactions appear across reports.
+
+---
+
+## Part 2: Classic Template Editor
+
+Switch to **Classic Template Editor** at the top of the Import page if you prefer declarative Handlebars templates for full structural control over generated transactions. The classic interface has three components:
+
+1. **File Preview** – Drag and drop CSV/TXT/XLS/XLSX/PDF files to preview raw tabular rows.
+2. **Ledger Preview** – Live rendered ledger output.
+3. **Template Editor** – Edit the Handlebars template.
+
+Each row in the file is processed against the template:
 
 ```handlebars
 {{#if (and (isDate ROW.A "DD/MM/YYYY") (isBlank ROW.G))}}
@@ -31,14 +70,7 @@ ledger. This conversion is controlled by the template.
 {{/if}}
 ```
 
-Let's break this down. The first line is a conditional statement. It
-checks if the row has a date in the first column. You can refer any
-column using their alphabets. The second line constructs the
-transaction header. The third line constructs the first posting. The
-fourth line constructs the second posting.
-
-Effectively a single row in the CSV file is converted to a single
-transaction like this.
+This converts a matching row into a transaction such as:
 
 ```ledger
 2023/03/28 AMAZON HTTP://WWW.AM IN
@@ -46,29 +78,13 @@ transaction like this.
     Assets:Checking
 ```
 
-The template is written in [Handlebars](https://handlebarsjs.com/). Paisa provides a few
-helper functions to make it easier to write the template.
+### Template Management
 
-#### Template Management
+Paisa ships with built-in templates and lets you create custom ones with **Save As** (stored in `paisa.yaml` under `import_templates`).
 
-Paisa ships with a few built-in templates. You can also create your
-own. To create a new template, edit the template and click on the
-`Save As` button. User defined custom templates are stored in the
-configuration file.
+### Template Data
 
-!!! tip
-    The import system is designed to be extensible and might not be
-    intuitive if you are not accustomed to coding. If you are unable
-    to create a template suitable for your file, please open an issue
-    with a sample file, and we will provide assistance, possibly
-    adding it to the built-in templates.
-
-#### Template Data
-
-1. **ROW** - This is the current row being processed. You can refer to
-    any column using their alphabets. For example, `ROW.A` refers to
-    the first column, `ROW.B` refers to the second column and so
-    on. The current row index is available as `ROW.index`.
+1. **ROW** – The current row being processed. Columns are keyed by letters (`ROW.A`, `ROW.B`, …) and `ROW.index` holds the 0-based row index.
 
 <details>
   <summary>Example</summary>
@@ -87,8 +103,7 @@ configuration file.
 ```
 </details>
 
-2. **SHEET** - This is the entire sheet. It is an array of rows. You
-   can refer a specific cell using the following syntax `SHEET.5.A`.
+2. **SHEET** – The entire parsed sheet as an array of row objects (e.g., `SHEET.5.A`).
 
 <details>
   <summary>Example</summary>
@@ -152,237 +167,128 @@ configuration file.
 ```
 </details>
 
-#### Template Helpers
+### Template Helpers
 
 #### `#!typescript eq(a: any, b: any): boolean`
-
 Checks if the two values are equal.
 
 #### `#!typescript not(value: any): boolean`
-
 Negates the given value.
 
 #### `#!typescript and(...args: any[]): boolean`
-
 Returns true if all the arguments are true.
 
 #### `#!typescript or(...args: any[]): boolean`
-
 Returns true if any of the arguments are true.
 
 #### `#!typescript gte(a: string | number, b: string | number): boolean`
-
-Checks if a is greater than or equal to b.
+Checks if `a` is greater than or equal to `b`.
 
 #### `#!typescript gt(a: string | number, b: string | number): boolean`
-
-Checks if a is greater than b.
+Checks if `a` is greater than `b`.
 
 #### `#!typescript lte(a: string | number, b: string | number): boolean`
-
-Checks if a is less than or equal to b.
+Checks if `a` is less than or equal to `b`.
 
 #### `#!typescript lt(a: string | number, b: string | number): boolean`
-
-Checks if a is less than b.
+Checks if `a` is less than `b`.
 
 #### `#!typescript negate(value: string | number): number`
-
-Negates the given value. For example, `negate("123.45")` will return
-`-123.45`
+Negates the given value. For example, `negate("123.45")` returns `-123.45`.
 
 #### `#!typescript amount(str: string, {default?: string}): string`
-
-Converts the given string to a valid amount. If the string is blank,
-the default value is used. Examples `(0.9534)` to `-0.9534`, `₹
-1,234.56` to `1234.56`
+Converts the given string to a valid amount. If blank, uses `default`. Examples: `(0.9534)` → `-0.9534`, `₹ 1,234.56` → `1234.56`.
 
 #### `#!typescript round(str: string, {precision?: number}): number`
-
-Rounds the given value to the given precision. If precision is not
-set, defaults to `0`
+Rounds the given value to `precision` decimal places (defaults to `0`).
 
 #### `#!typescript isDate(str: string, format: string): boolean`
-
-Checks if the given string is a valid date in the given format. Refer
-[Day.js](https://day.js.org/docs/en/parse/string-format#list-of-all-available-parsing-tokens) for the full list of supported formats.
+Checks if `str` is a valid date in `format` (see [Day.js format tokens](https://day.js.org/docs/en/parse/string-format#list-of-all-available-parsing-tokens)).
 
 #### `#!typescript predictAccount(...terms: string[], {prefix?: string}): string`
-
-Helps with prediction of account name to be used in a
-transaction. Let's say you import your Credit Card bill, you would
-prefer the system to automatically assign the account name for
-you. `predictAccount` acts like a search engine. It will try to find a
-transaction that is similar to the current transaction. The search
-requires input (referred as terms) and it will match transactions with
-similar **description** and will pick the accounts from the top match.
-
-If `terms` are not provided, the entire `ROW` will be used.
-
-The `prefix` is optional and will be used to filter out matching
-accounts. If no match is found, `Unknown` will be returned.
+Finds transactions in your journal with similar descriptions and picks the top matching account. If `terms` are omitted, the entire `ROW` is used. `prefix` filters candidate accounts; returns `Unknown` if no match is found.
 
 ```handlebars
 {{predictAccount prefix="Income"}}
 {{predictAccount ROW.C ROW.F prefix="Income"}}
 ```
 
-!!! tip
-
-    Prediction will only work if you have similar transactions in
-    ledger file. It usually means, first time you have to manually fix
-    the Unknown account and then subsequent imports will work
-
 #### `#!typescript isBlank(str: string): boolean`
-
 Checks if the given string is blank.
 
 #### `#!typescript date(str: string, format: string): string`
-
-Parses the given string as a date in the given format and returns the
-date in the format `YYYY/MM/DD`. Refer [Day.js](https://day.js.org/docs/en/parse/string-format#list-of-all-available-parsing-tokens) for the full list
-of supported formats.
+Parses `str` using `format` and returns `YYYY/MM/DD`.
 
 #### `#!typescript findAbove(column: string, {regexp?: string}): string`
-
-Finds the first cell above the current row in the given column. If
-`regexp` is provided, the search will continue till a match is found
+Finds the first non-empty cell above the current row in `column` (optionally matching `regexp`).
 
 ```handlebars
 {{findAbove B regexp="LIMITED"}}
 ```
 
 #### `#!typescript findBelow(column: string, {regexp?: string}): string`
-
-Finds the first cell below the current row in the given column. If
-`regexp` is provided, the search will continue till a match is found
+Finds the first non-empty cell below the current row in `column` (optionally matching `regexp`).
 
 ```handlebars
 {{findBelow B regexp="LIMITED"}}
 ```
 
 #### `#!typescript acronym(str: string): string`
-
-Returns the acronym of the given string that is suitable to be used as
-a commodity symbol. For example, `UTI Nifty Next 50 Index Growth
-Direct Plan` will be converted to `UNNI`
+Returns an acronym suitable for a commodity symbol (e.g., `UTI Nifty Next 50 Index Growth Direct Plan` → `UNNI`).
 
 #### `#!typescript trim(str: string): string`
-
-Trims the given string.
+Trims leading and trailing whitespace.
 
 #### `#!typescript replace(str: string, search: string, replace: string): string`
-
-Replace the given search string with the given replace string.
+Replaces `search` with `replace` inside `str`.
 
 #### `#!typescript regexpTest(str: string, regexp: string): boolean`
-
-Tests the given string against the given regular expression.
-
+Tests whether `str` matches `regexp`.
 
 #### `#!typescript regexpMatch(str: string, regexp: string, {group?: number}): string`
+Extracts a capture group (default `0`): `#!handlebars {{regexpMatch ROW.C "(.*) Growth Direct Plan" group=1}}`.
 
-Extract part of a string. Let's say you have `Axis Long Term
-  Equity Growth Direct Plan` and you want to extract `Axis Long Term
-  Equity`, you can use `#!handlebars {{regexpMatch ROW.C "(.*) Growth Direct Plan" group=1}}` assuming the string is in the column
-  `C`. `group` is optional and defaults to `0`.
-
-
-#### `#!typescript textRange(fromColumn: string, toColumn: string, {separator?: number}): string`
-
-Extracts text from the given range of columns. The `separator` is
-optional and defaults to `" "`.
+#### `#!typescript textRange(fromColumn: string, toColumn: string, {separator?: string}): string`
+Joins columns from `fromColumn` through `toColumn` with `separator` (defaults to `" "`).
 
 ```handlebars
 {{textRange A C separator=" "}}
 ```
 
 #### `#!typescript toLowerCase(str: string): string`
-
-Converts the given string to lower case.
+Converts `str` to lowercase.
 
 #### `#!typescript toUpperCase(str: string): string`
-
-Converts the given string to upper case.
+Converts `str` to uppercase.
 
 #### `#!typescript capitalize(str: string): string`
-
-Capitalize the given string.
+Capitalizes `str`.
 
 #### `#!typescript match(str: string, {[string]: string}): string`
-
-Let's say you are trying to import your Credit Card bill and you want
-map the transaction to a specific expense account based on the
-description. You can use the `match` helper to do that. The helper
-takes a string and a map of key value pairs. The key is the account to
-be returned if the string matches the value. The value must be a valid
-regular expression.
-
-```handlebars
-{{match ROW.C Expenses:Shopping="Amazon|Flipkart" Expenses:Groceries="BigBasket"}}
-```
-
-In case of no match `null` will be returned. You can combine this
-with `or` helper to return a default account.
+Matches `str` against a map of `Account="regex"` pairs:
 
 ```handlebars
 {{or (match ROW.C Expenses:Shopping="Amazon|Flipkart" Expenses:Groceries="BigBasket")
      "Expenses:Unknown"}}
 ```
 
-## Import Preview
+### Import Preview (Template Mode)
 
-Before writing any transactions to your journal file, you can use the
-**Preview** step to review the results of applying the template.  When
-you click **Preview**, Paisa sends the file content to
-`POST /api/import/preview` in dry-run mode.  The response includes a
-row-by-row table that shows:
+Click **Preview** to run `POST /api/import/preview` in dry-run mode. Paisa shows a row-by-row validation table with **valid/invalid** badges, error messages, and per-row selection checkboxes before saving output to a journal file.
 
-- A **valid** or **invalid** badge for each row.
-- The error message for rows that failed to parse.
-- A checkbox (selected by default) for each valid row, letting you
-  include or exclude individual rows before committing.
+### Import Presets
 
-A **Select All / Deselect All** control is provided at the top.  Only
-the selected rows are written when you click **Confirm**.
+Frequently used delimiter/column configurations can be saved as named presets (`GET/POST/DELETE /api/import/presets`) in Paisa's SQLite database. Built-in presets cannot be deleted:
 
-## Import Presets
+| Preset Name | Format description |
+|---|---|
+| `Generic Bank CSV` | Simple date / description / amount CSV |
+| `Chase Credit Card CSV` | Chase card statement CSV export |
+| `SBI Account Statement CSV` | State Bank of India account statement |
+| `ICICI Credit Card CSV` | ICICI Bank credit card statement |
+| `Kotak Bank Statement CSV` | Kotak Mahindra Bank account statement |
 
-Frequently reused column mappings, date formats, default accounts, and
-delimiter settings can be saved as a named **preset** so you don't
-have to reconfigure the template every time you import from the same
-bank.
-
-### Saving a Preset
-
-After configuring the template, click the **Save Current** button in
-the **Preset** selector above the template editor and give the preset
-a name.  The preset is stored in Paisa's SQLite database and is
-available across sessions.
-
-### Loading a Preset
-
-Select a previously saved preset from the dropdown.  The template
-editor immediately switches to the stored configuration.
-
-### Deleting a Preset
-
-Open the preset dropdown, choose the preset you want to remove, and
-click the **Delete** button.
-
-### Built-in Presets
-
-Paisa ships with the following built-in presets that cover common
-statement formats.  Built-in presets cannot be deleted.
-
-| Preset Name               | Format description                          |
-|---------------------------|---------------------------------------------|
-| Generic Bank CSV          | Simple date / description / amount CSV      |
-| Chase Credit Card CSV     | Chase card statement CSV export             |
-| SBI Account Statement CSV | State Bank of India account statement       |
-| ICICI Credit Card CSV     | ICICI Bank credit card statement            |
-
-You can also add your own user-defined templates via `paisa.yaml`:
+Custom Handlebars templates can also be configured in `paisa.yaml`:
 
 ```yaml
 import_templates:

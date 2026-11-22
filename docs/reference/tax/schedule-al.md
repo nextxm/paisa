@@ -1,8 +1,9 @@
 # Schedule AL
 
-As per the Indian Income tax law, citizens are obligated to report
-their entire Assets and Liabilities if the total income exceeds ₹50
-lakh. Paisa helps with the computation of the amount.
+Open **Planning → Tax → Schedule AL** (`/planning/tax/schedule_al`; shown when `default_currency` is `INR`) to compute your end-of-year asset and liability totals by Schedule AL category. Use the financial year selector in the top navbar to switch between years.
+
+As per Indian Income Tax rules, individuals with total income above ₹50
+lakh are required to report Assets and Liabilities under Schedule AL. Paisa computes these totals using your configured account mappings.
 
 | code      | Section        | Details                                                                      |
 |-----------|----------------|------------------------------------------------------------------------------|
@@ -18,9 +19,9 @@ lakh. Paisa helps with the computation of the amount.
 | liability | C (1)          | Liabilities                                                                  |
 
 
-All you need to do is to specify the accounts that belong to each
-section. Paisa will compute the total as on the last day of the
-previous financial year.
+All you need to do is map your ledger accounts to each
+section under **Tools → Configuration → Finance → Schedule AL** (`/more/config/schedule-al`) or directly in `paisa.yaml`. Paisa computes the total as of the last day of the
+selected financial year.
 
 
 ```yaml

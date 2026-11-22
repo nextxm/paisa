@@ -28,7 +28,7 @@ flowchart LR
 
 You do not need to edit text files or write YAML regex. You can manage your entire asset allocation visually:
 
-1. Navigate to **Assets** $\rightarrow$ **Allocation** (`/assets/allocation`) from the left sidebar.
+1. Navigate to **Net Worth** $\rightarrow$ **Investments & Portfolio** $\rightarrow$ **Target Asset Allocation** (`/assets/allocation`) from the top navigation bar (or **Assets** $\rightarrow$ **Allocation** in Classic navigation).
 2. In the **Target Asset Allocation** card:
    * If you have no targets configured yet, click **Set Up Asset Targets**.
    * If you already have targets, click **Manage Targets** (⚙ icon) at the top right.
@@ -80,7 +80,8 @@ Each asset class displays its current valuation, actual weight, target weight, a
 | **Overweight (Amber)** | $\Delta > +\text{Drift Band}$ | Asset class has expanded beyond the upper band. |
 | **Underweight (Blue)** | $\Delta < -\text{Drift Band}$ | Asset class has fallen below the lower band. |
 
-### Visual Charts
+### Visual Charts & Currency Exposure
+* **Currency Exposure Donut:** Displays your portfolio's denomination-level exposure across currencies (via `GET /api/currency-exposure`).
 * **Treemap & Target Comparison:** Shows target proportions alongside current market values.
 * **Allocation Timeline:** Shows how your asset distribution has evolved over time.
 * **Allocation Table:** Complete breakdown of leaf accounts, market values, and percentage shares.
@@ -104,7 +105,7 @@ Directly below the allocation charts, the **Portfolio Rebalancing Engine** card 
 │ Gold              10.0%       8.0%         ₹80,000       [ BUY ₹15,000 ]   8.6% │
 │ Cash              10.0%       9.0%         ₹90,000       [ HOLD ]          8.2% │
 ├─────────────────────────────────────────────────────────────────────────────────┤
-│ Portfolio Total: ₹10,000,000 ➔ Projected: ₹10,050,000                           │
+│ Portfolio Total: ₹10,00,000 ➔ Projected: ₹10,50,000                           │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -121,6 +122,11 @@ Directly below the allocation charts, the **Portfolio Rebalancing Engine** card 
 * **How it works:** Computes the exact trades needed to reset the portfolio to exact target weights:
   * Trims overweighted assets with a **SELL** action.
   * Reallocates proceeds to underweighted assets with a **BUY** action.
+
+### API Endpoints
+* `GET /api/allocation`: Returns current asset breakdown, allocation timeline, saved targets, and default cash-rebalance plan.
+* `POST /api/allocation/targets`: Validates and persists updated allocation targets to `paisa.yaml`.
+* `POST /api/allocation/rebalance`: Computes cash-deployment (`buy_only`) or full-rebalance recommendations for a specified investable cash amount.
 
 ---
 

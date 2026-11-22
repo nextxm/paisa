@@ -10,45 +10,48 @@ nav:
     - getting-started/installation.md
     - getting-started/tutorial.md
   - 'Reference':
-    - reference/architecture.md
-    - reference/design.md
-    - reference/engineering-review.md
-    - reference/performance-baseline-phase0.md
-    - reference/roadmap.md
-    - reference/accounts.md
-    - reference/commodities.md
-    - reference/journal.md
-    - reference/parser.md
-    - reference/allocation-targets.md
-    - reference/budget.md
-    - reference/cash-flow.md
-    - reference/assets.md
     - reference/dashboard.md
-    - reference/bulk-edit.md
-    - reference/import.md
-    - reference/recurring.md
-    - reference/sheets.md
-    - reference/config.md
-    - reference/sync.md
+    - reference/accounts.md
+    - reference/journal.md
+    - reference/commodities.md
     - reference/fx-rates.md
-    - reference/doctor.md
+    - reference/cash-flow.md
+    - reference/expenses.md
+    - reference/budget.md
+    - reference/recurring.md
+    - reference/income.md
+    - reference/assets.md
+    - reference/allocation-targets.md
+    - reference/analysis.md
+    - reference/credit-cards.md
     - reference/planning.md
     - 'Goals':
         - reference/goals/index.md
         - reference/goals/retirement.md
         - reference/goals/savings.md
-    - reference/ledger-cli.md
-    - reference/editor.md
-    - reference/deployment.md
-    - reference/user-authentication.md
-    - reference/credit-cards.md
-    - reference/analysis.md
     - 'Tax':
       - reference/tax/index.md
       - reference/tax/tax-harvesting.md
       - reference/tax/capital-gains.md
       - reference/tax/schedule-al.md
+    - reference/import.md
+    - reference/bulk-edit.md
+    - reference/editor.md
+    - reference/parser.md
+    - reference/sheets.md
+    - reference/doctor.md
+    - reference/config.md
+    - reference/sync.md
+    - reference/ledger-cli.md
+    - reference/user-authentication.md
+    - reference/deployment.md
     - reference/changelog.md
+    - 'Developer & Architecture':
+      - reference/architecture.md
+      - reference/design.md
+      - reference/engineering-review.md
+      - reference/performance-baseline-phase0.md
+      - reference/roadmap.md
   - manifesto.md
   - faq.md
   - Blog:

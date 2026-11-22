@@ -2,7 +2,31 @@
 
 ### Unreleased — Future changes
 
-### 0.94-beta (2026-11-21) — Future changes
+#### Features
+
+- **Monthly Expenses mobile widget-first layout & Calendar Month Spending Trends** — Improved mobile ergonomics and trend comparison flexibility on `/expense/monthly`.
+  - Reordered `/expense/monthly` using CSS Grid (`monthly-expense-grid`) so summary KPIs and analytical charts appear above the individual expense list on mobile while preserving the desktop two-column layout.
+  - Added a persisted **Last 30 Days** vs. **Calendar Month** comparison toggle (`expenseTrendMode` in `localStorage`) synced with the navbar Month Picker and timeline bar clicks, including month-to-date (`MTD`) cues and sparkline month capping (`src/lib/expense/trends.ts`).
+  - Added focused unit test coverage in `src/lib/expense/trends.test.ts` and fixed broken in-app help links (`expenses`, `tax/tax-harvesting`, `tax/capital-gains`, `tax/schedule-al`) in `Navbar.svelte`.
+
+#### Documentation
+
+- **Complete user documentation review and overhaul** — Audited all user-facing docs (`docs/` and `mkdocs.yml`) against the current application.
+  - Added dedicated user guides for [Expenses](docs/reference/expenses.md) and [Income](docs/reference/income.md) and reorganized `mkdocs.yml` so user reference guides lead ahead of developer architecture docs.
+  - Updated onboarding, FAQ, dashboard, cash flow, assets, allocation targets, planning/goals, smart import, doctor, configuration, sync, editor, transaction filtering, commodities/FX, deployment, authentication, and Indian tax guides with Grouped vs. Classic navigation paths, current workflows, and factual corrections.
+
+### 0.94-beta (2026-11-21)
+
+#### Features
+
+- **Smart Importer custom field mapping & Kotak bank statement preset** — Extended the Smart Importer (`Map Statement Columns`) with flexible column/field mapping, added the `Kotak Account Statement` CSV preset with payee cleanup rules, and refined generated transaction output formatting.
+- **Dashboard data fetching & widget ergonomics** — Included investment income directly in dashboard snapshots/payloads to eliminate redundant startup round-trips and refined customizable widget layout presets (`src/lib/dashboard_layout.ts`).
+- **Financial DNA precision inputs & projection CSV export** — Improved financial profile extraction (`internal/projection/dna`) and updated `/planning/projection` with precision numeric inputs and Year-by-Year CSV export.
+- **Improved mobile responsiveness** — Enhanced mobile layouts and table readability across Navigation, Dashboard widgets, Monthly Cash Flow, Asset Balances, Postings, Transactions, Logs, and Liabilities pages.
+
+#### Performance
+
+- **Faster startup, navigation, and journal status checks** — Memoized journal dirty checks (`internal/server/journal_dirty.go`) via file stat fingerprinting, removed redundant per-navigation `/api/config` refetches, prevented layout remount thrashing, lazy-loaded heavy export libraries, modularized Bulma SCSS imports, and optimized backend net-worth/market query paths.
 
 ### 0.91-beta (2026-10-25) — Future changes
 

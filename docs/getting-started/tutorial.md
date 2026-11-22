@@ -25,13 +25,15 @@ comes with an embedded **ledger** and you are not required to use
     [configuration](../reference/config.md) reference for more details.
 
 
+If you are starting with an empty journal, the Dashboard displays a **Setup Demo** button so you can explore a sample journal and configuration with one click, or follow the steps below to build your own journal.
+
 ## :fontawesome-regular-file-lines: Journal
 
 A [journal](../reference/journal.md) file captures all your financial transactions. A transaction
 may represent a mutual fund purchase, retirement contribution, grocery
 purchase and so on. Paisa creates a journal named `main.ledger`, Let's
 add our first transaction there. To open the editor, go to `Ledger`
-:material-chevron-right: `Editor`
+:material-chevron-right: `Editor` (you can also use the `+` **Quick Add** button in the top-right action bar or the [Smart Importer](../reference/import.md) under `Ledger` :material-chevron-right: `Import` to import bank statements).
 
 ```ledger
 2022/01/01/*(1)!*/ Salary/*(2)!*/
@@ -41,18 +43,17 @@ add our first transaction there. To open the editor, go to `Ledger`
 
 1. Transaction `Date`
 2. Transaction description, also called as `Payee`
-3. Debit `Account`
-4. Credit `Account`
+3. Credit (`Income`) `Account` — source of funds (negative in Ledger)
+4. Debit (`Assets`) `Account` — destination of funds (positive in Ledger)
 5. `Amount`
 6. `Currency`
 
 **ledger** follows the double-entry accounting system. In simple terms, it
-tracks the movement of money from debit account to credit
-account. Here `#!ledger Income:Salary:Acme` is the debit account and
-`#!ledger Assets:Checking` is the credit account. The date at which the
+tracks the movement of money from a credit (source) account to a debit
+(destination) account. Here `#!ledger Income:Salary:Acme` is the credit account (source of income, shown as negative) and
+`#!ledger Assets:Checking` is the debit account (destination receiving the funds, shown as positive). The date at which the
 transaction took place and a description of the transaction is written
-in the first line followed by the list of credit or debit
-entry. Account [naming conventions](../reference/accounts.md) are explained later. The `:` in the account name
+in the first line followed by the list of postings. Account [naming conventions](../reference/accounts.md) are explained later. The `:` in the account name
 represents hierarchy.
 
 ```ledger
@@ -154,23 +155,18 @@ selling for taxation purpose, usually FIFO. `#!ledger -100 NIFTY
 amount comes from the capital gains account `#!ledger
 Income:CapitalGains:Equity:NIFTY`
 
-Paisa has support for fetching commodity price history from few
-[providers](../reference/commodities.md). Go to `Configuration` page and expand the `Commodities`
-section. You can click the :fontawesome-solid-circle-plus: icon to
-add a new one. Edit the name to `#!ledger NIFTY`. Click the
-:fontawesome-solid-pen-to-square: icon near Price section and select
-the price provider details. Once done, save the configuration and click the
-`Update Prices` from the top right hand side menu. If you had done
-everything correctly, you would see the latest price of the commodity
-under `Assets` :material-chevron-right: `Balance`
+Paisa has support for fetching commodity price history from several
+[providers](../reference/commodities.md). Go to `Tools` :material-chevron-right: `Configuration` (or `More` :material-chevron-right: `Configuration` in Classic navigation) and select `Finance` :material-chevron-right: `Commodities & Prices`. Click **Add** (or the :fontawesome-solid-circle-plus: icon) to
+add a new commodity, set its name to `#!ledger NIFTY`, choose the price provider details, and save the configuration. Then click the **Update Prices** (`$`) icon in the top-right action bar. If everything is configured correctly, you will see the
+latest valuation under `Net Worth` :material-chevron-right: `Net Worth` :material-chevron-right: `Asset Balances` (`Assets` :material-chevron-right: `Balance` in Classic navigation).
 
 ## :fontawesome-solid-hand-holding-dollar: Interest
 
 There are many instruments like EPF, FD, etc that pay interest at
 regular intervals. We can treat it as just another transaction. Any
 income account that has a prefix `#!ledger Income:Interest:` can be
-used as the debit account. It's not mandatory to specify the amount at
-bot side. If you leave one side, **ledger** will deduct it.
+used as the credit account. It's not mandatory to specify the amount on
+both sides. If you leave one side blank, **ledger** will deduce it automatically.
 
 ```ledger
 2022/03/31 EPF Interest
@@ -204,11 +200,9 @@ other countries would have to change the `default_currency` and
 
 ## Update
 
-Paisa fetches the latest price of the commodities only when
-*update* command is used. Make sure to run `paisa update` command
-after you make any changes to your journal file or you want to fetch
-the latest value of the commodities. The update can be performed from
-the UI as well via the dropdown in the top right hand side corner.
+Paisa fetches the latest price of commodities and re-ingests journal changes when you sync.
+Make sure to run `paisa update` (CLI) or click the **Sync Journal** / **Update Prices** icons in the top-right action bar after editing your journal or whenever you want fresh market valuations.
+If you edit journal files externally outside Paisa, the background file watcher automatically highlights the **Sync Journal** icon in amber so you know a sync is pending. See [Data Synchronization](../reference/sync.md) for details.
 
 [^1]: [hledger](https://hledger.org) and [beancount](https://beancount.github.io/) are also supported, refer
     [Ledger CLI](../reference/ledger-cli.md) for more information.

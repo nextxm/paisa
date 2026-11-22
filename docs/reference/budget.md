@@ -5,6 +5,12 @@ description: "How to setup envelope budgeting in Paisa, an open source personal 
 
 # Budget
 
+Open **Cash Flow → Expenses & Budget → Budget Tracker** (Classic: **Expenses → Budget**, `/expense/budget`) to use Paisa's envelope budgeting tracker.
+
+!!! note "Ledger engine & checking accounts"
+
+    Budgeting relies on periodic (`~`) transactions, which are supported by **ledger** and **hledger** (not **beancount**; see [Ledger CLI](./ledger-cli.md#beancount)). If your main spending account is not named `Assets:Checking`, configure `checking_accounts` under **Tools → Configuration → Tools → Accounts** so available-to-budget balances are accurate.
+
 Paisa supports a simple budgeting system. Let's say you get 50000 INR
 at the beginning of the month. You want to budget this amount and
 figure out how much you can spend on each category.
@@ -132,4 +138,4 @@ you get your salary.
 
 2) Adjust your budget as you spend and make sure there is no deficit.
 
-[^1]: If you prefer to not have rollover feature, it can be disabled in the [configuration](../reference/config.md) page.
+[^1]: Rollover can be toggled under **Tools → Configuration → Planning → Budget** (`/more/config/budget`) in [Configuration](./config.md). You can also monitor monthly budgets directly from the **Budget** widget on your [Dashboard](./dashboard.md) (configurable `1–20` accounts, default `10`).

@@ -1,151 +1,142 @@
 ---
-description: "Full list of configuration options supported by Paisa along with their description"
+description: "Full list of configuration options supported by Paisa along with their schema, sidebar sections, and Backup & Export"
 ---
 
 # Configuration
 
-All the configuration related to paisa is stored in a yaml file named
-`paisa.yaml`. The configuration can be edited via the web interface.
-The configuration screen features a structured, sidebar-based interface
-with categorized sections for easy navigation and discoverability.
-On mobile devices, the sidebar automatically collapses upon selecting a section.
+All configuration for Paisa is stored in a YAML file named `paisa.yaml`. You can edit settings through **Tools → Configuration** (`/more/config`; Classic: **More → Configuration**), which organizes options into four sidebar groups:
 
-The sequence in which paisa looks for the file is described
-below
+- **General**: Core Setup, Display & Format, Security & Auth
+- **Finance**: Commodities & Prices, Allocation Targets, Credit Cards, Schedule AL
+- **Planning**: Goals, Budget
+- **Tools**: Import Templates, Accounts, Doctor Rules, Backup & Export, Firefly III, Labs, Advanced
+
+On mobile viewports, the configuration sidebar automatically collapses when a section is selected.
+
+Paisa searches for `paisa.yaml` in the following order:
 
 1. `PAISA_CONFIG` environment variable
-1. via `--config` flag
-1. Current working directory
-1. `paisa/paisa.yaml` file inside User Documents folder.
+2. `--config` CLI flag
+3. Current working directory
+4. `paisa/paisa.yaml` inside the user's `Documents` folder
 
-If it can't find the configuration file, it will create a default
-configuration file named `paisa/paisa.yaml` inside User Documents folder. The
-default configuration is tuned for Indians, users from other countries
-would have to change the `default_currency` and `locale`.
+If no configuration file is found, Paisa creates a default `paisa/paisa.yaml` inside your `Documents` folder. Because the defaults are tuned for Indian locales (`INR`, `en-IN`, financial year starting April), international users should adjust `default_currency`, `locale`, and `financial_year_starting_month`.
 
-### Accounts
+### Account Matching Syntax
 
-In many places, paisa expects you to specify a list of accounts. You
-can type the full account name like `#!ledger
-Account:Equity:APPL`. Paisa also supports wildcard `*`, you can use
-`#!ledger Account:Equity:*` to represent all accounts under
-Equity. It's also possible to use negation. `#!ledger !Expenses:Tax`
-will match all accounts except Tax. If you use negation, then all the
-accounts should be negation. Don't mix negation with others, if done
-the behavior will be undefined.
+In most configuration lists (`checking_accounts`, `inactive_accounts`, `allocation_targets`, `goals`, `schedule_al`), you can specify exact account names (such as `#!ledger Assets:Equity:AAPL`), wildcard patterns (`#!ledger Assets:Equity:*`), or negations (`#!ledger !Expenses:Tax`). When using negation, use negations across the entire list—do not mix positive and negated patterns in the same list.
+
+*(Note: `doctor.*.pattern` uses SQL `LIKE` syntax with `%` wildcards—see [Doctor Rules](#doctor-rules).)*
 
 ```yaml
-# Path to your journal file. It can be absolute or relative to the
-# configuration file. The main journal file can refer other files using
-# `include` as long as all the files are in the same or sub directory
+# Path to your main journal file (absolute or relative to paisa.yaml).
+# Sub-files loaded via `include` must reside in the same directory or a subdirectory.
 # REQUIRED
 journal_path: /home/john/Documents/paisa/main.ledger
 
-# Path to a dedicated journal file where transactions added via the API
-# or webhooks (e.g. Firefly III) are appended, keeping the main journal
-# clean. Must be an existing file. Absolute or relative to the config file.
+# Path to a journal file where transactions created via Quick Add,
+# Smart Importer, or Firefly III webhooks are appended. Created automatically
+# if missing; ensure your main journal `include`s it.
 # OPTIONAL
 add_journal_path: /home/john/Documents/paisa/added.ledger
 
-# Path to your database file. It can be absolute or relative to the
-# configuration file. The database file will be created if it does not exist.
+# Path to your SQLite cache database file (created automatically if missing).
 # REQUIRED
 db_path: /home/john/Documents/paisa/paisa.db
 
-# Path to your sheets directory. It can be absolute or relative to the
-# configuration file. The sheets directory will be created if it does not exist.
-# By default it will be created in the same directory as the journal file.
-# OPTIONAL, DEFAULT: same directory as journal file.
+# Path to your sheets directory. Defaults to the directory containing journal_path.
+# OPTIONAL
 sheets_directory: sheets
 
-# The ledger client to use
-# OPTIONAL, DEFAULT: ledger, ENUM: ledger, hledger, beancount
+# Run Paisa in read-only mode (blocks mutating API endpoints).
+# OPTIONAL, DEFAULT: false
+readonly: false
+
+# Ledger engine to invoke
+# OPTIONAL, DEFAULT: ledger, ENUM: "", ledger, hledger, beancount
 ledger_cli: ledger
 
-# The default currency to use. NOTE: Paisa tries to convert other
-# currencies to default currency, so make sure it's possible to
-# convert to default currency by specifying the exchange rate.
-#
+# Default reporting currency. Ensure FX rates to default_currency exist for foreign holdings.
 # OPTIONAL, DEFAULT: INR
 default_currency: INR
 
-# A list of commodities that should be treated as currencies rather
-# than securities. This is useful for multi-currency environments.
-# The default currency is always implicitly included.
-#
+# Additional commodities treated as currencies rather than securities.
+# The default_currency is always included automatically.
 # OPTIONAL, DEFAULT: []
 currencies: []
 
-# The precision to show in UI. NOTE: This applies only to the UI, not
-# to the entries in journal.
-#
+# Accounts treated as checking accounts on the Dashboard and balance calculations.
+# Supports wildcards (e.g., Assets:Checking:*).
+# OPTIONAL, DEFAULT: ["Assets:Checking"]
+checking_accounts:
+  - Assets:Checking
+
+# Accounts treated as inactive (hidden when "Filter Inactive" is enabled).
+# Supports wildcards (e.g., Assets:OldBank:*).
+# OPTIONAL, DEFAULT: []
+inactive_accounts: []
+
+# Decimal precision displayed in the UI (0–4). Does not alter journal entries.
 # OPTIONAL, DEFAULT: 0
 display_precision: 0
 
-# The column to align the amount in the editor.
-#
+# Column used to align amounts when formatting entries in the Editor (40–100).
 # OPTIONAL, DEFAULT: 52
 amount_alignment_column: 52
 
-# The locale used to format numbers. The list of locales supported
-# depends on your browser. It's known to work well with en-US and en-IN.
-#
+# Browser locale used for number formatting (pattern: ^[a-z]{2}-[A-Z]{2}$).
 # OPTIONAL, DEFAULT: en-IN
 locale: en-IN
 
-# The time zone used to parse and format dates. If not set, system
-# time zone will be used. Example values are Asia/Kolkata,
-# America/New_York, etc
-#
-# OPTIONAL, DEFAULT: system timezone
+# IANA time zone for parsing and formatting dates (e.g., Asia/Kolkata, America/New_York).
+# OPTIONAL, DEFAULT: system local timezone
 time_zone: ""
 
-# First month of the financial year. This can be set to 1 to follow
-# January to December.
-#
+# First month of the financial year (1 = January, 4 = April, etc.).
 # OPTIONAL, DEFAULT: 4
 financial_year_starting_month: 4
 
-# First day of the week. This can be set to 1 to follow Monday to
-# Sunday. 0 represents Sunday, 1 represents Monday and so on.
-#
+# First day of the week (0 = Sunday, 1 = Monday, ..., 6 = Saturday).
 # OPTIONAL, DEFAULT: 0
 week_starting_day: 0
 
-# When strict mode is enabled, all the accounts and commodities should
-# be defined before use. This is same as --pedantic flag in ledger and
-# --strict flag in hledger. Doesn't apply to beancount.
-#
-# OPTIONAL, ENUM: yes, no DEFAULT: no
+# Enforce strict account/commodity declarations (--pedantic in ledger, --strict in hledger).
+# Not used for beancount.
+# OPTIONAL, ENUM: "", yes, no DEFAULT: no
 strict: "no"
 
-# Enables request/response logging for outbound HTTP calls to price and
-# reference-data providers. Helpful for debugging provider issues.
-#
+# Log outbound HTTP requests/responses to price and reference-data providers.
+# Can also be toggled live without saving the full form in Tools -> Configuration -> Tools -> Advanced.
 # OPTIONAL, DEFAULT: false
 provider_debug_http: false
 
+# Disable pair-aware multi-currency cross-rate resolution and report_currency conversion.
+# OPTIONAL, DEFAULT: false
+disable_multi_currency_prices: false
+
+# Suppress log warnings when a commodity price is not found in the database.
+# OPTIONAL, DEFAULT: false
+disable_missing_price_logging: false
+
 ## Budget
 budget:
-  # Rollover unspent money to next month
-  # OPTIONAL, ENUM: yes, no DEFAULT: yes
+  # Rollover unspent budget to the next month
+  # OPTIONAL, ENUM: "", yes, no DEFAULT: yes
   rollover: "yes"
 
 ## Goals
 goals:
   # Retirement goals
   retirement:
-      # Goal name
-      # REQUIRED
+      # Goal name (REQUIRED)
     - name: Retirement
-      # Goal icon
-      # REQUIRED
+      # Goal icon (REQUIRED)
       icon: mdi:palm-tree
-      # Safe Withdrawal Rate
-      # OPTIONAL, DEFAULT: 4
-      swr: 2
-      # List of expense accounts
-      # OPTIONAL, DEFAULT: Expenses:*
+      # Safe Withdrawal Rate in % (REQUIRED, 1–10)
+      swr: 4
+      # Display priority — higher priority appears first (OPTIONAL)
+      priority: 10
+      # List of expense accounts used to estimate 3-year average annual expenses (OPTIONAL)
       expenses:
         - Expenses:Clothing
         - Expenses:Education
@@ -157,44 +148,51 @@ goals:
         - Expenses:Restaurant
         - Expenses:Shopping
         - Expenses:Utilities
-      # List of accounts where you keep retirement savings
-      # OPTIONAL, DEFAULT: Assets:*
+      # Accounts holding retirement savings (REQUIRED)
       savings:
         - Assets:Equity:*
         - Assets:Debt:*
-      # By default, average of last 3 year expenses will be used to
-      # calculate your yearly expenses. This can be overridden by setting
-      # this configuration to positive value
-      # OPTIONAL, DEFAULT: 0
+      # Optional fixed annual expense override (positive integer)
       yearly_expenses: 0
+
+  # Savings goals
   savings:
-      # Goal name
-      # REQUIRED
+      # Goal name (REQUIRED)
     - name: House
-      # Goal icon
-      # REQUIRED
+      # Goal icon (REQUIRED)
       icon: fluent-emoji-high-contrast:house-with-garden
-      # Goal target amount
-      # REQUIRED
+      # Target amount (REQUIRED)
       target: 100000
-      # Goal target date
-      # OPTIONAL (either target_date or payment_per_period can be specified)
+      # Target date in YYYY-MM-DD (OPTIONAL; requires `rate` when set)
       target_date: "2030-01-01"
-      # Expected rate of returns
-      # OPTIONAL
+      # Expected monthly investment amount (OPTIONAL)
       payment_per_period: 0
-      # Expected rate of returns
-      # OPTIONAL, REQUIRED if target_date or payment_per_period is set
+      # Expected annual return % (OPTIONAL; required if target_date is set)
       rate: 5
-      # List of accounts where you keep the goal's savings
-      # REQUIRED
+      # Display priority — higher priority appears first (OPTIONAL)
+      priority: 5
+      # Accounts holding goal savings (REQUIRED)
       accounts:
-        - Assets:Equity:**
-## Schedule AL
+        - Assets:Equity:*
+
+  # Milestone & recurring life goals (used by Planning -> Life Plan)
+  life:
+    - name: College Tuition
+      icon: mdi:school
+      type: recurring # ENUM: milestone, recurring
+      start_date: "2032-06" # YYYY-MM (required for recurring)
+      end_date: "2036-05"   # YYYY-MM (required for recurring)
+      frequency: yearly     # ENUM: monthly, quarterly, yearly
+      inflation_rate: 8     # Optional per-goal inflation % override (or null)
+      priority: 1
+      monthly_allocation: 400000 # Allocation per occurrence (required for recurring)
+      funded_by:
+        - Assets:Equity:*
+
+## Schedule AL (India Income Tax reporting)
 # OPTIONAL, DEFAULT: []
 schedule_al:
-  # Code
-  # REQUIRED, ENUM: immovable, metal, art, vehicle, bank, share,
+  # REQUIRED code ENUM: immovable, metal, art, vehicle, bank, share,
   # insurance, loan, cash, liability
   - code: metal
     accounts:
@@ -210,30 +208,21 @@ schedule_al:
     accounts:
       - Assets:Debt:Insurance
 
-## Allocation Target
+## Allocation Targets
 # OPTIONAL, DEFAULT: []
 allocation_targets:
   - name: Debt
     target: 30
+    drift: 5 # Optional allowed drift band percentage (0–50)
     accounts:
       - Assets:Debt:*
       - Assets:Checking
   - name: Equity
     target: 60
+    drift: 5
     accounts:
       - Assets:Equity:*
-  - name: Equity Foreign
-    target: 20
-    accounts:
-      - Assets:Equity:NASDAQ
-  - name: Equity Index
-    target: 20
-    accounts:
-      - Assets:Equity:NIFTY
-  - name: Equity Active
-    target: 20
-    accounts:
-      - Assets:Equity:PPFAS
+    commodities: [] # Optional list of specific commodity tickers
   - name: Others
     target: 10
     accounts:
@@ -244,15 +233,15 @@ allocation_targets:
 # OPTIONAL, DEFAULT: []
 commodities:
   - name: NASDAQ
-    # Required, ENUM: mutualfund, stock, nps, unknown
+    # REQUIRED ENUM: mutualfund, stock, nps, metal, unknown
     type: mutualfund
     price:
-      # Required, ENUM: in-mfapi, com-yahoo, com-purifiedbytes-nps, co-alphavantage, local-json
+      # REQUIRED ENUM: in-mfapi, com-yahoo, com-purifiedbytes-nps,
+      # com-purifiedbytes-metal, co-alphavantage
       provider: in-mfapi
-      # differs based on provider
       code: 145552
     harvest: 1095
-    # Optional, ENUM: equity65, equity35, debt, unlisted_equity
+    # OPTIONAL ENUM: "", debt, equity, equity65, equity35, unlisted_equity
     tax_category: debt
   - name: NIFTY
     type: mutualfund
@@ -268,18 +257,16 @@ commodities:
       code: AAPL
     harvest: 1095
     tax_category: equity65
-  # Example: local JSON file provider (see docs/reference/commodities.md for the file format)
-  - name: MYFUND
-    type: unknown
+  - name: GOLD
+    type: metal
     price:
-      provider: local-json
-      code: prices/myfund.json
+      provider: com-purifiedbytes-metal
+      code: gold-999
 
 ## Import Templates
 # OPTIONAL, DEFAULT: []
 import_templates:
   - name: SBI Account Statement
-    # Required
     content: |
       {{#if (isDate ROW.A "D MMM YYYY")}}
         {{date ROW.A "D MMM YYYY"}} {{ROW.C}}
@@ -291,109 +278,88 @@ import_templates:
           {{predictAccount prefix="Income"}}
         {{/if}}
       {{/if}}
-    # Should be a valid handlebar template
 
-## Accounts: account customization
+## Accounts: display icons and inactive flag
 # OPTIONAL, DEFAULT: []
 accounts:
   - name: Liabilities:CreditCard:IDFC
-    # Required, name of the account
     icon: arcticons:idfc-first-bank
-    # Optional, use the UI to select the icon.
+    inactive: false
 
-## List of user accounts.
-# If the list is empty, then no authentication will be performed
-#
+## User Authentication
+# If empty, authentication is disabled.
 # OPTIONAL, DEFAULT: []
 user_accounts:
   - username: john.doe
-    # Required
+    # SHA-256 hex digest prefixed with sha256:
     password: sha256:a96dc73edd639b1c711b006e714bd2ff5bf5c1aecd77d0b3c3370403c66d58e5
-    # Required, password hashed twice with sha256, then prefixed sha256:
-    # echo -n 'secret' | sha256sum | head -c 64 | sha256sum | head -c 64
 
-## List of credit cards
+# Allow legacy X-Auth: username:password header (disabled by default; not recommended).
+# OPTIONAL, DEFAULT: false
+allow_legacy_auth: false
+
+## Credit Cards
 # OPTIONAL, DEFAULT: []
 credit_cards:
   - account: Liabilities:CreditCard:Freedom
-    # Required, account name
     credit_limit: 150000
-    # Required, credit limit of the card
     statement_end_day: 8
-    # Required, the day of the month when the statement is generated
     due_day: 20
-    # Required, the day of the month when the payment is due
-    network: visa
-    # Required, the network of the card
+    network: visa # ENUM: visa, mastercard, dinersclub, amex, rupay, jcb, discover
     number: "0007"
-    # Required, the last 4 digits of the card number
     expiration_date: "2029-05-01"
-    # Required, the expiration date of the card
 
 ## Firefly III Integration
-
-# Settings for Firefly III webhook and reconciliation integration.
 # OPTIONAL
 firefly:
-  # Base URL of your Firefly III instance
   url: https://firefly.example.com
-  # Personal Access Token from Firefly III
   token: your-personal-access-token
-  # Accounts to skip during reconciliation (prefix match)
   ignore_accounts:
     - Assets:Cash
 
 ## Labs
-
-Experimental features that are hidden by default.  Enable individual
-flags to opt in.
-
+# Experimental features hidden by default.
 # OPTIONAL, DEFAULT: {}
 labs:
-  # Enable the Firefly III balance-reconciliation tool.
-  # OPTIONAL, DEFAULT: false
   firefly_reconcile: false
-
-## Account Reconciliation
-
-# Whether to enable account reconciliation tracking and UI.
-# When enabled, reconciliation badges appear on account rows and
-# a reconciliation widget appears on the dashboard.
-# OPTIONAL, DEFAULT: false
-enable_reconciliation: false
 ```
+
+*(Note: Although the `local-json` price provider is implemented in the scraper package and documented in [Commodities](./commodities.md), `local-json` is not yet included in `schema.json`'s provider enum and will currently fail config validation if set in `paisa.yaml`.)*
 
 ## Doctor Rules
 
-Automated ledger hygiene and validation rules evaluated by the Data Health / Doctor engine.
+Automated health diagnostic rules evaluated by [Data Health (Doctor)](./doctor.md):
 
 ```yaml
-# Automated health diagnostic rules
-# OPTIONAL
 doctor:
   negative_balance:
-    enabled: true
+    enabled: "yes"
     pattern:
-      - "Assets:*"
+      - "Assets:%"
   non_credit_account:
-    enabled: true
+    enabled: "yes"
     pattern:
-      - "Expenses:*"
-      - "Assets:*"
+      - "Income:%"
   non_debit_account:
-    enabled: true
+    enabled: "yes"
     pattern:
-      - "Income:*"
-      - "Liabilities:*"
+      - "Expenses:%"
   exchange_price_missing:
-    enabled: true
+    enabled: "yes"
   unit_price_mismatch:
-    enabled: true
+    enabled: "yes"
   asset_allocation_missing:
-    enabled: true
+    enabled: "yes"
+    pattern:
+      - "Assets:%"
 ```
+
+`enabled` accepts `"yes"` or `"no"`, and `pattern` uses SQL `LIKE` `%` wildcards.
 
 ## Backup & Export
 
-Paisa provides full data archive export through **Configuration → Tools → Backup & Export** (`/more/config/backup`). This packages all your ledger journals, include files, configuration (`paisa.yaml`), and custom sheet templates into a single downloadable `.zip` archive for easy local backups or migration.
+Export a full `.zip` archive of your financial data via **Tools → Configuration → Tools → Backup & Export** (`/more/config/backup`, `GET /api/backup/export`):
 
+- Includes your main and `include`d journal files (plus `add_journal_path`), `paisa.yaml`, and `.sheet`/`.json`/`.csv` files from `sheets_directory`.
+- Excludes `paisa.db` (which is rebuilt from journals on sync).
+- **Password Redaction**: By default, `user_accounts[].password` hashes in the exported `paisa.yaml` are replaced with `[REDACTED]`. Check **Include secrets** (`?include_secrets=true`) only if you intentionally want hashes preserved in an encrypted/secure backup.

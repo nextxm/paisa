@@ -1,5 +1,5 @@
 ---
-description: "Different types of accounts and the naming convention followed by Paisa, an open source personal finance manager"
+description: "Different types of accounts and naming conventions followed by Paisa"
 ---
 
 # Accounts
@@ -7,17 +7,16 @@ description: "Different types of accounts and the naming convention followed by 
 If you take a typical transaction, money moves between two parties. In
 ledger, you call them **Account**. At least two accounts are involved
 in any transaction. Accounts are also hierarchical. This helps with
-the organization. For example you can treat EPF and PPF as two
+organization. For example you can treat EPF and PPF as two
 accounts namely `#!ledger Assets:Debt:EPF` and `#!ledger
-Assets:Debt:PPF`. The hierarchy helps you ask questions like what is
-the balance of `#!ledger Assets:Debt`, which will include both EPF and
+Assets:Debt:PPF`. The hierarchy lets you ask questions like what is
+the balance of `#!ledger Assets:Debt`, which includes both EPF and
 PPF.
 
-Even though **ledger** doesn't have any strict Account naming
-convention, Paisa expects you to follow the standard naming
-convention.
+Even though **ledger** doesn't enforce an account naming
+convention, Paisa relies on standard top-level names to distinguish spending, income, assets, and liabilities.
 
-There are five types of account namely
+There are five top-level account types:
 
 1. :fontawesome-solid-sack-dollar:{ .assets-color } Assets
 1. :fontawesome-solid-credit-card:{ .liabilities-color } Liabilities
@@ -26,14 +25,12 @@ There are five types of account namely
 1. :fontawesome-solid-money-check-dollar:{ .equity-color } Equity
 
 All the accounts you create should be under one of these
-accounts. This naming convention is a necessity, because without
-which, it's not possible to tell whether you are spending money or
-investing money. A transaction from `#!ledger Assets` account to
-`#!ledger Expenses` account implies that you are spending money.
+five prefixes. A transaction from `#!ledger Assets` to
+`#!ledger Expenses` implies spending money, while `#!ledger Assets` to `#!ledger Assets` represents an investment or transfer.
 
 Money typically flows from `#!ledger Income` to `#!ledger Assets`,
 from `#!ledger Assets` to either `#!ledger Expenses`, `#!ledger
-Liabilities` or other `#!ledger Assets`, from `#!ledger Liabilities`
+Liabilities`, or other `#!ledger Assets`, and from `#!ledger Liabilities`
 to `#!ledger Expenses`.
 
 ``` mermaid
@@ -45,61 +42,33 @@ graph LR
   L --> E[Expenses];
 ```
 
-As a general principle, try not to create too many accounts at second
-level. The UI works best when you create less than or equal to 12
-second level accounts under each type. For example, you can have 12
-accounts under `#!ledger Expenses`. But if you want more, try to add them under
-3<sup>rd</sup> level, example `#!ledger Expenses:Food:Subway`.
-
+As a general principle, try to keep second-level categories concise. The UI works best when you have around 12 or fewer
+second-level accounts under each type (using 3<sup>rd</sup>-level sub-accounts such as `#!ledger Expenses:Food:Subway` for finer detail).
 
 ## Assets
 
-All your assets should go under `#!ledger Assets:`. The level of granularity is
-up to you. The recommended convention is to use
-`#!ledger Assets:{instrument_type}:{instrument_name}`. The instrument type may
-be `Cash`, `Equity`, `Debt`, etc. The instrument name may be the name of
-the fund, stock, etc
+All your assets should go under `#!ledger Assets:`. The recommended convention is
+`#!ledger Assets:{instrument_type}:{instrument_name}` (e.g., `Cash`, `Equity`, `Debt`).
 
 ### Checking
 
-`#!ledger Assets:Checking` is a special account where you keep your money for
-daily use. This will be included in your net worth, but will not be
-treated as an investment. So gain page for example, will exclude this
-account and won't show the returns. If you have multiple checking
-accounts, you can use sub accounts as well, for example `#!ledger
-Assets:Checking:HDFC` and `#!ledger Assets:Checking:AXIS`.
+`#!ledger Assets:Checking` (or any accounts matching `checking_accounts` in `paisa.yaml`, which supports wildcards like `Assets:Checking:*`) represents liquid cash accounts for daily use. They are included in net worth and displayed in the **Checking Balance** Dashboard widget, while investment gain/XIRR views exclude them.
 
-The distinction is necessary because Checking account is an asset, but
-not an investment. So you ideally you want to disregard them when you
-calculate your absolute returns etc.
+### Inactive Accounts
 
+Old or closed accounts can be hidden from active Asset Balance views using the **Filter Inactive** toggle by listing them under `inactive_accounts` (wildcards supported) or setting `inactive: true` on an entry in `accounts:` inside [Configuration](./config.md).
 
 ## Income
 
-All your income should come from `#!ledger Income:`. The typical way
-is to treat each employer as a separate account like `#!ledger
-Income:Salary:{company}`
+All your income should come from `#!ledger Income:`, such as `#!ledger Income:Salary:{company}`.
 
-### Interest
+### Investment Income (Dividend, Interest, Distribution)
 
-`#!ledger Income:Interest` is a special type of account from the perspective of
-returns calculation. Let's assume you have bought `#!ledger APPLE` stock. You
-might be buying them at regular intervals. To calculate your returns,
-we can compute the difference between purchase price and current
-price.
+Paisa recognizes passive income prefixes to power [Investment Income](./income.md#investment-income), the Dashboard **Investment Income** widget, and total-return metrics on **Assets → Gain**:
 
-Now in case of FD, you will get your interest credited to your
-account. The returns is the difference between the amount you
-deposited and the final balance. It's essential we need to know which
-transactions are deposits and which are interest credits.
-
-Any money that comes from the sub account of `#!ledger
-Income:Interest` will be treated as interest. This convention allows
-paisa to calculate the returns of any debt instrument without
-explicitly specifying anything else.
-
-* `#!ledger Income:Interest:{name}` - interest debit account
-
+- `#!ledger Income:Dividend:{name}` – stock and mutual fund dividends
+- `#!ledger Income:Interest:{name}` – savings, FD, EPF, or bond interest (also used to compute debt/FD returns)
+- `#!ledger Income:Distribution:{name}` / `#!ledger Income:Distributions:{name}` – fund or REIT distributions
 
 ### Capital Gains
 
@@ -110,40 +79,25 @@ explicitly specifying anything else.
     Assets:Equity:NIFTY               -100 NIFTY {67.5281 INR} [2018/01/01] @ 67.7549 INR
 ```
 
-Let's say you have an asset account named `#!ledger Assets:{name}` and
-you make some profit when you sell the asset, this profit should come
-from capital gains account named `#!ledger Income:CapitalGains:{name}`.
+When you sell an asset for a gain or loss, record the profit/loss against `#!ledger Income:CapitalGains:{name}`.
 
 ## Expenses
 
-All your expenses should go to `#!ledger Expenses:{category}`
-accounts. You can also have more than 2 levels as well. The expense
-page will roll it up to 2 level wherever necessary.
+All your expenses should go to `#!ledger Expenses:{category}`. You can nest deeper levels as needed; Paisa rolls them up to level 2 on monthly breakdowns and trend cards.
 
 ### Tax
 
-Income tax paid to government should be credited to `#!ledger
-Expenses:Tax` account. This is used to calculate your Net Income and
-your Savings Rate. If you want to track different types of taxes, you
-can use sub accounts as well, for example `#!ledger Expenses:Tax:Income`
-and `#!ledger Expenses:Tax:GST`.
+Taxes paid (income tax, TDS, GST) should be posted to `#!ledger Expenses:Tax` (or sub-accounts such as `#!ledger Expenses:Tax:Income`). Paisa uses this to separate **Net Income** from **Gross Income**, compute savings rate accurately, and exclude tax payments from spending trend and FIRE living-expense baselines.
 
 ## Liabilities
 
 ### Credit Card
 
-Credit card accounts should be named `#!ledger
-Liabilities:CreditCard:{name}`, for example `#!ledger
-Liabilities:CreditCard:Freedom` and `#!ledger
-Liabilities:CreditCard:AmazonPay`
+Credit card accounts should be named `#!ledger Liabilities:CreditCard:{name}`, such as `#!ledger Liabilities:CreditCard:Freedom`. See [Credit Cards](./credit-cards.md) for statement-cycle configuration.
 
 ## Equity
 
-Equity is used in rare cases where you want to balance the
-transaction, but none of the other accounts are suitable for the
-purpose. Let's say you have `#!ledger 1000 INR` in your real bank
-account and you want your checking account in Paisa to have same
-balance, you can use Equity account to balance the transaction.
+Equity is used to record opening balances or balance adjustments where money did not originate from Income or move to Expenses:
 
 ```ledger
 2022/01/01 Opening Balance
@@ -151,92 +105,24 @@ balance, you can use Equity account to balance the transaction.
     Equity:OpeningBalance
 ```
 
-
 ## Icons
 
-Each account is associated with an icon and is shown along with the
-account name in most places. Paisa assigns icon based on few simple
-rules and it usually falls back to a generic icon. To modify the icon,
-go to the configuration page, add a new Account and specify the name
-of your account and then select icon of your choice. Paisa ships with
-four icon sets.
+Each account is paired with an icon across tables, cards, and charts. Customize icons in **Tools → Configuration → Tools → Accounts** (`/more/config/accounts`). Paisa bundles four icon sets:
 
 * [Arcticons](https://arcticons.onnno.nl/)
 * [Font Awesome Regular, Solid and Brands](https://fontawesome.com/search?o=r&m=free&s=solid)
 * [Material Design Icons](https://materialdesignicons.com/)
 * [Fluent Emoji High Contrast](https://icon-sets.iconify.design/fluent-emoji-high-contrast/)
 
-
-!!! example "Experimental"
-    There is a wide range of free icons available, but adding each
-    icon set to Paisa would increase the app binary size. So a balance
-    has to be struck between the number of icons and the app
-    size. Feel free to start a discussion if you feel strongly about
-    any icon set. The current icon sets are not final, they may be
-    replaced if a better alternative is found.
-
 ## Account Notes
 
-You can attach a free-text note to any account (for example
-"Emergency fund", "Company 401k") without editing the ledger file.
-Notes are stored in Paisa's database and do not affect journal
-parsing.
+You can attach a free-text note to any account (e.g., `"Emergency fund"`, `"Company 401k"`) without modifying your ledger files. Notes are stored in SQLite (`GET /api/account_notes`, `GET /api/account_notes/:account`, `POST /api/account_notes/upsert`, `POST /api/account_notes/delete`):
 
-- Navigate to **Accounts → [account name]** to open the account
-  overview page, which contains a textarea for composing or editing a
-  note, plus a **Delete** button to remove it.
-- On the **Accounts → [account name] → Transactions** page, an
-  existing note is shown inline in the page header as a highlighted
-  tag.  A **Notes** button next to the tag takes you directly to the
-  notes editor.
-
-Notes are persisted immediately via the API when you save them.
+- Navigate to `/accounts/[name]` to compose, edit, or delete the account's note.
+- On **Accounts → [name] → Transactions** (`/accounts/[name]/transactions`), existing notes appear inline in the header with a **Notes** button to edit them.
 
 ## Account-Level Transaction History
 
-Click on any account balance widget on the dashboard or on an account
-row in the Assets or Accounts list to open a filtered transaction
-history for that specific account.  The route
-`/accounts/[name]/transactions` shows all transactions that touch the
-selected account (or any sub-account below it).
+Clicking any account balance card on the Dashboard or an account row in Asset Balances opens `/accounts/[name]/transactions`, showing a filtered transaction history (with local date-range selector) for that account and any sub-accounts below it.
 
-## Account Reconciliation
-
-!!! note
-    Reconciliation is disabled by default.  Enable it by setting
-    `enable_reconciliation: true` in `paisa.yaml`.
-
-When reconciliation is enabled, Paisa tracks the last date each
-account was reconciled and how frequently it should be reconciled.
-
-### Reconciliation Status Badge
-
-A color-coded badge appears next to every account balance row and on
-the account detail page:
-
-- **Green** – reconciled within the expected frequency window.
-- **Amber** – overdue (more days have elapsed than the configured
-  `frequency_days`).
-
-Clicking a badge opens an in-page modal where you can update the
-reconciliation date without navigating away, preserving page state on
-the Dashboard, Assets, and Account detail pages.
-
-### Dashboard Reconciliation Widget
-
-When reconciliation is enabled, the dashboard shows an **Account
-Reconciliation** widget with:
-
-- Counts of up-to-date and overdue accounts.
-- Quick links to reconcile overdue accounts.
-
-### Reconciliation API
-
-| Method  | Endpoint                                   | Description                                          |
-|---------|--------------------------------------------|------------------------------------------------------|
-| `GET`   | `/api/accounts/reconciliation`             | List reconciliation metadata for all accounts.       |
-| `GET`   | `/api/accounts/:account/reconciliation`    | Fetch metadata for a single account.                 |
-| `PATCH` | `/api/accounts/:account/reconciliation`    | Update `last_reconciled_date` and `frequency_days`.  |
-
-Responses include computed `days_since` (days since the last
-reconciliation) and `is_overdue` fields.
+*(If you use Firefly III alongside Paisa, experimental balance comparison against Firefly III is available under Labs — see [Data Synchronization](./sync.md#firefly-iii-reconciliation-labs).)*

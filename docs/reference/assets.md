@@ -1,31 +1,72 @@
 ---
-description: "Managing and analyzing your assets in Paisa"
+description: "Managing and analyzing your net worth, balances, investments, gains, and projections in Paisa"
 ---
 
-# Assets
+# Assets & Net Worth
 
-The Assets section provides tools to view your balances, analyze your portfolio, and track your gains over time.
+The **Net Worth** section (listed as **Assets** in Classic navigation) provides tools to inspect asset balances, track net worth history and FX impact, analyze investment performance, unwrap mutual fund holdings, and target/rebalance your portfolio.
 
-## Balance
+## Asset Balances
 
-The Balance page provides an overview of all your asset accounts and their current valuations. 
+Route: `/assets/balance` (Grouped: `Net Worth → Net Worth → Asset Balances`; Classic: `Assets → Balance`)
 
-### Flat View and Exports
-By default, accounts are displayed in a hierarchical tree. You can toggle the **Flat Accounts** view to see a non-rollup, flat list of your accounts. 
+The **Asset Balances** page provides a complete breakdown of your asset accounts, units, average cost, market prices, and current valuations:
 
-The current view (whether hierarchical or flat) can be exported to CSV or Excel for external analysis and record-keeping. The exported data will respect your selected display mode.
+- **View as of**: Pick any historical date (`as_of_date`) to inspect balances as of the end of that day.
+- **Report Currency**: Switch between your default currency and other configured currencies when multiple currencies exist.
+- **Flat Accounts**: Toggle between the hierarchical rollup tree and a flat list of accounts.
+- **Filter Inactive & Filter 0**: Hide accounts marked inactive (`inactive_accounts` / `accounts[].inactive`) or zero-balance accounts.
+- **Exports**: Export the current view (respecting hierarchy vs. flat mode) to **CSV** or **Excel**.
 
-## Gain
+## Net Worth History
 
-The Gain page helps you track the performance of your investments. It calculates key metrics such as Internal Rate of Return (XIRR), total investment, and absolute return. The calculations use historical market prices to provide accurate valuations, even when dealing with multiple currencies.
+Route: `/assets/networth` (Grouped: `Net Worth → Net Worth → Net Worth History`; Classic: `Assets → Networth`)
 
-## Analysis
+Tracks your portfolio valuation over time with multi-currency attribution and optional forward projection:
 
-The Analysis page unwraps commodity containers (like mutual funds) and categorizes the underlying securities by industry and rating. See the [Analysis](analysis.md) documentation for more details.
+- **Summary Metrics**: Displays **Net worth**, **Net Investment**, **Gain / Loss**, **Contribution**, **Investment Return**, **FX Impact**, and overall **XIRR**.
+- **FX Impact Decomposition**: Separates cumulative foreign-exchange movements from local investment returns for holdings denominated in non-default currencies, with a **Show FX impact overlay** toggle on the chart.
+- **Report Currency**: Re-value the timeline in another configured currency.
+- **Project Forward**: Toggle **Project Forward** to overlay the conservative/expected/optimistic projection curves and milestone markers directly onto your historical net worth timeline.
+
+## Holdings & Valuation
+
+Route: `/assets/investment` (Grouped: `Net Worth → Investments & Portfolio → Holdings & Valuation`; Classic: `Assets → Investment`)
+
+Visualizes monthly and financial-year investment flows and holdings valuations over time, including a **Report Currency** switcher when multiple currencies are configured.
+
+## Performance & Gain (XIRR)
+
+Route: `/assets/gain` (Grouped: `Net Worth → Investments & Portfolio → Performance & Gain (XIRR)`; Classic: `Assets → Gain`)
+
+Calculates **Internal Rate of Return (XIRR)**, total investment, unrealized/realized price appreciation, and total return using historical market prices across currencies.
+
+The gain breakdown table also integrates passive payouts from [Investment Income](./income.md#investment-income) (`Income:Dividend:*`, `Income:Interest:*`, `Income:Distribution:*`), showing per-account:
+
+- **Price Appreciation**
+- **Income Received**
+- **Total Return** (`Price Appreciation + Income Received`)
+- **TTM Yield** (trailing 12-month yield)
+
+Click any account row to drill into `/assets/gain/[account]` for its detailed timeline and breakdown.
+
+## Target Asset Allocation & Rebalancing
+
+Route: `/assets/allocation` (Grouped: `Net Worth → Investments & Portfolio → Target Asset Allocation`; Classic: `Assets → Allocation`)
+
+Configure target weights, drift bands, and calculate cash deployment or full buy/sell rebalance plans, plus inspect currency exposure. See [Target Asset Allocation & Rebalancing](./allocation-targets.md).
+
+## Underlying Portfolio
+
+Route: `/assets/portfolio` (Grouped: `Net Worth → Investments & Portfolio → Underlying Portfolio`; Classic: `Assets → Portfolio`) *(formerly `Analysis`; `/assets/analysis` redirects here)*
+
+Unwraps commodity containers (such as mutual funds) and categorizes underlying securities by industry and rating. See [Underlying Portfolio](./analysis.md) for details.
 
 ## Projection (FIRE)
 
-The Projection page maps out your long-term net worth trajectory and calculates key Financial Independence, Retire Early (FIRE) metrics. It simulates your future net worth across three scenarios (Conservative, Expected, and Optimistic) using your current net worth, historical savings/investment behavior, and customizable compound growth assumptions.
+Route: `/planning/projection` (Grouped: `Planning → Projections & Life Plan → Net Worth Projections`; Classic: `Planning → Projection`)
+
+The **Net Worth Projections** page maps out your long-term net worth trajectory and calculates key Financial Independence, Retire Early (FIRE) metrics. It simulates future net worth across three scenarios (**Conservative**, **Expected**, and **Optimistic**) using your current net worth, historical savings/investment behavior, and customizable compound growth assumptions. See [Financial Planning & Life Projections](./planning.md) for the broader planning suite (including Monte Carlo simulations, Milestone Life Goals, What-If scenarios, and Tax-Aware Drawdown).
 
 ### Key Metrics & Calculations
 
@@ -34,86 +75,47 @@ The **Target Corpus** is the total asset valuation required to sustain your curr
 
 $$\text{Target Corpus} = \frac{\text{Annual Expenses}}{\text{SWR} / 100}$$
 
-*   **Annual Expenses**: Derived from the cost sum of all transaction postings matching the `Expenses:*` prefix (excluding tax-related postings under `Expenses:Tax` so tax liabilities do not distort long-term sustainable living costs) over the trailing 12 months (TTM). This is annualized proportionally based on the number of active months that contain transaction data:
-    $$\text{Annual Expenses} = \frac{\text{Total Expenses in TTM}}{\text{Active Months}} \times 12$$
-    *   *Active Months* represents the duration of data presence, computed as the difference in months between the earliest expense posting date within the TTM window and the current month (capped at a minimum of 1 and a maximum of 12).
-*   **SWR (Safe Withdrawal Rate)**: The withdrawal rate percentage (defaults to **4.0%**, representing the standard 25x expenses rule), which is fully adjustable in the UI.
+* **Annual Expenses**: Derived from the cost sum of all transaction postings matching the `Expenses:*` prefix (excluding `Expenses:Tax` so tax liabilities do not distort long-term sustainable living costs) over the trailing 12 months (TTM), annualized proportionally across active months:
+  $$\text{Annual Expenses} = \frac{\text{Total Expenses in TTM}}{\text{Active Months}} \times 12$$
+  * *Active Months* is the number of months between the earliest expense posting within the TTM window and the current month (clamped to `[1, 12]`).
+* **SWR (Safe Withdrawal Rate)**: The withdrawal rate percentage (defaults to **4.0%**, representing the 25x expenses rule), adjustable in the UI via slider or numeric input.
 
 #### 2. Years to FIRE
 The estimated time (in years) until your projected net worth in the **Expected** scenario meets or exceeds your **Target Corpus**:
 
 $$\text{Years to FIRE} = \frac{\text{Months to Target}}{12}$$
 
-*   **Start Date**: Today's date.
-*   **Target Crossing**: The first month in the expected projection scenario where the balance is greater than or equal to the target corpus. If the target is not crossed within the selected projection window (default: 15 years), the UI displays "Not in projection window" or "N/A".
+If the target is not crossed within the selected projection window (default: 15 years), the UI displays `"Not in projection window"`.
 
 #### 3. FIRE Progress
 Your current progress toward achieving financial independence:
 
 $$\text{FIRE Progress} = \min\left(100\%,\, \frac{\text{Current Net Worth}}{\text{Target Corpus}} \times 100\%\right)$$
 
----
+### Net Worth Projection Engine & Interactive Controls
 
-### Net Worth Projection Engine
+Paisa models three deterministic compounding curves (defaults: **6.0% Conservative**, **9.0% Expected**, **12.0% Optimistic** CAGR) over your chosen timeframe (`1–40` via slider, or arbitrary precision values via the numeric input field next to every control):
 
-Paisa models three projection curves over your chosen timeframe (1 to 40 years, default 15):
+$$\text{Balance}_i = \text{Balance}_{i-1} \times (1 + r) + \text{Monthly Contribution}, \quad r = (1 + \text{CAGR})^{1/12} - 1$$
 
-*   **Conservative**: Defaults to **6.0% CAGR**
-*   **Expected**: Defaults to **9.0% CAGR** (used to calculate Years to FIRE)
-*   **Optimistic**: Defaults to **12.0% CAGR**
-
-For each month $i$, the compound balance is calculated as:
-
-$$\text{Balance}_i = \text{Balance}_{i-1} \times (1 + r) + \text{Monthly Contribution}$$
-
-where the monthly growth rate $r$ is derived from the annual CAGR:
-
-$$r = (1 + \text{CAGR})^{1/12} - 1$$
-
----
+The **Your Financial DNA** panel automatically extracts your historical **Annual Income**, **Annual Expenses**, **Savings Rate**, and **Historical Return / Volatility**, and lets you click **Apply to Sliders** to calibrate the projection controls from your ledger history.
 
 ### Year-by-Year Projection Breakdown
 
-The projection curve itself does **not** subtract annual expenses from the corpus. Expenses are used to compute the FIRE target corpus and progress metrics, while the chart grows the current corpus using the selected CAGR and monthly contribution. To make the yearly movement easier to read, the tables below show the annual recurrence in a simplified view.
+Below the chart, Paisa renders expandable year-by-year scenario tables for Conservative, Expected, and Optimistic trajectories, each with an **Export CSV** button:
 
-For each year, the starting corpus is the previous year's ending corpus. The annual expense value is shown as the baseline used by the FIRE calculation, not as a deduction in the projection curve.
+| Year | Starting Corpus | Annual Contribution | Return | Ending Corpus | Inflated Expenses |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1 | $C_0$ | $12 \times \text{PMT}$ | $\sum \text{monthly return}$ | $C_1$ | $E_0$ |
+| 2 | $C_1$ | $12 \times \text{PMT}$ | $\sum \text{monthly return}$ | $C_2$ | $E_0 \times (1 + \text{inf})^{1}$ |
+| 3 | $C_2$ | $12 \times \text{PMT}$ | $\sum \text{monthly return}$ | $C_3$ | $E_0 \times (1 + \text{inf})^{2}$ |
 
-#### Conservative Scenario
-
-| Year | Starting Corpus | Expenses | Return | Ending Corpus |
-| --- | ---: | ---: | ---: | ---: |
-| 1 | $C_0$ | $E$ | $C_0 \times 6\%$ | $C_0 \times 1.06$ |
-| 2 | $C_1$ | $E$ | $C_1 \times 6\%$ | $C_1 \times 1.06$ |
-| 3 | $C_2$ | $E$ | $C_2 \times 6\%$ | $C_2 \times 1.06$ |
-
-#### Expected Scenario
-
-| Year | Starting Corpus | Expenses | Return | Ending Corpus |
-| --- | ---: | ---: | ---: | ---: |
-| 1 | $C_0$ | $E$ | $C_0 \times 9\%$ | $C_0 \times 1.09$ |
-| 2 | $C_1$ | $E$ | $C_1 \times 9\%$ | $C_1 \times 1.09$ |
-| 3 | $C_2$ | $E$ | $C_2 \times 9\%$ | $C_2 \times 1.09$ |
-
-#### Optimistic Scenario
-
-| Year | Starting Corpus | Expenses | Return | Ending Corpus |
-| --- | ---: | ---: | ---: | ---: |
-| 1 | $C_0$ | $E$ | $C_0 \times 12\%$ | $C_0 \times 1.12$ |
-| 2 | $C_1$ | $E$ | $C_1 \times 12\%$ | $C_1 \times 1.12$ |
-| 3 | $C_2$ | $E$ | $C_2 \times 12\%$ | $C_2 \times 1.12$ |
+The projection curve compounds your starting corpus with ongoing monthly contributions without subtracting annual expenses; **Inflated Expenses** shows your inflation-adjusted annual cost of living and FIRE benchmark alongside each year.
 
 ### Deriving Historical Inputs
 
-Paisa automatically analyzes your last 12 months of journal history to pre-populate projection inputs, ensuring realistic, data-driven defaults:
+Paisa analyzes your last 12 months of journal history to pre-populate projection defaults (`GET /api/networth/projection`):
 
-1.  **Current Net Worth**: The valuation sum of all postings in `Assets:*` (excluding checking accounts), `Income:CapitalGains:*`, and `Liabilities:*` up to today, with historical market prices applied.
-2.  **Net Investment**: The total cost sum of postings to asset accounts (`Assets:*`), excluding checking accounts (`Assets:Checking`) and any transactions tied to liabilities (`Liabilities:*`). Non-cash adjustment transactions such as stock splits are filtered out.
-3.  **Monthly Contribution**:
-    *   Paisa derives your regular monthly contribution by analyzing your historical savings rate and actual net investments.
-    *   First, your **Net Income** is computed as the negative sum of all income postings (matching the `Income:*` prefix) over the past 12 months.
-    *   If your **Net Income** is greater than zero, Paisa calculates your **Savings Rate** as:
-        $$\text{Savings Rate} = \frac{\text{Net Investment}}{\text{Net Income}} \times 100\%$$
-    *   The **Monthly Contribution** is then calculated by multiplying your average monthly income by this savings rate, which provides a smoothed, representative estimation of your monthly investments:
-        $$\text{Monthly Contribution} = \text{Average Monthly Income} \times \frac{\text{Savings Rate}}{100}$$
-    *   If your **Net Income** is zero or negative (representing cases with no formal income data, or net expenses exceeding income), the savings rate calculation is skipped. Instead, the monthly contribution defaults directly to the average monthly net investment:
-        $$\text{Monthly Contribution} = \frac{\text{Net Investment}}{\text{Active Months}}$$
+1. **Current Net Worth**: Valuation sum of postings in `Assets:*` (excluding checking accounts), `Income:CapitalGains:*`, and `Liabilities:*` up to today with historical market prices applied.
+2. **Net Investment**: Cost sum of postings to `Assets:*`, excluding checking accounts and liability-linked transactions (non-cash adjustments such as stock splits are filtered out).
+3. **Monthly Contribution**: Computed from your **Net Income** (`Income:*`) and **Savings Rate** ($\text{Net Investment} / \text{Net Income}$), falling back to $\text{Net Investment} / \text{Active Months}$ if net income is zero or negative.

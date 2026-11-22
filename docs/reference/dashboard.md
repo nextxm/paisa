@@ -1,58 +1,57 @@
 ---
-description: "Overview of the Paisa dashboard and its widgets"
+description: "Overview of the Paisa dashboard, its customizable widgets, presets, and quick navigation tools"
 ---
 
 # Dashboard
 
-The **Dashboard** is the landing page of Paisa.  It provides an
-at-a-glance overview of your financial health through a collection of
-widgets.
+The **Dashboard** (`/`) is the landing page of Paisa. It provides an at-a-glance overview of your financial health through a customizable two-column collection of widgets.
 
-## Recent Transactions
+When you launch Paisa with an empty journal, the Dashboard displays a first-run guide with a **Setup Demo** button that loads a sample journal and configuration so you can explore every view immediately.
 
-The **Recent Transactions** widget shows the 15 most recent
-transactions from your journal.  Each entry is rendered as a
-transaction card with the date, description, and posting amounts.
+## Dashboard Widgets
 
-The `GET /api/transaction` endpoint supports optional `limit` and
-`offset` query parameters to retrieve a custom page of transactions.
-Every response includes all postings for each returned transaction
-(pagination is applied at the transaction level, not the posting
-level).
+All nine built-in widgets can be reordered, toggled on or off, and customized:
 
-## Monthly Cashflow
+### Left Column (Default)
 
-The **Monthly Cashflow** widget provides a multi-currency breakdown of
-income versus expenses for the current month, using the original
-ledger quantities (no mark-to-market conversion).  This gives a quick,
-currency-accurate net cashflow figure.
+- **Assets**: Displays total **Net worth**, **Net Investment**, unrealized **Gain / Loss**, and overall **XIRR** (links to [Net Worth History](./assets.md)).
+- **Checking Balance**: Shows current balances for accounts matching `checking_accounts` in `paisa.yaml` (default `Assets:Checking`). Configurable item limit: `1–12` (default `6`).
+- **Investment Income**: Displays trailing 12-month (**TTM Dividend** and **TTM Interest**) figures (links to [Investment Income](./income.md#investment-income)).
+- **Cash Flow**: Renders a 3-month income vs. expense bar chart in your default currency (links to [Monthly Cash Flow](./cash-flow.md)).
+- **Budget**: Displays compact progress bars for the current month's budget accounts (links to [Budget](./budget.md)). Configurable account limit: `1–20` (default `10`).
+- **Goals**: Lists configured retirement and savings goals ordered by descending priority (links to [Goals](./goals/index.md)). Configurable item limit: `1–12` (default `6`).
 
-## Account Reconciliation
+### Right Column (Default)
 
-When `enable_reconciliation: true` is set in `paisa.yaml`, the
-dashboard shows an **Account Reconciliation** widget with:
+- **Expenses**: Shows total expenses for the selected month along with an interactive **3-month switcher** and a category breakdown bar chart (links to [Monthly Expenses](./expenses.md#monthly-expenses)).
+- **Recurring**: Displays upcoming and due recurring bill cards (links to [Recurring](./recurring.md)). Configurable item limit: `1–30` (default `16`).
+- **Recent Transactions**: Displays compact cards for your latest journal transactions (links to [Transactions](./bulk-edit.md)). Configurable item limit: `1–30` (default `10`).
 
-- The count of up-to-date accounts (reconciled within their expected
-  frequency window).
-- The count of overdue accounts.
-- Quick-action links to reconcile each overdue account directly from
-  the dashboard.
+The backing `GET /api/transaction` endpoint also supports optional `limit` (up to `500`), `offset`, `q`, `account`, `commodity`, `amount_min`, `amount_max`, `date_from`, and `date_to` query parameters.
 
-See [Accounts – Account Reconciliation](accounts.md#account-reconciliation)
-for full details.
+## Customizing the Dashboard
+
+Click the **Customize** (gear) button at the top right of the Dashboard to open the layout editor:
+
+- **Built-in Presets**: Switch quickly between **Overview** (all 9 widgets), **Cash Flow & Budget**, **Investor**, and **Minimal** presets, or click **Reset to default**.
+- **Drag-and-Drop Reordering**: Drag widgets within the Left or Right column to change their display order.
+- **Visibility & Item Limits**: Toggle any widget on/off and configure item counts (Checking Balance, Budget accounts, Goals, Recurring items, Recent Transactions).
+- **Persistence**: Preferences are saved automatically in browser storage (`localStorage` key `dashboard-layout`).
 
 ## Account Drill-Down
 
-Clicking on any account balance widget on the dashboard navigates to
-`/accounts/[name]/transactions`, which shows a filtered history of all
-transactions that touch that account (or any sub-account below it).
+Clicking on any account balance card on the Dashboard (such as in **Checking Balance**) opens `/accounts/[name]/transactions`, displaying a filtered transaction history and any saved account note for that account and its sub-accounts. See [Accounts](./accounts.md#account-level-transaction-history) for details.
 
-## FIRE Metrics
+## Global Navigation & Top Action Bar
 
-The dashboard features a **FIRE Metrics** level indicator displaying key metrics to track your progress towards financial independence:
+Across the Dashboard and every page, the top bar provides quick productivity tools:
 
-- **Years to FIRE**: The projected number of years required to reach your target corpus using the "Expected" net worth projection curve.
-- **Target Corpus**: The total asset amount needed to support your annualized expenses based on your Safe Withdrawal Rate (SWR).
-- **FIRE Progress**: The percentage of the target corpus you have currently accumulated.
+- **Navigation Layout Switcher**: Toggle between **Grouped** (default: `Cash Flow`, `Net Worth`, `Planning`, `Ledger`, `Tools`) and **Classic** (`Cash Flow`, `Expenses`, `Assets`, `Liabilities`, `Income`, `Planning`, `Ledger`, `More`) menus.
+- **Command Palette (++ctrl+k++ / ++cmd+k++)**: Search and jump to any page, currency FX view, transaction search, or Quick Add action.
+- **Quick Add (`+`)**: Create transactions manually or via [Natural Language Quick Add](./parser.md).
+- **Sync Controls & Freshness Indicators**: Open **Sync History**, trigger **Sync Journal** (amber when external disk edits are detected), **Update Prices** (amber after 24h, red after 48h), and **Update Mutual Fund Portfolios**. See [Data Synchronization](./sync.md).
+- **Theme & Privacy Mode**: Switch between light and dark themes or click the eye icon to obscure monetary figures on screen.
 
-These metrics are calculated dynamically using your historical income, expenses, and investment savings patterns. See [Assets – Projection (FIRE)](assets.md#projection-fire) for the exact calculation logic, formulas, and parameters.
+## Forward Projections
+
+For FIRE target corpus, years to FIRE, and multi-scenario compounding projections, see [Financial Planning & Life Projections](./planning.md).

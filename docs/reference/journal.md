@@ -28,11 +28,11 @@ sub directories as your main journal.
 
 ## Backup
 
-Paisa tries its best to keep your journal safe. It creates a backup of
-your journal file every time you save it. The backup file is created
-with the same name as your journal file with a `.backup.{timestamp}`
-extension. You can revert back to old versions of your journal file
-via the editor. You can also delete the backup files from the editor.
+Paisa tries its best to keep your journal safe. Every time you save in the editor, it creates a backup of
+your journal file with a `.backup.{timestamp}`
+extension so you can revert to older versions or delete old backups directly from the editor. When editing journals outside Paisa, `JournalWatcher` automatically monitors your files and flags the navbar **Sync** indicator if a change needs to be re-synced.
+
+You can also download a complete `.zip` archive of your journal files, `paisa.yaml` (with account password hashes redacted by default), and `.sheet` files from **Tools → Configuration → Tools → Backup & Export** (`/more/config/backup`).
 
 !!! warning
 
@@ -109,16 +109,10 @@ supports wildcards `*`.
 
 ## Natural Language Quick Add
 
-Paisa can also create journal entries from free-form transaction text
-through parser APIs. This is useful for quick capture workflows where
-you type text such as:
+Click the **+** (**Quick Add Transaction**) button in the top-right action strip (or press `Ctrl+K` → **Quick Add Transaction**) to capture new entries from free-form text or a structured form targeting `add_journal_path`. For example:
 
 ```text
 20 Apr, bought 15$ groceries using bmo cc from no frills
 ```
 
-The parser extracts date, amount, payee, and account candidates, then
-creates a normal journal entry through the same add-transaction flow.
-
-See the full API contract, request/response formats, and confidence
-handling in [Natural Language Parser API](./parser.md).
+The parser extracts date, amount, currency, payee, and account candidates, lets you review confidence scores and candidate pills, and appends a validated journal entry. See the full API contract, request/response fields, and confidence handling in [Natural Language Parser API](./parser.md).

@@ -32,7 +32,7 @@ by **hledger** and **beancount**
 
 ### beancount
 
-* [Budget](./budget.md) - budget is based on periodic transactions that is no
+* [Budget](./budget.md) - budget relies on periodic transactions, which is not
     supported by beancount.
 
 * [Recurring](./recurring.md) (partial) - beancount doesn't support automated
@@ -41,3 +41,10 @@ by **hledger** and **beancount**
 
 * Search filter in Transactions and Postings pages doesn't support note
   [property](./bulk-edit.md#property).
+
+## Dialect-Aware Features
+
+Paisa adapts output and import formatting automatically to your configured `ledger_cli`:
+
+* **Smart Importer & Quick Add**: When writing entries for `beancount`, Paisa uses `YYYY-MM-DD * "Payee" "Narration"` syntax, `#tag` tags (instead of `; Tag:` comments), and automatically skips `group_by_date` debit consolidation so multi-posting entries match Beancount conventions.
+* **Price History Export**: Both the **Commodity Prices** UI export and the `paisa export` CLI support `--format ledger`, `--format hledger`, and `--format beancount` (`P` vs. `price` directives).

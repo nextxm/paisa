@@ -24,15 +24,10 @@ credit_cards:
 2. Credit limit of the card
 3. The day of the month when the statement is generated
 4. The day of the month when the payment is due
-5. The network of the card
+5. Card network (`visa`, `mastercard`, `dinersclub`, `amex`, `rupay`, `jcb`, or `discover`)
 6. The last 4 digits of the card number
 7. The expiration date of the card
 
-The above configuration can be done from the `More > Configuration`
-page. Expand the `Credit Cards` section and click
-:fontawesome-solid-circle-plus: icon to add a new one
+Configure cards in **Tools → Configuration → Finance → Credit Cards** (`/more/config/credit-cards`) by clicking the :fontawesome-solid-circle-plus: icon, or add them directly under `credit_cards:` in `paisa.yaml`.
 
-Once configured, the credit card will show up on the `Liabilities >
-Credit Cards` page. Paisa will automatically calculate and display
-various information like the amount due, payment due date, credit
-limit utilized, etc.
+Once configured, your cards appear on **Net Worth → Liabilities & Debt → Credit Cards** (Classic: **Liabilities → Credit Cards**, `/liabilities/credit_cards`), displaying amount due, payment due date, and credit limit utilization. Select any card to open its drill-down page (`/liabilities/credit_cards/[slug]`) for available credit, statement cycle history, bill payment status, and a year-wise spend chart.

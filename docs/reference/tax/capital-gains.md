@@ -1,12 +1,13 @@
 # Capital Gains
 
-Mutual Funds are considered as capital asset and capital gains tax
-will be charged on any gains. Capital Gains page shows the financial
-year wise capital gains tax based on the withdrawal transaction. The
-sum total, account wise breakdown, and per buy/sell match information
-are available.
+Open **Planning → Tax → Capital Gains** (`/planning/tax/capital_gains`; shown when `default_currency` is `INR`) to review financial-year realized capital gains and estimated tax liability across mutual funds and stocks. The underlying lot-matching engine is also used by the [Tax-Aware Drawdown Strategy](../planning.md#4-tax-aware-drawdown-strategy) planner.
 
-Only commodities with `tax_category` are considered. Please check [Tax
+Mutual Funds and equities are considered capital assets and capital gains tax
+applies on realized withdrawals. The Capital Gains page shows financial
+year wise capital gains tax based on your sell/redemption transactions, with
+the total summary, account-wise breakdown, and per buy/sell FIFO match details.
+
+Only commodities with `tax_category` (`equity`, `equity65`, `equity35`, `debt`, or `unlisted_equity`) are included. Please check the [Tax
 Harvesting](tax-harvesting.md) page for configuration details.
 
 ### Gain

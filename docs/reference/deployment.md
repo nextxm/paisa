@@ -16,15 +16,25 @@ can read your financial data and capture your session token or credentials.
 
 ---
 
-## How Paisa binds by default
+## How Paisa binds
 
-By default `paisa serve` listens on `127.0.0.1:7500` (localhost only). The
-reverse proxy runs on the public interface and forwards requests to Paisa on
-localhost, so Paisa itself never needs to handle TLS.
+By default `paisa serve` listens on `:7500` across all network interfaces (port configurable via `-p` / `--port`). Because traffic to Paisa is plain HTTP, **firewall port `7500`** on host deployments so only localhost or your reverse proxy can reach it, and terminate TLS at the reverse proxy:
 
 ```
 Internet ──HTTPS──► Reverse Proxy (port 443) ──HTTP──► Paisa (127.0.0.1:7500)
 ```
+
+For Docker deployments without a reverse proxy in the same Compose network, publish `127.0.0.1:7500:7500` instead of `7500:7500`.
+
+### Environment variables
+
+You can control runtime behavior via environment variables:
+
+| Variable | Effect |
+|----------|--------|
+| `PAISA_CONFIG` | Path to `paisa.yaml` (overrides `--config` and default locations) |
+| `PAISA_DEBUG` | Set to `true` to enable verbose debug logging and GORM SQL query logging |
+| `PAISA_DISABLE_LOG_FILE` | Set to `true` to skip writing rotating log files (useful when collecting stdout/stderr logs in Docker or systemd) |
 
 ---
 
@@ -74,6 +84,8 @@ server {
 }
 ```
 
+If you put an external authentication proxy in front of Paisa, allow unauthenticated browser requests to static/PWA routes (`/site.webmanifest`, `/manifest.webmanifest`, `/sw.js`, `/workbox-*`, `/pwa-*.png`, and `/_app/*`) if installable PWA metadata is needed before sign-in.
+
 After updating the configuration, reload nginx:
 
 ```console
@@ -113,10 +125,10 @@ container.
 ```yaml
 services:
   paisa:
-    image: ananthakumaran/paisa:latest
+    image: nextxm/paisa:latest
     volumes:
       - /home/john/Documents/paisa:/root/Documents/paisa
-    # Bind to localhost only – do not publish 7500 to the host network.
+    # Do not publish 7500 to the host public interface – only expose to the proxy network.
     expose:
       - "7500"
 
