@@ -10,7 +10,8 @@ import {
   editorRightWidth,
   editorLeftCollapsed,
   editorRightCollapsed,
-  configSidebarCollapsed
+  configSidebarCollapsed,
+  expenseTrendMode
 } from "../../persisted_store";
 
 /**
@@ -31,6 +32,7 @@ class PersistedState {
   readonly editorLeftCollapsed = fromStore(editorLeftCollapsed);
   readonly editorRightCollapsed = fromStore(editorRightCollapsed);
   readonly configSidebarCollapsed = fromStore(configSidebarCollapsed);
+  readonly expenseTrendMode = fromStore(expenseTrendMode);
 }
 
 export const persistedState = new PersistedState();

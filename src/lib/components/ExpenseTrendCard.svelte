@@ -7,8 +7,18 @@
   let {
     trend,
     color,
-    sparkData = {}
-  }: { trend: ExpenseTrend; color: string; sparkData?: Record<string, number> } = $props();
+    sparkData = {},
+    currentLabel = "Current 30 days",
+    previousLabel = "Previous 30 days",
+    previousShortLabel = "prev"
+  }: {
+    trend: ExpenseTrend;
+    color: string;
+    sparkData?: Record<string, number>;
+    currentLabel?: string;
+    previousLabel?: string;
+    previousShortLabel?: string;
+  } = $props();
 
   const isIncrease = $derived(trend.variance > 0);
   const isDecrease = $derived(trend.variance < 0);
@@ -28,9 +38,9 @@
 <div
   class="box p-2 my-2 has-background-white"
   style="border-left: 2px solid {color}"
-  title="Previous 30 days: {formatCurrency(
-    trend.previous_month
-  )} · Current 30 days: {formatCurrency(trend.current_month)}"
+  title="{previousLabel}: {formatCurrency(trend.previous_month)} · {currentLabel}: {formatCurrency(
+    trend.current_month
+  )}"
 >
   <div class="is-flex is-justify-content-space-between is-align-items-center">
     <div class="has-text-grey has-text-weight-semibold custom-icon truncate">
@@ -42,7 +52,7 @@
   </div>
   <div class="is-flex is-justify-content-space-between is-align-items-center mt-1">
     <div class="has-text-grey-light is-size-7">
-      prev: {formatCurrency(trend.previous_month)}
+      {previousShortLabel}: {formatCurrency(trend.previous_month)}
     </div>
     {#if hasPrevious}
       <div

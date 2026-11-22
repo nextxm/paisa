@@ -20,3 +20,6 @@ export const configSidebarCollapsed = persisted("configSidebarCollapsed", false)
 
 export type NavLayout = "classic" | "grouped";
 export const navLayout = persisted<NavLayout>("navLayout", "grouped");
+
+export type ExpenseTrendMode = "rolling30" | "calendarMonth";
+export const expenseTrendMode = persisted<ExpenseTrendMode>("expenseTrendMode", "rolling30");

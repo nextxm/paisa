@@ -97,7 +97,13 @@
       label: "Expenses",
       href: "/expense",
       children: [
-        { label: "Monthly", href: "/monthly", monthPicker: true, dateRangeSelector: true },
+        {
+          label: "Monthly",
+          href: "/monthly",
+          help: "expenses",
+          monthPicker: true,
+          dateRangeSelector: true
+        },
         { label: "Yearly", href: "/yearly", financialYearPicker: true },
         { label: "Budget", href: "/budget", help: "budget", monthPicker: true },
         { label: "Expense Breakdown", href: "/sankey", dateRangeSelector: true },
@@ -179,12 +185,12 @@
     href: "/tax",
     help: "tax",
     children: [
-      { label: "Harvest", href: "/harvest", help: "tax-harvesting" },
-      { label: "Capital Gains", href: "/capital_gains", help: "capital-gains" },
+      { label: "Harvest", href: "/harvest", help: "tax/tax-harvesting" },
+      { label: "Capital Gains", href: "/capital_gains", help: "tax/capital-gains" },
       {
         label: "Schedule AL",
         href: "/schedule_al",
-        help: "schedule-al",
+        help: "tax/schedule-al",
         financialYearPicker: true
       }
     ]
@@ -200,12 +206,12 @@
     href: "/tax",
     help: "tax",
     children: [
-      { label: "Tax Harvesting", href: "/harvest", help: "tax-harvesting" },
-      { label: "Capital Gains", href: "/capital_gains", help: "capital-gains" },
+      { label: "Tax Harvesting", href: "/harvest", help: "tax/tax-harvesting" },
+      { label: "Capital Gains", href: "/capital_gains", help: "tax/capital-gains" },
       {
         label: "Schedule AL",
         href: "/schedule_al",
-        help: "schedule-al",
+        help: "tax/schedule-al",
         financialYearPicker: true
       }
     ]
@@ -243,6 +249,7 @@
             {
               label: "Monthly Expenses",
               href: "/monthly",
+              help: "expenses",
               monthPicker: true,
               dateRangeSelector: true
             },
