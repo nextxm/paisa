@@ -1519,6 +1519,75 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#use-cases-sample-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Use Cases &amp; Sample Queries
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Use Cases & Sample Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-net-worth-unrealized-gains" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Net Worth &amp; Unrealized Gains
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-savings-rate-cash-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Savings Rate &amp; Cash Flow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-emergency-fund-runway-fire-progress" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Emergency Fund Runway &amp; FIRE Progress
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-portfolio-rebalancing-calculator" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Portfolio Rebalancing Calculator
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-spending-by-category-merchant-or-tag" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Spending by Category, Merchant, or Tag
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-loan-principal-interest-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Loan Principal &amp; Interest Tracking
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2442,6 +2511,75 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#use-cases-sample-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Use Cases &amp; Sample Queries
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Use Cases & Sample Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-net-worth-unrealized-gains" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Net Worth &amp; Unrealized Gains
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-savings-rate-cash-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Savings Rate &amp; Cash Flow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-emergency-fund-runway-fire-progress" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Emergency Fund Runway &amp; FIRE Progress
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-portfolio-rebalancing-calculator" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Portfolio Rebalancing Calculator
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-spending-by-category-merchant-or-tag" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Spending by Category, Merchant, or Tag
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-loan-principal-interest-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Loan Principal &amp; Interest Tracking
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2704,6 +2842,101 @@ postings and you will have the remaining buy postings.</p>
 <p>Negates the amount and quantity of all the postings. This would be
 useful when you want to do some calculation on liabilities or income
 which are negative in nature.</p>
+<h2 id="use-cases-sample-queries">Use Cases &amp; Sample Queries<a class="headerlink" href="#use-cases-sample-queries" title="Permanent link">&para;</a></h2>
+<p>Because Sheets combines a live calculator with direct queries against your ledger, you can build dynamic financial worksheets that update automatically as you add new transactions. Below are common use cases and sample queries you can adapt to your own account hierarchy.</p>
+<h3 id="1-net-worth-unrealized-gains">1. Net Worth &amp; Unrealized Gains<a class="headerlink" href="#1-net-worth-unrealized-gains" title="Permanent link">&para;</a></h3>
+<p>Compare the FIFO cost basis of your assets against their current market value, subtract liabilities, and calculate total unrealized gains.</p>
+<div class="language-sheet highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gh"># Net Worth &amp; Unrealized Gains</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="err">assets </span><span class="o">=</span><span class="err"> </span><span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Assets:/</span><span class="o">}</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="err">liabilities </span><span class="o">=</span><span class="err"> </span><span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Liabilities:/</span><span class="o">}</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="err">investments </span><span class="o">=</span><span class="err"> </span><span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Assets:(Equity|Debt|MutualFunds):/</span><span class="o">}</span>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="c1">// Current market value vs. FIFO cost basis</span>
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="err">total_assets </span><span class="o">=</span><span class="err"> </span><span class="nf">balance</span>(<span class="err">assets)</span>
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="err">total_liabilities </span><span class="o">=</span><span class="err"> </span><span class="nf">balance</span>(<span class="nf">negate</span>(<span class="err">liabilities))</span>
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="err">net_worth </span><span class="o">=</span><span class="err"> total_assets </span><span class="o">-</span><span class="err"> total_liabilities</span>
+</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>
+</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="c1">// Investment performance</span>
+</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="err">invested_cost </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="nf">fifo</span>(<span class="err">investments))</span>
+</span><span id="__span-15-13"><a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="err">invested_value </span><span class="o">=</span><span class="err"> </span><span class="nf">balance</span>(<span class="err">investments)</span>
+</span><span id="__span-15-14"><a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="err">unrealized_gain </span><span class="o">=</span><span class="err"> invested_value </span><span class="o">-</span><span class="err"> invested_cost</span>
+</span><span id="__span-15-15"><a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="err">return_pct </span><span class="o">=</span><span class="err"> (unrealized_gain </span><span class="o">/</span><span class="err"> invested_cost) </span><span class="o">*</span><span class="err"> </span><span class="m">100</span>
+</span></code></pre></div>
+<h3 id="2-savings-rate-cash-flow">2. Savings Rate &amp; Cash Flow<a class="headerlink" href="#2-savings-rate-cash-flow" title="Permanent link">&para;</a></h3>
+<p>Track how much of your income you are saving over a given period (such as a financial year or <code>[this year]</code>, <code>[last month]</code>). Since income postings are negative in double-entry accounting, wrap them with <code>negate(...)</code>.</p>
+<div class="language-sheet highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gh"># Annual Savings Rate</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="err">period </span><span class="o">=</span><span class="err"> </span><span class="o">{</span><span class="kc">date</span> <span class="o">&gt;=</span> <span class="na">[2025-04-01]</span> <span class="k">AND</span> <span class="kc">date</span> <span class="o">&lt;=</span> <span class="na">[2026-03-31]</span><span class="o">}</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="err">income </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="nf">negate</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Income:/</span><span class="o">}</span><span class="err"> </span><span class="k">AND</span><span class="err"> period))</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="err">expenses </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Expenses:/</span><span class="o">}</span><span class="err"> </span><span class="k">AND</span><span class="err"> period)</span>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="err">net_savings </span><span class="o">=</span><span class="err"> income </span><span class="o">-</span><span class="err"> expenses</span>
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="err">savings_rate_pct </span><span class="o">=</span><span class="err"> (net_savings </span><span class="o">/</span><span class="err"> income) </span><span class="o">*</span><span class="err"> </span><span class="m">100</span>
+</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="err">monthly_avg_expense </span><span class="o">=</span><span class="err"> expenses </span><span class="o">/</span><span class="err"> </span><span class="m">12</span>
+</span></code></pre></div>
+<h3 id="3-emergency-fund-runway-fire-progress">3. Emergency Fund Runway &amp; FIRE Progress<a class="headerlink" href="#3-emergency-fund-runway-fire-progress" title="Permanent link">&para;</a></h3>
+<p>Use your actual historical spending from the ledger to size your emergency fund and track progress toward Financial Independence (FIRE).</p>
+<div class="language-sheet highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gh"># Emergency Fund &amp; FIRE</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="err">annual_expenses </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Expenses:/</span> <span class="k">AND</span> <span class="kc">date</span> <span class="o">&gt;=</span> <span class="na">[last year]</span><span class="o">}</span><span class="err">)</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="err">monthly_expenses </span><span class="o">=</span><span class="err"> annual_expenses </span><span class="o">/</span><span class="err"> </span><span class="m">12</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="c1">// Liquid cash available in checking/savings accounts</span>
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="err">liquid_cash </span><span class="o">=</span><span class="err"> </span><span class="nf">balance</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Assets:(Checking|Savings)/</span><span class="o">}</span><span class="err">)</span>
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="err">runway_months </span><span class="o">=</span><span class="err"> liquid_cash </span><span class="o">/</span><span class="err"> monthly_expenses</span>
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="c1">// FIRE target using the 4% safe withdrawal rate (25x annual expenses)</span>
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="err">swr </span><span class="o">=</span><span class="err"> </span><span class="m">4%</span>
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="err">fire_target </span><span class="o">=</span><span class="err"> annual_expenses </span><span class="o">/</span><span class="err"> swr</span>
+</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="err">portfolio </span><span class="o">=</span><span class="err"> </span><span class="nf">balance</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Assets:(Equity|Debt|MutualFunds):/</span><span class="o">}</span><span class="err">)</span>
+</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="err">fire_progress_pct </span><span class="o">=</span><span class="err"> (portfolio </span><span class="o">/</span><span class="err"> fire_target) </span><span class="o">*</span><span class="err"> </span><span class="m">100</span>
+</span></code></pre></div>
+<h3 id="4-portfolio-rebalancing-calculator">4. Portfolio Rebalancing Calculator<a class="headerlink" href="#4-portfolio-rebalancing-calculator" title="Permanent link">&para;</a></h3>
+<p>Check your current asset allocation and calculate the exact amount to buy or sell to return to your target split.</p>
+<div class="language-sheet highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gh"># Portfolio Rebalancing</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="err">equity </span><span class="o">=</span><span class="err"> </span><span class="nf">balance</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Assets:Equity:/</span><span class="o">}</span><span class="err">)</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="err">debt </span><span class="o">=</span><span class="err"> </span><span class="nf">balance</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Assets:Debt:/</span><span class="o">}</span><span class="err">)</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="err">total_portfolio </span><span class="o">=</span><span class="err"> equity </span><span class="o">+</span><span class="err"> debt</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="c1">// Current allocation (%)</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="err">equity_pct </span><span class="o">=</span><span class="err"> (equity </span><span class="o">/</span><span class="err"> total_portfolio) </span><span class="o">*</span><span class="err"> </span><span class="m">100</span>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="err">debt_pct </span><span class="o">=</span><span class="err"> (debt </span><span class="o">/</span><span class="err"> total_portfolio) </span><span class="o">*</span><span class="err"> </span><span class="m">100</span>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="c1">// Target 70% Equity / 30% Debt</span>
+</span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="err">target_equity </span><span class="o">=</span><span class="err"> total_portfolio </span><span class="o">*</span><span class="err"> </span><span class="m">70%</span>
+</span><span id="__span-18-12"><a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="err">target_debt </span><span class="o">=</span><span class="err"> total_portfolio </span><span class="o">*</span><span class="err"> </span><span class="m">30%</span>
+</span><span id="__span-18-13"><a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a>
+</span><span id="__span-18-14"><a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="c1">// Positive = buy, Negative = sell</span>
+</span><span id="__span-18-15"><a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="err">equity_rebalance </span><span class="o">=</span><span class="err"> target_equity </span><span class="o">-</span><span class="err"> equity</span>
+</span><span id="__span-18-16"><a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a><span class="err">debt_rebalance </span><span class="o">=</span><span class="err"> target_debt </span><span class="o">-</span><span class="err"> debt</span>
+</span></code></pre></div>
+<h3 id="5-spending-by-category-merchant-or-tag">5. Spending by Category, Merchant, or Tag<a class="headerlink" href="#5-spending-by-category-merchant-or-tag" title="Permanent link">&para;</a></h3>
+<p>Combine <code>account</code>, <code>payee</code>, <code>note</code>, and <code>date</code> filters to inspect specific spending habits or gather figures for tax deductions and reimbursements.</p>
+<div class="language-sheet highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gh"># Category &amp; Merchant Insights</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="err">fy </span><span class="o">=</span><span class="err"> </span><span class="o">{</span><span class="kc">date</span> <span class="o">&gt;=</span> <span class="na">[2025-04-01]</span> <span class="k">AND</span> <span class="kc">date</span> <span class="o">&lt;=</span> <span class="na">[2026-03-31]</span><span class="o">}</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1">// Food delivery spend across multiple merchants</span>
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="err">food_delivery </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="o">{</span><span class="kc">payee</span> <span class="o">=~</span> <span class="s">/swiggy|zomato/i</span><span class="o">}</span><span class="err"> </span><span class="k">AND</span><span class="err"> fy)</span>
+</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>
+</span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="c1">// Reimbursable or tax-deductible expenses tagged in transaction notes</span>
+</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="err">tax_deductible </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Expenses:/</span> <span class="k">AND</span> <span class="kc">note</span> <span class="o">=~</span> <span class="s">/tax-deductible/i</span><span class="o">}</span><span class="err"> </span><span class="k">AND</span><span class="err"> fy)</span>
+</span><span id="__span-19-9"><a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="err">reimbursable </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="o">{</span><span class="kc">note</span> <span class="o">=~</span> <span class="s">/reimbursable/i</span><span class="o">}</span><span class="err"> </span><span class="k">AND</span><span class="err"> fy)</span>
+</span><span id="__span-19-10"><a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>
+</span><span id="__span-19-11"><a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="c1">// Large discretionary purchases over 5,000</span>
+</span><span id="__span-19-12"><a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="err">large_expenses </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Expenses:/</span> <span class="k">AND</span> <span class="kc">total</span> <span class="o">&gt;</span> <span class="m">5000</span><span class="o">}</span><span class="err"> </span><span class="k">AND</span><span class="err"> fy)</span>
+</span></code></pre></div>
+<h3 id="6-loan-principal-interest-tracking">6. Loan Principal &amp; Interest Tracking<a class="headerlink" href="#6-loan-principal-interest-tracking" title="Permanent link">&para;</a></h3>
+<p>Monitor remaining loan principal alongside total interest paid to date, and compare against a target payoff payment.</p>
+<div class="language-sheet highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gh"># Home Loan Tracker</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="err">loan_principal </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="nf">fifo</span>(<span class="nf">negate</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=~</span> <span class="s">/^Liabilities:Homeloan/</span><span class="o">}</span><span class="err">)))</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="err">interest_paid </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=</span> <span class="s">Expenses:Interest:Homeloan</span><span class="o">}</span><span class="err">)</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="err">interest_this_fy </span><span class="o">=</span><span class="err"> </span><span class="nf">cost</span>(<span class="o">{</span><span class="kc">account</span> <span class="o">=</span> <span class="s">Expenses:Interest:Homeloan</span> <span class="k">AND</span> <span class="kc">date</span> <span class="o">&gt;=</span> <span class="na">[2025-04-01]</span><span class="o">}</span><span class="err">)</span>
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>
+</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="c1">// Simulate monthly EMI for the remaining balance</span>
+</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="err">annual_rate </span><span class="o">=</span><span class="err"> </span><span class="m">8.5%</span>
+</span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="err">remaining_months </span><span class="o">=</span><span class="err"> </span><span class="m">180</span>
+</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="err">r </span><span class="o">=</span><span class="err"> annual_rate </span><span class="o">/</span><span class="err"> </span><span class="m">12</span>
+</span><span id="__span-20-10"><a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="err">estimated_emi </span><span class="o">=</span><span class="err"> r </span><span class="o">/</span><span class="err"> (</span><span class="m">1</span><span class="err"> </span><span class="o">-</span><span class="err"> (</span><span class="m">1</span><span class="err"> </span><span class="o">+</span><span class="err"> r) </span><span class="o">^</span><span class="err"> (</span><span class="o">-</span><span class="err">remaining_months)) </span><span class="o">*</span><span class="err"> loan_principal</span>
+</span></code></pre></div>
 
 
 

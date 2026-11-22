@@ -1523,6 +1523,39 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#095-beta-2026-11-22-future-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.95-beta (2026-11-22) — Future changes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.95-beta (2026-11-22) — Future changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#documentation" class="md-nav__link">
     <span class="md-ellipsis">
       Documentation
@@ -1547,7 +1580,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#features_1" class="md-nav__link">
+  <a href="#features_2" class="md-nav__link">
     <span class="md-ellipsis">
       Features
     </span>
@@ -1580,7 +1613,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#features_2" class="md-nav__link">
+  <a href="#features_3" class="md-nav__link">
     <span class="md-ellipsis">
       Features
     </span>
@@ -2559,6 +2592,39 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#095-beta-2026-11-22-future-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.95-beta (2026-11-22) — Future changes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.95-beta (2026-11-22) — Future changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#documentation" class="md-nav__link">
     <span class="md-ellipsis">
       Documentation
@@ -2583,7 +2649,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#features_1" class="md-nav__link">
+  <a href="#features_2" class="md-nav__link">
     <span class="md-ellipsis">
       Features
     </span>
@@ -2616,7 +2682,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#features_2" class="md-nav__link">
+  <a href="#features_3" class="md-nav__link">
     <span class="md-ellipsis">
       Features
     </span>
@@ -2991,6 +3057,22 @@
 <h3 id="unreleased-future-changes">Unreleased — Future changes<a class="headerlink" href="#unreleased-future-changes" title="Permanent link">&para;</a></h3>
 <h4 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h4>
 <ul>
+<li><strong>System theme mode (<code>59ce2d52</code>)</strong> — Added a <code>system</code> theme preference (<code>prefers-color-scheme</code>) alongside light and dark modes in <code>ThemeSwitcher.svelte</code> and <code>src/lib/theme.ts</code>, with pre-render initialization in <code>src/app.html</code>.</li>
+<li><strong>FinBodhi price providers (<code>e49877e6</code>, <code>1364d979</code>, <code>da832abc</code>, <code>e871b3fe</code>)</strong> — Renamed <code>com-purifiedbytes-*</code> providers to <code>com-finbodhi-*</code> (with automatic legacy config normalization) and added <code>com-finbodhi-sif</code>, <code>com-finbodhi-stock</code>, and <code>com-finbodhi-mutualfund</code> providers.</li>
+<li><strong>Beancount 3 support (<code>b22cf74e</code>)</strong> — Added <code>bean-query</code> balance preview and <code>#prices</code> import support for Beancount 3 / standalone <code>beanquery</code> while keeping Beancount 2 <code>bean-report</code> compatibility.</li>
+<li><strong>Configurable server host &amp; loopback default (<code>ba96af1e</code>, <code>4989a662</code>)</strong> — Added <code>--host</code> flag to <code>paisa serve</code> and defaulted binding to <code>127.0.0.1</code> (Dockerfiles updated to pass <code>--host 0.0.0.0</code>).</li>
+<li><strong>CSV transaction ID export &amp; embedded timezone data (<code>960995f2</code>, <code>36c43d6f</code>)</strong> — Included <code>TransactionID</code> in transaction CSV exports and embedded <code>time/tzdata</code> in the Go binary.</li>
+</ul>
+<h4 id="fixes">Fixes<a class="headerlink" href="#fixes" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Path traversal &amp; journal editor validation (<code>03594935</code>, <code>74a9dd00</code>, <code>e570d955</code>)</strong> — Enforced <code>utils.BuildSubPath</code> and <code>utils.Glob</code> in editor/sheet file and backup endpoints, rejected mismatched journal file extensions on save, and fixed validation of nested journal files with relative includes.</li>
+<li><strong>Indian capital gains &amp; <code>listed_debt</code> (<code>d718cd78</code>)</strong> — Updated capital gains calculations for July 2024 tax rules (12.5% LTCG / 20% STCG, Section 50AA cutoff, equity grandfathering FMV) and added the <code>listed_debt</code> tax category.</li>
+<li><strong>Accounting &amp; price sync fixes (<code>1e28a307</code>, <code>e0436556</code>, <code>b731eae3</code>, <code>7c3a332d</code>, <code>ca312424</code>, <code>3e375142</code>, <code>fcfd0451</code>, <code>cb00dd31</code>)</strong> — Fixed double-counted budget rollover in projected balances, skipped investment return calculations for checking accounts, marked rounded credit-card bills (<code>&lt; 1</code> unit) as paid, normalized <code>silver-999</code> prices from kg to grams, included file/line numbers in ledger validation errors, fixed quoted commodity regex parsing in price sync, handled Beancount commodities containing digits, and improved Yahoo Finance HTTP error reporting.</li>
+<li><strong>Frontend &amp; import fixes (<code>462fdaf0</code>, <code>3fb683d3</code>, <code>1d31895e</code>)</strong> — Added locale-aware <code>BigNumber</code> parsing for import template helpers (<code>src/lib/amount.ts</code>), fixed spreadsheet column naming beyond <code>Z</code>, and prevented expense breakdown bars from overlapping long amount labels.</li>
+</ul>
+<h3 id="095-beta-2026-11-22-future-changes">0.95-beta (2026-11-22) — Future changes<a class="headerlink" href="#095-beta-2026-11-22-future-changes" title="Permanent link">&para;</a></h3>
+<h4 id="features_1">Features<a class="headerlink" href="#features_1" title="Permanent link">&para;</a></h4>
+<ul>
 <li><strong>Monthly Expenses mobile widget-first layout &amp; Calendar Month Spending Trends</strong> — Improved mobile ergonomics and trend comparison flexibility on <code>/expense/monthly</code>.</li>
 <li>Reordered <code>/expense/monthly</code> using CSS Grid (<code>monthly-expense-grid</code>) so summary KPIs and analytical charts appear above the individual expense list on mobile while preserving the desktop two-column layout.</li>
 <li>Added a persisted <strong>Last 30 Days</strong> vs. <strong>Calendar Month</strong> comparison toggle (<code>expenseTrendMode</code> in <code>localStorage</code>) synced with the navbar Month Picker and timeline bar clicks, including month-to-date (<code>MTD</code>) cues and sparkline month capping (<code>src/lib/expense/trends.ts</code>).</li>
@@ -3003,7 +3085,7 @@
 <li>Updated onboarding, FAQ, dashboard, cash flow, assets, allocation targets, planning/goals, smart import, doctor, configuration, sync, editor, transaction filtering, commodities/FX, deployment, authentication, and Indian tax guides with Grouped vs. Classic navigation paths, current workflows, and factual corrections.</li>
 </ul>
 <h3 id="094-beta-2026-11-21">0.94-beta (2026-11-21)<a class="headerlink" href="#094-beta-2026-11-21" title="Permanent link">&para;</a></h3>
-<h4 id="features_1">Features<a class="headerlink" href="#features_1" title="Permanent link">&para;</a></h4>
+<h4 id="features_2">Features<a class="headerlink" href="#features_2" title="Permanent link">&para;</a></h4>
 <ul>
 <li><strong>Smart Importer custom field mapping &amp; Kotak bank statement preset</strong> — Extended the Smart Importer (<code>Map Statement Columns</code>) with flexible column/field mapping, added the <code>Kotak Account Statement</code> CSV preset with payee cleanup rules, and refined generated transaction output formatting.</li>
 <li><strong>Dashboard data fetching &amp; widget ergonomics</strong> — Included investment income directly in dashboard snapshots/payloads to eliminate redundant startup round-trips and refined customizable widget layout presets (<code>src/lib/dashboard_layout.ts</code>).</li>
@@ -3015,7 +3097,7 @@
 <li><strong>Faster startup, navigation, and journal status checks</strong> — Memoized journal dirty checks (<code>internal/server/journal_dirty.go</code>) via file stat fingerprinting, removed redundant per-navigation <code>/api/config</code> refetches, prevented layout remount thrashing, lazy-loaded heavy export libraries, modularized Bulma SCSS imports, and optimized backend net-worth/market query paths.</li>
 </ul>
 <h3 id="091-beta-2026-10-25-future-changes">0.91-beta (2026-10-25) — Future changes<a class="headerlink" href="#091-beta-2026-10-25-future-changes" title="Permanent link">&para;</a></h3>
-<h4 id="features_2">Features<a class="headerlink" href="#features_2" title="Permanent link">&para;</a></h4>
+<h4 id="features_3">Features<a class="headerlink" href="#features_3" title="Permanent link">&para;</a></h4>
 <ul>
 <li><strong>Tighten statement-import duplicate matching and expense categorization</strong> — Updated the spreadsheet import utility to avoid false duplicate merges caused by equal amounts alone and to improve best-effort expense guessing for bank/credit-card statements.</li>
 <li>Duplicate detection in statement imports now requires the same account, same amount, and a sufficiently close date plus matching payee text to suppress accidental merges across different merchants.</li>
