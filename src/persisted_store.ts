@@ -6,6 +6,12 @@ export const cashflowExpenseDepth = persisted("cashflowExpenseDepth", 0);
 export const cashflowIncomeDepth = persisted("cashflowIncomeDepth", 0);
 export const cashflowShowTransfers = persisted("cashflowShowTransfers", true);
 
+export type MonthlyCashflowGroupLevel = 1 | 2 | "all";
+export const monthlyCashflowGroupLevel = persisted<MonthlyCashflowGroupLevel>(
+  "monthlyCashflowGroupLevel",
+  "all"
+);
+
 export type SankeyPeriod = "month" | "quarter" | "year";
 export const sankeyPeriod = persisted<SankeyPeriod>("sankeyPeriod", "month");
 

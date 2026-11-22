@@ -10,6 +10,11 @@
     type Posting
   } from "$lib/utils";
   import { onMount } from "svelte";
+  import { aggregatePostingsByLevel } from "$lib/cash_flow_monthly";
+  import {
+    monthlyCashflowGroupLevel,
+    type MonthlyCashflowGroupLevel
+  } from "../../../../persisted_store";
   import { dateRange, setAllowedDateRange } from "../../../../store";
   import ZeroState from "$lib/components/ZeroState.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
@@ -54,41 +59,46 @@
     }
   });
 
-  interface AggregatedItem {
-    account: string;
-    commodity: string;
-    amount: number;
-  }
-
-  function aggregate(postings: Posting[], negate = false): AggregatedItem[] {
-    const result: Record<string, Record<string, number>> = {};
-    for (const p of postings) {
-      if (!result[p.account]) result[p.account] = {};
-      if (!result[p.account][p.commodity]) result[p.account][p.commodity] = 0;
-      result[p.account][p.commodity] += negate ? -p.quantity : p.quantity;
-    }
-
-    const flattened: AggregatedItem[] = [];
-    for (const account in result) {
-      for (const commodity in result[account]) {
-        flattened.push({ account, commodity, amount: result[account][commodity] });
-      }
-    }
-    return _.sortBy(flattened, "account");
-  }
+  const groupLevelOptions: { label: string; value: MonthlyCashflowGroupLevel }[] = [
+    { label: "Level 1", value: 1 },
+    { label: "Level 2", value: 2 },
+    { label: "All", value: "all" }
+  ];
 
   const aggregatedIncomes = $derived(
-    aggregate(expenseData.month_wise.incomes[selectedMonth] || [], true)
+    aggregatePostingsByLevel(
+      expenseData.month_wise.incomes[selectedMonth] || [],
+      true,
+      $monthlyCashflowGroupLevel
+    )
   );
   const aggregatedExpenses = $derived(
-    aggregate(expenseData.month_wise.expenses[selectedMonth] || [])
+    aggregatePostingsByLevel(
+      expenseData.month_wise.expenses[selectedMonth] || [],
+      false,
+      $monthlyCashflowGroupLevel
+    )
   );
   const aggregatedInvestments = $derived(
-    aggregate(expenseData.month_wise.investments[selectedMonth] || [])
+    aggregatePostingsByLevel(
+      expenseData.month_wise.investments[selectedMonth] || [],
+      false,
+      $monthlyCashflowGroupLevel
+    )
   );
-  const aggregatedTaxes = $derived(aggregate(expenseData.month_wise.taxes[selectedMonth] || []));
+  const aggregatedTaxes = $derived(
+    aggregatePostingsByLevel(
+      expenseData.month_wise.taxes[selectedMonth] || [],
+      false,
+      $monthlyCashflowGroupLevel
+    )
+  );
   const aggregatedLiabilities = $derived(
-    aggregate(expenseData.month_wise.liabilities[selectedMonth] || [], true)
+    aggregatePostingsByLevel(
+      expenseData.month_wise.liabilities[selectedMonth] || [],
+      true,
+      $monthlyCashflowGroupLevel
+    )
   );
 
   const netBreakdown = $derived.by(() => {
@@ -177,7 +187,25 @@
               style="gap: 0.75rem;"
             >
               <h2 class="title is-4 mb-0">Monthly Breakdown</h2>
-              <MonthPicker bind:value={selectedMonth} min={minDate} max={maxDate} />
+              <div class="is-flex is-flex-wrap-wrap is-align-items-center" style="gap: 0.75rem;">
+                <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                  <span class="is-size-7 has-text-grey has-text-weight-medium">Group by</span>
+                  <div class="buttons has-addons mb-0">
+                    {#each groupLevelOptions as option}
+                      <button
+                        type="button"
+                        class="button is-small mb-0"
+                        class:is-primary={$monthlyCashflowGroupLevel === option.value}
+                        class:is-selected={$monthlyCashflowGroupLevel === option.value}
+                        onclick={() => ($monthlyCashflowGroupLevel = option.value)}
+                      >
+                        {option.label}
+                      </button>
+                    {/each}
+                  </div>
+                </div>
+                <MonthPicker bind:value={selectedMonth} min={minDate} max={maxDate} />
+              </div>
             </div>
 
             <div class="columns is-multiline">
