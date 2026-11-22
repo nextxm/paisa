@@ -2,6 +2,8 @@
 
 ### Unreleased — Future changes
 
+### 0.96-beta (2026-11-22) — Future changes
+
 #### Features
 
 - **System theme mode (`59ce2d52`)** — Added a `system` theme preference (`prefers-color-scheme`) alongside light and dark modes in `ThemeSwitcher.svelte` and `src/lib/theme.ts`, with pre-render initialization in `src/app.html`.
