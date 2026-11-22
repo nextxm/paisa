@@ -228,82 +228,91 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if transaction}
-  <div class="drawer-backdrop" role="presentation" onclick={close}></div>
-  <div class="tx-drawer box" aria-label="Transaction Workbench" role="dialog" aria-modal="true">
-    <header class="tx-drawer-header">
-      <div>
-        <p class="title is-6 mb-1">Edit Transaction</p>
-        <p class="is-size-7 has-text-grey">
-          {transaction.fileName}:{transaction.beginLine}-{transaction.endLine}
-          {#if transaction.postings[0]}
-            ·
-            <a href={postingUrl(transaction.postings[0])} class="is-underlined"> Open in Editor </a>
-          {/if}
-        </p>
-      </div>
-      <button type="button" class="delete" aria-label="Close drawer" onclick={close}></button>
-    </header>
-
-    <div class="tabs is-small is-boxed mb-3">
-      <ul>
-        <li class:is-active={activeTab === "form"}>
-          <a
-            href="#form"
-            onclick={(e) => {
-              e.preventDefault();
-              switchTab("form");
-            }}
-          >
-            Edit / Split
-          </a>
-        </li>
-        <li class:is-active={activeTab === "raw"}>
-          <a
-            href="#raw"
-            onclick={(e) => {
-              e.preventDefault();
-              switchTab("raw");
-            }}
-          >
-            Raw Journal
-          </a>
-        </li>
-      </ul>
-    </div>
-
-    <div class="tx-drawer-body">
-      {#if loadError}
-        <article class="message is-warning is-small">
-          <div class="message-body">{loadError}</div>
-        </article>
-      {/if}
-
-      {#if validationErrors.length > 0}
-        <article class="message is-danger is-small">
-          <div class="message-body">
-            {#each validationErrors as err}
-              <div>Line {err.line_from}: {err.message}</div>
-            {/each}
-          </div>
-        </article>
-      {/if}
-
-      {#if isLoadingRaw}
-        <p class="has-text-grey is-size-7">Loading transaction…</p>
-      {:else if activeTab === "raw"}
-        <div class="field">
-          <label class="label is-small" for="drawer-raw-text">Raw Ledger Entry</label>
-          <textarea
-            id="drawer-raw-text"
-            class="textarea is-small is-family-monospace"
-            rows="10"
-            bind:value={rawText}
-          ></textarea>
+  <div
+    class="tx-modal-backdrop"
+    role="presentation"
+    onclick={(e) => {
+      if (e.target === e.currentTarget) close();
+    }}
+  >
+    <div class="tx-modal box" aria-label="Transaction Workbench" role="dialog" aria-modal="true">
+      <header class="tx-modal-header">
+        <div>
+          <p class="title is-6 mb-1">Edit Transaction</p>
+          <p class="is-size-7 has-text-grey">
+            {transaction.fileName}:{transaction.beginLine}-{transaction.endLine}
+            {#if transaction.postings[0]}
+              ·
+              <a href={postingUrl(transaction.postings[0])} class="is-underlined">
+                Open in Editor
+              </a>
+            {/if}
+          </p>
         </div>
-      {:else if editable}
-        <div class="columns is-mobile mb-0">
-          <div class="column is-6">
-            <div class="field">
+        <button type="button" class="delete" aria-label="Close modal" onclick={close}></button>
+      </header>
+
+      <div class="tx-modal-tabs">
+        <div class="tabs is-small is-boxed mb-0">
+          <ul>
+            <li class:is-active={activeTab === "form"}>
+              <a
+                href="#form"
+                onclick={(e) => {
+                  e.preventDefault();
+                  switchTab("form");
+                }}
+              >
+                Edit / Split
+              </a>
+            </li>
+            <li class:is-active={activeTab === "raw"}>
+              <a
+                href="#raw"
+                onclick={(e) => {
+                  e.preventDefault();
+                  switchTab("raw");
+                }}
+              >
+                Raw Journal
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="tx-modal-body">
+        {#if loadError}
+          <article class="message is-warning is-small mb-3">
+            <div class="message-body">{loadError}</div>
+          </article>
+        {/if}
+
+        {#if validationErrors.length > 0}
+          <article class="message is-danger is-small mb-3">
+            <div class="message-body">
+              {#each validationErrors as err}
+                <div>Line {err.line_from}: {err.message}</div>
+              {/each}
+            </div>
+          </article>
+        {/if}
+
+        {#if isLoadingRaw}
+          <p class="has-text-grey is-size-7">Loading transaction…</p>
+        {:else if activeTab === "raw"}
+          <div class="field">
+            <label class="label is-small" for="drawer-raw-text">Raw Ledger Entry</label>
+            <textarea
+              id="drawer-raw-text"
+              class="textarea is-small is-family-monospace"
+              rows="10"
+              bind:value={rawText}
+            ></textarea>
+          </div>
+        {:else if editable}
+          <div class="tx-field-grid mb-3">
+            <div class="field mb-0">
               <label class="label is-small" for="drawer-date">Date</label>
               <input
                 id="drawer-date"
@@ -312,9 +321,7 @@
                 bind:value={editable.date}
               />
             </div>
-          </div>
-          <div class="column is-6">
-            <div class="field">
+            <div class="field mb-0">
               <label class="label is-small" for="drawer-status">Status</label>
               <div class="select is-small is-fullwidth">
                 <select id="drawer-status" bind:value={editable.status}>
@@ -324,12 +331,7 @@
                 </select>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div class="columns is-mobile mb-0">
-          <div class="column is-6">
-            <div class="field">
+            <div class="field mb-0">
               <label class="label is-small" for="drawer-payee">Payee</label>
               <input
                 id="drawer-payee"
@@ -338,9 +340,7 @@
                 bind:value={editable.payee}
               />
             </div>
-          </div>
-          <div class="column is-6">
-            <div class="field">
+            <div class="field mb-0">
               <label class="label is-small" for="drawer-narration">Narration</label>
               <input
                 id="drawer-narration"
@@ -351,78 +351,72 @@
               />
             </div>
           </div>
-        </div>
 
-        <div class="is-flex is-justify-content-space-between is-align-items-center mt-2 mb-2">
-          <span class="label is-small mb-0">Postings &amp; Splits</span>
-          <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
-            <span
-              class="tag is-small {Math.abs(runningTotal) < 0.005
-                ? 'is-success is-light'
-                : 'is-warning is-light'}"
-            >
-              Net: {runningTotal.toFixed(2)}
-            </span>
-            <button type="button" class="button is-small is-link is-light" onclick={addSplit}>
-              + Add Split
-            </button>
+          <div class="is-flex is-justify-content-space-between is-align-items-center mt-4 mb-3">
+            <span class="label is-small mb-0">Postings &amp; Splits</span>
+            <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
+              <span
+                class="tag is-small {Math.abs(runningTotal) < 0.005
+                  ? 'is-success is-light'
+                  : 'is-warning is-light'}"
+              >
+                Net: {runningTotal.toFixed(2)}
+              </span>
+              <button type="button" class="button is-small is-link is-light" onclick={addSplit}>
+                + Add Split
+              </button>
+            </div>
           </div>
-        </div>
 
-        {#each editable.postings as posting, idx}
-          {#if !posting.isCommentOnly}
-            <div class="box p-2 mb-2 posting-edit-card">
-              <div class="field mb-2">
-                <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-                  <span class="is-size-7 has-text-weight-semibold">Account #{idx + 1}</span>
-                  {#if editable.postings.filter((p) => !p.isCommentOnly).length > 2}
-                    <button
-                      type="button"
-                      class="button is-ghost is-small has-text-danger p-0"
-                      style="height: auto;"
-                      onclick={() => removePosting(idx)}
-                    >
-                      Remove
-                    </button>
-                  {/if}
+          {#each editable.postings as posting, idx}
+            {#if !posting.isCommentOnly}
+              <div class="box posting-edit-card">
+                <div class="field mb-2">
+                  <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+                    <span class="is-size-7 has-text-weight-semibold">Account #{idx + 1}</span>
+                    {#if editable.postings.filter((p) => !p.isCommentOnly).length > 2}
+                      <button
+                        type="button"
+                        class="button is-ghost is-small has-text-danger p-0"
+                        style="height: auto;"
+                        onclick={() => removePosting(idx)}
+                      >
+                        Remove
+                      </button>
+                    {/if}
+                  </div>
+                  <Select
+                    value={posting.account
+                      ? { id: posting.account, name: posting.account }
+                      : undefined}
+                    items={selectItems}
+                    label="name"
+                    itemId="id"
+                    placeholder="Select or type account..."
+                    searchable={true}
+                    clearable={false}
+                    showChevron={true}
+                    on:change={(e) => updatePostingAccount(idx, e.detail?.name || "")}
+                    on:input={(e) => {
+                      if (typeof e.detail === "string" && e.detail.trim()) {
+                        updatePostingAccount(idx, e.detail.trim());
+                      }
+                    }}
+                  />
                 </div>
-                <Select
-                  value={posting.account
-                    ? { id: posting.account, name: posting.account }
-                    : undefined}
-                  items={selectItems}
-                  label="name"
-                  itemId="id"
-                  placeholder="Select or type account..."
-                  searchable={true}
-                  clearable={false}
-                  showChevron={true}
-                  on:change={(e) => updatePostingAccount(idx, e.detail?.name || "")}
-                  on:input={(e) => {
-                    if (typeof e.detail === "string" && e.detail.trim()) {
-                      updatePostingAccount(idx, e.detail.trim());
-                    }
-                  }}
-                />
-              </div>
-              <div class="columns is-mobile mb-0">
-                <div class="column is-5 py-1">
+                <div class="tx-posting-grid">
                   <input
                     class="input is-small"
                     type="text"
                     bind:value={posting.amount}
                     placeholder="Amount (e.g. -50.00)"
                   />
-                </div>
-                <div class="column is-3 py-1">
                   <input
                     class="input is-small"
                     type="text"
                     bind:value={posting.commodity}
                     placeholder="Currency"
                   />
-                </div>
-                <div class="column is-4 py-1">
                   <input
                     class="input is-small"
                     type="text"
@@ -431,103 +425,154 @@
                   />
                 </div>
               </div>
-            </div>
-          {/if}
-        {/each}
-      {/if}
-    </div>
-
-    <footer class="tx-drawer-footer">
-      <div>
-        {#if !confirmDelete}
-          <button
-            type="button"
-            class="button is-small is-danger is-light"
-            disabled={isSaving}
-            onclick={() => (confirmDelete = true)}
-          >
-            Delete
-          </button>
-        {:else}
-          <div class="buttons are-small">
-            <button
-              type="button"
-              class="button is-danger {isSaving ? 'is-loading' : ''}"
-              disabled={isSaving}
-              onclick={deleteTransaction}
-            >
-              Confirm Delete
-            </button>
-            <button
-              type="button"
-              class="button is-light"
-              disabled={isSaving}
-              onclick={() => (confirmDelete = false)}
-            >
-              Cancel
-            </button>
-          </div>
+            {/if}
+          {/each}
         {/if}
       </div>
-      <div class="buttons are-small mb-0">
-        <button type="button" class="button" onclick={close} disabled={isSaving}>Cancel</button>
-        <button
-          type="button"
-          class="button is-primary {isSaving ? 'is-loading' : ''}"
-          disabled={isSaving || isLoadingRaw}
-          onclick={savePatch}
-        >
-          Save Changes
-        </button>
-      </div>
-    </footer>
+
+      <footer class="tx-modal-footer">
+        <div>
+          {#if !confirmDelete}
+            <button
+              type="button"
+              class="button is-small is-danger is-light"
+              disabled={isSaving}
+              onclick={() => (confirmDelete = true)}
+            >
+              Delete
+            </button>
+          {:else}
+            <div class="buttons are-small mb-0">
+              <button
+                type="button"
+                class="button is-danger {isSaving ? 'is-loading' : ''}"
+                disabled={isSaving}
+                onclick={deleteTransaction}
+              >
+                Confirm Delete
+              </button>
+              <button
+                type="button"
+                class="button is-light"
+                disabled={isSaving}
+                onclick={() => (confirmDelete = false)}
+              >
+                Cancel
+              </button>
+            </div>
+          {/if}
+        </div>
+        <div class="buttons are-small mb-0">
+          <button type="button" class="button" onclick={close} disabled={isSaving}>Cancel</button>
+          <button
+            type="button"
+            class="button is-primary {isSaving ? 'is-loading' : ''}"
+            disabled={isSaving || isLoadingRaw}
+            onclick={savePatch}
+          >
+            Save Changes
+          </button>
+        </div>
+      </footer>
+    </div>
   </div>
 {/if}
 
 <style lang="scss">
-  .drawer-backdrop {
+  .tx-modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(10, 10, 10, 0.45);
+    background: rgba(10, 10, 10, 0.55);
     z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
   }
 
-  .tx-drawer {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: min(560px, 100vw);
-    z-index: 61;
+  .tx-modal {
+    width: min(640px, 100%);
+    max-height: calc(100vh - 3rem);
     display: flex;
     flex-direction: column;
-    border-radius: 0;
+    border-radius: 8px;
     margin: 0 !important;
-    padding: 1rem 1.25rem;
+    padding: 0 !important;
     overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
   }
 
-  .tx-drawer-header {
+  .tx-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding-bottom: 0.75rem;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem 1rem;
     border-bottom: 1px solid var(--fa-border-color, #dbdbdb);
-    margin-bottom: 0.75rem;
   }
 
-  .tx-drawer-body {
+  .tx-modal-tabs {
+    padding: 0.875rem 1.5rem 0;
+  }
+
+  .tx-modal-body {
     flex: 1;
     overflow-y: auto;
-    padding-right: 0.25rem;
+    overflow-x: hidden;
+    padding: 1.25rem 1.5rem;
   }
 
-  .tx-drawer-footer {
+  .tx-field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem 1rem;
+  }
+
+  .posting-edit-card {
+    padding: 0.875rem 1rem !important;
+    margin-bottom: 0.75rem !important;
+    border: 1px solid var(--fa-border-color, rgba(128, 128, 128, 0.25));
+
+    &:last-child {
+      margin-bottom: 0 !important;
+    }
+  }
+
+  .tx-posting-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 3fr) minmax(0, 4fr);
+    gap: 0.625rem;
+  }
+
+  .tx-modal-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 0.75rem;
-    margin-top: 0.75rem;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem 1.25rem;
     border-top: 1px solid var(--fa-border-color, #dbdbdb);
+  }
+
+  @media (max-width: 540px) {
+    .tx-modal-backdrop {
+      padding: 0.75rem;
+    }
+
+    .tx-modal {
+      max-height: calc(100vh - 1.5rem);
+    }
+
+    .tx-modal-header,
+    .tx-modal-tabs,
+    .tx-modal-body,
+    .tx-modal-footer {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    .tx-field-grid,
+    .tx-posting-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 </style>
