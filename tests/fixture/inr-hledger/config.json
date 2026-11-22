@@ -277,9 +277,12 @@
                 "provider": {
                   "enum": [
                     "in-mfapi",
+                    "com-finbodhi-mutualfund",
                     "com-yahoo",
-                    "com-purifiedbytes-nps",
-                    "com-purifiedbytes-metal",
+                    "com-finbodhi-stock",
+                    "com-finbodhi-nps",
+                    "com-finbodhi-sif",
+                    "com-finbodhi-metal",
                     "co-alphavantage"
                   ],
                   "type": "string"
@@ -296,6 +299,7 @@
               "enum": [
                 "",
                 "debt",
+                "listed_debt",
                 "equity",
                 "equity65",
                 "equity35",
@@ -306,6 +310,7 @@
             "type": {
               "enum": [
                 "mutualfund",
+                "sif",
                 "stock",
                 "nps",
                 "metal",

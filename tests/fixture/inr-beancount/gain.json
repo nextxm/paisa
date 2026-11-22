@@ -3,29 +3,29 @@
     {
       "account": "Assets:Coinbase:BTC",
       "networth": {
-        "date": "2022-01-12T00:00:00Z",
-        "investmentAmount": 0,
+        "date": "2022-02-07T00:00:00Z",
+        "investmentAmount": 0.03440667277056,
         "withdrawalAmount": 0,
         "gainAmount": 0,
-        "balanceAmount": 0,
-        "balanceUnits": 0,
-        "netInvestmentAmount": 0,
-        "contribution": 0,
+        "contribution": 0.03440667277056,
+        "investment_return": 0,
         "fx_impact": 0,
-        "investment_return": 0
+        "balanceAmount": 0.03440667277056,
+        "balanceUnits": 0,
+        "netInvestmentAmount": 0.03440667277056
       },
       "xirr": 0,
       "postings": [
         {
           "id": 20,
-          "transaction_id": "94f04e44ad603231840b705870e6467a",
+          "transaction_id": "4063ba9caed9f43fca3b8e99fd7d2c7e",
           "date": "2022-01-12T00:00:00Z",
           "payee": "Purchased 0.00000001 BTC",
           "account": "Assets:Coinbase:BTC",
           "commodity": "BTC",
-          "quantity": 1e-08,
-          "amount": 0,
-          "original_amount": 1e-08,
+          "quantity": 1e-8,
+          "amount": 0.03440667277056,
+          "original_amount": 1e-8,
           "status": "cleared",
           "tag_recurring": "",
           "tag_period": "",
@@ -35,14 +35,14 @@
           "forecast": false,
           "note": "",
           "transaction_note": "",
-          "market_amount": 0,
+          "market_amount": 0.03440667277056,
           "balance": 0
         }
       ],
-      "income_received": 0.0,
-      "price_appreciation": 0.0,
-      "total_return": 0.0,
-      "ttm_yield": 0.0
+      "income_received": 0,
+      "price_appreciation": 0,
+      "total_return": 0,
+      "ttm_yield": 0
     },
     {
       "account": "Assets:Dollar",
@@ -51,18 +51,18 @@
         "investmentAmount": 804.42048,
         "withdrawalAmount": 0,
         "gainAmount": 0,
+        "contribution": 804.42048,
+        "investment_return": 0,
+        "fx_impact": 0,
         "balanceAmount": 804.42048,
         "balanceUnits": 0,
-        "netInvestmentAmount": 804.42048,
-        "contribution": 804.42048,
-        "fx_impact": 0,
-        "investment_return": 0
+        "netInvestmentAmount": 804.42048
       },
       "xirr": 0,
       "postings": [
         {
           "id": 18,
-          "transaction_id": "25cfdd99926f1f27ca89c0eaa4b96a3a",
+          "transaction_id": "adf320c53a1c977d17b9d53ede258ea4",
           "date": "2022-01-11T00:00:00Z",
           "payee": "Multi Currency Debit",
           "account": "Assets:Dollar",
@@ -83,30 +83,30 @@
           "balance": 0
         }
       ],
-      "income_received": 0.0,
-      "price_appreciation": 0.0,
-      "total_return": 0.0,
-      "ttm_yield": 0.0
+      "income_received": 0,
+      "price_appreciation": 0,
+      "total_return": 0,
+      "ttm_yield": 0
     },
     {
       "account": "Assets:Equity:AAPL",
       "networth": {
         "date": "2022-01-10T00:00:00Z",
         "investmentAmount": 10000,
-        "withdrawalAmount": 10027,
-        "gainAmount": 27,
+        "withdrawalAmount": 10027.3,
+        "gainAmount": 27.3,
+        "contribution": -27.3,
+        "investment_return": 27.3,
+        "fx_impact": 0,
         "balanceAmount": 0,
         "balanceUnits": 0,
-        "netInvestmentAmount": -27,
-        "contribution": -27,
-        "fx_impact": 0,
-        "investment_return": 27
+        "netInvestmentAmount": -27.3
       },
-      "xirr": 167.56,
+      "xirr": 170.5,
       "postings": [
         {
           "id": 11,
-          "transaction_id": "bb27c9f651527e62d2528e13b9fb7c8b",
+          "transaction_id": "d849cb32d9a2264202c0ce0d831e87c4",
           "date": "2022-01-09T00:00:00Z",
           "payee": "Buy Apple",
           "account": "Assets:Equity:AAPL",
@@ -128,13 +128,13 @@
         },
         {
           "id": 14,
-          "transaction_id": "3b252f03f4e42a4cd3861e6b3dc6b8f1",
+          "transaction_id": "b686a5a1a4f1a1dad43e6c4e43aced55",
           "date": "2022-01-10T00:00:00Z",
           "payee": "Sell",
           "account": "Income:CapitalGains:Equity:AAPL",
           "commodity": "INR",
           "quantity": -27.3,
-          "amount": -27,
+          "amount": -27.3,
           "original_amount": -27.3,
           "status": "cleared",
           "tag_recurring": "",
@@ -145,12 +145,12 @@
           "forecast": false,
           "note": "",
           "transaction_note": "",
-          "market_amount": -27,
+          "market_amount": -27.3,
           "balance": 0
         },
         {
           "id": 13,
-          "transaction_id": "3b252f03f4e42a4cd3861e6b3dc6b8f1",
+          "transaction_id": "b686a5a1a4f1a1dad43e6c4e43aced55",
           "date": "2022-01-10T00:00:00Z",
           "payee": "Sell",
           "account": "Assets:Equity:AAPL",
@@ -171,36 +171,36 @@
           "balance": 0
         }
       ],
-      "income_received": 0.0,
-      "price_appreciation": 27.0,
-      "total_return": 27.0,
-      "ttm_yield": 0.0
+      "income_received": 0,
+      "price_appreciation": 27.3,
+      "total_return": 27.3,
+      "ttm_yield": 0
     },
     {
       "account": "Assets:Equity:ABNB",
       "networth": {
         "date": "2022-02-07T00:00:00Z",
-        "investmentAmount": 7963.762752,
+        "investmentAmount": 8025.3170071296,
         "withdrawalAmount": 0,
         "gainAmount": 0,
-        "balanceAmount": 7963.762752,
-        "balanceUnits": 0,
-        "netInvestmentAmount": 7963.762752,
-        "contribution": 7963.762752,
+        "contribution": 8025.3170071296,
+        "investment_return": 0,
         "fx_impact": 0,
-        "investment_return": 0
+        "balanceAmount": 8025.3170071296,
+        "balanceUnits": 0,
+        "netInvestmentAmount": 8025.3170071296
       },
       "xirr": 0,
       "postings": [
         {
           "id": 9,
-          "transaction_id": "c50a3b3ee30033764df6b4a179e09f8d",
+          "transaction_id": "dfb175234a2c45c0a5c08e83bbe2b4f1",
           "date": "2022-01-08T00:00:00Z",
           "payee": "Buy ABNB",
           "account": "Assets:Equity:ABNB",
           "commodity": "ABNB",
           "quantity": 0.76,
-          "amount": 7963.762752,
+          "amount": 8025.3170071296,
           "original_amount": 0.76,
           "status": "cleared",
           "tag_recurring": "",
@@ -211,14 +211,14 @@
           "forecast": false,
           "note": "",
           "transaction_note": "",
-          "market_amount": 7963.762752,
+          "market_amount": 8025.3170071296,
           "balance": 0
         }
       ],
-      "income_received": 0.0,
-      "price_appreciation": 0.0,
-      "total_return": 0.0,
-      "ttm_yield": 0.0
+      "income_received": 0,
+      "price_appreciation": 0,
+      "total_return": 0,
+      "ttm_yield": 0
     },
     {
       "account": "Assets:Equity:NIFTY",
@@ -227,18 +227,18 @@
         "investmentAmount": 80000,
         "withdrawalAmount": 0,
         "gainAmount": 218.4,
+        "contribution": 80000,
+        "investment_return": 218.4,
+        "fx_impact": 0,
         "balanceAmount": 80218.4,
         "balanceUnits": 0,
-        "netInvestmentAmount": 80000,
-        "contribution": 80000,
-        "fx_impact": 0,
-        "investment_return": 218.4
+        "netInvestmentAmount": 80000
       },
       "xirr": 3.16,
       "postings": [
         {
           "id": 8,
-          "transaction_id": "d14e425ba0d573ba0388d100bda5eb80",
+          "transaction_id": "4911c9afea34c52b2b10356d4f3777cf",
           "date": "2022-01-07T00:00:00Z",
           "payee": "Investment",
           "account": "Assets:Equity:NIFTY",
@@ -259,10 +259,10 @@
           "balance": 0
         }
       ],
-      "income_received": 0.0,
+      "income_received": 0,
       "price_appreciation": 218.4,
       "total_return": 218.4,
-      "ttm_yield": 0.0
+      "ttm_yield": 0
     }
   ]
 }

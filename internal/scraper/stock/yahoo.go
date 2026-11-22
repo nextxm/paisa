@@ -196,9 +196,16 @@ func getTicker(ticker string, since time.Time) (*Response, error) {
 	}
 
 	var response Response
-	err = json.Unmarshal(respBytes, &response)
-	if err != nil {
-		return nil, err
+	decodeErr := json.Unmarshal(respBytes, &response)
+	if chartErr := response.Chart.Error; decodeErr == nil && chartErr != nil {
+		// Let GetHistory handle Chart.Error (e.g., no new data for incremental sync).
+		return &response, nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Yahoo Finance %s: HTTP %d %s", ticker, resp.StatusCode, http.StatusText(resp.StatusCode))
+	}
+	if decodeErr != nil {
+		return nil, fmt.Errorf("Yahoo Finance %s: invalid response: %w", ticker, decodeErr)
 	}
 
 	return &response, nil

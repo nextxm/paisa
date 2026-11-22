@@ -1763,22 +1763,12 @@ export function postingUrl(posting: Posting) {
   }`;
 }
 
-const storageKey = "theme-preference";
+import { getColorPreference, setColorPreference } from "./theme";
 
-export function getColorPreference() {
-  if (localStorage.getItem(storageKey)) {
-    return localStorage.getItem(storageKey);
-  } else {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-}
+export { getColorPreference, setColorPreference };
 
 export function darkLightColor(dark: string, light: string) {
   return getColorPreference() == "dark" ? dark : light;
-}
-
-export function setColorPreference(theme: string) {
-  localStorage.setItem(storageKey, theme);
 }
 
 export function isZero(n: number) {

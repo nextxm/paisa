@@ -21,7 +21,7 @@ type PriceProvider struct {
 }
 
 func (p *PriceProvider) Code() string {
-	return "com-purifiedbytes-metal"
+	return "com-finbodhi-metal"
 }
 
 func (p *PriceProvider) Label() string {

@@ -358,7 +358,7 @@ func SyncPortfolios(db *gorm.DB) error {
 
 	return db.Transaction(func(tx *gorm.DB) error {
 		for _, commodity := range commodities {
-			if commodity.Price.Provider != "in-mfapi" {
+			if commodity.Price.Provider != "in-mfapi" && commodity.Price.Provider != "com-finbodhi-mutualfund" {
 				continue
 			}
 
