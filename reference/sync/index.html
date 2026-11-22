@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Paisa is an open source personal finance manager. It helps you with tracking investments like mutual funds, stocks etc. It helps with expenses categorization, budgeting and money management in general.">
+        <meta name="description" content="Synchronizing journals, market prices, portfolios, and external integrations in Paisa">
       
       
         <meta name="author" content="Anantha Kumaran and nextxm contributors">
@@ -18,7 +18,7 @@
         <link rel="prev" href="../config/">
       
       
-        <link rel="next" href="../fx-rates/">
+        <link rel="next" href="../ledger-cli/">
       
       
       <link rel="icon" href="../../images/favicon.png">
@@ -282,7 +282,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../architecture/" class="md-tabs__link">
+        <a href="../dashboard/" class="md-tabs__link">
           
   
     
@@ -584,10 +584,6 @@
       
         
       
-        
-      
-        
-      
     
     
       
@@ -620,6 +616,1075 @@
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboard/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboard
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../accounts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Accounts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../journal/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Journal
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../commodities/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Commodities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fx-rates/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FX Rates
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cash-flow/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cash Flow
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../expenses/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Expenses
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../budget/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Budget
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../recurring/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Recurring
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../income/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Income
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../assets/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Assets &amp; Net Worth
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../allocation-targets/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Target Asset Allocation &amp; Rebalancing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../analysis/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Underlying Portfolio
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../credit-cards/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Credit Cards
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../planning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Financial Planning &amp; Life Projections
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_16" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../goals/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Goals
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_16" id="__nav_3_16_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_16">
+            <span class="md-nav__icon md-icon"></span>
+            Goals
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../goals/retirement/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Retirement
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../goals/savings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Savings
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_17" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tax/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Tax
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_17" id="__nav_3_17_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_17">
+            <span class="md-nav__icon md-icon"></span>
+            Tax
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tax/tax-harvesting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tax Harvesting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tax/capital-gains/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Capital Gains
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tax/schedule-al/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Schedule AL
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../import/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Import
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bulk-edit/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transactions, Filtering &amp; Bulk Edit
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../editor/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Editor
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parser/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quick Add &amp; Natural Language Parser API
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sheets/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sheets
+    
+  </span>
+  
+    
+  
+  
+    <span class="md-status md-status--new" title="Recently added">
+    </span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../doctor/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data Health (Doctor)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Data Synchronization
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Data Synchronization
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#manual-background-sync" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manual &amp; Background Sync
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Manual & Background Sync">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#async-sync-job-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      Async Sync &amp; Job Tracking
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Async Sync & Job Tracking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lazy-snapshot-refresh" class="md-nav__link">
+    <span class="md-ellipsis">
+      Lazy Snapshot Refresh
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#incremental-price-sync-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Incremental Price Sync Optimization
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sync-history-overlay" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sync History Overlay
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#automatic-freshness-external-file-change-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      Automatic Freshness &amp; External File Change Detection
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scheduled-sync-via-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scheduled Sync via CLI
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scheduled Sync via CLI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#automation-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Automation Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#firefly-iii-webhook-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Firefly III Webhook Integration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Firefly III Webhook Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Setup
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#firefly-iii-reconciliation-labs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Firefly III Reconciliation (Labs)
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ledger-cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Ledger CLI
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-authentication/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    User Authentication
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Deployment
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Release Changelog
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_30" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_30" id="__nav_3_30_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Developer & Architecture
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_30_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_30">
+            <span class="md-nav__icon md-icon"></span>
+            Developer & Architecture
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -733,955 +1798,9 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../accounts/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Accounts
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../commodities/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Commodities
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../journal/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Journal
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../parser/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Natural Language Parser API
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../allocation-targets/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Target Asset Allocation &amp; Rebalancing
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../budget/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Budget
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../cash-flow/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Cash Flow
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../assets/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Assets
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../dashboard/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Dashboard
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../bulk-edit/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Bulk Edit
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../import/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Import
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../recurring/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Recurring
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../sheets/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Sheets
-    
-  </span>
-  
-    
-  
-  
-    <span class="md-status md-status--new" title="Recently added">
-    </span>
-  
-
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../config/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Configuration
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Data Synchronization
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  <span class="md-ellipsis">
-    Data Synchronization
-    
-  </span>
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#manual-sync" class="md-nav__link">
-    <span class="md-ellipsis">
-      Manual Sync
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Manual Sync">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#async-sync-job-tracking" class="md-nav__link">
-    <span class="md-ellipsis">
-      Async Sync &amp; Job Tracking
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Async Sync & Job Tracking">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sync-history-overlay" class="md-nav__link">
-    <span class="md-ellipsis">
-      Sync History Overlay
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#price-journal-freshness-indicators" class="md-nav__link">
-    <span class="md-ellipsis">
-      Price &amp; Journal Freshness Indicators
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#scheduled-sync-via-cli" class="md-nav__link">
-    <span class="md-ellipsis">
-      Scheduled Sync via CLI
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Scheduled Sync via CLI">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#automation-examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      Automation Examples
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#firefly-iii-webhook-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Firefly III Webhook Integration
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Firefly III Webhook Integration">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      Setup
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#firefly-iii-reconciliation-labs" class="md-nav__link">
-    <span class="md-ellipsis">
-      Firefly III Reconciliation (Labs)
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../fx-rates/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    FX Rates
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../doctor/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Data Health (Doctor)
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../planning/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Financial Planning &amp; Life Projections
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_24" >
-        
-          
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../goals/" class="md-nav__link ">
-              
-  
-  <span class="md-ellipsis">
-    Goals
-    
-  </span>
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_3_24" id="__nav_3_24_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_24_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_24">
-            <span class="md-nav__icon md-icon"></span>
-            Goals
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../goals/retirement/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Retirement
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../goals/savings/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Savings
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../ledger-cli/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Ledger CLI
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../editor/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Editor
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../deployment/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Deployment
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../user-authentication/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    User Authentication
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../credit-cards/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Credit Cards
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../analysis/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Analysis
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_31" >
-        
-          
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../tax/" class="md-nav__link ">
-              
-  
-  <span class="md-ellipsis">
-    Tax
-    
-  </span>
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_3_31" id="__nav_3_31_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_31_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_31">
-            <span class="md-nav__icon md-icon"></span>
-            Tax
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../tax/tax-harvesting/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Tax Harvesting
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../tax/capital-gains/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Capital Gains
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../tax/schedule-al/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Schedule AL
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../changelog/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Release Changelog
-    
-  </span>
-  
-
-      </a>
     </li>
   
 
@@ -2115,13 +2234,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#manual-sync" class="md-nav__link">
+  <a href="#manual-background-sync" class="md-nav__link">
     <span class="md-ellipsis">
-      Manual Sync
+      Manual &amp; Background Sync
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Manual Sync">
+    <nav class="md-nav" aria-label="Manual & Background Sync">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2133,6 +2252,24 @@
   
     <nav class="md-nav" aria-label="Async Sync & Job Tracking">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lazy-snapshot-refresh" class="md-nav__link">
+    <span class="md-ellipsis">
+      Lazy Snapshot Refresh
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#incremental-price-sync-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Incremental Price Sync Optimization
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#sync-history-overlay" class="md-nav__link">
@@ -2149,9 +2286,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#price-journal-freshness-indicators" class="md-nav__link">
+  <a href="#automatic-freshness-external-file-change-detection" class="md-nav__link">
     <span class="md-ellipsis">
-      Price &amp; Journal Freshness Indicators
+      Automatic Freshness &amp; External File Change Detection
     </span>
   </a>
   
@@ -2239,105 +2376,78 @@
 
 
 <h1 id="data-synchronization">Data Synchronization<a class="headerlink" href="#data-synchronization" title="Permanent link">&para;</a></h1>
-<p>Paisa needs to periodically pull new data from external price providers and your journal file.</p>
-<h2 id="manual-sync">Manual Sync<a class="headerlink" href="#manual-sync" title="Permanent link">&para;</a></h2>
-<p>When using the Paisa web interface, you can manually trigger a sync at any time using the action buttons in the navigation bar. This ensures your dashboard displays the latest available market data and recent journal modifications.</p>
-<h3 id="async-sync-job-tracking">Async Sync &amp; Job Tracking<a class="headerlink" href="#async-sync-job-tracking" title="Permanent link">&para;</a></h3>
-<p><code>POST /api/sync</code> returns <code>202 Accepted</code> immediately with a job ID
-(<code>{ "job_id": "&lt;uuid&gt;" }</code>) rather than blocking until the sync
-completes. The work is performed in the background and tracked in a
-SQLite-backed queue, so in-flight jobs survive process restarts. The UI
-subscribes to <code>GET /api/jobs/stream</code> (Server-Sent Events) for live
-status/progress updates instead of polling.</p>
-<h4 id="sync-history-overlay">Sync History Overlay<a class="headerlink" href="#sync-history-overlay" title="Permanent link">&para;</a></h4>
-<p>Click the clock-rotate-left icon in the header action bar to open the
-<strong>Sync History</strong> overlay.  The overlay lists all background jobs in
-reverse-chronological order and shows for each job:</p>
+<p>Paisa keeps its SQLite read model synchronized with your plain-text journal files and external market price providers.</p>
+<h2 id="manual-background-sync">Manual &amp; Background Sync<a class="headerlink" href="#manual-background-sync" title="Permanent link">&para;</a></h2>
+<p>Trigger synchronization anytime from the top-right action bar:</p>
 <ul>
-<li>A colour-coded status badge (success / running / failed / pending).</li>
-<li>The creation, start, and finish timestamps and wall-clock duration.</li>
-<li>An error message snippet for failed jobs.</li>
-<li>An expandable list of per-step details.</li>
+<li><strong>Sync Journal</strong>: Re-parses your journal files and updates postings and snapshots.</li>
+<li><strong>Update Prices</strong>: Fetches latest quotes from configured <a href="../commodities/">price providers</a>. Use <strong>Force Refresh</strong> on <strong>Ledger → Commodity Prices</strong> (<code>/ledger/price</code>) to pass <code>force_prices: true</code> and rebuild full price history.</li>
+<li><strong>Update Mutual Fund Portfolios</strong>: Updates underlying fund portfolio compositions.</li>
 </ul>
-<p>A <strong>Clear history</strong> button resets the client-side view. The persisted
-job queue remains available on the server and is replayed into the UI
-stream after reconnect. The overlay can
-be opened and closed at any time without interrupting an in-progress
-sync.</p>
-<h3 id="price-journal-freshness-indicators">Price &amp; Journal Freshness Indicators<a class="headerlink" href="#price-journal-freshness-indicators" title="Permanent link">&para;</a></h3>
-<p>The navigation bar shows visual freshness indicators at a glance:</p>
+<h3 id="async-sync-job-tracking">Async Sync &amp; Job Tracking<a class="headerlink" href="#async-sync-job-tracking" title="Permanent link">&para;</a></h3>
+<p><code>POST /api/sync</code> returns <code>202 Accepted</code> immediately with a job ID (<code>{ "job_id": "&lt;uuid&gt;" }</code>). Work runs asynchronously in a SQLite-backed queue so in-flight jobs survive process restarts, while the UI subscribes to Server-Sent Events (<code>GET /api/jobs/stream</code>) for live progress updates.</p>
+<h4 id="lazy-snapshot-refresh">Lazy Snapshot Refresh<a class="headerlink" href="#lazy-snapshot-refresh" title="Permanent link">&para;</a></h4>
+<p>To minimize wall-clock sync latency, Paisa marks cached read-model snapshots (<code>dashboard</code>, <code>projection</code>, <code>investment_income</code>) dirty when journal or price data changes and lazily rebuilds each snapshot on first access (or prioritizes the active view via <code>active_snapshot</code>).</p>
+<h4 id="incremental-price-sync-optimization">Incremental Price Sync Optimization<a class="headerlink" href="#incremental-price-sync-optimization" title="Permanent link">&para;</a></h4>
+<p>Price providers use incremental fetching to keep updates fast:</p>
 <ul>
-<li><strong>Update Prices icon</strong> – turns <strong>amber</strong> when the last price update
-  is more than 24 hours ago and <strong>red</strong> when it is more than 48 hours
-  ago.</li>
-<li><strong>Sync Journal icon</strong> – turns <strong>amber</strong> whenever one or more journal
-  files have been modified on disk since the last sync.</li>
+<li><strong>Yahoo Finance</strong> (<code>com-yahoo</code>) passes incremental <code>period1</code> timestamps since the last cached price date.</li>
+<li><strong>Alpha Vantage</strong> (<code>co-alphavantage</code>) switches to <code>outputsize=compact</code> when incremental history is within 80 days.</li>
+<li>Database writes use batched SQLite upserts.</li>
+</ul>
+<h4 id="sync-history-overlay">Sync History Overlay<a class="headerlink" href="#sync-history-overlay" title="Permanent link">&para;</a></h4>
+<p>Click the clock-rotate-left icon in the top-right action bar to open <strong>Sync History</strong>. It displays jobs in reverse-chronological order with status badges, timestamps, live-ticking wall-clock durations for active jobs, commodity progress counts, error snippets, and expandable step details.</p>
+<p>Clicking <strong>Clear history</strong> calls <code>POST /api/jobs/clear</code> to remove terminal (completed/failed) jobs from both the server queue and the UI.</p>
+<h3 id="automatic-freshness-external-file-change-detection">Automatic Freshness &amp; External File Change Detection<a class="headerlink" href="#automatic-freshness-external-file-change-detection" title="Permanent link">&para;</a></h3>
+<p>The top-right action bar shows live freshness indicators:</p>
+<ul>
+<li><strong>Update Prices icon</strong>: Turns <strong>amber</strong> when the last price sync is $\ge 24$ hours old and <strong>red</strong> when it is $\ge 48$ hours old (or never run).</li>
+<li><strong>Sync Journal icon</strong>: Turns <strong>amber</strong> whenever journal files change on disk. Paisa runs a background <code>JournalWatcher</code> (comparing file modification times and SHA-256 hashes across your main journal and all <code>include</code>d files) while the UI polls <code>GET /api/journal/status</code> every 30 seconds and on tab focus (<code>visibilitychange</code>), surfacing external edits made in your editor or via Git without needing a manual check.</li>
 </ul>
 <h2 id="scheduled-sync-via-cli">Scheduled Sync via CLI<a class="headerlink" href="#scheduled-sync-via-cli" title="Permanent link">&para;</a></h2>
-<p>For automated periodic updates outside of the running application (e.g., pulling nightly mutual fund prices or syncing an external ledger file), you can schedule the <code>paisa update</code> command using your operating system's built-in tools.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Sync journal, commodities, and portfolios</span>
+<p>Schedule automated syncs outside the web UI using <code>paisa update</code>:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Sync journal, commodities, portfolios, and CII index</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>paisa<span class="w"> </span>update
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Sync only commodities</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>paisa<span class="w"> </span>update<span class="w"> </span>--commodity
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Sync individual targets</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>paisa<span class="w"> </span>update<span class="w"> </span>--journal<span class="w">      </span><span class="c1"># -j</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>paisa<span class="w"> </span>update<span class="w"> </span>--commodity<span class="w">    </span><span class="c1"># -c</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>paisa<span class="w"> </span>update<span class="w"> </span>--portfolio<span class="w">    </span><span class="c1"># -p</span>
 </span></code></pre></div>
 <h3 id="automation-examples">Automation Examples<a class="headerlink" href="#automation-examples" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Windows</strong>: Use <strong>Task Scheduler</strong> to create a basic task that runs daily at a specific time, executing <code>paisa.exe update --commodity</code>.</li>
-<li><strong>Linux / macOS</strong>: Add a cron job (<code>crontab -e</code>) to run it daily: 
-  <code>0 18 * * * /path/to/paisa update --commodity</code></li>
-<li><strong>Docker</strong>: If hosting via Docker, use your host machine's cron to execute <code>docker exec &lt;container_name&gt; paisa update -c</code>.</li>
+<li><strong>Windows</strong>: Use <strong>Task Scheduler</strong> to run <code>paisa.exe update --commodity</code> daily.</li>
+<li><strong>Linux / macOS</strong>: Add a cron job (<code>crontab -e</code>): <code>0 18 * * * /path/to/paisa update --commodity</code>.</li>
+<li><strong>Docker</strong>: Execute from host cron: <code>docker exec &lt;container_name&gt; paisa update -c</code>.</li>
 </ul>
 <h2 id="firefly-iii-webhook-integration">Firefly III Webhook Integration<a class="headerlink" href="#firefly-iii-webhook-integration" title="Permanent link">&para;</a></h2>
-<p>Paisa can receive transaction webhooks from
-<a href="https://www.firefly-iii.org/">Firefly III</a> and automatically append
-the imported transactions to your journal.</p>
+<p>Paisa can receive transaction webhooks from <a href="https://www.firefly-iii.org/">Firefly III</a> and automatically append new entries to <code>add_journal_path</code>.</p>
 <h3 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h3>
 <ol>
 <li>
-<p>In <code>paisa.yaml</code>, set <code>add_journal_path</code> to the file that should
-   receive webhook-imported transactions:</p>
+<p>In <code>paisa.yaml</code>, set <code>add_journal_path</code> (Paisa creates parent directories and the file automatically if missing; make sure your main journal <code>include</code>s it):</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">add_journal_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/home/john/Documents/paisa/added.ledger</span>
 </span></code></pre></div>
 </li>
 <li>
-<p>In Firefly III, create a webhook pointing at:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>http://&lt;paisa-host&gt;:7500/api/webhooks/firefly
-</span></code></pre></div>
-<p>Trigger: <strong>After transaction creation</strong> (or update/destroy as
-needed).</p>
+<p>In Firefly III, create a webhook pointing at <code>http://&lt;paisa-host&gt;:7500/api/webhooks/firefly</code> with the <strong>After transaction creation</strong> trigger (<code>STORE_TRANSACTION</code> events are processed; other webhook event types are ignored).</p>
 </li>
-<li>
-<p>Paisa parses the incoming payload and appends well-formed ledger
-   entries to <code>add_journal_path</code>.  Run <strong>Sync Journal</strong> afterward (or
-   let the scheduled sync pick them up) to see the new transactions in
-   the UI.</p>
-</li>
+<li>Run <strong>Sync Journal</strong> (or scheduled <code>paisa update --journal</code>) to ingest the appended entries.</li>
 </ol>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The <code>add_journal_path</code> file must already exist; Paisa will not
-create it automatically.</p>
-</div>
 <h2 id="firefly-iii-reconciliation-labs">Firefly III Reconciliation (Labs)<a class="headerlink" href="#firefly-iii-reconciliation-labs" title="Permanent link">&para;</a></h2>
 <div class="admonition example">
 <p class="admonition-title">Labs Feature</p>
-<p>This feature is hidden by default.  Enable it with
-<code>labs.firefly_reconcile: true</code> in <code>paisa.yaml</code> (see
-<a href="../config/">Configuration</a>).</p>
+<p>Hidden by default. Enable <code>labs.firefly_reconcile: true</code> in <code>paisa.yaml</code> (or under <strong>Tools → Configuration → Tools → Labs</strong>).</p>
 </div>
-<p>When enabled, a balance-reconciliation tool lets you compare your
-Paisa (Ledger) account balances with the corresponding account
-balances in Firefly III.  Discrepancies are highlighted in the UI.</p>
-<p>Configuration options in <code>paisa.yaml</code>:</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">firefly</span><span class="p">:</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://firefly.example.com</span><span class="w">   </span><span class="c1"># Firefly III base URL</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">token</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">your-personal-access-token</span><span class="w">  </span><span class="c1"># Personal Access Token</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">ignore_accounts</span><span class="p">:</span><span class="w">                   </span><span class="c1"># Accounts to skip during reconciliation</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Assets:Cash</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="nt">labs</span><span class="p">:</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="nt">firefly_reconcile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">            </span><span class="c1"># Enable the reconciliation tool</span>
+<p>When enabled, <strong>Tools → Reconciliation</strong> (<code>/more/reconciliation</code>; Classic: <strong>More → Reconciliation</strong>) compares your Paisa account balances against Firefly III and highlights discrepancies.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">firefly</span><span class="p">:</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://firefly.example.com</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">token</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">your-personal-access-token</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">ignore_accounts</span><span class="p">:</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Assets:Cash</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="nt">labs</span><span class="p">:</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="nt">firefly_reconcile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span></code></pre></div>
 
 
@@ -2345,6 +2455,9 @@ balances in Firefly III.  Discrepancies are highlighted in the UI.</p>
 
 
 
+
+  
+  
 
 
 
@@ -2435,13 +2548,13 @@ balances in Firefly III.  Discrepancies are highlighted in the UI.</p>
         
         
           
-          <a href="../fx-rates/" class="md-footer__link md-footer__link--next" aria-label="Next: FX Rates">
+          <a href="../ledger-cli/" class="md-footer__link md-footer__link--next" aria-label="Next: Ledger CLI">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                FX Rates
+                Ledger CLI
               </div>
             </div>
             <div class="md-footer__button md-icon">

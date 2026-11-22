@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Understanding Cash Flow, Monthly Breakdown, and Income Statement in Paisa">
+        <meta name="description" content="Understanding Monthly Cash Flow, Yearly Cash Flow, Income Statement, and Money Flow (Sankey) in Paisa">
       
       
         <meta name="author" content="Anantha Kumaran and nextxm contributors">
@@ -15,10 +15,10 @@
         <link rel="canonical" href="https://nextxm.github.io/paisa/reference/cash-flow/">
       
       
-        <link rel="prev" href="../budget/">
+        <link rel="prev" href="../fx-rates/">
       
       
-        <link rel="next" href="../assets/">
+        <link rel="next" href="../expenses/">
       
       
       <link rel="icon" href="../../images/favicon.png">
@@ -282,7 +282,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../architecture/" class="md-tabs__link">
+        <a href="../dashboard/" class="md-tabs__link">
           
   
     
@@ -584,10 +584,6 @@
       
         
       
-        
-      
-        
-      
     
     
       
@@ -620,6 +616,997 @@
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboard/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dashboard
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../accounts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Accounts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../journal/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Journal
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../commodities/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Commodities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fx-rates/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FX Rates
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Cash Flow
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Cash Flow
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#monthly-cash-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Monthly Cash Flow
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yearly-cash-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Yearly Cash Flow
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#income-statement" class="md-nav__link">
+    <span class="md-ellipsis">
+      Income Statement
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#money-flow-sankey" class="md-nav__link">
+    <span class="md-ellipsis">
+      Money Flow (Sankey)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-views" class="md-nav__link">
+    <span class="md-ellipsis">
+      Related Views
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../expenses/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Expenses
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../budget/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Budget
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../recurring/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Recurring
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../income/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Income
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../assets/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Assets &amp; Net Worth
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../allocation-targets/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Target Asset Allocation &amp; Rebalancing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../analysis/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Underlying Portfolio
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../credit-cards/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Credit Cards
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../planning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Financial Planning &amp; Life Projections
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_16" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../goals/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Goals
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_16" id="__nav_3_16_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_16">
+            <span class="md-nav__icon md-icon"></span>
+            Goals
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../goals/retirement/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Retirement
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../goals/savings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Savings
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_17" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tax/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Tax
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_17" id="__nav_3_17_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_17">
+            <span class="md-nav__icon md-icon"></span>
+            Tax
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tax/tax-harvesting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tax Harvesting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tax/capital-gains/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Capital Gains
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tax/schedule-al/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Schedule AL
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../import/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Import
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bulk-edit/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transactions, Filtering &amp; Bulk Edit
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../editor/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Editor
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parser/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quick Add &amp; Natural Language Parser API
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sheets/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sheets
+    
+  </span>
+  
+    
+  
+  
+    <span class="md-status md-status--new" title="Recently added">
+    </span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../doctor/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data Health (Doctor)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sync/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data Synchronization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ledger-cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Ledger CLI
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-authentication/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    User Authentication
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Deployment
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Release Changelog
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_30" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_30" id="__nav_3_30_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Developer & Architecture
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_30_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_30">
+            <span class="md-nav__icon md-icon"></span>
+            Developer & Architecture
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -733,901 +1720,9 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../accounts/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Accounts
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../commodities/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Commodities
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../journal/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Journal
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../parser/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Natural Language Parser API
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../allocation-targets/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Target Asset Allocation &amp; Rebalancing
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../budget/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Budget
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Cash Flow
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  <span class="md-ellipsis">
-    Cash Flow
-    
-  </span>
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#yearly-and-monthly-views" class="md-nav__link">
-    <span class="md-ellipsis">
-      Yearly and Monthly Views
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Yearly and Monthly Views">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#monthly-breakdown-widget" class="md-nav__link">
-    <span class="md-ellipsis">
-      Monthly Breakdown Widget
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#income-statement" class="md-nav__link">
-    <span class="md-ellipsis">
-      Income Statement
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#30-day-spending-trends" class="md-nav__link">
-    <span class="md-ellipsis">
-      30-Day Spending Trends
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#monthly-cashflow-widget" class="md-nav__link">
-    <span class="md-ellipsis">
-      Monthly Cashflow Widget
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../assets/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Assets
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../dashboard/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Dashboard
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../bulk-edit/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Bulk Edit
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../import/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Import
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../recurring/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Recurring
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../sheets/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Sheets
-    
-  </span>
-  
-    
-  
-  
-    <span class="md-status md-status--new" title="Recently added">
-    </span>
-  
-
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../config/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Configuration
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../sync/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Data Synchronization
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../fx-rates/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    FX Rates
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../doctor/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Data Health (Doctor)
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../planning/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Financial Planning &amp; Life Projections
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_24" >
-        
-          
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../goals/" class="md-nav__link ">
-              
-  
-  <span class="md-ellipsis">
-    Goals
-    
-  </span>
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_3_24" id="__nav_3_24_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_24_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_24">
-            <span class="md-nav__icon md-icon"></span>
-            Goals
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../goals/retirement/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Retirement
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../goals/savings/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Savings
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../ledger-cli/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Ledger CLI
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../editor/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Editor
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../deployment/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Deployment
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../user-authentication/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    User Authentication
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../credit-cards/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Credit Cards
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../analysis/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Analysis
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_31" >
-        
-          
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../tax/" class="md-nav__link ">
-              
-  
-  <span class="md-ellipsis">
-    Tax
-    
-  </span>
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_3_31" id="__nav_3_31_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_31_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_31">
-            <span class="md-nav__icon md-icon"></span>
-            Tax
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../tax/tax-harvesting/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Tax Harvesting
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../tax/capital-gains/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Capital Gains
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../tax/schedule-al/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Schedule AL
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../changelog/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Release Changelog
-    
-  </span>
-  
-
-      </a>
     </li>
   
 
@@ -2061,26 +2156,20 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#yearly-and-monthly-views" class="md-nav__link">
+  <a href="#monthly-cash-flow" class="md-nav__link">
     <span class="md-ellipsis">
-      Yearly and Monthly Views
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Yearly and Monthly Views">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#monthly-breakdown-widget" class="md-nav__link">
-    <span class="md-ellipsis">
-      Monthly Breakdown Widget
+      Monthly Cash Flow
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#yearly-cash-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Yearly Cash Flow
+    </span>
+  </a>
   
 </li>
       
@@ -2094,18 +2183,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#30-day-spending-trends" class="md-nav__link">
+  <a href="#money-flow-sankey" class="md-nav__link">
     <span class="md-ellipsis">
-      30-Day Spending Trends
+      Money Flow (Sankey)
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#monthly-cashflow-widget" class="md-nav__link">
+  <a href="#related-views" class="md-nav__link">
     <span class="md-ellipsis">
-      Monthly Cashflow Widget
+      Related Views
     </span>
   </a>
   
@@ -2131,33 +2220,41 @@
 
 
 <h1 id="cash-flow">Cash Flow<a class="headerlink" href="#cash-flow" title="Permanent link">&para;</a></h1>
-<p>The Cash Flow section provides a comprehensive view of your income and expenses over time, allowing you to track your savings rate and understand where your money is going.</p>
-<h2 id="yearly-and-monthly-views">Yearly and Monthly Views<a class="headerlink" href="#yearly-and-monthly-views" title="Permanent link">&para;</a></h2>
-<p>You can view your cash flow on a yearly or monthly basis. The views display the total income, expenses, and savings for the selected period.</p>
-<h3 id="monthly-breakdown-widget">Monthly Breakdown Widget<a class="headerlink" href="#monthly-breakdown-widget" title="Permanent link">&para;</a></h3>
-<p>The Monthly Breakdown widget offers a multi-currency view of your cash flow for a specific month. It aggregates your income and expenses to give you an accurate picture of your financial health across different currencies.</p>
-<h2 id="income-statement">Income Statement<a class="headerlink" href="#income-statement" title="Permanent link">&para;</a></h2>
-<p>The Income Statement provides a detailed breakdown of your revenue and expenses for a given period. It correctly accounts for liabilities and calculates starting and ending balances directly from the balance sheet (assets at market value + liabilities at book value), mirroring the Networth page for the current year. This ensures that the Income Statement accurately handles liability-funded transactions and foreign currency mark-to-market.</p>
-<h2 id="30-day-spending-trends">30-Day Spending Trends<a class="headerlink" href="#30-day-spending-trends" title="Permanent link">&para;</a></h2>
-<p>The <strong>Monthly Expenses</strong> page now shows a <strong>30-Day Spending Trends</strong>
-grid below the expense calendar.  For each expense category, the grid
-displays:</p>
+<p>The <strong>Cash Flow</strong> section provides a comprehensive view of your inflows, outflows, taxes, and net savings over time, helping you monitor your savings rate and trace how money moves across your accounts.</p>
+<p>In the default <strong>Grouped</strong> navigation layout, these tools live under <strong>Cash Flow → Cash Flow</strong> and <strong>Cash Flow → Flows &amp; Recurring</strong> (and in <strong>Classic</strong> navigation under the top-level <strong>Cash Flow</strong> menu).</p>
+<h2 id="monthly-cash-flow">Monthly Cash Flow<a class="headerlink" href="#monthly-cash-flow" title="Permanent link">&para;</a></h2>
+<p>Route: <code>/cash_flow/monthly</code></p>
+<p>The <strong>Monthly Cash Flow</strong> view combines a multi-year interactive timeline with a currency-accurate monthly ledger breakdown:</p>
 <ul>
-<li>The <strong>current 30-day total</strong> (today − 30 days to today).</li>
-<li>The <strong>previous 30-day total</strong> (today − 60 days to today − 30 days).</li>
-<li>The <strong>variance</strong> amount and a colour-coded percentage change
-  indicator: red for an increase (↑) and green for a decrease (↓).</li>
-<li>A <strong>6-month sparkline</strong> bar chart showing per-category monthly
-  history.  The current month's bar is highlighted in the category
-  colour; a dashed red average line is overlaid.</li>
+<li><strong>Monthly Cash Flow Chart</strong>: Compares monthly Income, Expenses, Investment/Net Cashflow, and Checking Balance across the navbar date range.</li>
+<li><strong>Monthly Breakdown</strong>: Use the <strong>Month Picker</strong> to inspect any month. Summary cards display <strong>Income</strong>, <strong>Expenses</strong>, <strong>Taxes</strong>, and <strong>Net Flow</strong> using original ledger quantities broken down by native currency (avoiding mark-to-market distortion in multi-currency setups).</li>
+<li><strong>Inflows &amp; Outflows Tables</strong>: Lists per-account Income, Liabilities Inflow, Expenses, and Taxes alongside a <strong>Monthly Net Flow</strong> summary footer.</li>
 </ul>
-<p><code>Expenses:Tax</code> transactions are excluded from all trend calculations.</p>
-<h2 id="monthly-cashflow-widget">Monthly Cashflow Widget<a class="headerlink" href="#monthly-cashflow-widget" title="Permanent link">&para;</a></h2>
-<p>The dashboard includes a <strong>Monthly Cashflow</strong> widget that provides a
-multi-currency cashflow breakdown for the current month, showing total
-income versus total expenses using the original ledger quantities
-(without mark-to-market conversion).  This gives a quick, currency-
-accurate view of your net cashflow for the month at a glance.</p>
+<h2 id="yearly-cash-flow">Yearly Cash Flow<a class="headerlink" href="#yearly-cash-flow" title="Permanent link">&para;</a></h2>
+<p>Route: <code>/cash_flow/yearly</code></p>
+<p>The <strong>Yearly Cash Flow</strong> page renders a Sankey flow diagram for the selected financial year using the <strong>Financial Year Picker</strong>:</p>
+<ul>
+<li><strong>Flow Settings</strong> (slider icon in the sub-navigation bar): Adjust <strong>Expenses</strong> and <strong>Income</strong> account depth aggregation independently, and toggle <strong>Show transfers</strong> to include or exclude internal asset transfers (<code>Assets → Assets</code>).</li>
+</ul>
+<h2 id="income-statement">Income Statement<a class="headerlink" href="#income-statement" title="Permanent link">&para;</a></h2>
+<p>Route: <code>/cash_flow/income_statement</code></p>
+<p>The <strong>Income Statement</strong> provides a financial-year breakdown of revenues, expenses, taxes, and net change. It accounts for liabilities and computes starting and ending net worth directly from the balance sheet (assets at market value plus liabilities at book value), mirroring the <a href="../assets/#net-worth-history">Net Worth</a> calculation so liability-funded transactions and foreign-currency mark-to-market movements reconcile cleanly.</p>
+<h2 id="money-flow-sankey">Money Flow (Sankey)<a class="headerlink" href="#money-flow-sankey" title="Permanent link">&para;</a></h2>
+<p>Route: <code>/cash_flow/sankey</code></p>
+<p><strong>Money Flow</strong> visualizes end-to-end money paths across Income, Assets, Liabilities, and Expenses for a selected period:</p>
+<ul>
+<li><strong>Period Selector</strong>: Switch between <strong>Month</strong>, <strong>Quarter</strong>, or <strong>Year</strong> windows and step forward or backward by period.</li>
+<li><strong>Account Depth &amp; Transfer Filtering</strong>: Collapse sub-accounts to a chosen depth or toggle <strong>Hide asset transfers</strong> to focus strictly on income-to-expense and savings flows.</li>
+<li><strong>FX Warnings</strong>: Alerts you if any multi-currency flows cannot be converted due to missing exchange rates.</li>
+</ul>
+<p>For an outflow-only Sankey focused strictly on <code>Expenses:*</code> accounts over the navbar date range, see <a href="../expenses/#expense-breakdown-sankey">Expenses – Expense Breakdown</a>.</p>
+<h2 id="related-views">Related Views<a class="headerlink" href="#related-views" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../expenses/">Expenses</a> — Monthly Expenses (including <strong>Last 30 Days</strong> vs. <strong>Calendar Month</strong> spending trends), Yearly Expenses, Heatmap, MoM, and YoY diagnostics.</li>
+<li><a href="../income/">Income</a> — Income Timeline and TTM Investment Income (dividends, interest, distributions).</li>
+<li><a href="../recurring/">Recurring</a> — Upcoming recurring bills and scheduled transactions.</li>
+<li><a href="../dashboard/">Dashboard</a> — 3-month Cash Flow overview widget.</li>
+</ul>
 
 
 
@@ -2240,7 +2337,7 @@ accurate view of your net cashflow for the month at a glance.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../budget/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Budget">
+          <a href="../fx-rates/" class="md-footer__link md-footer__link--prev" aria-label="Previous: FX Rates">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2250,20 +2347,20 @@ accurate view of your net cashflow for the month at a glance.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Budget
+                FX Rates
               </div>
             </div>
           </a>
         
         
           
-          <a href="../assets/" class="md-footer__link md-footer__link--next" aria-label="Next: Assets">
+          <a href="../expenses/" class="md-footer__link md-footer__link--next" aria-label="Next: Expenses">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Assets
+                Expenses
               </div>
             </div>
             <div class="md-footer__button md-icon">

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Overview of the Paisa dashboard and its widgets">
+        <meta name="description" content="Overview of the Paisa dashboard, its customizable widgets, presets, and quick navigation tools">
       
       
         <meta name="author" content="Anantha Kumaran and nextxm contributors">
@@ -15,10 +15,10 @@
         <link rel="canonical" href="https://nextxm.github.io/paisa/reference/dashboard/">
       
       
-        <link rel="prev" href="../assets/">
+        <link rel="prev" href="../../getting-started/tutorial/">
       
       
-        <link rel="next" href="../bulk-edit/">
+        <link rel="next" href="../accounts/">
       
       
       <link rel="icon" href="../../images/favicon.png">
@@ -282,7 +282,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../architecture/" class="md-tabs__link">
+        <a href="./" class="md-tabs__link">
           
   
     
@@ -584,10 +584,6 @@
       
         
       
-        
-      
-        
-      
     
     
       
@@ -620,6 +616,1021 @@
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Dashboard
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Dashboard
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard-widgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dashboard Widgets
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dashboard Widgets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#left-column-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      Left Column (Default)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#right-column-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      Right Column (Default)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#customizing-the-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      Customizing the Dashboard
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#account-drill-down" class="md-nav__link">
+    <span class="md-ellipsis">
+      Account Drill-Down
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#global-navigation-top-action-bar" class="md-nav__link">
+    <span class="md-ellipsis">
+      Global Navigation &amp; Top Action Bar
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#forward-projections" class="md-nav__link">
+    <span class="md-ellipsis">
+      Forward Projections
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../accounts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Accounts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../journal/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Journal
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../commodities/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Commodities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fx-rates/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FX Rates
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cash-flow/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cash Flow
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../expenses/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Expenses
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../budget/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Budget
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../recurring/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Recurring
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../income/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Income
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../assets/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Assets &amp; Net Worth
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../allocation-targets/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Target Asset Allocation &amp; Rebalancing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../analysis/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Underlying Portfolio
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../credit-cards/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Credit Cards
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../planning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Financial Planning &amp; Life Projections
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_16" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../goals/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Goals
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_16" id="__nav_3_16_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_16">
+            <span class="md-nav__icon md-icon"></span>
+            Goals
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../goals/retirement/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Retirement
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../goals/savings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Savings
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_17" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tax/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Tax
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_17" id="__nav_3_17_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_17">
+            <span class="md-nav__icon md-icon"></span>
+            Tax
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tax/tax-harvesting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tax Harvesting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tax/capital-gains/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Capital Gains
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tax/schedule-al/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Schedule AL
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../import/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Import
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bulk-edit/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transactions, Filtering &amp; Bulk Edit
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../editor/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Editor
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parser/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quick Add &amp; Natural Language Parser API
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sheets/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sheets
+    
+  </span>
+  
+    
+  
+  
+    <span class="md-status md-status--new" title="Recently added">
+    </span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../doctor/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data Health (Doctor)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sync/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data Synchronization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ledger-cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Ledger CLI
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-authentication/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    User Authentication
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Deployment
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Release Changelog
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_30" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_30" id="__nav_3_30_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Developer & Architecture
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_30_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_30">
+            <span class="md-nav__icon md-icon"></span>
+            Developer & Architecture
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -733,895 +1744,9 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../accounts/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Accounts
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../commodities/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Commodities
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../journal/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Journal
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../parser/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Natural Language Parser API
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../allocation-targets/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Target Asset Allocation &amp; Rebalancing
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../budget/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Budget
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../cash-flow/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Cash Flow
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../assets/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Assets
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Dashboard
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  <span class="md-ellipsis">
-    Dashboard
-    
-  </span>
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#recent-transactions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Recent Transactions
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#monthly-cashflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      Monthly Cashflow
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#account-reconciliation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Account Reconciliation
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#account-drill-down" class="md-nav__link">
-    <span class="md-ellipsis">
-      Account Drill-Down
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#fire-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      FIRE Metrics
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../bulk-edit/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Bulk Edit
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../import/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Import
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../recurring/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Recurring
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../sheets/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Sheets
-    
-  </span>
-  
-    
-  
-  
-    <span class="md-status md-status--new" title="Recently added">
-    </span>
-  
-
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../config/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Configuration
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../sync/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Data Synchronization
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../fx-rates/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    FX Rates
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../doctor/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Data Health (Doctor)
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../planning/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Financial Planning &amp; Life Projections
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_24" >
-        
-          
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../goals/" class="md-nav__link ">
-              
-  
-  <span class="md-ellipsis">
-    Goals
-    
-  </span>
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_3_24" id="__nav_3_24_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_24_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_24">
-            <span class="md-nav__icon md-icon"></span>
-            Goals
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../goals/retirement/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Retirement
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../goals/savings/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Savings
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../ledger-cli/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Ledger CLI
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../editor/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Editor
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../deployment/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Deployment
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../user-authentication/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    User Authentication
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../credit-cards/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Credit Cards
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../analysis/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Analysis
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_31" >
-        
-          
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../tax/" class="md-nav__link ">
-              
-  
-  <span class="md-ellipsis">
-    Tax
-    
-  </span>
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_3_31" id="__nav_3_31_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_31_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_31">
-            <span class="md-nav__icon md-icon"></span>
-            Tax
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../tax/tax-harvesting/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Tax Harvesting
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../tax/capital-gains/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Capital Gains
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../tax/schedule-al/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Schedule AL
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../changelog/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Release Changelog
-    
-  </span>
-  
-
-      </a>
     </li>
   
 
@@ -2055,27 +2180,42 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#recent-transactions" class="md-nav__link">
+  <a href="#dashboard-widgets" class="md-nav__link">
     <span class="md-ellipsis">
-      Recent Transactions
+      Dashboard Widgets
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dashboard Widgets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#left-column-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      Left Column (Default)
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#monthly-cashflow" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#right-column-default" class="md-nav__link">
     <span class="md-ellipsis">
-      Monthly Cashflow
+      Right Column (Default)
     </span>
   </a>
   
 </li>
+        
+      </ul>
+    </nav>
+  
+</li>
       
         <li class="md-nav__item">
-  <a href="#account-reconciliation" class="md-nav__link">
+  <a href="#customizing-the-dashboard" class="md-nav__link">
     <span class="md-ellipsis">
-      Account Reconciliation
+      Customizing the Dashboard
     </span>
   </a>
   
@@ -2091,9 +2231,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fire-metrics" class="md-nav__link">
+  <a href="#global-navigation-top-action-bar" class="md-nav__link">
     <span class="md-ellipsis">
-      FIRE Metrics
+      Global Navigation &amp; Top Action Bar
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#forward-projections" class="md-nav__link">
+    <span class="md-ellipsis">
+      Forward Projections
     </span>
   </a>
   
@@ -2119,47 +2268,47 @@
 
 
 <h1 id="dashboard">Dashboard<a class="headerlink" href="#dashboard" title="Permanent link">&para;</a></h1>
-<p>The <strong>Dashboard</strong> is the landing page of Paisa.  It provides an
-at-a-glance overview of your financial health through a collection of
-widgets.</p>
-<h2 id="recent-transactions">Recent Transactions<a class="headerlink" href="#recent-transactions" title="Permanent link">&para;</a></h2>
-<p>The <strong>Recent Transactions</strong> widget shows the 15 most recent
-transactions from your journal.  Each entry is rendered as a
-transaction card with the date, description, and posting amounts.</p>
-<p>The <code>GET /api/transaction</code> endpoint supports optional <code>limit</code> and
-<code>offset</code> query parameters to retrieve a custom page of transactions.
-Every response includes all postings for each returned transaction
-(pagination is applied at the transaction level, not the posting
-level).</p>
-<h2 id="monthly-cashflow">Monthly Cashflow<a class="headerlink" href="#monthly-cashflow" title="Permanent link">&para;</a></h2>
-<p>The <strong>Monthly Cashflow</strong> widget provides a multi-currency breakdown of
-income versus expenses for the current month, using the original
-ledger quantities (no mark-to-market conversion).  This gives a quick,
-currency-accurate net cashflow figure.</p>
-<h2 id="account-reconciliation">Account Reconciliation<a class="headerlink" href="#account-reconciliation" title="Permanent link">&para;</a></h2>
-<p>When <code>enable_reconciliation: true</code> is set in <code>paisa.yaml</code>, the
-dashboard shows an <strong>Account Reconciliation</strong> widget with:</p>
+<p>The <strong>Dashboard</strong> (<code>/</code>) is the landing page of Paisa. It provides an at-a-glance overview of your financial health through a customizable two-column collection of widgets.</p>
+<p>When you launch Paisa with an empty journal, the Dashboard displays a first-run guide with a <strong>Setup Demo</strong> button that loads a sample journal and configuration so you can explore every view immediately.</p>
+<h2 id="dashboard-widgets">Dashboard Widgets<a class="headerlink" href="#dashboard-widgets" title="Permanent link">&para;</a></h2>
+<p>All nine built-in widgets can be reordered, toggled on or off, and customized:</p>
+<h3 id="left-column-default">Left Column (Default)<a class="headerlink" href="#left-column-default" title="Permanent link">&para;</a></h3>
 <ul>
-<li>The count of up-to-date accounts (reconciled within their expected
-  frequency window).</li>
-<li>The count of overdue accounts.</li>
-<li>Quick-action links to reconcile each overdue account directly from
-  the dashboard.</li>
+<li><strong>Assets</strong>: Displays total <strong>Net worth</strong>, <strong>Net Investment</strong>, unrealized <strong>Gain / Loss</strong>, and overall <strong>XIRR</strong> (links to <a href="../assets/">Net Worth History</a>).</li>
+<li><strong>Checking Balance</strong>: Shows current balances for accounts matching <code>checking_accounts</code> in <code>paisa.yaml</code> (default <code>Assets:Checking</code>). Configurable item limit: <code>1–12</code> (default <code>6</code>).</li>
+<li><strong>Investment Income</strong>: Displays trailing 12-month (<strong>TTM Dividend</strong> and <strong>TTM Interest</strong>) figures (links to <a href="../income/#investment-income">Investment Income</a>).</li>
+<li><strong>Cash Flow</strong>: Renders a 3-month income vs. expense bar chart in your default currency (links to <a href="../cash-flow/">Monthly Cash Flow</a>).</li>
+<li><strong>Budget</strong>: Displays compact progress bars for the current month's budget accounts (links to <a href="../budget/">Budget</a>). Configurable account limit: <code>1–20</code> (default <code>10</code>).</li>
+<li><strong>Goals</strong>: Lists configured retirement and savings goals ordered by descending priority (links to <a href="../goals/">Goals</a>). Configurable item limit: <code>1–12</code> (default <code>6</code>).</li>
 </ul>
-<p>See <a href="../accounts/#account-reconciliation">Accounts – Account Reconciliation</a>
-for full details.</p>
+<h3 id="right-column-default">Right Column (Default)<a class="headerlink" href="#right-column-default" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Expenses</strong>: Shows total expenses for the selected month along with an interactive <strong>3-month switcher</strong> and a category breakdown bar chart (links to <a href="../expenses/#monthly-expenses">Monthly Expenses</a>).</li>
+<li><strong>Recurring</strong>: Displays upcoming and due recurring bill cards (links to <a href="../recurring/">Recurring</a>). Configurable item limit: <code>1–30</code> (default <code>16</code>).</li>
+<li><strong>Recent Transactions</strong>: Displays compact cards for your latest journal transactions (links to <a href="../bulk-edit/">Transactions</a>). Configurable item limit: <code>1–30</code> (default <code>10</code>).</li>
+</ul>
+<p>The backing <code>GET /api/transaction</code> endpoint also supports optional <code>limit</code> (up to <code>500</code>), <code>offset</code>, <code>q</code>, <code>account</code>, <code>commodity</code>, <code>amount_min</code>, <code>amount_max</code>, <code>date_from</code>, and <code>date_to</code> query parameters.</p>
+<h2 id="customizing-the-dashboard">Customizing the Dashboard<a class="headerlink" href="#customizing-the-dashboard" title="Permanent link">&para;</a></h2>
+<p>Click the <strong>Customize</strong> (gear) button at the top right of the Dashboard to open the layout editor:</p>
+<ul>
+<li><strong>Built-in Presets</strong>: Switch quickly between <strong>Overview</strong> (all 9 widgets), <strong>Cash Flow &amp; Budget</strong>, <strong>Investor</strong>, and <strong>Minimal</strong> presets, or click <strong>Reset to default</strong>.</li>
+<li><strong>Drag-and-Drop Reordering</strong>: Drag widgets within the Left or Right column to change their display order.</li>
+<li><strong>Visibility &amp; Item Limits</strong>: Toggle any widget on/off and configure item counts (Checking Balance, Budget accounts, Goals, Recurring items, Recent Transactions).</li>
+<li><strong>Persistence</strong>: Preferences are saved automatically in browser storage (<code>localStorage</code> key <code>dashboard-layout</code>).</li>
+</ul>
 <h2 id="account-drill-down">Account Drill-Down<a class="headerlink" href="#account-drill-down" title="Permanent link">&para;</a></h2>
-<p>Clicking on any account balance widget on the dashboard navigates to
-<code>/accounts/[name]/transactions</code>, which shows a filtered history of all
-transactions that touch that account (or any sub-account below it).</p>
-<h2 id="fire-metrics">FIRE Metrics<a class="headerlink" href="#fire-metrics" title="Permanent link">&para;</a></h2>
-<p>The dashboard features a <strong>FIRE Metrics</strong> level indicator displaying key metrics to track your progress towards financial independence:</p>
+<p>Clicking on any account balance card on the Dashboard (such as in <strong>Checking Balance</strong>) opens <code>/accounts/[name]/transactions</code>, displaying a filtered transaction history and any saved account note for that account and its sub-accounts. See <a href="../accounts/#account-level-transaction-history">Accounts</a> for details.</p>
+<h2 id="global-navigation-top-action-bar">Global Navigation &amp; Top Action Bar<a class="headerlink" href="#global-navigation-top-action-bar" title="Permanent link">&para;</a></h2>
+<p>Across the Dashboard and every page, the top bar provides quick productivity tools:</p>
 <ul>
-<li><strong>Years to FIRE</strong>: The projected number of years required to reach your target corpus using the "Expected" net worth projection curve.</li>
-<li><strong>Target Corpus</strong>: The total asset amount needed to support your annualized expenses based on your Safe Withdrawal Rate (SWR).</li>
-<li><strong>FIRE Progress</strong>: The percentage of the target corpus you have currently accumulated.</li>
+<li><strong>Navigation Layout Switcher</strong>: Toggle between <strong>Grouped</strong> (default: <code>Cash Flow</code>, <code>Net Worth</code>, <code>Planning</code>, <code>Ledger</code>, <code>Tools</code>) and <strong>Classic</strong> (<code>Cash Flow</code>, <code>Expenses</code>, <code>Assets</code>, <code>Liabilities</code>, <code>Income</code>, <code>Planning</code>, <code>Ledger</code>, <code>More</code>) menus.</li>
+<li><strong>Command Palette (<span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-k">K</kbd></span> / <span class="keys"><kbd class="key-command">Cmd</kbd><span>+</span><kbd class="key-k">K</kbd></span>)</strong>: Search and jump to any page, currency FX view, transaction search, or Quick Add action.</li>
+<li><strong>Quick Add (<code>+</code>)</strong>: Create transactions manually or via <a href="../parser/">Natural Language Quick Add</a>.</li>
+<li><strong>Sync Controls &amp; Freshness Indicators</strong>: Open <strong>Sync History</strong>, trigger <strong>Sync Journal</strong> (amber when external disk edits are detected), <strong>Update Prices</strong> (amber after 24h, red after 48h), and <strong>Update Mutual Fund Portfolios</strong>. See <a href="../sync/">Data Synchronization</a>.</li>
+<li><strong>Theme &amp; Privacy Mode</strong>: Switch between light and dark themes or click the eye icon to obscure monetary figures on screen.</li>
 </ul>
-<p>These metrics are calculated dynamically using your historical income, expenses, and investment savings patterns. See <a href="../assets/#projection-fire">Assets – Projection (FIRE)</a> for the exact calculation logic, formulas, and parameters.</p>
+<h2 id="forward-projections">Forward Projections<a class="headerlink" href="#forward-projections" title="Permanent link">&para;</a></h2>
+<p>For FIRE target corpus, years to FIRE, and multi-scenario compounding projections, see <a href="../planning/">Financial Planning &amp; Life Projections</a>.</p>
 
 
 
@@ -2242,7 +2391,7 @@ transactions that touch that account (or any sub-account below it).</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../assets/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Assets">
+          <a href="../../getting-started/tutorial/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Tutorial">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2252,20 +2401,20 @@ transactions that touch that account (or any sub-account below it).</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Assets
+                Tutorial
               </div>
             </div>
           </a>
         
         
           
-          <a href="../bulk-edit/" class="md-footer__link md-footer__link--next" aria-label="Next: Bulk Edit">
+          <a href="../accounts/" class="md-footer__link md-footer__link--next" aria-label="Next: Accounts">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Bulk Edit
+                Accounts
               </div>
             </div>
             <div class="md-footer__button md-icon">
