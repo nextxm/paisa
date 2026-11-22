@@ -22,10 +22,13 @@
   import * as bulkEdit from "$lib/bulk_edit";
   import * as toast from "bulma-toast";
   import DiffViewModal from "$lib/components/DiffViewModal.svelte";
+  import TransactionDrawer from "$lib/components/TransactionDrawer.svelte";
   import { download } from "$lib/export";
   import { sync, startPolling } from "$lib/sync";
+  import { syncJournalAndRefresh } from "../../../../store";
 
   let buldEditOpen = $state(false);
+  let selectedTransaction = $state<T | null>(null);
   let transactions: T[] = $state(null);
   let filtered: T[] = $state([]);
   let files: LedgerFile[] = $state([]);
@@ -91,12 +94,12 @@
         });
       } else {
         toast.toast({
-          message: `Saved ${newFile.name}`,
+          message: `Saved ${newFile.name}. Syncing in background...`,
           type: "is-success"
         });
       }
     }
-    await loadTransactions();
+    void syncJournalAndRefresh(() => loadTransactions());
   }
 
   const debouncedFetchTransactions = _.debounce((currentFilters: TransactionFilters) => {
@@ -160,6 +163,12 @@
   oldFiles={files}
   {newFiles}
   {updatedTransactionsCount}
+/>
+
+<TransactionDrawer
+  bind:transaction={selectedTransaction}
+  {accounts}
+  onsaved={() => loadTransactions()}
 />
 
 {#if transactions}
@@ -252,7 +261,7 @@
             >
               <div slot="item" let:index let:style style="{style} overflow: hidden;">
                 {@const t = filtered[index]}
-                <Transaction {t} />
+                <Transaction {t} onselect={(tx) => (selectedTransaction = tx)} />
               </div>
             </VirtualList>
           </div>

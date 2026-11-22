@@ -4,8 +4,7 @@
   import { fetchConfig } from "$lib/config_client";
   import { tick } from "svelte";
   import _ from "lodash";
-  import QuickAddModal from "./QuickAddModal.svelte";
-  import { commandPaletteOpen } from "../../store";
+  import { commandPaletteOpen, quickAddOpen } from "../../store";
 
   interface Command {
     id: string;
@@ -21,7 +20,6 @@
   let selectedIndex = $state(0);
   let inputEl: HTMLInputElement | null = $state(null);
   let listEl: HTMLUListElement | null = $state(null);
-  let showQuickAdd = $state(false);
   let accounts: string[] = $state([]);
 
   const navPages: Command[] = [
@@ -394,14 +392,9 @@
     goto(href);
   }
 
-  async function openQuickAdd() {
+  function openQuickAdd() {
     closePalette();
-    showQuickAdd = true;
-
-    if (accounts.length === 0) {
-      const response = await fetchConfig({ background: true });
-      accounts = response.accounts;
-    }
+    quickAddOpen.set(true);
   }
 
   async function runCommand(cmd: Command) {
@@ -458,8 +451,6 @@
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
-
-<QuickAddModal bind:open={showQuickAdd} {accounts} />
 
 {#if open}
   <!-- Backdrop -->

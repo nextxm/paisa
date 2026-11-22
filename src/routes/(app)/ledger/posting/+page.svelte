@@ -3,6 +3,7 @@
   import TransactionFilterBar from "$lib/components/TransactionFilterBar.svelte";
   import PostingNote from "$lib/components/PostingNote.svelte";
   import PostingStatus from "$lib/components/PostingStatus.svelte";
+  import TransactionDrawer from "$lib/components/TransactionDrawer.svelte";
   import { iconText } from "$lib/icon";
   import { change } from "$lib/posting";
   import {
@@ -28,13 +29,33 @@
   let commodities: string[] = $state([]);
 
   let filteredPostings: Posting[] = $state([]);
+  let transactionByPostingKey = $state(new Map<string, Transaction>());
+  let selectedTransaction = $state<Transaction | null>(null);
   let filters: TransactionFilters = $state(emptyTransactionFilters());
+
+  function postingKey(p: Posting) {
+    return `${p.file_name}:${p.transaction_begin_line}:${p.transaction_end_line}`;
+  }
 
   async function loadPostings(currentFilters = filters) {
     const query = buildTransactionFiltersQuery(currentFilters);
     const route = query ? `/api/transaction?${query}` : "/api/transaction";
     const { transactions } = await ajax(route);
+    const map = new Map<string, Transaction>();
+    for (const t of transactions as Transaction[]) {
+      map.set(`${t.fileName}:${t.beginLine}:${t.endLine}`, t);
+    }
+    transactionByPostingKey = map;
     filteredPostings = _.flatMap(transactions, (transaction: Transaction) => transaction.postings);
+  }
+
+  function openPostingDrawer(e: MouseEvent, p: Posting) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    const tx = transactionByPostingKey.get(postingKey(p));
+    if (tx) {
+      e.preventDefault();
+      selectedTransaction = tx;
+    }
   }
 
   const debouncedLoadPostings = _.debounce((currentFilters: TransactionFilters) => {
@@ -120,7 +141,11 @@
                 <div class="is-size-7 truncate" title={p.payee}>
                   <PostingStatus posting={p} />
                   <PostingNote posting={p} />
-                  <a class="secondary-link" href={postingUrl(p)}>{p.payee}</a>
+                  <a
+                    class="secondary-link"
+                    href={postingUrl(p)}
+                    onclick={(e) => openPostingDrawer(e, p)}>{p.payee}</a
+                  >
                 </div>
                 <div class="custom-icon truncate" title={p.account}>
                   <div class="flex">
@@ -156,3 +181,9 @@
     </div>
   </div>
 </section>
+
+<TransactionDrawer
+  bind:transaction={selectedTransaction}
+  {accounts}
+  onsaved={() => loadPostings()}
+/>

@@ -7,22 +7,13 @@
   import { get } from "svelte/store";
   import { onDestroy } from "svelte";
   import dayjs from "dayjs";
-  import { refresh, now, willRefresh, commandPaletteOpen } from "../../store";
+  import { refresh, now, willRefresh, commandPaletteOpen, quickAddOpen } from "../../store";
   import SyncHistoryOverlay from "./SyncHistoryOverlay.svelte";
-  import QuickAddModal from "./QuickAddModal.svelte";
-  import { fetchConfig } from "$lib/config_client";
 
   let showHistory = $state(false);
-  let showQuickAdd = $state(false);
-  let accounts: string[] = $state([]);
 
-  async function openQuickAdd() {
-    showQuickAdd = true;
-
-    if (accounts.length === 0) {
-      const response = await fetchConfig({ background: true });
-      accounts = response.accounts;
-    }
+  function openQuickAdd() {
+    quickAddOpen.set(true);
   }
 
   async function syncWithLoader(request: Record<string, any>) {
@@ -73,7 +64,6 @@
 
 <div class="is-flex is-align-items-center navbar-actions-strip" style="gap: 0.25rem;">
   <SyncHistoryOverlay bind:open={showHistory} />
-  <QuickAddModal bind:open={showQuickAdd} {accounts} />
 
   <button
     type="button"

@@ -15,17 +15,27 @@ import (
 	"gorm.io/gorm"
 )
 
+type AddPostingRequest struct {
+	Account      string `json:"account"`
+	Amount       string `json:"amount"`
+	Commodity    string `json:"commodity"`
+	ToAmount     string `json:"to_amount,omitempty"`
+	ToCommodity  string `json:"to_commodity,omitempty"`
+	ExchangeRate string `json:"exchange_rate,omitempty"`
+}
+
 type AddTransactionRequest struct {
-	Date         string `json:"date" binding:"required"`
-	Payee        string `json:"payee"`
-	Narration    string `json:"narration"`
-	FromAccount  string `json:"from_account" binding:"required"`
-	ToAccount    string `json:"to_account" binding:"required"`
-	Amount       string `json:"amount" binding:"required"`
-	Commodity    string `json:"commodity" binding:"required"`
-	ToAmount     string `json:"to_amount"`
-	ToCommodity  string `json:"to_commodity"`
-	ExchangeRate string `json:"exchange_rate"`
+	Date         string              `json:"date" binding:"required"`
+	Payee        string              `json:"payee"`
+	Narration    string              `json:"narration"`
+	FromAccount  string              `json:"from_account"`
+	ToAccount    string              `json:"to_account"`
+	Amount       string              `json:"amount"`
+	Commodity    string              `json:"commodity"`
+	ToAmount     string              `json:"to_amount"`
+	ToCommodity  string              `json:"to_commodity"`
+	ExchangeRate string              `json:"exchange_rate"`
+	Postings     []AddPostingRequest `json:"postings,omitempty"`
 }
 
 func matchAccount(db *gorm.DB, query string) (string, error) {
@@ -105,6 +115,30 @@ func formatTransaction(req AddTransactionRequest) string {
 		sb.WriteString("\n")
 	}
 
+	if len(req.Postings) > 0 {
+		for _, p := range req.Postings {
+			sb.WriteString("  ")
+			sb.WriteString(p.Account)
+			sb.WriteString("  ")
+			sb.WriteString(p.Amount)
+			sb.WriteString(" ")
+			sb.WriteString(p.Commodity)
+
+			if p.ToAmount != "" && p.ToCommodity != "" && p.ToCommodity != p.Commodity {
+				sb.WriteString(fmt.Sprintf(" @@ %s %s", p.ToAmount, p.ToCommodity))
+			} else if p.ExchangeRate != "" {
+				targetCmdty := p.ToCommodity
+				if targetCmdty == "" {
+					targetCmdty = p.Commodity
+				}
+				sb.WriteString(fmt.Sprintf(" @ %s %s", p.ExchangeRate, targetCmdty))
+			}
+			sb.WriteString("\n")
+		}
+		sb.WriteString("\n")
+		return sb.String()
+	}
+
 	// Write FromAccount posting (negative amount)
 	sb.WriteString("  ")
 	sb.WriteString(req.FromAccount)
@@ -156,15 +190,25 @@ func formatTransaction(req AddTransactionRequest) string {
 func appendTransactionAndValidate(db *gorm.DB, req AddTransactionRequest) (string, []ledger.LedgerFileError, error) {
 	addPath := config.GetAddJournalPath()
 	if addPath == "" {
+		addPath = config.GetJournalPath()
+	}
+	if addPath == "" {
 		return "", nil, fmt.Errorf("add_journal_path is not configured")
 	}
 
 	// Resolve accounts
-	fromAcc, _ := matchAccount(db, req.FromAccount)
-	req.FromAccount = fromAcc
+	if len(req.Postings) > 0 {
+		for i := range req.Postings {
+			resolved, _ := matchAccount(db, req.Postings[i].Account)
+			req.Postings[i].Account = resolved
+		}
+	} else {
+		fromAcc, _ := matchAccount(db, req.FromAccount)
+		req.FromAccount = fromAcc
 
-	toAcc, _ := matchAccount(db, req.ToAccount)
-	req.ToAccount = toAcc
+		toAcc, _ := matchAccount(db, req.ToAccount)
+		req.ToAccount = toAcc
+	}
 
 	// Format
 	entryText := formatTransaction(req)
@@ -197,10 +241,34 @@ func appendTransactionAndValidate(db *gorm.DB, req AddTransactionRequest) (strin
 	return entryText, errors, nil
 }
 
+func validateAddTransactionRequest(req AddTransactionRequest) error {
+	if len(req.Postings) > 0 {
+		if len(req.Postings) < 2 {
+			return fmt.Errorf("split transactions require at least 2 postings")
+		}
+		for i, p := range req.Postings {
+			if strings.TrimSpace(p.Account) == "" || strings.TrimSpace(p.Amount) == "" || strings.TrimSpace(p.Commodity) == "" {
+				return fmt.Errorf("posting %d requires account, amount, and commodity", i+1)
+			}
+		}
+		return nil
+	}
+
+	if strings.TrimSpace(req.FromAccount) == "" || strings.TrimSpace(req.ToAccount) == "" ||
+		strings.TrimSpace(req.Amount) == "" || strings.TrimSpace(req.Commodity) == "" {
+		return fmt.Errorf("from_account, to_account, amount, and commodity are required")
+	}
+	return nil
+}
+
 func AddTransactionHandler(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req AddTransactionRequest
 		if !BindJSONOrError(c, &req) {
+			return
+		}
+		if err := validateAddTransactionRequest(req); err != nil {
+			RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, err.Error())
 			return
 		}
 

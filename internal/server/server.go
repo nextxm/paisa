@@ -446,6 +446,8 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/transaction", func(c *gin.Context) {
 		GetTransactionsHandler(db, c)
 	})
+	router.GET("/api/transaction/raw", GetRawTransactionHandler())
+	writeGroup.POST("/api/transaction/patch", PatchTransactionHandler(db))
 	router.POST("/api/parser/parse", ParseTransactionHandler(db))
 	writeGroup.POST("/api/parser/create-transaction", CreateParsedTransactionHandler(db))
 	writeGroup.POST("/api/transaction/add", AddTransactionHandler(db))

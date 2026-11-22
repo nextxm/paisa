@@ -165,6 +165,7 @@ export function setCashflowDepthAllowed(expense: number, income: number) {
 
 export const willRefresh = writable(0);
 export const commandPaletteOpen = writable(false);
+export const quickAddOpen = writable(false);
 
 // Number of data-quality issues (duplicates + outliers) detected on the
 // last visit to the Doctor page.  Used to show a badge on the Doctor nav link.
@@ -192,6 +193,17 @@ export async function refresh() {
   }
   willRefresh.update((n) => n + 1);
   return true;
+}
+
+/**
+ * Sync the journal in the background and refresh the active view (or run onComplete)
+ * once the sync job completes.
+ */
+export async function syncJournalAndRefresh(
+  onComplete?: () => void | Promise<void>
+): Promise<string | null> {
+  const { syncJournal } = await import("$lib/sync");
+  return syncJournal(onComplete ?? (() => void refresh()));
 }
 
 export { jobs, jobsList, isJobRunning } from "$lib/stores/jobs";

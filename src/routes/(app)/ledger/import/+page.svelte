@@ -28,6 +28,7 @@
     type IngestionResult
   } from "$lib/utils";
   import { cleanPayee } from "$lib/clean_payee";
+  import { syncJournal } from "$lib/sync";
   import { fetchConfig } from "$lib/config_client";
   import {
     defaultIncludedFromValidation,
@@ -799,7 +800,7 @@
 
       if (res.success) {
         toast.toast({
-          message: `Successfully appended ${res.committed_count} transactions to ledger!`,
+          message: `Successfully appended ${res.committed_count} transactions to ledger! Syncing in background...`,
           type: "is-success",
           duration: 6000
         });
@@ -808,6 +809,7 @@
         stagedTransactions = stagedTransactions.filter((_, idx) => !includedStaged[idx]);
         includedStaged = stagedTransactions.map(() => true);
         reviewLedgerOpen = false;
+        void syncJournal();
       }
     } catch (e: any) {
       toast.toast({ message: `Failed to commit transactions: ${e.message}`, type: "is-danger" });
@@ -884,10 +886,11 @@
       toast.toast({
         message: `Saved <b><a href="/ledger/editor/${encodeURIComponent(
           destinationFile
-        )}">${destinationFile}</a></b>`,
+        )}">${destinationFile}</a></b>. Syncing in background...`,
         type: "is-success",
         duration: 5000
       });
+      void syncJournal();
     } else {
       toast.toast({
         message: `Failed to save ${destinationFile}. reason: ${message}`,

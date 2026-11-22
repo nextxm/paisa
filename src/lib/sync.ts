@@ -230,6 +230,24 @@ export async function sync(request: Record<string, any>): Promise<string | null>
 }
 
 /**
+ * Trigger a background journal sync and optionally run a callback when it completes.
+ */
+export async function syncJournal(onComplete?: () => void | Promise<void>): Promise<string | null> {
+  const jobId = await sync({ journal: true });
+  if (!jobId) return null;
+
+  if (onComplete) {
+    startPolling(jobId, async (job) => {
+      if (job.status === "completed") {
+        await onComplete();
+      }
+    });
+  }
+
+  return jobId;
+}
+
+/**
  * Legacy name kept for call-site compatibility. This now subscribes to SSE
  * updates instead of polling.
  */

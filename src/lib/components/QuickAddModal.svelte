@@ -1,15 +1,26 @@
 <script lang="ts">
+  import Select from "svelte-select";
   import { ajax } from "$lib/utils";
+  import { fetchConfig } from "$lib/config_client";
+  import { syncJournalAndRefresh } from "../../store";
   import * as toast from "bulma-toast";
   import dayjs from "dayjs";
   import {
     applySuggestionSelection,
     buildQuickAddSubmitRequest,
     clearedParserState,
-    parserFormOverrides
+    parserFormOverrides,
+    type QuickAddPostingValue
   } from "./quick_add_parser_utils";
 
-  let { open = $bindable(false), accounts = [] }: { open: boolean; accounts: string[] } = $props();
+  let { open = $bindable(false), accounts = [] }: { open: boolean; accounts?: string[] } = $props();
+
+  let loadedAccounts = $state<string[]>([]);
+  const effectiveAccounts = $derived(accounts.length > 0 ? accounts : loadedAccounts);
+  const selectItems = $derived(effectiveAccounts.map((acc) => ({ id: acc, name: acc })));
+  const hasJournalTarget = $derived(
+    Boolean(USER_CONFIG.add_journal_path || USER_CONFIG.journal_path)
+  );
 
   let date = $state(dayjs().format("YYYY-MM-DD"));
   let payee = $state("");
@@ -18,6 +29,18 @@
   let toAccount = $state("");
   let amount = $state("");
   let commodity = $state(USER_CONFIG.default_currency || "INR");
+
+  let showMultiCurrency = $state(false);
+  let toAmount = $state("");
+  let toCommodity = $state("");
+  let exchangeRate = $state("");
+
+  let splitMode = $state(false);
+  let splits = $state<{ account: string; amount: string; commodity: string }[]>([
+    { account: "", amount: "", commodity: USER_CONFIG.default_currency || "INR" },
+    { account: "", amount: "", commodity: USER_CONFIG.default_currency || "INR" }
+  ]);
+
   let isLoading = $state(false);
   let isParsing = $state(false);
   let parserText = $state("");
@@ -26,6 +49,14 @@
   let requiresConfirmation = $state(false);
   let selectedSuggestionIndex = $state<Record<string, number>>({});
   let parseStartedAt = $state<number | null>(null);
+
+  $effect(() => {
+    if (open && effectiveAccounts.length === 0) {
+      void fetchConfig({ background: true }).then((cfg) => {
+        loadedAccounts = cfg.accounts || [];
+      });
+    }
+  });
 
   function applyParsedResult(result: any) {
     const parsedDate = dayjs(result.date);
@@ -111,17 +142,85 @@
     selectedSuggestionIndex = selection.selectedSuggestionIndex;
   }
 
+  function addSplitRow() {
+    splits = [...splits, { account: "", amount: "", commodity: commodity || "INR" }];
+  }
+
+  function removeSplitRow(index: number) {
+    if (splits.length <= 2) return;
+    splits = splits.filter((_, i) => i !== index);
+  }
+
+  function toggleSplitMode() {
+    splitMode = !splitMode;
+    if (splitMode) {
+      if (!splits[0].account && toAccount) {
+        splits[0].account = toAccount;
+      }
+      if (!splits[0].amount && amount) {
+        splits[0].amount = amount;
+      }
+      splits = splits.map((s) => ({ ...s, commodity: s.commodity || commodity }));
+    }
+  }
+
+  const splitSum = $derived(
+    splits.reduce((sum, s) => {
+      const n = parseFloat(s.amount);
+      return Number.isFinite(n) ? sum + n : sum;
+    }, 0)
+  );
+
   function resetFormState() {
     payee = "";
     narration = "";
     fromAccount = "";
     toAccount = "";
     amount = "";
+    toAmount = "";
+    toCommodity = "";
+    exchangeRate = "";
+    showMultiCurrency = false;
+    splitMode = false;
+    splits = [
+      { account: "", amount: "", commodity: commodity || "INR" },
+      { account: "", amount: "", commodity: commodity || "INR" }
+    ];
     clearParsedState();
   }
 
   async function submit() {
-    if (!date || !fromAccount || !toAccount || !amount || !commodity) {
+    if (!date || !fromAccount || !commodity) {
+      toast.toast({ message: "Please fill all required fields", type: "is-danger" });
+      return;
+    }
+
+    let postingsPayload: QuickAddPostingValue[] | undefined;
+    let effectiveAmount = amount;
+    let effectiveToAccount = toAccount;
+
+    if (splitMode) {
+      const validSplits = splits.filter((s) => s.account.trim() && s.amount.trim());
+      if (validSplits.length < 2) {
+        toast.toast({ message: "Split mode requires at least 2 split rows", type: "is-danger" });
+        return;
+      }
+      if (!effectiveAmount.trim()) {
+        effectiveAmount = splitSum.toFixed(2);
+      }
+      effectiveToAccount = validSplits[0].account;
+      const negAmount = effectiveAmount.trim().startsWith("-")
+        ? effectiveAmount.trim()
+        : `-${effectiveAmount.trim()}`;
+      postingsPayload = [
+        { account: fromAccount, amount: negAmount, commodity },
+        ...validSplits.map((s) => ({
+          account: s.account,
+          amount: s.amount,
+          commodity: s.commodity || commodity
+        }))
+      ];
+    } else if (!toAccount || !amount) {
       toast.toast({ message: "Please fill all required fields", type: "is-danger" });
       return;
     }
@@ -129,15 +228,19 @@
     isLoading = true;
     try {
       const request = buildQuickAddSubmitRequest({
-        parserText,
+        parserText: splitMode ? "" : parserText,
         values: {
           date,
           payee,
           narration,
           fromAccount,
-          toAccount,
-          amount,
-          commodity
+          toAccount: effectiveToAccount,
+          amount: effectiveAmount,
+          commodity,
+          toAmount: showMultiCurrency ? toAmount : undefined,
+          toCommodity: showMultiCurrency ? toCommodity : undefined,
+          exchangeRate: showMultiCurrency ? exchangeRate : undefined,
+          postings: postingsPayload
         },
         selectedSuggestionIndex,
         parseStartedAt,
@@ -153,18 +256,19 @@
         if (response.errors && response.errors.length > 0) {
           toast.toast({
             message:
-              "Transaction added, but journal has validation errors. Please sync and check the Editor.",
+              "Transaction added, but journal has validation errors. Please check the Editor.",
             type: "is-warning",
             duration: 10000
           });
         } else {
           toast.toast({
-            message: "Transaction added. Please sync to see changes.",
+            message: "Transaction added. Syncing in background...",
             type: "is-success"
           });
         }
         open = false;
         resetFormState();
+        void syncJournalAndRefresh();
       } else {
         toast.toast({
           message: response.error?.message || "Failed to add transaction",
@@ -193,10 +297,10 @@
       <button class="delete" aria-label="close" onclick={() => (open = false)}></button>
     </header>
     <section class="modal-card-body">
-      {#if !USER_CONFIG.add_journal_path}
+      {#if !hasJournalTarget}
         <article class="message is-warning is-small">
           <div class="message-body">
-            <code>add_journal_path</code> is not configured. Please set it in Settings first.
+            Neither <code>add_journal_path</code> nor <code>journal_path</code> is configured.
           </div>
         </article>
       {/if}
@@ -212,22 +316,41 @@
             placeholder="e.g. 20 Apr, bought 15$ groceries using bmo cc from no frills"
           ></textarea>
         </div>
-        <div class="control mt-2 is-flex" style="gap: 0.5rem;">
-          <button
-            class="button is-small is-info is-light {isParsing ? 'is-loading' : ''}"
-            onclick={parseNaturalLanguage}
-            disabled={!parserText.trim() || !USER_CONFIG.add_journal_path}
-          >
-            Parse Text
-          </button>
-          <button
-            class="button is-small is-light"
-            type="button"
-            onclick={clearParsedState}
-            disabled={!parserText && !parserResult}
-          >
-            Clear Parsed State
-          </button>
+        <div class="control mt-2 is-flex is-justify-content-space-between" style="gap: 0.5rem;">
+          <div class="is-flex" style="gap: 0.5rem;">
+            <button
+              class="button is-small is-info is-light {isParsing ? 'is-loading' : ''}"
+              onclick={parseNaturalLanguage}
+              disabled={!parserText.trim() || !hasJournalTarget}
+            >
+              Parse Text
+            </button>
+            <button
+              class="button is-small is-light"
+              type="button"
+              onclick={clearParsedState}
+              disabled={!parserText && !parserResult}
+            >
+              Clear Parsed State
+            </button>
+          </div>
+          <div class="is-flex" style="gap: 0.5rem;">
+            <button
+              type="button"
+              class="button is-small {splitMode ? 'is-link' : 'is-light'}"
+              onclick={toggleSplitMode}
+            >
+              Split
+            </button>
+            <button
+              type="button"
+              class="button is-small {showMultiCurrency ? 'is-link' : 'is-light'}"
+              onclick={() => (showMultiCurrency = !showMultiCurrency)}
+              disabled={splitMode}
+            >
+              Multi-Currency
+            </button>
+          </div>
         </div>
       </div>
 
@@ -273,80 +396,114 @@
         {/each}
       {/if}
 
-      <div class="field">
-        <label class="label is-small" for="date-input">Date</label>
-        <div class="control">
-          <input id="date-input" class="input is-small" type="date" bind:value={date} required />
+      <div class="columns is-mobile mb-0">
+        <div class="column is-4">
+          <div class="field">
+            <label class="label is-small" for="date-input">Date</label>
+            <div class="control">
+              <input
+                id="date-input"
+                class="input is-small"
+                type="date"
+                bind:value={date}
+                required
+              />
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div class="field">
-        <label class="label is-small" for="payee-input">Payee</label>
-        <div class="control">
-          <input
-            id="payee-input"
-            class="input is-small"
-            type="text"
-            bind:value={payee}
-            placeholder="e.g. Amazon"
-          />
+        <div class="column is-4">
+          <div class="field">
+            <label class="label is-small" for="payee-input">Payee</label>
+            <div class="control">
+              <input
+                id="payee-input"
+                class="input is-small"
+                type="text"
+                bind:value={payee}
+                placeholder="e.g. Amazon"
+              />
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div class="field">
-        <label class="label is-small" for="narration-input">Narration</label>
-        <div class="control">
-          <input
-            id="narration-input"
-            class="input is-small"
-            type="text"
-            bind:value={narration}
-            placeholder="e.g. New keyboard"
-          />
+        <div class="column is-4">
+          <div class="field">
+            <label class="label is-small" for="narration-input">Narration</label>
+            <div class="control">
+              <input
+                id="narration-input"
+                class="input is-small"
+                type="text"
+                bind:value={narration}
+                placeholder="e.g. New keyboard"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="columns is-mobile mb-0">
         <div class="column">
           <div class="field">
-            <label class="label is-small" for="from-account-input">From Account</label>
-            <div class="control select is-small is-fullwidth">
-              <select id="from-account-input" bind:value={fromAccount} required>
-                <option value="" disabled>Select account...</option>
-                {#each accounts as account}
-                  <option value={account}>{account}</option>
-                {/each}
-              </select>
-            </div>
+            <span class="label is-small">From Account</span>
+            <Select
+              value={fromAccount ? { id: fromAccount, name: fromAccount } : undefined}
+              items={selectItems}
+              label="name"
+              itemId="id"
+              placeholder="Select or type account..."
+              searchable={true}
+              clearable={true}
+              showChevron={true}
+              on:change={(e) => (fromAccount = e.detail?.name || "")}
+              on:clear={() => (fromAccount = "")}
+              on:input={(e) => {
+                if (typeof e.detail === "string" && e.detail.trim()) {
+                  fromAccount = e.detail.trim();
+                }
+              }}
+            />
           </div>
         </div>
-        <div class="column">
-          <div class="field">
-            <label class="label is-small" for="to-account-input">To Account</label>
-            <div class="control select is-small is-fullwidth">
-              <select id="to-account-input" bind:value={toAccount} required>
-                <option value="" disabled>Select account...</option>
-                {#each accounts as account}
-                  <option value={account}>{account}</option>
-                {/each}
-              </select>
+        {#if !splitMode}
+          <div class="column">
+            <div class="field">
+              <span class="label is-small">To Account</span>
+              <Select
+                value={toAccount ? { id: toAccount, name: toAccount } : undefined}
+                items={selectItems}
+                label="name"
+                itemId="id"
+                placeholder="Select or type account..."
+                searchable={true}
+                clearable={true}
+                showChevron={true}
+                on:change={(e) => (toAccount = e.detail?.name || "")}
+                on:clear={() => (toAccount = "")}
+                on:input={(e) => {
+                  if (typeof e.detail === "string" && e.detail.trim()) {
+                    toAccount = e.detail.trim();
+                  }
+                }}
+              />
             </div>
           </div>
-        </div>
+        {/if}
       </div>
 
-      <div class="columns is-mobile">
+      <div class="columns is-mobile mb-0">
         <div class="column">
           <div class="field">
-            <label class="label is-small" for="amount-input">Amount</label>
+            <label class="label is-small" for="amount-input">
+              {splitMode ? "Total Amount (optional, auto-sums splits)" : "Amount"}
+            </label>
             <div class="control">
               <input
                 id="amount-input"
                 class="input is-small"
                 type="text"
                 bind:value={amount}
-                placeholder="0.00"
-                required
+                placeholder={splitMode ? splitSum.toFixed(2) : "0.00"}
+                required={!splitMode}
               />
             </div>
           </div>
@@ -366,13 +523,108 @@
           </div>
         </div>
       </div>
+
+      {#if showMultiCurrency && !splitMode}
+        <div class="box p-2 mt-2 mb-2">
+          <p class="is-size-7 has-text-weight-semibold mb-2">Multi-Currency / FX</p>
+          <div class="columns is-mobile mb-0">
+            <div class="column">
+              <label class="label is-small" for="to-amount-input">To Amount</label>
+              <input
+                id="to-amount-input"
+                class="input is-small"
+                type="text"
+                bind:value={toAmount}
+                placeholder="e.g. 45.00"
+              />
+            </div>
+            <div class="column">
+              <label class="label is-small" for="to-currency-input">To Currency</label>
+              <input
+                id="to-currency-input"
+                class="input is-small"
+                type="text"
+                bind:value={toCommodity}
+                placeholder="e.g. EUR"
+              />
+            </div>
+            <div class="column">
+              <label class="label is-small" for="fx-rate-input">Exchange Rate</label>
+              <input
+                id="fx-rate-input"
+                class="input is-small"
+                type="text"
+                bind:value={exchangeRate}
+                placeholder="e.g. 0.90"
+              />
+            </div>
+          </div>
+        </div>
+      {/if}
+
+      {#if splitMode}
+        <div class="mt-2">
+          <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+            <span class="label is-small mb-0"
+              >To Accounts (Splits: {splitSum.toFixed(2)} {commodity})</span
+            >
+            <button type="button" class="button is-small is-link is-light" onclick={addSplitRow}>
+              + Add Split
+            </button>
+          </div>
+          {#each splits as split, idx}
+            <div class="columns is-mobile is-vcentered mb-1">
+              <div class="column is-6 py-1">
+                <Select
+                  value={split.account ? { id: split.account, name: split.account } : undefined}
+                  items={selectItems}
+                  label="name"
+                  itemId="id"
+                  placeholder="Account #{idx + 1}"
+                  searchable={true}
+                  clearable={true}
+                  showChevron={true}
+                  on:change={(e) => (split.account = e.detail?.name || "")}
+                  on:clear={() => (split.account = "")}
+                />
+              </div>
+              <div class="column is-3 py-1">
+                <input
+                  class="input is-small"
+                  type="text"
+                  bind:value={split.amount}
+                  placeholder="Amount"
+                />
+              </div>
+              <div class="column is-2 py-1">
+                <input
+                  class="input is-small"
+                  type="text"
+                  bind:value={split.commodity}
+                  placeholder="Curr"
+                />
+              </div>
+              <div class="column is-1 py-1">
+                {#if splits.length > 2}
+                  <button
+                    type="button"
+                    class="delete is-small"
+                    aria-label="Remove split"
+                    onclick={() => removeSplitRow(idx)}
+                  ></button>
+                {/if}
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
     </section>
     <footer class="modal-card-foot is-justify-content-flex-end">
       <button class="button is-small" onclick={() => (open = false)}>Cancel</button>
       <button
         class="button is-primary is-small {isLoading ? 'is-loading' : ''}"
         onclick={submit}
-        disabled={!USER_CONFIG.add_journal_path}
+        disabled={!hasJournalTarget}
       >
         Add Transaction
       </button>
@@ -382,6 +634,6 @@
 
 <style lang="scss">
   .modal-card {
-    max-width: 620px;
+    max-width: 680px;
   }
 </style>

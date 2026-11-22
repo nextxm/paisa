@@ -8,11 +8,21 @@
   import Navbar from "$lib/components/Navbar.svelte";
   import ReloadPrompt from "$lib/components/ReloadPrompt.svelte";
   import CommandPalette from "$lib/components/CommandPalette.svelte";
-  import { willClearTippy, willRefresh } from "../../store";
+  import QuickAddModal from "$lib/components/QuickAddModal.svelte";
+  import { quickAddOpen, willClearTippy, willRefresh } from "../../store";
+  import { isMobile } from "$lib/utils";
   import { onMount } from "svelte";
 
   let { children }: { children: Snippet; data?: any } = $props();
   let isBurger: boolean | null = $state(null);
+  const mobile = isMobile();
+
+  function handleGlobalKeydown(e: KeyboardEvent) {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "a") {
+      e.preventDefault();
+      quickAddOpen.set(true);
+    }
+  }
 
   function clearTippy() {
     hideAll();
@@ -68,6 +78,8 @@
   });
 </script>
 
+<svelte:window onkeydown={handleGlobalKeydown} />
+
 <Navbar bind:isBurger />
 
 <Spinner>
@@ -80,9 +92,33 @@
 </Spinner>
 
 <CommandPalette />
+<QuickAddModal bind:open={$quickAddOpen} />
 <ReloadPrompt />
 
+{#if mobile}
+  <button
+    type="button"
+    class="button is-primary is-rounded mobile-quick-add-fab"
+    aria-label="Quick Add Transaction (Ctrl+Shift+A)"
+    onclick={() => quickAddOpen.set(true)}
+  >
+    <span class="icon">
+      <i class="fa-solid fa-plus"></i>
+    </span>
+  </button>
+{/if}
+
 <style lang="scss">
+  .mobile-quick-add-fab {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 45;
+    width: 3.25rem;
+    height: 3.25rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+
   .route-loading-overlay {
     position: fixed;
     top: 1rem;

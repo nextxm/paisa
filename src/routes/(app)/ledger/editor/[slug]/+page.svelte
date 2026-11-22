@@ -14,6 +14,7 @@
   import * as toast from "bulma-toast";
   import type { EditorView } from "codemirror";
   import { format } from "$lib/journal";
+  import { syncJournal } from "$lib/sync";
   import _ from "lodash";
   import { beforeNavigate, goto } from "$app/navigation";
   import type { PageData } from "./$types";
@@ -202,13 +203,14 @@
       }
     } else {
       toast.toast({
-        message: `Saved ${selectedFile.name}. Please sync to see changes.`,
+        message: `Saved ${selectedFile.name}. Syncing in background...`,
         type: "is-success"
       });
       filesMap[file.name] = file;
       selectedFile = file;
       selectedVersion = null;
       $editorState = _.assign({}, $editorState, { hasUnsavedChanges: false });
+      void syncJournal();
     }
   }
 

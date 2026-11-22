@@ -8,10 +8,23 @@
   let {
     compact = false,
     t,
-    highlightAccount = ""
-  }: { compact?: boolean; t: Transaction; highlightAccount?: string } = $props();
+    highlightAccount = "",
+    onselect
+  }: {
+    compact?: boolean;
+    t: Transaction;
+    highlightAccount?: string;
+    onselect?: (t: Transaction) => void;
+  } = $props();
 
   const useCompact = $derived(compact || isMobile());
+
+  function handleSelect(e: MouseEvent) {
+    if (!onselect) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    onselect(t);
+  }
 </script>
 
 <div class="column is-12" class:py-1={useCompact}>
@@ -23,7 +36,9 @@
           <span title={t.payee}>
             <PostingStatus posting={t.postings[0]} />
             <TransactionNote transaction={t} />
-            <a class="secondary-link" href={postingUrl(t.postings[0])}>{t.payee}</a></span
+            <a class="secondary-link" href={postingUrl(t.postings[0])} onclick={handleSelect}
+              >{t.payee}</a
+            ></span
           >
         </div>
       </div>
@@ -39,7 +54,9 @@
           <span title={t.payee}
             ><PostingStatus posting={t.postings[0]} />
             <TransactionNote transaction={t} />
-            <a class="secondary-link" href={postingUrl(t.postings[0])}>{t.payee}</a></span
+            <a class="secondary-link" href={postingUrl(t.postings[0])} onclick={handleSelect}
+              >{t.payee}</a
+            ></span
           >
         </div>
       </div>

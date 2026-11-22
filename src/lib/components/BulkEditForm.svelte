@@ -5,8 +5,10 @@
   let {
     accounts,
     onpreview
-  }: { accounts: string[]; onpreview?: (data: { operation: string; args: typeof args }) => void } =
-    $props();
+  }: {
+    accounts: string[];
+    onpreview?: (data: { operation: string; args: Record<string, any> }) => void;
+  } = $props();
 
   const selectItems = $derived(
     _.map(accounts, (account) => {
@@ -14,15 +16,55 @@
     })
   );
 
-  let selectedItem: { id: string; name: string } = $state(undefined);
+  let selectedOldAccount: { id: string; name: string } | undefined = $state(undefined);
+  let selectedNewAccount: { id: string; name: string } | undefined = $state(undefined);
 
-  const OPERATIONS = [{ id: "rename_account", label: "Rename Account" }];
+  const OPERATIONS = [
+    { id: "rename_account", label: "Recategorize / Rename Account" },
+    { id: "add_tag", label: "Add Tag" },
+    { id: "remove_tag", label: "Remove Tag" },
+    { id: "toggle_status", label: "Toggle Cleared / Pending" },
+    { id: "rename_payee", label: "Rename Payee" },
+    { id: "delete", label: "Delete Transactions" }
+  ];
   let selectedOperation = $state(OPERATIONS[0].id);
 
-  let args = $state({ oldAccountName: "", newAccountName: "" });
+  let oldAccountName = $state("");
+  let newAccountName = $state("");
+  let newAccountFilterText = $state("");
+  let tag = $state("");
+  let status = $state<"toggle" | "*" | "!" | "">("toggle");
+  let oldPayee = $state("");
+  let newPayee = $state("");
+
+  function handlePreview() {
+    let args: Record<string, any> = {};
+    switch (selectedOperation) {
+      case "rename_account":
+        args = {
+          oldAccountName,
+          newAccountName: newAccountName || newAccountFilterText
+        };
+        break;
+      case "add_tag":
+      case "remove_tag":
+        args = { tag };
+        break;
+      case "toggle_status":
+        args = { status };
+        break;
+      case "rename_payee":
+        args = { oldPayee, newPayee };
+        break;
+      case "delete":
+        args = {};
+        break;
+    }
+    onpreview?.({ operation: selectedOperation, args });
+  }
 </script>
 
-<div class="field is-grouped">
+<div class="field is-grouped is-grouped-multiline">
   <div class="control">
     <div class="select">
       <select bind:value={selectedOperation}>
@@ -32,10 +74,11 @@
       </select>
     </div>
   </div>
+
   {#if selectedOperation === "rename_account"}
     <div class="control is-expanded">
       <Select
-        bind:value={selectedItem}
+        bind:value={selectedOldAccount}
         showChevron={true}
         items={selectItems}
         label="name"
@@ -43,25 +86,75 @@
         placeholder="Old Account name"
         searchable={true}
         clearable={false}
-        on:change={(_e) => {
-          args.oldAccountName = selectedItem.name;
+        on:change={() => {
+          oldAccountName = selectedOldAccount?.name ?? "";
         }}
-      ></Select>
-    </div>
-    <div class="control is-expanded">
-      <input
-        bind:value={args.newAccountName}
-        class="input"
-        type="text"
-        placeholder="New Account name"
       />
     </div>
+    <div class="control is-expanded">
+      <Select
+        bind:value={selectedNewAccount}
+        bind:filterText={newAccountFilterText}
+        showChevron={true}
+        items={selectItems}
+        label="name"
+        itemId="id"
+        placeholder="New Account name (select or type)"
+        searchable={true}
+        clearable={true}
+        on:change={() => {
+          newAccountName = selectedNewAccount?.name ?? "";
+        }}
+        on:clear={() => {
+          newAccountName = "";
+        }}
+      />
+    </div>
+  {:else if selectedOperation === "add_tag" || selectedOperation === "remove_tag"}
+    <div class="control is-expanded">
+      <input
+        bind:value={tag}
+        class="input"
+        type="text"
+        placeholder="Tag name (e.g. reimbursable)"
+      />
+    </div>
+  {:else if selectedOperation === "toggle_status"}
+    <div class="control">
+      <div class="select">
+        <select bind:value={status}>
+          <option value="toggle">Flip Cleared (*) ↔ Pending (!)</option>
+          <option value="*">Mark Cleared (*)</option>
+          <option value="!">Mark Pending (!)</option>
+          <option value="">Clear Status Marker</option>
+        </select>
+      </div>
+    </div>
+  {:else if selectedOperation === "rename_payee"}
+    <div class="control is-expanded">
+      <input
+        bind:value={oldPayee}
+        class="input"
+        type="text"
+        placeholder="Current Payee (optional, blank = all filtered)"
+      />
+    </div>
+    <div class="control is-expanded">
+      <input bind:value={newPayee} class="input" type="text" placeholder="New Payee" />
+    </div>
+  {:else if selectedOperation === "delete"}
+    <div class="control is-flex is-align-items-center">
+      <span class="tag is-warning is-light">
+        Deletes all currently filtered transactions (previewed before saving)
+      </span>
+    </div>
   {/if}
+
   <p class="control">
     <button
       type="button"
-      class="button is-link"
-      onclick={(_e) => onpreview?.({ operation: selectedOperation, args: args })}>Preview</button
+      class="button {selectedOperation === 'delete' ? 'is-danger' : 'is-link'}"
+      onclick={handlePreview}>Preview</button
     >
   </p>
 </div>

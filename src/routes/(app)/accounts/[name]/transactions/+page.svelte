@@ -4,6 +4,7 @@
   import { onMount } from "svelte";
   import VirtualList from "svelte-tiny-virtual-list";
   import Transaction from "$lib/components/Transaction.svelte";
+  import TransactionDrawer from "$lib/components/TransactionDrawer.svelte";
   import TransactionHeader from "$lib/components/TransactionHeader.svelte";
   import DateRange from "$lib/components/DateRange.svelte";
   import type { PageData } from "./$types";
@@ -12,6 +13,7 @@
   let { data }: { data: PageData } = $props();
 
   let transactions: T[] | null = $state(null);
+  let selectedTransaction = $state<T | null>(null);
   let accountNote: AccountNote | null = $state(null);
   let localDateMin = $state(dayjs("1980", "YYYY"));
   let localDateMax = $state(dayjs());
@@ -41,9 +43,13 @@
     return mobile ? 42 + count * 25 : 8 + count * 22;
   };
 
-  onMount(async () => {
+  async function loadAccountTransactions() {
     const encoded = encodeURIComponent(data.account);
     transactions = (await ajax(`/api/transaction?account=${encoded}`)).transactions;
+  }
+
+  onMount(async () => {
+    await loadAccountTransactions();
     const noteResult = await ajax("/api/account_notes/:account", null, { account: data.account });
     accountNote = noteResult.account_note;
 
@@ -122,7 +128,11 @@
               >
                 <div slot="item" let:index let:style style="{style} overflow: hidden;">
                   {@const t = filteredTransactions[index]}
-                  <Transaction {t} highlightAccount={data.account} />
+                  <Transaction
+                    {t}
+                    highlightAccount={data.account}
+                    onselect={(tx) => (selectedTransaction = tx)}
+                  />
                 </div>
               </VirtualList>
             {/if}
@@ -132,3 +142,8 @@
     </div>
   </section>
 {/if}
+
+<TransactionDrawer
+  bind:transaction={selectedTransaction}
+  onsaved={() => loadAccountTransactions()}
+/>
