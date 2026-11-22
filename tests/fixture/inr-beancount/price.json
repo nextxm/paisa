@@ -1,4 +1,5 @@
 {
+  "history_mode": "latest",
   "prices": {
     "AAPL": [],
     "ABNB": [],
@@ -10,7 +11,7 @@
         "commodity_type": "unknown",
         "commodity_id": "NIFTY",
         "commodity_name": "NIFTY",
-        "quote_commodity": "INR",
+        "quote_commodity": "INR\r",
         "value": 100.273,
         "source": "journal"
       }
@@ -22,11 +23,10 @@
         "commodity_type": "unknown",
         "commodity_id": "USD",
         "commodity_name": "USD",
-        "quote_commodity": "INR",
+        "quote_commodity": "INR\r",
         "value": 80.442048,
         "source": "journal"
       }
     ]
-  },
-  "history_mode": "latest"
+  }
 }

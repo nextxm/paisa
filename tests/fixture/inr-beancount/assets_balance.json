@@ -2,14 +2,14 @@
   "asset_breakdowns": {
     "Assets": {
       "group": "Assets",
-      "investmentAmount": 98768.183232,
-      "withdrawalAmount": 10027,
-      "marketAmount": 102155.81133819763,
+      "investmentAmount": 90904.18610772,
+      "withdrawalAmount": 10027.3,
+      "marketAmount": 94292.81421391763,
       "balanceUnits": 0,
       "latestPrice": 0,
-      "xirr": 12.14,
-      "gainAmount": 13414.62810619763,
-      "absoluteReturn": 0.1358193262974935,
+      "xirr": 13.76,
+      "absoluteReturn": 0.1475831716957453,
+      "gainAmount": 13415.928106197629,
       "originalBalances": [
         {
           "currency": "BTC",
@@ -17,7 +17,11 @@
         },
         {
           "currency": "INR",
-          "amount": 102217.4
+          "amount": 22000
+        },
+        {
+          "currency": "INR\r",
+          "amount": 80218.4
         },
         {
           "currency": "USD",
@@ -30,16 +34,16 @@
       "group": "Assets:Checking",
       "investmentAmount": 0,
       "withdrawalAmount": 0,
-      "marketAmount": 13169.22810619763,
+      "marketAmount": 13170.22810619763,
       "balanceUnits": 0,
       "latestPrice": 0,
-      "xirr": 44.27,
-      "gainAmount": 13169.22810619763,
+      "xirr": 0,
       "absoluteReturn": 0,
+      "gainAmount": 0,
       "originalBalances": [
         {
           "currency": "INR",
-          "amount": 21999
+          "amount": 22000
         },
         {
           "currency": "USD",
@@ -50,14 +54,14 @@
     },
     "Assets:Coinbase": {
       "group": "Assets:Coinbase",
-      "investmentAmount": 0,
+      "investmentAmount": 0.00042772,
       "withdrawalAmount": 0,
-      "marketAmount": 0,
+      "marketAmount": 0.00042772,
       "balanceUnits": 0,
       "latestPrice": 0,
       "xirr": 0,
-      "gainAmount": 0,
       "absoluteReturn": 0,
+      "gainAmount": 0,
       "originalBalances": [
         {
           "currency": "BTC",
@@ -68,14 +72,14 @@
     },
     "Assets:Coinbase:BTC": {
       "group": "Assets:Coinbase:BTC",
-      "investmentAmount": 0,
+      "investmentAmount": 0.00042772,
       "withdrawalAmount": 0,
-      "marketAmount": 0,
+      "marketAmount": 0.00042772,
       "balanceUnits": 1e-8,
       "latestPrice": 0,
       "xirr": 0,
-      "gainAmount": 0,
       "absoluteReturn": 0,
+      "gainAmount": 0,
       "originalBalances": [
         {
           "currency": "BTC",
@@ -92,8 +96,8 @@
       "balanceUnits": 10,
       "latestPrice": 0,
       "xirr": 0,
-      "gainAmount": 0,
       "absoluteReturn": 0,
+      "gainAmount": 0,
       "originalBalances": [
         {
           "currency": "USD",
@@ -104,17 +108,17 @@
     },
     "Assets:Equity": {
       "group": "Assets:Equity",
-      "investmentAmount": 97963.762752,
-      "withdrawalAmount": 10027,
-      "marketAmount": 88182.162752,
+      "investmentAmount": 90099.7652,
+      "withdrawalAmount": 10027.3,
+      "marketAmount": 80318.1652,
       "balanceUnits": 0,
       "latestPrice": 0,
-      "xirr": 3.23,
-      "gainAmount": 245.4,
-      "absoluteReturn": 0.0025050079040067,
+      "xirr": 3.54,
+      "absoluteReturn": 0.0027269771397806,
+      "gainAmount": 245.7,
       "originalBalances": [
         {
-          "currency": "INR",
+          "currency": "INR\r",
           "amount": 80218.4
         }
       ],
@@ -123,26 +127,26 @@
     "Assets:Equity:AAPL": {
       "group": "Assets:Equity:AAPL",
       "investmentAmount": 10000,
-      "withdrawalAmount": 10027,
+      "withdrawalAmount": 10027.3,
       "marketAmount": 0,
       "balanceUnits": -100,
       "latestPrice": 0,
-      "xirr": 167.56,
-      "gainAmount": 27,
-      "absoluteReturn": 0.0027,
+      "xirr": 170.5,
+      "absoluteReturn": 0.00273,
+      "gainAmount": 27.3,
       "originalBalances": null,
       "inactive": false
     },
     "Assets:Equity:ABNB": {
       "group": "Assets:Equity:ABNB",
-      "investmentAmount": 7963.762752,
+      "investmentAmount": 99.7652,
       "withdrawalAmount": 0,
-      "marketAmount": 7963.762752,
+      "marketAmount": 99.7652,
       "balanceUnits": 0.76,
       "latestPrice": 0,
       "xirr": 0,
-      "gainAmount": 0,
       "absoluteReturn": 0,
+      "gainAmount": 0,
       "originalBalances": null,
       "inactive": false
     },
@@ -154,11 +158,11 @@
       "balanceUnits": 800,
       "latestPrice": 0,
       "xirr": 3.16,
-      "gainAmount": 218.4,
       "absoluteReturn": 0.00273,
+      "gainAmount": 218.4,
       "originalBalances": [
         {
-          "currency": "INR",
+          "currency": "INR\r",
           "amount": 80218.4
         }
       ],

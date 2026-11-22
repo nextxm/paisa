@@ -35,9 +35,9 @@
         "marketAmount": 12097.5625128704,
         "balanceUnits": 0,
         "latestPrice": 0,
-        "xirr": 48.45,
+        "xirr": 0,
         "absoluteReturn": 0,
-        "gainAmount": 12097.5625128704,
+        "gainAmount": 0,
         "originalBalances": [
           {
             "currency": "INR",
