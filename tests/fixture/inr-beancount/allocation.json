@@ -18,7 +18,7 @@
     "Assets:Coinbase:BTC": {
       "date": "2022-02-07T23:59:59.999999999Z",
       "account": "Assets:Coinbase:BTC",
-      "market_amount": 0.00042772
+      "market_amount": 0.03440667277056
     },
     "Assets:Dollar": {
       "date": "2022-02-07T23:59:59.999999999Z",
@@ -38,7 +38,7 @@
     "Assets:Equity:ABNB": {
       "date": "2022-02-07T23:59:59.999999999Z",
       "account": "Assets:Equity:ABNB",
-      "market_amount": 99.7652
+      "market_amount": 8025.3170071296
     },
     "Assets:Equity:NIFTY": {
       "date": "2022-02-07T23:59:59.999999999Z",
@@ -110,7 +110,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-08T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-08T00:00:00Z",
@@ -132,7 +132,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-09T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-09T00:00:00Z",
@@ -154,7 +154,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-10T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-10T00:00:00Z",
@@ -181,7 +181,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-11T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-11T00:00:00Z",
@@ -198,7 +198,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-12T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-12T00:00:00Z",
@@ -213,7 +213,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-12T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-12T00:00:00Z",
@@ -230,7 +230,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-13T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-13T00:00:00Z",
@@ -245,7 +245,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-13T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-13T00:00:00Z",
@@ -262,7 +262,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-14T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-14T00:00:00Z",
@@ -277,7 +277,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-14T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-14T00:00:00Z",
@@ -294,7 +294,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-15T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-15T00:00:00Z",
@@ -309,7 +309,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-15T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-15T00:00:00Z",
@@ -326,7 +326,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-16T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-16T00:00:00Z",
@@ -341,7 +341,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-16T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-16T00:00:00Z",
@@ -358,7 +358,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-17T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-17T00:00:00Z",
@@ -373,7 +373,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-17T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-17T00:00:00Z",
@@ -390,7 +390,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-18T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-18T00:00:00Z",
@@ -405,7 +405,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-18T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-18T00:00:00Z",
@@ -422,7 +422,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-19T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-19T00:00:00Z",
@@ -437,7 +437,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-19T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-19T00:00:00Z",
@@ -454,7 +454,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-20T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-20T00:00:00Z",
@@ -469,7 +469,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-20T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-20T00:00:00Z",
@@ -486,7 +486,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-21T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-21T00:00:00Z",
@@ -501,7 +501,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-21T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-21T00:00:00Z",
@@ -518,7 +518,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-22T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-22T00:00:00Z",
@@ -533,7 +533,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-22T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-22T00:00:00Z",
@@ -550,7 +550,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-23T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-23T00:00:00Z",
@@ -565,7 +565,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-23T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-23T00:00:00Z",
@@ -582,7 +582,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-24T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-24T00:00:00Z",
@@ -597,7 +597,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-24T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-24T00:00:00Z",
@@ -614,7 +614,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-25T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-25T00:00:00Z",
@@ -629,7 +629,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-25T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-25T00:00:00Z",
@@ -646,7 +646,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-26T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-26T00:00:00Z",
@@ -661,7 +661,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-26T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-26T00:00:00Z",
@@ -678,7 +678,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-27T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-27T00:00:00Z",
@@ -693,7 +693,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-27T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-27T00:00:00Z",
@@ -710,7 +710,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-28T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-28T00:00:00Z",
@@ -725,7 +725,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-28T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-28T00:00:00Z",
@@ -742,7 +742,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-29T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-29T00:00:00Z",
@@ -757,7 +757,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-29T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-29T00:00:00Z",
@@ -774,7 +774,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-30T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-30T00:00:00Z",
@@ -789,7 +789,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-30T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-30T00:00:00Z",
@@ -806,7 +806,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-01-31T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-01-31T00:00:00Z",
@@ -821,7 +821,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-01-31T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-01-31T00:00:00Z",
@@ -838,7 +838,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-02-01T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-02-01T00:00:00Z",
@@ -853,7 +853,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-02-01T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-02-01T00:00:00Z",
@@ -870,7 +870,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-02-02T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-02-02T00:00:00Z",
@@ -885,7 +885,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-02-02T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-02-02T00:00:00Z",
@@ -902,7 +902,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-02-03T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-02-03T00:00:00Z",
@@ -917,7 +917,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-02-03T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-02-03T00:00:00Z",
@@ -934,7 +934,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-02-04T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-02-04T00:00:00Z",
@@ -949,7 +949,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-02-04T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-02-04T00:00:00Z",
@@ -966,7 +966,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-02-05T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-02-05T00:00:00Z",
@@ -981,7 +981,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-02-05T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-02-05T00:00:00Z",
@@ -998,7 +998,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-02-06T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-02-06T00:00:00Z",
@@ -1013,7 +1013,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-02-06T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-02-06T00:00:00Z",
@@ -1030,7 +1030,7 @@
       "Assets:Coinbase:BTC": {
         "date": "2022-02-07T00:00:00Z",
         "account": "Assets:Coinbase:BTC",
-        "market_amount": 0.00042772
+        "market_amount": 0.03440667277056
       },
       "Assets:Dollar": {
         "date": "2022-02-07T00:00:00Z",
@@ -1045,7 +1045,7 @@
       "Assets:Equity:ABNB": {
         "date": "2022-02-07T00:00:00Z",
         "account": "Assets:Equity:ABNB",
-        "market_amount": 99.7652
+        "market_amount": 8025.3170071296
       },
       "Assets:Equity:NIFTY": {
         "date": "2022-02-07T00:00:00Z",

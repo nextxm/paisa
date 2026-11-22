@@ -11,7 +11,7 @@
         "commodity_type": "unknown",
         "commodity_id": "NIFTY",
         "commodity_name": "NIFTY",
-        "quote_commodity": "INR\r",
+        "quote_commodity": "INR",
         "value": 100.273,
         "source": "journal"
       }
@@ -23,7 +23,7 @@
         "commodity_type": "unknown",
         "commodity_id": "USD",
         "commodity_name": "USD",
-        "quote_commodity": "INR\r",
+        "quote_commodity": "INR",
         "value": 80.442048,
         "source": "journal"
       }

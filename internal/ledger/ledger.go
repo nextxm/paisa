@@ -718,7 +718,9 @@ func parseBeancountPrices(output string) ([]price.Price, error) {
 }
 
 func beancountPrice(dateString, commodity, target string, value decimal.Decimal) (price.Price, error) {
-	date, err := time.ParseInLocation("2006-01-02", dateString, config.TimeZone())
+	commodity = strings.TrimSpace(commodity)
+	target = strings.TrimSpace(target)
+	date, err := time.ParseInLocation("2006-01-02", strings.TrimSpace(dateString), config.TimeZone())
 	if err != nil {
 		return price.Price{}, err
 	}

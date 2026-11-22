@@ -3,16 +3,16 @@
     {
       "account": "Assets:Coinbase:BTC",
       "networth": {
-        "date": "2022-01-12T00:00:00Z",
-        "investmentAmount": 0.00042772,
+        "date": "2022-02-07T00:00:00Z",
+        "investmentAmount": 0.03440667277056,
         "withdrawalAmount": 0,
         "gainAmount": 0,
-        "contribution": 0.00042772,
+        "contribution": 0.03440667277056,
         "investment_return": 0,
         "fx_impact": 0,
-        "balanceAmount": 0.00042772,
+        "balanceAmount": 0.03440667277056,
         "balanceUnits": 0,
-        "netInvestmentAmount": 0.00042772
+        "netInvestmentAmount": 0.03440667277056
       },
       "xirr": 0,
       "postings": [
@@ -24,7 +24,7 @@
           "account": "Assets:Coinbase:BTC",
           "commodity": "BTC",
           "quantity": 1e-8,
-          "amount": 0.00042772,
+          "amount": 0.03440667277056,
           "original_amount": 1e-8,
           "status": "cleared",
           "tag_recurring": "",
@@ -35,7 +35,7 @@
           "forecast": false,
           "note": "",
           "transaction_note": "",
-          "market_amount": 0.00042772,
+          "market_amount": 0.03440667277056,
           "balance": 0
         }
       ],
@@ -68,7 +68,7 @@
           "account": "Assets:Dollar",
           "commodity": "USD",
           "quantity": 10,
-          "amount": 10,
+          "amount": 804.42048,
           "original_amount": 10,
           "status": "cleared",
           "tag_recurring": "",
@@ -180,15 +180,15 @@
       "account": "Assets:Equity:ABNB",
       "networth": {
         "date": "2022-02-07T00:00:00Z",
-        "investmentAmount": 99.7652,
+        "investmentAmount": 8025.3170071296,
         "withdrawalAmount": 0,
         "gainAmount": 0,
-        "contribution": 99.7652,
+        "contribution": 8025.3170071296,
         "investment_return": 0,
         "fx_impact": 0,
-        "balanceAmount": 99.7652,
+        "balanceAmount": 8025.3170071296,
         "balanceUnits": 0,
-        "netInvestmentAmount": 99.7652
+        "netInvestmentAmount": 8025.3170071296
       },
       "xirr": 0,
       "postings": [
@@ -200,7 +200,7 @@
           "account": "Assets:Equity:ABNB",
           "commodity": "ABNB",
           "quantity": 0.76,
-          "amount": 99.7652,
+          "amount": 8025.3170071296,
           "original_amount": 0.76,
           "status": "cleared",
           "tag_recurring": "",
@@ -211,7 +211,7 @@
           "forecast": false,
           "note": "",
           "transaction_note": "",
-          "market_amount": 99.7652,
+          "market_amount": 8025.3170071296,
           "balance": 0
         }
       ],
