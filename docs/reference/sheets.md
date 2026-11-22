@@ -308,3 +308,124 @@ postings and you will have the remaining buy postings.
 Negates the amount and quantity of all the postings. This would be
 useful when you want to do some calculation on liabilities or income
 which are negative in nature.
+
+## Use Cases & Sample Queries
+
+Because Sheets combines a live calculator with direct queries against your ledger, you can build dynamic financial worksheets that update automatically as you add new transactions. Below are common use cases and sample queries you can adapt to your own account hierarchy.
+
+### 1. Net Worth & Unrealized Gains
+
+Compare the FIFO cost basis of your assets against their current market value, subtract liabilities, and calculate total unrealized gains.
+
+```sheet
+# Net Worth & Unrealized Gains
+assets = {account =~ /^Assets:/}
+liabilities = {account =~ /^Liabilities:/}
+investments = {account =~ /^Assets:(Equity|Debt|MutualFunds):/}
+
+// Current market value vs. FIFO cost basis
+total_assets = balance(assets)
+total_liabilities = balance(negate(liabilities))
+net_worth = total_assets - total_liabilities
+
+// Investment performance
+invested_cost = cost(fifo(investments))
+invested_value = balance(investments)
+unrealized_gain = invested_value - invested_cost
+return_pct = (unrealized_gain / invested_cost) * 100
+```
+
+### 2. Savings Rate & Cash Flow
+
+Track how much of your income you are saving over a given period (such as a financial year or `[this year]`, `[last month]`). Since income postings are negative in double-entry accounting, wrap them with `negate(...)`.
+
+```sheet
+# Annual Savings Rate
+period = {date >= [2025-04-01] AND date <= [2026-03-31]}
+
+income = cost(negate({account =~ /^Income:/} AND period))
+expenses = cost({account =~ /^Expenses:/} AND period)
+
+net_savings = income - expenses
+savings_rate_pct = (net_savings / income) * 100
+monthly_avg_expense = expenses / 12
+```
+
+### 3. Emergency Fund Runway & FIRE Progress
+
+Use your actual historical spending from the ledger to size your emergency fund and track progress toward Financial Independence (FIRE).
+
+```sheet
+# Emergency Fund & FIRE
+annual_expenses = cost({account =~ /^Expenses:/ AND date >= [last year]})
+monthly_expenses = annual_expenses / 12
+
+// Liquid cash available in checking/savings accounts
+liquid_cash = balance({account =~ /^Assets:(Checking|Savings)/})
+runway_months = liquid_cash / monthly_expenses
+
+// FIRE target using the 4% safe withdrawal rate (25x annual expenses)
+swr = 4%
+fire_target = annual_expenses / swr
+portfolio = balance({account =~ /^Assets:(Equity|Debt|MutualFunds):/})
+fire_progress_pct = (portfolio / fire_target) * 100
+```
+
+### 4. Portfolio Rebalancing Calculator
+
+Check your current asset allocation and calculate the exact amount to buy or sell to return to your target split.
+
+```sheet
+# Portfolio Rebalancing
+equity = balance({account =~ /^Assets:Equity:/})
+debt = balance({account =~ /^Assets:Debt:/})
+total_portfolio = equity + debt
+
+// Current allocation (%)
+equity_pct = (equity / total_portfolio) * 100
+debt_pct = (debt / total_portfolio) * 100
+
+// Target 70% Equity / 30% Debt
+target_equity = total_portfolio * 70%
+target_debt = total_portfolio * 30%
+
+// Positive = buy, Negative = sell
+equity_rebalance = target_equity - equity
+debt_rebalance = target_debt - debt
+```
+
+### 5. Spending by Category, Merchant, or Tag
+
+Combine `account`, `payee`, `note`, and `date` filters to inspect specific spending habits or gather figures for tax deductions and reimbursements.
+
+```sheet
+# Category & Merchant Insights
+fy = {date >= [2025-04-01] AND date <= [2026-03-31]}
+
+// Food delivery spend across multiple merchants
+food_delivery = cost({payee =~ /swiggy|zomato/i} AND fy)
+
+// Reimbursable or tax-deductible expenses tagged in transaction notes
+tax_deductible = cost({account =~ /^Expenses:/ AND note =~ /tax-deductible/i} AND fy)
+reimbursable = cost({note =~ /reimbursable/i} AND fy)
+
+// Large discretionary purchases over 5,000
+large_expenses = cost({account =~ /^Expenses:/ AND total > 5000} AND fy)
+```
+
+### 6. Loan Principal & Interest Tracking
+
+Monitor remaining loan principal alongside total interest paid to date, and compare against a target payoff payment.
+
+```sheet
+# Home Loan Tracker
+loan_principal = cost(fifo(negate({account =~ /^Liabilities:Homeloan/})))
+interest_paid = cost({account = Expenses:Interest:Homeloan})
+interest_this_fy = cost({account = Expenses:Interest:Homeloan AND date >= [2025-04-01]})
+
+// Simulate monthly EMI for the remaining balance
+annual_rate = 8.5%
+remaining_months = 180
+r = annual_rate / 12
+estimated_emi = r / (1 - (1 + r) ^ (-remaining_months)) * loan_principal
+```
