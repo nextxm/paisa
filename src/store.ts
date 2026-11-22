@@ -79,7 +79,9 @@ export const dateRange = derived(
   }
 );
 
-export const theme = writable("light");
+import type { ColorTheme } from "./lib/theme";
+
+export const theme = writable<ColorTheme>("light");
 
 function createLoadingStore() {
   const { subscribe, set, update } = writable(0);

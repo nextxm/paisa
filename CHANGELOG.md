@@ -2,6 +2,21 @@
 
 ### Unreleased — Future changes
 
+#### Features
+
+- **System theme mode (`59ce2d52`)** — Added a `system` theme preference (`prefers-color-scheme`) alongside light and dark modes in `ThemeSwitcher.svelte` and `src/lib/theme.ts`, with pre-render initialization in `src/app.html`.
+- **FinBodhi price providers (`e49877e6`, `1364d979`, `da832abc`, `e871b3fe`)** — Renamed `com-purifiedbytes-*` providers to `com-finbodhi-*` (with automatic legacy config normalization) and added `com-finbodhi-sif`, `com-finbodhi-stock`, and `com-finbodhi-mutualfund` providers.
+- **Beancount 3 support (`b22cf74e`)** — Added `bean-query` balance preview and `#prices` import support for Beancount 3 / standalone `beanquery` while keeping Beancount 2 `bean-report` compatibility.
+- **Configurable server host & loopback default (`ba96af1e`, `4989a662`)** — Added `--host` flag to `paisa serve` and defaulted binding to `127.0.0.1` (Dockerfiles updated to pass `--host 0.0.0.0`).
+- **CSV transaction ID export & embedded timezone data (`960995f2`, `36c43d6f`)** — Included `TransactionID` in transaction CSV exports and embedded `time/tzdata` in the Go binary.
+
+#### Fixes
+
+- **Path traversal & journal editor validation (`03594935`, `74a9dd00`, `e570d955`)** — Enforced `utils.BuildSubPath` and `utils.Glob` in editor/sheet file and backup endpoints, rejected mismatched journal file extensions on save, and fixed validation of nested journal files with relative includes.
+- **Indian capital gains & `listed_debt` (`d718cd78`)** — Updated capital gains calculations for July 2024 tax rules (12.5% LTCG / 20% STCG, Section 50AA cutoff, equity grandfathering FMV) and added the `listed_debt` tax category.
+- **Accounting & price sync fixes (`1e28a307`, `e0436556`, `b731eae3`, `7c3a332d`, `ca312424`, `3e375142`, `fcfd0451`, `cb00dd31`)** — Fixed double-counted budget rollover in projected balances, skipped investment return calculations for checking accounts, marked rounded credit-card bills (`< 1` unit) as paid, normalized `silver-999` prices from kg to grams, included file/line numbers in ledger validation errors, fixed quoted commodity regex parsing in price sync, handled Beancount commodities containing digits, and improved Yahoo Finance HTTP error reporting.
+- **Frontend & import fixes (`462fdaf0`, `3fb683d3`, `1d31895e`)** — Added locale-aware `BigNumber` parsing for import template helpers (`src/lib/amount.ts`), fixed spreadsheet column naming beyond `Z`, and prevented expense breakdown bars from overlapping long amount labels.
+
 ### 0.95-beta (2026-11-22) — Future changes
 
 #### Features

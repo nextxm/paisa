@@ -34,6 +34,7 @@ type CommodityType string
 
 const (
 	MutualFund CommodityType = "mutualfund"
+	SIF        CommodityType = "sif"
 	NPS        CommodityType = "nps"
 	Stock      CommodityType = "stock"
 	Metal      CommodityType = "metal"
@@ -387,6 +388,28 @@ func LoadConfigFile(path string) {
 	log.Info("Using config file: ", path)
 }
 
+func normalizePriceProvider(provider string) string {
+	switch provider {
+	case "com-purifiedbytes-nps":
+		return "com-finbodhi-nps"
+	case "com-purifiedbytes-metal":
+		return "com-finbodhi-metal"
+	}
+	return provider
+}
+
+func normalizeConfig(value interface{}) {
+	root, _ := value.(map[string]interface{})
+	commodities, _ := root["commodities"].([]interface{})
+	for _, value := range commodities {
+		commodity, _ := value.(map[string]interface{})
+		price, _ := commodity["price"].(map[string]interface{})
+		if provider, ok := price["provider"].(string); ok {
+			price["provider"] = normalizePriceProvider(provider)
+		}
+	}
+}
+
 func LoadConfig(content []byte, cp string) error {
 	var configJson interface{}
 	err := yaml.Unmarshal(content, &configJson)
@@ -394,15 +417,22 @@ func LoadConfig(content []byte, cp string) error {
 		return err
 	}
 
+	normalizeConfig(configJson)
+
 	err = schema.Validate(configJson)
 	if err != nil {
 		return fmt.Errorf("Invalid configuration\n%#v", err)
 	}
 
+	// Decode the original YAML to preserve formatting of numeric commodity codes.
 	config = Config{}
 	err = yaml.Unmarshal(content, &config)
 	if err != nil {
 		return err
+	}
+
+	for i := range config.Commodities {
+		config.Commodities[i].Price.Provider = normalizePriceProvider(config.Commodities[i].Price.Provider)
 	}
 
 	err = mergo.Merge(&config, defaultConfig, mergo.WithOverrideEmptySlice)
