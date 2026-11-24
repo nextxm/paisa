@@ -57,7 +57,16 @@ func validateWithTempFile(filePath string, content string) ([]ledger.LedgerFileE
 	return ledger.Cli().ValidateFile(tmpfile.Name())
 }
 
+// clampEndLine adjusts endLine when Beancount's lastPostingLine+1 overshoots a file with no trailing newline.
+func clampEndLine(beginLine, endLine, lineCount int) int {
+	if endLine == lineCount+1 && beginLine >= 1 && beginLine <= lineCount {
+		return lineCount
+	}
+	return endLine
+}
+
 func patchTransactionLines(lines []string, beginLine int, endLine int, action string, replacement string) (string, error) {
+	endLine = clampEndLine(beginLine, endLine, len(lines))
 	if beginLine < 1 || endLine < beginLine || endLine > len(lines) {
 		return "", fmt.Errorf("line range %d..%d out of bounds (file has %d lines)", beginLine, endLine, len(lines))
 	}
@@ -112,6 +121,7 @@ func GetRawTransactionHandler() gin.HandlerFunc {
 		}
 
 		lines := splitNormalizedLines(string(rawBytes))
+		endLine = clampEndLine(beginLine, endLine, len(lines))
 		if beginLine < 1 || endLine < beginLine || endLine > len(lines) {
 			RespondError(c, http.StatusBadRequest, ErrCodeInvalidRequest, "line range out of bounds")
 			return

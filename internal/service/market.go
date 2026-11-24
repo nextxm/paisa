@@ -42,6 +42,7 @@ var (
 type priceCache struct {
 	loaded            bool
 	pricesTree        map[string]*btree.BTree
+	nativePricesTree  map[string]*btree.BTree
 	postingPricesTree map[string]*btree.BTree
 	dcPricesTree      map[string]*btree.BTree
 }
@@ -92,6 +93,7 @@ func ensureRateCacheLoaded(db *gorm.DB) {
 
 func loadPriceCache(db *gorm.DB) {
 	pricesTree := make(map[string]*btree.BTree)
+	nativePricesTree := make(map[string]*btree.BTree)
 	postingPricesTree := make(map[string]*btree.BTree)
 
 	dc := config.DefaultCurrency()
@@ -109,6 +111,13 @@ func loadPriceCache(db *gorm.DB) {
 			pricesTree[p.CommodityName] = btree.New(2)
 		}
 		pricesTree[p.CommodityName].ReplaceOrInsert(p)
+
+		if !isDefaultCurrency(p.QuoteCommodity, dc) {
+			if nativePricesTree[p.CommodityName] == nil {
+				nativePricesTree[p.CommodityName] = btree.New(2)
+			}
+			nativePricesTree[p.CommodityName].ReplaceOrInsert(p)
+		}
 
 		// postingPricesTree is used specifically for native journal prices
 		// already in the default currency.
@@ -129,6 +138,7 @@ func loadPriceCache(db *gorm.DB) {
 	pcacheMu.Lock()
 	defer pcacheMu.Unlock()
 	pcache.pricesTree = pricesTree
+	pcache.nativePricesTree = nativePricesTree
 	pcache.postingPricesTree = postingPricesTree
 	pcache.dcPricesTree = dcPricesTree
 	pcache.loaded = true
@@ -214,6 +224,7 @@ func ClearPriceCache() {
 	defer pcacheMu.Unlock()
 	pcache.loaded = false
 	pcache.pricesTree = nil
+	pcache.nativePricesTree = nil
 	pcache.postingPricesTree = nil
 	pcache.dcPricesTree = nil
 }

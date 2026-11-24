@@ -54,6 +54,10 @@ export function renderNetworth(
   } = {}
 ): { destroy: () => void; legends: Legend[] } {
   const { showFXImpact = false, projections = [], milestones = [] } = options;
+  if (points.length === 0) {
+    d3.select(element).selectAll("*").remove();
+    return { destroy: () => {}, legends: [] };
+  }
   const projectionEnd = _.max(
     _.flatMap(projections, (p) => _.map(p.points, (point) => point.date))
   );
@@ -317,7 +321,7 @@ export function renderNetworth(
     .concat(investmentVoronoiPoints)
     .concat(projectionVoronoiPoints);
 
-  const voronoi = Delaunay.from(allVoronoiPoints).voronoi([0, 0, width, height]);
+  const delaunay = Delaunay.from(allVoronoiPoints);
 
   const dataList: any[] = points
     .map((p) => ["networth", p])
@@ -329,18 +333,22 @@ export function renderNetworth(
     });
   }
 
+  let lastHoverIdx = -1;
+
   layer
-    .append("g")
-    .selectAll("path")
-    .data(dataList)
-    .enter()
-    .append("path")
-    .style("pointer-events", "all")
+    .append("rect")
+    .attr("width", Math.max(width, 0))
+    .attr("height", Math.max(height, 0))
     .style("fill", "none")
-    .attr("d", (_, i) => {
-      return voronoi.renderCell(i);
-    })
-    .on("mouseover", (event, item) => {
+    .style("pointer-events", "all")
+    .on("mousemove", (event) => {
+      if (allVoronoiPoints.length === 0) return;
+      const [mx, my] = d3.pointer(event);
+      const i = delaunay.find(mx, my);
+      if (i < 0 || i >= dataList.length || i === lastHoverIdx) return;
+      lastHoverIdx = i;
+
+      const item = dataList[i];
       const itemType = item[0];
       if (itemType === "projection") {
         const p = item[1];
@@ -395,7 +403,8 @@ export function renderNetworth(
         t.show();
       }
     })
-    .on("mouseout", () => {
+    .on("mouseleave", () => {
+      lastHoverIdx = -1;
       t.hide();
       hoverCircle.attr("fill", "none");
     });

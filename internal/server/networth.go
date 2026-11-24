@@ -264,7 +264,7 @@ func computeNetworthTimeline(db *gorm.DB, postings []posting.Posting, computeBal
 
 			if utils.IsCurrency(commodity) {
 				balance = balance.Add(rs.balance)
-			} else {
+			} else if !rs.balanceUnits.IsZero() || !rs.balance.IsZero() {
 				if computeBalanceUnits {
 					balanceUnits = balanceUnits.Add(rs.balanceUnits)
 				}
@@ -310,6 +310,11 @@ func computeFXImpactForCommodity(
 	dayEnd time.Time,
 	fxStateByCommodity map[string]networthFXState,
 ) decimal.Decimal {
+	if rs.balanceUnits.IsZero() {
+		delete(fxStateByCommodity, commodity)
+		return decimal.Zero
+	}
+
 	localValue, quote, rate, hasRate, trackFX := commodityFXState(db, commodity, rs.balanceUnits, dayEnd)
 	if !trackFX || localValue.IsZero() {
 		delete(fxStateByCommodity, commodity)

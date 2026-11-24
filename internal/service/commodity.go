@@ -23,35 +23,46 @@ func GetNativeUnitPrice(db *gorm.DB, commodity string, date time.Time) (decimal.
 	pcacheMu.RLock()
 	defer pcacheMu.RUnlock()
 
+	dc := config.DefaultCurrency()
+	pivot := utils.EndOfDay(date)
+	seekKey := price.Price{Date: pivot.Add(time.Nanosecond)}
+
+	if nativeTree := pcache.nativePricesTree[commodity]; nativeTree != nil {
+		var bestNative price.Price
+		nativeTree.DescendLessOrEqual(seekKey, func(item btree.Item) bool {
+			p := item.(price.Price)
+			if p.Date.After(pivot) {
+				return true
+			}
+			if !p.Value.IsZero() {
+				bestNative = p
+				return false
+			}
+			return true
+		})
+		if !bestNative.Value.IsZero() {
+			return bestNative.Value, bestNative.QuoteCommodity, true
+		}
+	}
+
 	pt := pcache.pricesTree[commodity]
 	if pt == nil {
 		return decimal.Zero, "", false
 	}
 
-	dc := config.DefaultCurrency()
-	pivot := utils.EndOfDay(date)
-	var bestNative, bestDC price.Price
-
-	pt.Descend(func(item btree.Item) bool {
+	var bestDC price.Price
+	pt.DescendLessOrEqual(seekKey, func(item btree.Item) bool {
 		p := item.(price.Price)
 		if p.Date.After(pivot) {
 			return true
 		}
-		if !isDefaultCurrency(p.QuoteCommodity, dc) && bestNative.Value.IsZero() {
-			bestNative = p
-		}
-		if isDefaultCurrency(p.QuoteCommodity, dc) && bestDC.Value.IsZero() {
+		if isDefaultCurrency(p.QuoteCommodity, dc) && !p.Value.IsZero() {
 			bestDC = p
-		}
-		if !bestNative.Value.IsZero() && !bestDC.Value.IsZero() {
 			return false
 		}
 		return true
 	})
 
-	if !bestNative.Value.IsZero() {
-		return bestNative.Value, bestNative.QuoteCommodity, true
-	}
 	if !bestDC.Value.IsZero() {
 		return bestDC.Value, dc, true
 	}

@@ -39,6 +39,12 @@ func TestPatchTransactionLines(t *testing.T) {
 		assert.Equal(t, "2024/05/02 * Grocery Store\n    Assets:Cash  -20.00 USD\n    Expenses:Groceries  20.00 USD", out)
 	})
 
+	t.Run("clamps endLine at EOF when lastPostingLine+1 overshoots by one", func(t *testing.T) {
+		out, err := patchTransactionLines(lines, 5, 8, "replace", "2024/05/02 * Grocery Store\n    Assets:Cash  -25.00 USD\n    Expenses:Groceries  25.00 USD")
+		require.NoError(t, err)
+		assert.Contains(t, out, "Expenses:Groceries  25.00 USD")
+	})
+
 	t.Run("out of bounds rejected", func(t *testing.T) {
 		_, err := patchTransactionLines(lines, 1, 99, "delete", "")
 		assert.Error(t, err)
@@ -66,6 +72,21 @@ func TestGetRawTransactionHandler(t *testing.T) {
 		var resp map[string]any
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 		assert.Equal(t, "2024/05/01 * Coffee\n    Assets:Cash  -5.00 USD\n    Expenses:Food  5.00 USD", resp["raw"])
+	})
+
+	t.Run("clamps end_line at EOF without trailing newline", func(t *testing.T) {
+		noNewlinePath := filepath.Join(tmpDir, "no_newline.beancount")
+		err := os.WriteFile(noNewlinePath, []byte("2026-06-01 * \"Test\"\n  Expenses:Groceries  12 CAD\n  Assets:CAD:Cash"), 0644)
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(http.MethodGet, "/api/transaction/raw?file_name=no_newline.beancount&begin_line=1&end_line=4", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		var resp map[string]any
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, "2026-06-01 * \"Test\"\n  Expenses:Groceries  12 CAD\n  Assets:CAD:Cash", resp["raw"])
 	})
 
 	t.Run("rejects path traversal", func(t *testing.T) {

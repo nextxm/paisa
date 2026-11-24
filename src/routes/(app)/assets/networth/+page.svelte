@@ -30,7 +30,7 @@
   let xirr = $state(0);
   let svg: Element = $state();
   let destroy: () => void;
-  let points: Networth[] = $state([]);
+  let points: Networth[] = $state.raw([]);
   let legends: Legend[] = $state([]);
   let showFXImpact = $state(true);
   let showProjection = $state(false);
@@ -39,7 +39,7 @@
   let projection: NetworthProjectionResponse | null = $state(null);
 
   $effect(() => {
-    if (!_.isEmpty(points)) {
+    if (svg && !_.isEmpty(points)) {
       if (destroy) {
         destroy();
       }
