@@ -18,8 +18,7 @@
     cashflowShowTransfers,
     obscure,
     sankeyPeriod,
-    sankeyRefDate,
-    navLayout
+    sankeyRefDate
   } from "../../persisted_store";
   import _ from "lodash";
   import { financialYear, forEachFinancialYear, helpUrl, isMobile, now } from "$lib/utils";
@@ -69,159 +68,21 @@
     disablePreload?: boolean;
   }
 
-  const classicLinks: Link[] = [
-    { label: "Dashboard", href: "/", hide: true },
+  const taxLinks: Link[] = [
+    { label: "Tax Harvesting", href: "/tax/harvest", help: "tax/tax-harvesting" },
+    { label: "Capital Gains", href: "/tax/capital_gains", help: "tax/capital-gains" },
     {
-      label: "Cash Flow",
-      href: "/cash_flow",
-      children: [
-        { label: "Income Statement", href: "/income_statement", financialYearPicker: true },
-        { label: "Monthly", href: "/monthly", dateRangeSelector: true },
-        {
-          label: "Yearly",
-          href: "/yearly",
-          financialYearPicker: true,
-          maxDepthSelector: true
-        },
-        {
-          label: "Recurring",
-          href: "/recurring",
-          help: "recurring",
-          monthPicker: true,
-          recurringIcons: true
-        },
-        { label: "Money Flow", href: "/sankey", sankeyPeriodSelector: true }
-      ]
-    },
-    {
-      label: "Expenses",
-      href: "/expense",
-      children: [
-        {
-          label: "Monthly",
-          href: "/monthly",
-          help: "expenses",
-          monthPicker: true,
-          dateRangeSelector: true
-        },
-        { label: "Yearly", href: "/yearly", financialYearPicker: true },
-        { label: "Budget", href: "/budget", help: "budget", monthPicker: true },
-        { label: "Expense Breakdown", href: "/sankey", dateRangeSelector: true },
-        { label: "Heatmap", href: "/heatmap" },
-        { label: "YoY", href: "/yoy" },
-        { label: "MoM", href: "/mom" }
-      ]
-    },
-    {
-      label: "Assets",
-      href: "/assets",
-      children: [
-        { label: "Balance", href: "/balance" },
-        { label: "Networth", href: "/networth", dateRangeSelector: true },
-        { label: "Investment", href: "/investment" },
-        { label: "Gain", href: "/gain" },
-        { label: "Allocation", href: "/allocation", help: "allocation-targets" },
-        { label: "Portfolio", href: "/portfolio", tag: "alpha", help: "analysis" }
-      ]
-    },
-    {
-      label: "Liabilities",
-      href: "/liabilities",
-      children: [
-        { label: "Balance", href: "/balance" },
-        { label: "Credit Cards", href: "/credit_cards", help: "credit-cards" },
-        { label: "Repayment", href: "/repayment" },
-        { label: "Interest", href: "/interest" }
-      ]
-    },
-    {
-      label: "Income",
-      href: "/income",
-      children: [
-        { label: "Timeline", href: "" },
-        { label: "Investment", href: "/investment", financialYearPicker: true }
-      ]
-    },
-    {
-      label: "Planning",
-      href: "/planning",
-      help: "planning",
-      children: [
-        { label: "Projection", href: "/projection" },
-        { label: "Goals", href: "/goals", help: "goals" },
-        { label: "What-If Scenarios", href: "/life/whatif" },
-        { label: "Drawdown Strategy", href: "/life/drawdown" }
-      ]
-    },
-    {
-      label: "Ledger",
-      href: "/ledger",
-      children: [
-        { label: "Editor", href: "/editor", help: "editor", disablePreload: true },
-        { label: "Import", href: "/import", help: "import" },
-        { label: "Transactions", href: "/transaction", help: "bulk-edit" },
-        { label: "Postings", href: "/posting" },
-        { label: "Price", href: "/price" },
-        { label: "FX Rates", href: "/fx-rates" }
-      ]
-    },
-    {
-      label: "More",
-      href: "/more",
-      children: [
-        { label: "Configuration", href: "/config", help: "config" },
-        { label: "Sheets", href: "/sheets", help: "sheets", disablePreload: true },
-        { label: "Data Health", href: "/doctor", help: "doctor" },
-        ...(USER_CONFIG.labs?.firefly_reconcile
-          ? [{ label: "Reconciliation", href: "/reconciliation" }]
-          : []),
-        { label: "Logs", href: "/logs" },
-        { label: "About", href: "/about" }
-      ]
+      label: "Schedule AL",
+      href: "/tax/schedule_al",
+      help: "tax/schedule-al",
+      financialYearPicker: true
     }
   ];
 
-  const classicTax = {
-    label: "Tax",
-    href: "/tax",
-    help: "tax",
-    children: [
-      { label: "Harvest", href: "/harvest", help: "tax/tax-harvesting" },
-      { label: "Capital Gains", href: "/capital_gains", help: "tax/capital-gains" },
-      {
-        label: "Schedule AL",
-        href: "/schedule_al",
-        help: "tax/schedule-al",
-        financialYearPicker: true
-      }
-    ]
-  };
-
-  const classicPlanning = _.find(classicLinks, { label: "Planning" });
-  if (USER_CONFIG.default_currency == "INR") {
-    classicPlanning?.children?.push(classicTax);
-  }
-
-  const groupedTax = {
-    label: "Tax",
-    href: "/tax",
-    help: "tax",
-    children: [
-      { label: "Tax Harvesting", href: "/harvest", help: "tax/tax-harvesting" },
-      { label: "Capital Gains", href: "/capital_gains", help: "tax/capital-gains" },
-      {
-        label: "Schedule AL",
-        href: "/schedule_al",
-        help: "tax/schedule-al",
-        financialYearPicker: true
-      }
-    ]
-  };
-
-  const groupedLinks: Link[] = [
+  const links: Link[] = [
     { label: "Dashboard", href: "/", hide: true },
     {
-      label: "Cash Flow",
+      label: "Cash Flow & Spending",
       href: "/cash_flow",
       children: [
         { label: "Cash Flow", href: "/monthly", dateRangeSelector: true },
@@ -329,38 +190,30 @@
         { label: "Goals", href: "/goals", help: "goals" },
         { label: "What-If Scenarios", href: "/life/whatif" },
         { label: "Drawdown Strategy", href: "/life/drawdown" },
-        ...(USER_CONFIG.default_currency === "INR" ? [groupedTax] : [])
+        ...(USER_CONFIG.default_currency === "INR" ? taxLinks : [])
       ]
     },
     {
-      label: "Ledger",
+      label: "Ledger & Tools",
       href: "/ledger",
       children: [
-        { label: "Editor", href: "/editor", help: "editor", disablePreload: true },
-        { label: "Import", href: "/import", help: "import" },
         { label: "Transactions", href: "/transaction", help: "bulk-edit" },
+        { label: "Import", href: "/import", help: "import" },
+        { label: "Editor", href: "/editor", help: "editor", disablePreload: true },
         { label: "Postings Register", href: "/posting" },
         { label: "Commodity Prices", href: "/price" },
-        { label: "FX Rates", href: "/fx-rates" }
-      ]
-    },
-    {
-      label: "Tools",
-      href: "/more",
-      children: [
-        { label: "Data Health", href: "/doctor", help: "doctor" },
-        { label: "Configuration", href: "/config", help: "config" },
-        { label: "Sheets", href: "/sheets", help: "sheets", disablePreload: true },
+        { label: "FX Rates", href: "/fx-rates" },
+        { label: "Data Health", href: "/../more/doctor", help: "doctor" },
+        { label: "Configuration", href: "/../more/config", help: "config" },
+        { label: "Sheets", href: "/../more/sheets", help: "sheets", disablePreload: true },
         ...(USER_CONFIG.labs?.firefly_reconcile
-          ? [{ label: "Reconciliation", href: "/reconciliation" }]
+          ? [{ label: "Reconciliation", href: "/../more/reconciliation" }]
           : []),
-        { label: "System Logs", href: "/logs" },
-        { label: "About", href: "/about" }
+        { label: "System Logs", href: "/../more/logs" },
+        { label: "About", href: "/../more/about" }
       ]
     }
   ];
-
-  const links = $derived($navLayout === "grouped" ? groupedLinks : classicLinks);
 
   let selectedLink: Link | null = $state(null);
   let selectedSubLink: Link | null = $state(null);

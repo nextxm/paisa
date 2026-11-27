@@ -15,6 +15,16 @@ const dashboardPage = await import("./+page");
 const goalsPage = await import("./planning/goals/+page");
 const networthPage = await import("./assets/networth/+page");
 const importPage = await import("./ledger/import/+page");
+const doctorV2Page = await import("./more/doctor-v2/+page");
+const doctorV3Page = await import("./more/doctor-v3/+page");
+const legacyGoalsPage = await import("./more/goals/+page");
+const legacyTaxPage = await import("./more/tax/+page");
+const lifeProjectionPage = await import("./planning/life/+page");
+const lifeGoalsRedirectPage = await import("./planning/life/goals/+page");
+const cashFlowIndexPage = await import("./cash_flow/+page");
+const expenseIndexPage = await import("./expense/+page");
+const assetsIndexPage = await import("./assets/+page");
+const liabilitiesIndexPage = await import("./liabilities/+page");
 
 describe("route load functions", () => {
   beforeEach(() => {
@@ -95,6 +105,33 @@ describe("route load functions", () => {
       { id: "1", name: "T", content: "C", template_type: "custom" }
     ]);
     expect((data as any).importPresets[0].name).toEqual("Generic Bank CSV");
+  });
+
+  test("legacy and consolidated index routes redirect cleanly", () => {
+    const cases: Array<[() => unknown, string]> = [
+      [() => doctorV2Page.load(), "/more/doctor"],
+      [() => doctorV3Page.load(), "/more/doctor"],
+      [() => legacyGoalsPage.load(), "/planning/goals"],
+      [() => legacyTaxPage.load(), "/planning/tax"],
+      [() => lifeProjectionPage.load(), "/planning/projection?mode=montecarlo"],
+      [() => lifeGoalsRedirectPage.load(), "/planning/goals?tab=life"],
+      [() => cashFlowIndexPage.load(), "/cash_flow/monthly"],
+      [() => expenseIndexPage.load(), "/expense/monthly"],
+      [() => assetsIndexPage.load(), "/assets/networth"],
+      [() => liabilitiesIndexPage.load(), "/liabilities/balance"]
+    ];
+
+    for (const [invoke, expectedLocation] of cases) {
+      let caught: any;
+      try {
+        invoke();
+      } catch (err) {
+        caught = err;
+      }
+      expect(caught).toBeDefined();
+      expect(caught.status).toBe(301);
+      expect(caught.location).toBe(expectedLocation);
+    }
   });
 
   test("ledger import page load tolerates missing templates and presets", async () => {

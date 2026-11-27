@@ -269,20 +269,52 @@
       action: () => navigate("/planning/goals")
     },
     {
+      id: "life_goals",
+      label: "Life Milestones",
+      description: "Planning",
+      icon: "fa-flag",
+      category: "Pages",
+      action: () => navigate("/planning/goals?tab=life")
+    },
+    {
+      id: "projection",
+      label: "Net Worth Projection",
+      description: "Planning",
+      icon: "fa-chart-line",
+      category: "Pages",
+      action: () => navigate("/planning/projection")
+    },
+    {
+      id: "projection_mc",
+      label: "Projection (Monte Carlo)",
+      description: "Planning",
+      icon: "fa-wave-square",
+      category: "Pages",
+      action: () => navigate("/planning/projection?mode=montecarlo")
+    },
+    {
+      id: "whatif",
+      label: "What-If Scenarios",
+      description: "Planning",
+      icon: "fa-code-branch",
+      category: "Pages",
+      action: () => navigate("/planning/life/whatif")
+    },
+    {
+      id: "drawdown",
+      label: "Drawdown Strategy",
+      description: "Planning",
+      icon: "fa-layer-group",
+      category: "Pages",
+      action: () => navigate("/planning/life/drawdown")
+    },
+    {
       id: "doctor",
-      label: "Doctor",
-      description: "More",
+      label: "Data Health",
+      description: "Tools",
       icon: "fa-stethoscope",
       category: "Pages",
       action: () => navigate("/more/doctor")
-    },
-    {
-      id: "doctor-v2",
-      label: "Doctor V2",
-      description: "More",
-      icon: "fa-kit-medical",
-      category: "Pages",
-      action: () => navigate("/more/doctor-v2")
     },
     {
       id: "logs",
