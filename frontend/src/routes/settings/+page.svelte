@@ -1,7 +1,11 @@
 <script lang="ts">
   import dayjs from "dayjs";
   import { onMount } from "svelte";
-  import { apiGet, authHeaders, getFullConfig, runtime, updateConfig } from "$lib/api";
+  import { ExternalLink } from "lucide-svelte";
+  import { apiGet, runtime } from "$lib/api";
+  import Logo from "$lib/components/Logo.svelte";
+  import ConfigPanel from "$lib/components/ConfigPanel.svelte";
+  import type { JsonSchemaNode } from "$lib/components/ConfigSchemaField.svelte";
 
   type SettingsTab = "config" | "logs" | "about" | "firefly";
 
@@ -14,17 +18,22 @@
   let activeTab = $state<SettingsTab>("config");
   let loading = $state(true);
   let configJson = $state<Record<string, unknown> | null>(null);
-  let configDraft = $state("");
+  let configSchema = $state<JsonSchemaNode | null>(null);
+  let configAccounts = $state<string[]>([]);
   let configError = $state<string | null>(null);
-  let configSaving = $state(false);
-  let configMessage = $state<string | null>(null);
   let logs = $state<LogEntry[]>([]);
   let fireflyItems = $state<Array<Record<string, unknown>>>([]);
 
+  const buildInfo = __BUILD_INFO__;
+
   onMount(async () => {
     try {
-      const [cfg, logRes, ffRes] = await Promise.all([
-        getFullConfig().catch((e) => {
+      const [cfgRes, logRes, ffRes] = await Promise.all([
+        apiGet<{
+          config?: Record<string, unknown>;
+          schema?: JsonSchemaNode;
+          accounts?: string[];
+        }>("/api/config").catch((e) => {
           configError = e instanceof Error ? e.message : "Failed to load configuration";
           return null;
         }),
@@ -33,8 +42,9 @@
           items: []
         }))
       ]);
-      configJson = cfg;
-      configDraft = cfg ? JSON.stringify(cfg, null, 2) : "";
+      configJson = cfgRes?.config || null;
+      configSchema = cfgRes?.schema || null;
+      configAccounts = cfgRes?.accounts || [];
       logs = logRes.logs || [];
       fireflyItems = ffRes.items || [];
     } finally {
@@ -73,81 +83,15 @@
   {#if loading}
     <div class="h-64 rounded-xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"></div>
   {:else if activeTab === "config"}
-    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-          Active Configuration (`paisa.yaml`)
-        </h3>
-        {#if !runtime.readonly && configJson}
-          <button
-            type="button"
-            disabled={configSaving}
-            onclick={async () => {
-              configSaving = true;
-              configMessage = null;
-              try {
-                const parsed = JSON.parse(configDraft) as Record<string, unknown>;
-                const res = await updateConfig(parsed);
-                if (res.success) {
-                  configJson = parsed;
-                  configMessage = "Configuration saved.";
-                } else {
-                  configMessage = res.error || "Failed to save configuration.";
-                }
-              } catch (e) {
-                configMessage = e instanceof Error ? e.message : "Invalid JSON";
-              } finally {
-                configSaving = false;
-              }
-            }}
-            class="px-3 py-1.5 rounded-lg bg-[var(--accent)] text-[var(--accent-fg)] text-xs font-medium cursor-pointer disabled:opacity-50"
-          >
-            {configSaving ? "Saving…" : "Save Config"}
-          </button>
-        {/if}
-      </div>
-      {#if configMessage}
-        <p class="text-xs text-[var(--muted)]">{configMessage}</p>
-      {/if}
-      {#if configJson}
-        <textarea
-          bind:value={configDraft}
-          readonly={runtime.readonly}
-          rows="20"
-          class="w-full p-4 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] font-mono text-xs outline-none focus:border-[var(--accent)]"
-        ></textarea>
-      {:else}
+    {#if configJson && configSchema}
+      <ConfigPanel initialConfig={configJson} schema={configSchema} accounts={configAccounts} />
+    {:else}
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5">
         <p class="text-sm text-[var(--muted)]">
           Configuration unavailable{configError ? `: ${configError}` : "."}
         </p>
-      {/if}
-    </div>
-
-    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-      <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-        Backup &amp; Export
-      </h3>
-      <p class="text-xs text-[var(--muted)]">
-        Download a ZIP archive of your ledger files and configuration.
-      </p>
-      <button
-        type="button"
-        onclick={async () => {
-          const res = await fetch("/api/backup/export", { headers: authHeaders() });
-          if (!res.ok) return;
-          const blob = await res.blob();
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "paisa-backup.zip";
-          a.click();
-          URL.revokeObjectURL(url);
-        }}
-        class="px-3 py-1.5 rounded-lg bg-[var(--accent)] text-[var(--accent-fg)] text-xs font-medium cursor-pointer"
-      >
-        Export Backup (.zip)
-      </button>
-    </div>
+      </div>
+    {/if}
   {:else if activeTab === "logs"}
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
       {#if logs.length === 0}
@@ -180,25 +124,80 @@
       {/if}
     </div>
   {:else}
-    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-6 space-y-4">
-      <div class="space-y-1">
-        <h3 class="text-base font-semibold">Paisa Personal Finance Manager</h3>
-        <p class="text-sm text-[var(--muted)]">
-          Double-entry plain-text accounting powered by ledger-cli, hledger, beancount, Go, SQLite, and SvelteKit.
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-6 space-y-4">
+        <div class="flex items-center gap-3">
+          <Logo size={48} />
+          <div>
+            <h3 class="text-base font-semibold">Paisa Personal Finance Manager</h3>
+            <p class="text-xs text-[var(--muted)]">
+              Double-entry plain-text accounting powered by ledger-cli, hledger, beancount, Go, SQLite, and SvelteKit.
+            </p>
+          </div>
+        </div>
+        <p class="text-xs text-[var(--muted)]">
+          Forked from <code>ananthakumaran/paisa</code>, maintained at <code>nextxm/paisa</code> under GNU AGPL-3.0-or-later.
         </p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs pt-3 border-t border-[var(--border)]">
+          <div>
+            <div class="text-[var(--muted)]">Version</div>
+            <div class="font-semibold mt-0.5 font-mono">{buildInfo.version || "dev"}</div>
+          </div>
+          <div>
+            <div class="text-[var(--muted)]">Build</div>
+            <div class="font-semibold mt-0.5 font-mono">{buildInfo.buildDate.substring(0, 10)}</div>
+          </div>
+          <div>
+            <div class="text-[var(--muted)]">Branch</div>
+            <div class="font-semibold mt-0.5 font-mono">
+              {buildInfo.branch || "—"}{buildInfo.commitHash ? ` (${buildInfo.commitHash})` : ""}
+            </div>
+          </div>
+          {#if buildInfo.tag}
+            <div>
+              <div class="text-[var(--muted)]">Tag</div>
+              <div class="font-semibold mt-0.5 font-mono">{buildInfo.tag}</div>
+            </div>
+          {/if}
+        </div>
+        <div class="grid grid-cols-3 gap-4 text-xs pt-3 border-t border-[var(--border)]">
+          <div>
+            <div class="text-[var(--muted)]">Default Currency</div>
+            <div class="font-semibold mt-0.5">{runtime.defaultCurrency}</div>
+          </div>
+          <div>
+            <div class="text-[var(--muted)]">Locale</div>
+            <div class="font-semibold mt-0.5">{runtime.locale}</div>
+          </div>
+          <div>
+            <div class="text-[var(--muted)]">Accounts Indexed</div>
+            <div class="font-semibold mt-0.5 tabular-nums">{runtime.accounts.length}</div>
+          </div>
+        </div>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs pt-2 border-t border-[var(--border)]">
-        <div>
-          <div class="text-[var(--muted)]">Default Currency</div>
-          <div class="font-semibold mt-0.5">{runtime.defaultCurrency}</div>
-        </div>
-        <div>
-          <div class="text-[var(--muted)]">Locale</div>
-          <div class="font-semibold mt-0.5">{runtime.locale}</div>
-        </div>
-        <div>
-          <div class="text-[var(--muted)]">Accounts Indexed</div>
-          <div class="font-semibold mt-0.5 tabular-nums">{runtime.accounts.length}</div>
+
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-6 space-y-3">
+        <h3 class="text-sm font-semibold">Links</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+          {#each [
+            { name: "Issue", href: "https://github.com/nextxm/paisa/issues" },
+            { name: "Discussions", href: "https://github.com/nextxm/paisa/discussions" },
+            { name: "Source Code", href: "https://github.com/nextxm/paisa" },
+            { name: "Upstream Project", href: "https://github.com/ananthakumaran/paisa" },
+            { name: "License (AGPL-3.0-or-later)", href: "https://www.gnu.org/licenses/agpl-3.0.html" },
+            { name: "Documentation", href: "https://nextxm.github.io/paisa/" },
+            { name: "Releases", href: "https://github.com/nextxm/paisa/releases" }
+          ] as link}
+            <a
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center justify-between px-3 py-2 rounded-lg border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            >
+              <span>{link.name}</span>
+              <ExternalLink class="w-3.5 h-3.5 text-[var(--muted)]" />
+            </a>
+          {/each}
         </div>
       </div>
     </div>

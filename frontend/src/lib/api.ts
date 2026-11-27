@@ -205,33 +205,24 @@ export async function apiGet<T>(path: string): Promise<T> {
 }
 
 export async function getFullConfig(): Promise<Record<string, unknown>> {
-  const res = await fetch("/connect/paisa.v1.PaisaService/GetConfig", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json", ...authHeaders() },
-    body: "{}"
-  });
-  if (res.ok) {
-    const data = (await res.json()) as { config?: Record<string, unknown> };
-    if (data.config) return data.config;
-  }
-  const fallback = await fetch("/api/config", {
+  const res = await fetch("/api/config", {
     headers: { Accept: "application/json", ...authHeaders() }
   });
-  if (!fallback.ok) {
+  if (!res.ok) {
     throw new Error(`${res.status} ${res.statusText}`);
   }
-  const fbData = (await fallback.json()) as { config?: Record<string, unknown> };
-  return fbData.config || (fbData as Record<string, unknown>);
+  const data = (await res.json()) as { config?: Record<string, unknown> };
+  return data.config || (data as Record<string, unknown>);
 }
 
 export async function updateConfig(
   config: Record<string, unknown>
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const res = await fetch("/connect/paisa.v1.PaisaService/UpdateConfig", {
+    const res = await fetch("/api/config", {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json", ...authHeaders() },
-      body: JSON.stringify({ config })
+      body: JSON.stringify(config)
     });
     if (!res.ok) {
       const errText = await res.text().catch(() => "");

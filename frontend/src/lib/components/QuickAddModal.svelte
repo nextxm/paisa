@@ -1,7 +1,7 @@
 <script lang="ts">
   import dayjs from "dayjs";
   import { Plus, Sparkles, Trash2, X } from "lucide-svelte";
-  import { runtime, triggerSync } from "$lib/api";
+  import { authHeaders, runtime, triggerSync } from "$lib/api";
 
   let {
     open = $bindable(false),
@@ -50,7 +50,7 @@
     try {
       const res = await fetch("/api/parser/parse", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ text: parserText.trim() })
       });
       if (!res.ok) {
@@ -58,23 +58,44 @@
         return;
       }
       const data = (await res.json()) as {
+        result?: {
+          date?: string;
+          payee?: string;
+          narration?: string;
+          amount?: number | string;
+          currency?: string;
+          commodity?: string;
+          from_account?: string;
+          to_account?: string;
+          warnings?: string[];
+        };
         date?: string;
         payee?: string;
         narration?: string;
         amount?: number | string;
+        currency?: string;
         commodity?: string;
         from_account?: string;
         to_account?: string;
+        warnings?: string[];
       };
-      if (data.date && dayjs(data.date).isValid()) {
-        date = dayjs(data.date).format("YYYY-MM-DD");
+      const parsed = data.result ?? data;
+      if (parsed.date && dayjs(parsed.date).isValid()) {
+        date = dayjs(parsed.date).format("YYYY-MM-DD");
       }
-      if (data.payee) payee = data.payee;
-      if (data.narration) narration = data.narration;
-      if (data.amount !== undefined) amount = String(data.amount);
-      if (data.commodity) commodity = data.commodity;
-      if (data.from_account) fromAccount = data.from_account;
-      if (data.to_account) toAccount = data.to_account;
+      if (parsed.payee) payee = parsed.payee;
+      if (parsed.narration) narration = parsed.narration;
+      if (parsed.amount !== undefined && parsed.amount !== null && parsed.amount !== "") {
+        amount = String(parsed.amount);
+      }
+      if (parsed.currency || parsed.commodity) {
+        commodity = parsed.currency || parsed.commodity || commodity;
+      }
+      if (parsed.from_account) fromAccount = parsed.from_account;
+      if (parsed.to_account) toAccount = parsed.to_account;
+      if (parsed.warnings && parsed.warnings.length > 0) {
+        error = parsed.warnings.join(" · ");
+      }
     } catch {
       error = "Failed to parse natural text";
     } finally {
@@ -151,7 +172,7 @@
     try {
       const res = await fetch("/api/transaction/add", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify(payload)
       });
       const data = (await res.json()) as { success?: boolean; message?: string; error?: string };

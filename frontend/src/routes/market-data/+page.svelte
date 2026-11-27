@@ -8,8 +8,12 @@
 
   interface PriceRow {
     commodity_name?: string;
+    commodity_type?: string;
+    commodity_id?: string;
     base?: string;
     quote?: string;
+    quote_commodity?: string;
+    value?: number;
     price?: number;
     date?: string;
     source?: string;
@@ -34,9 +38,12 @@
       if (Array.isArray(priceRes.prices)) {
         prices = priceRes.prices;
       } else if (priceRes.prices && typeof priceRes.prices === "object") {
-        prices = Object.entries(priceRes.prices).flatMap(([name, rows]) =>
-          (Array.isArray(rows) ? rows : []).map((r) => ({ ...r, commodity_name: r.commodity_name || name }))
-        );
+        prices = Object.entries(priceRes.prices).flatMap(([name, rows]) => {
+          if (!Array.isArray(rows) || rows.length === 0) {
+            return [{ commodity_name: name }];
+          }
+          return rows.map((r) => ({ ...r, commodity_name: r.commodity_name || name }));
+        });
       }
       providers = provRes.providers || [];
     } finally {
@@ -159,6 +166,8 @@
               <thead class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
                 <tr>
                   <th class="py-2.5 px-4 font-medium">Commodity</th>
+                  <th class="py-2.5 px-4 font-medium">Type</th>
+                  <th class="py-2.5 px-4 font-medium">ID</th>
                   <th class="py-2.5 px-4 text-right font-medium">Price</th>
                   <th class="py-2.5 px-4 font-medium">Date</th>
                   <th class="py-2.5 px-4 font-medium">Source</th>
@@ -166,10 +175,14 @@
               </thead>
               <tbody class="divide-y divide-[var(--border)] tabular-nums">
                 {#each filteredPrices as p}
+                  {@const unitPrice = p.value ?? p.price}
+                  {@const quoteCurr = p.quote_commodity || p.quote || runtime.defaultCurrency || "INR"}
                   <tr class="hover:bg-[var(--surface-elevated)]/50">
                     <td class="py-2 px-4 font-medium">{p.commodity_name || p.base || "—"}</td>
+                    <td class="py-2 px-4 text-xs text-[var(--muted)]">{p.commodity_type || "—"}</td>
+                    <td class="py-2 px-4 text-xs font-mono text-[var(--muted)]">{p.commodity_id || "—"}</td>
                     <td class="py-2 px-4 text-right font-semibold">
-                      {p.price !== undefined ? formatMoney(p.price, p.quote || "INR") : "—"}
+                      {unitPrice !== undefined ? formatMoney(unitPrice, quoteCurr) : "—"}
                     </td>
                     <td class="py-2 px-4 text-xs text-[var(--muted)]">
                       {p.date ? formatShortDate(p.date) : "—"}
