@@ -1,7 +1,642 @@
-<div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center space-y-2">
-  <h1 class="text-lg font-semibold">Planning &amp; FIRE Studio</h1>
-  <p class="text-sm text-[var(--muted)]">
-    Scheduled for Phase 4 — Unified Projection (Simple &amp; Monte Carlo), Goals, What-If, and
-    Drawdown.
-  </p>
+<script lang="ts">
+  import dayjs from "dayjs";
+  import { onMount } from "svelte";
+  import { ChevronDown, ChevronUp, Dna, Sparkles } from "lucide-svelte";
+  import ProjectionChart, {
+    type FanBand,
+    type ProjectionPoint
+  } from "$lib/components/ProjectionChart.svelte";
+  import { apiGet, formatMoney } from "$lib/api";
+
+  type PlanningTab = "projection" | "goals";
+  type ProjectionMode = "simple" | "montecarlo";
+  type ScenarioKey = "expected" | "conservative" | "optimistic";
+
+  interface FinancialProfile {
+    current_networth: number;
+    monthly_contribution: number;
+    savings_rate: number;
+    annual_expenses: number;
+    annual_income: number;
+    income_growth_rate: number;
+    expense_growth_rate: number;
+    historical_return: number;
+    return_volatility: number;
+    income_years_covered: number;
+    expense_years_covered: number;
+    price_months_covered: number;
+  }
+
+  interface BaseProjectionResponse {
+    current_networth: number;
+    annual_expenses: number;
+    monthly_contribution: number;
+    expected_cagr: number;
+    conservative_cagr: number;
+    optimistic_cagr: number;
+    swr: number;
+  }
+
+  interface SimResponse {
+    simulation: {
+      target_corpus: number;
+      fire_year_p25: number;
+      fire_year_p50: number;
+      fire_year_p75: number;
+      fire_probability: number;
+      bands: {
+        p10: Array<{ date: string; balance_amount: number }>;
+        p25: Array<{ date: string; balance_amount: number }>;
+        p50: Array<{ date: string; balance_amount: number }>;
+        p75: Array<{ date: string; balance_amount: number }>;
+        p90: Array<{ date: string; balance_amount: number }>;
+      };
+    };
+  }
+
+  interface GoalSummary {
+    id: string;
+    name: string;
+    type: string;
+    current: number;
+    target: number;
+    targetDate: string;
+  }
+
+  let activeTab = $state<PlanningTab>("projection");
+  let mode = $state<ProjectionMode>("simple");
+  let activeScenario = $state<ScenarioKey>("expected");
+
+  let loading = $state(true);
+  let error = $state<string | null>(null);
+  let dna = $state<FinancialProfile | null>(null);
+  let base = $state<BaseProjectionResponse | null>(null);
+  let goals = $state<GoalSummary[]>([]);
+
+  // Core 3 levers
+  let years = $state(15);
+  let monthlyContribution = $state(0);
+  let expectedCagr = $state(10);
+
+  // Collapsible assumptions
+  let swr = $state(4);
+  let inflationRate = $state(6);
+  let cagrSpread = $state(3);
+  let adjustForInflation = $state(true);
+  let volatility = $state(16);
+
+  let showAssumptions = $state(false);
+  let showDna = $state(false);
+
+  // Monte Carlo
+  let simData = $state<SimResponse | null>(null);
+  let simLoading = $state(false);
+
+  onMount(async () => {
+    try {
+      const [projRes, dnaRes, goalsRes] = await Promise.all([
+        apiGet<BaseProjectionResponse>("/api/networth/projection"),
+        apiGet<{ profile: FinancialProfile }>("/api/projection/dna").catch(() => ({
+          profile: null
+        })),
+        apiGet<{ goals?: GoalSummary[] }>("/api/goals").catch(() => ({ goals: [] }))
+      ]);
+
+      base = projRes;
+      dna = dnaRes.profile;
+      goals = goalsRes.goals || [];
+
+      monthlyContribution = Math.round(projRes.monthly_contribution || 0);
+      expectedCagr = projRes.expected_cagr || 10;
+      swr = projRes.swr || 4;
+      if (dna?.return_volatility) {
+        volatility = Math.min(40, Math.max(5, Math.round(dna.return_volatility * 10) / 10));
+      }
+    } catch (e) {
+      error = e instanceof Error ? e.message : "Failed to load planning data";
+    } finally {
+      loading = false;
+    }
+  });
+
+  function calibrateFromDna() {
+    if (!dna) return;
+    monthlyContribution = Math.round(dna.monthly_contribution || 0);
+    if (dna.price_months_covered >= 3 && dna.historical_return > 0) {
+      expectedCagr = Math.min(35, Math.max(0, Math.round(dna.historical_return * 10) / 10));
+      cagrSpread = dna.return_volatility > 0 ? Math.round(dna.return_volatility * 10) / 10 : 3;
+    }
+    if (dna.expense_years_covered >= 2 && dna.expense_growth_rate > 0) {
+      inflationRate = Math.min(15, Math.max(0, Math.round(dna.expense_growth_rate * 10) / 10));
+    }
+  }
+
+  function toReal(nominalPct: number): number {
+    return ((1 + nominalPct / 100) / (1 + inflationRate / 100) - 1) * 100;
+  }
+
+  function buildSeries(cagrPct: number): ProjectionPoint[] {
+    if (!base) return [];
+    const monthlyRate = Math.pow(1 + cagrPct / 100, 1 / 12) - 1;
+    let curr = base.current_networth;
+    const pts: ProjectionPoint[] = [];
+    const now = dayjs();
+    for (let m = 1; m <= years * 12; m++) {
+      curr = curr * (1 + monthlyRate) + monthlyContribution;
+      pts.push({ date: now.add(m, "month").format("YYYY-MM-DD"), balance: curr });
+    }
+    return pts;
+  }
+
+  const effectiveExpected = $derived(
+    adjustForInflation ? toReal(expectedCagr) : expectedCagr
+  );
+  const effectiveConservative = $derived(
+    adjustForInflation ? toReal(expectedCagr - cagrSpread) : expectedCagr - cagrSpread
+  );
+  const effectiveOptimistic = $derived(
+    adjustForInflation ? toReal(expectedCagr + cagrSpread) : expectedCagr + cagrSpread
+  );
+
+  const expectedPoints = $derived(buildSeries(effectiveExpected));
+  const conservativePoints = $derived(buildSeries(effectiveConservative));
+  const optimisticPoints = $derived(buildSeries(effectiveOptimistic));
+
+  const targetCorpus = $derived(
+    base && swr > 0 ? base.annual_expenses / (swr / 100) : 0
+  );
+
+  const yearsToFire = $derived.by(() => {
+    if (targetCorpus <= 0) return null;
+    for (let i = 0; i < expectedPoints.length; i++) {
+      const yrs = (i + 1) / 12;
+      const threshold = adjustForInflation
+        ? targetCorpus
+        : targetCorpus * Math.pow(1 + inflationRate / 100, yrs);
+      if (expectedPoints[i].balance >= threshold) {
+        return Math.round(yrs * 10) / 10;
+      }
+    }
+    return null;
+  });
+
+  const fireProgress = $derived(
+    base && targetCorpus > 0
+      ? Math.min(100, (base.current_networth / targetCorpus) * 100)
+      : 0
+  );
+
+  const tableRows = $derived.by(() => {
+    if (!base) return [];
+    const cagrPct =
+      activeScenario === "expected"
+        ? effectiveExpected
+        : activeScenario === "conservative"
+          ? effectiveConservative
+          : effectiveOptimistic;
+    const monthlyRate = Math.pow(1 + cagrPct / 100, 1 / 12) - 1;
+    let curr = base.current_networth;
+    const rows = [];
+    for (let y = 1; y <= years; y++) {
+      const start = curr;
+      let ret = 0;
+      for (let m = 0; m < 12; m++) {
+        const mr = curr * monthlyRate;
+        ret += mr;
+        curr += mr + monthlyContribution;
+      }
+      const exp = adjustForInflation
+        ? base.annual_expenses
+        : base.annual_expenses * Math.pow(1 + inflationRate / 100, y - 1);
+      const rowTarget = swr > 0 ? exp / (swr / 100) : 0;
+      rows.push({
+        year: y,
+        start,
+        contribution: monthlyContribution * 12,
+        returnAmount: ret,
+        end: curr,
+        expenses: exp,
+        isFire: rowTarget > 0 && curr >= rowTarget
+      });
+    }
+    return rows;
+  });
+
+  async function runMonteCarlo() {
+    simLoading = true;
+    try {
+      const res = await fetch("/api/projection/simulate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          iterations: 1000,
+          months_to_project: years * 12,
+          monthly_contribution: monthlyContribution,
+          contribution_growth_rate: 5,
+          expected_return: expectedCagr,
+          return_volatility: volatility,
+          inflation_rate: inflationRate,
+          swr
+        })
+      });
+      if (res.ok) {
+        simData = (await res.json()) as SimResponse;
+      }
+    } finally {
+      simLoading = false;
+    }
+  }
+
+  $effect(() => {
+    if (mode === "montecarlo" && base) {
+      const _y = years;
+      const _mc = monthlyContribution;
+      const _ec = expectedCagr;
+      const _v = volatility;
+      const _s = swr;
+      const _i = inflationRate;
+      void runMonteCarlo();
+    }
+  });
+
+  const fanBand = $derived.by((): FanBand | null => {
+    if (!simData?.simulation?.bands) return null;
+    const mapBand = (arr: Array<{ date: string; balance_amount: number }>) =>
+      (arr || []).map((p) => ({ date: p.date, balance: p.balance_amount }));
+    return {
+      p10: mapBand(simData.simulation.bands.p10),
+      p25: mapBand(simData.simulation.bands.p25),
+      p50: mapBand(simData.simulation.bands.p50),
+      p75: mapBand(simData.simulation.bands.p75),
+      p90: mapBand(simData.simulation.bands.p90)
+    };
+  });
+</script>
+
+<div class="space-y-5">
+  <!-- Header -->
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-semibold tracking-tight">Planning &amp; FIRE Studio</h1>
+      {#if base}
+        <p class="text-xs text-[var(--muted)] mt-0.5 tabular-nums">
+          Baseline: <strong>{formatMoney(base.current_networth)}</strong> net worth ·
+          <strong>{formatMoney(base.annual_expenses)}</strong>/yr expenses
+        </p>
+      {/if}
+    </div>
+
+    {#if activeTab === "projection"}
+      <div class="flex flex-wrap items-center gap-2">
+        <div
+          class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface)] p-0.5 text-xs"
+        >
+          <button
+            type="button"
+            class="px-3 py-1 rounded-md cursor-pointer {mode === 'simple'
+              ? 'bg-[var(--surface-elevated)] font-semibold'
+              : 'text-[var(--muted)]'}"
+            onclick={() => (mode = "simple")}
+          >
+            Simple
+          </button>
+          <button
+            type="button"
+            class="px-3 py-1 rounded-md cursor-pointer {mode === 'montecarlo'
+              ? 'bg-[var(--surface-elevated)] font-semibold'
+              : 'text-[var(--muted)]'}"
+            onclick={() => (mode = "montecarlo")}
+          >
+            Monte Carlo
+          </button>
+        </div>
+
+        {#if dna}
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--surface-elevated)] cursor-pointer"
+            onclick={calibrateFromDna}
+          >
+            <Sparkles class="w-3.5 h-3.5 text-[var(--accent)]" />
+            <span>Calibrate</span>
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--surface-elevated)] cursor-pointer"
+            onclick={() => (showDna = !showDna)}
+          >
+            <Dna class="w-3.5 h-3.5" />
+            <span>Financial DNA</span>
+          </button>
+        {/if}
+      </div>
+    {/if}
+  </div>
+
+  <!-- Tabs -->
+  <div class="border-b border-[var(--border)] flex items-center gap-6 text-sm">
+    <button
+      type="button"
+      class="pb-2.5 border-b-2 cursor-pointer {activeTab === 'projection'
+        ? 'border-[var(--accent)] font-semibold text-[var(--text)]'
+        : 'border-transparent text-[var(--muted)]'}"
+      onclick={() => (activeTab = "projection")}
+    >
+      Projection
+    </button>
+    <button
+      type="button"
+      class="pb-2.5 border-b-2 cursor-pointer {activeTab === 'goals'
+        ? 'border-[var(--accent)] font-semibold text-[var(--text)]'
+        : 'border-transparent text-[var(--muted)]'}"
+      onclick={() => (activeTab = "goals")}
+    >
+      Goals ({goals.length})
+    </button>
+  </div>
+
+  {#if loading}
+    <div
+      class="h-64 rounded-xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"
+    ></div>
+  {:else if error}
+    <div class="rounded-xl border border-[var(--loss)]/30 bg-[var(--loss)]/10 p-4 text-sm">
+      <p class="font-medium text-[var(--loss)]">Failed to load planning data</p>
+      <p class="text-xs text-[var(--muted)] mt-1">{error}</p>
+    </div>
+  {:else if activeTab === "projection"}
+    {#if showDna && dna}
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+        <div>
+          <div class="text-[var(--muted)] uppercase font-semibold">Annual Income</div>
+          <div class="text-base font-semibold tabular-nums mt-0.5">{formatMoney(dna.annual_income)}</div>
+        </div>
+        <div>
+          <div class="text-[var(--muted)] uppercase font-semibold">Annual Expenses</div>
+          <div class="text-base font-semibold tabular-nums mt-0.5">{formatMoney(dna.annual_expenses)}</div>
+        </div>
+        <div>
+          <div class="text-[var(--muted)] uppercase font-semibold">Savings Rate</div>
+          <div class="text-base font-semibold tabular-nums mt-0.5">{dna.savings_rate.toFixed(1)}%</div>
+        </div>
+        <div>
+          <div class="text-[var(--muted)] uppercase font-semibold">Historical Return</div>
+          <div class="text-base font-semibold tabular-nums text-[var(--gain)] mt-0.5">
+            {dna.historical_return.toFixed(1)}%
+          </div>
+        </div>
+      </div>
+    {/if}
+
+    <!-- Outcome KPIs -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
+        <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          {mode === "montecarlo" ? "Median Years to FIRE (P50)" : "Years to FIRE"}
+        </div>
+        <div class="text-2xl font-semibold tabular-nums mt-1">
+          {#if mode === "montecarlo"}
+            {simData?.simulation.fire_year_p50 ? `${simData.simulation.fire_year_p50} years` : `Not in ${years}y`}
+          {:else}
+            {yearsToFire !== null ? `${yearsToFire} years` : `Not in ${years}y`}
+          {/if}
+        </div>
+      </div>
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
+        <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          {mode === "montecarlo" ? "FIRE Probability" : "FIRE Progress"}
+        </div>
+        <div class="text-2xl font-semibold tabular-nums mt-1">
+          {mode === "montecarlo"
+            ? `${((simData?.simulation.fire_probability || 0) * 100).toFixed(1)}%`
+            : `${fireProgress.toFixed(1)}%`}
+        </div>
+        <div class="h-1.5 rounded-full bg-[var(--surface-elevated)] overflow-hidden mt-2">
+          <div
+            class="h-full rounded-full bg-[var(--accent)]"
+            style="width: {mode === 'montecarlo'
+              ? (simData?.simulation.fire_probability || 0) * 100
+              : fireProgress}%"
+          ></div>
+        </div>
+      </div>
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
+        <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Target Corpus ({adjustForInflation && mode === "simple" ? "Today's money" : "Nominal"})
+        </div>
+        <div class="text-2xl font-semibold tabular-nums mt-1">
+          {formatMoney(
+            mode === "montecarlo"
+              ? simData?.simulation.target_corpus || targetCorpus
+              : targetCorpus
+          )}
+        </div>
+      </div>
+    </div>
+
+    <!-- Levers + Chart -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div class="lg:col-span-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4">
+        <h2 class="text-sm font-semibold">Core Levers</h2>
+        <div class="space-y-3.5 text-xs">
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="font-medium">Projection Horizon</span>
+              <span class="tabular-nums font-semibold">{years} years</span>
+            </div>
+            <input type="range" min="1" max="40" bind:value={years} class="w-full accent-[var(--accent)]" />
+          </div>
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="font-medium">Monthly Contribution</span>
+              <span class="tabular-nums font-semibold">{formatMoney(monthlyContribution)}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max={Math.max(500000, monthlyContribution * 2)}
+              step="1000"
+              bind:value={monthlyContribution}
+              class="w-full accent-[var(--accent)]"
+            />
+          </div>
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="font-medium">Expected Return</span>
+              <span class="tabular-nums font-semibold">{expectedCagr.toFixed(1)}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="25"
+              step="0.5"
+              bind:value={expectedCagr}
+              class="w-full accent-[var(--accent)]"
+            />
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-[var(--border)]">
+          <button
+            type="button"
+            class="w-full flex items-center justify-between text-xs font-medium text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
+            onclick={() => (showAssumptions = !showAssumptions)}
+          >
+            <span>Assumptions ({swr}% SWR · {inflationRate}% inf)</span>
+            {#if showAssumptions}
+              <ChevronUp class="w-4 h-4" />
+            {:else}
+              <ChevronDown class="w-4 h-4" />
+            {/if}
+          </button>
+
+          {#if showAssumptions}
+            <div class="mt-3 space-y-3 text-xs">
+              {#if mode === "simple"}
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" bind:checked={adjustForInflation} />
+                  <span>Adjust for inflation (today's money)</span>
+                </label>
+              {/if}
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span>Safe Withdrawal Rate</span>
+                  <span class="tabular-nums">{swr}%</span>
+                </div>
+                <input type="range" min="2" max="7" step="0.1" bind:value={swr} class="w-full accent-[var(--accent)]" />
+              </div>
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span>Inflation Rate</span>
+                  <span class="tabular-nums">{inflationRate}%</span>
+                </div>
+                <input type="range" min="0" max="15" step="0.5" bind:value={inflationRate} class="w-full accent-[var(--accent)]" />
+              </div>
+              {#if mode === "montecarlo"}
+                <div>
+                  <div class="flex justify-between mb-1">
+                    <span>Volatility</span>
+                    <span class="tabular-nums">{volatility}%</span>
+                  </div>
+                  <input type="range" min="2" max="40" step="0.5" bind:value={volatility} class="w-full accent-[var(--accent)]" />
+                </div>
+              {:else}
+                <div>
+                  <div class="flex justify-between mb-1">
+                    <span>Scenario Spread</span>
+                    <span class="tabular-nums">±{cagrSpread}%</span>
+                  </div>
+                  <input type="range" min="1" max="10" step="0.5" bind:value={cagrSpread} class="w-full accent-[var(--accent)]" />
+                </div>
+              {/if}
+            </div>
+          {/if}
+        </div>
+      </div>
+
+      <div class="lg:col-span-8 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5">
+        {#if mode === "montecarlo" && simLoading}
+          <div class="h-64 flex items-center justify-center text-sm text-[var(--muted)]">
+            Running 1,000 Monte Carlo simulations…
+          </div>
+        {:else}
+          <ProjectionChart
+            {mode}
+            conservative={conservativePoints}
+            expected={expectedPoints}
+            optimistic={optimisticPoints}
+            fan={fanBand}
+            {targetCorpus}
+          />
+        {/if}
+      </div>
+    </div>
+
+    <!-- Year-by-Year Table (Simple mode) -->
+    {#if mode === "simple"}
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+        <div class="px-4 py-3 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
+          <h3 class="text-sm font-semibold">Year-by-Year Projection</h3>
+          <div class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5 text-xs">
+            {#each [
+              { key: "expected", label: "Expected" },
+              { key: "conservative", label: "Conservative" },
+              { key: "optimistic", label: "Optimistic" }
+            ] as s}
+              <button
+                type="button"
+                class="px-2.5 py-1 rounded-md cursor-pointer {activeScenario === s.key
+                  ? 'bg-[var(--surface)] font-semibold'
+                  : 'text-[var(--muted)]'}"
+                onclick={() => (activeScenario = s.key as ScenarioKey)}
+              >
+                {s.label}
+              </button>
+            {/each}
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
+              <tr>
+                <th class="py-2.5 px-4 font-medium">Year</th>
+                <th class="py-2.5 px-4 text-right font-medium">Starting</th>
+                <th class="py-2.5 px-4 text-right font-medium">Contribution</th>
+                <th class="py-2.5 px-4 text-right font-medium">Return</th>
+                <th class="py-2.5 px-4 text-right font-medium">Ending</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--border)] tabular-nums">
+              {#each tableRows as r}
+                <tr class="hover:bg-[var(--surface-elevated)]/50">
+                  <td class="py-2 px-4 font-medium">
+                    Year {r.year}
+                    {#if r.isFire}
+                      <span class="ml-1.5 px-1.5 py-0.5 text-[10px] rounded bg-[var(--accent)]/15 text-[var(--accent)] font-semibold">
+                        FIRE
+                      </span>
+                    {/if}
+                  </td>
+                  <td class="py-2 px-4 text-right">{formatMoney(r.start)}</td>
+                  <td class="py-2 px-4 text-right">{formatMoney(r.contribution)}</td>
+                  <td class="py-2 px-4 text-right {r.returnAmount >= 0 ? 'text-[var(--gain)]' : 'text-[var(--loss)]'}">
+                    {formatMoney(r.returnAmount)}
+                  </td>
+                  <td class="py-2 px-4 text-right font-semibold">{formatMoney(r.end)}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {/if}
+  {:else}
+    <!-- Goals Tab -->
+    {#if goals.length === 0}
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center text-sm text-[var(--muted)]">
+        No goals configured yet.
+      </div>
+    {:else}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {#each goals as g (g.id)}
+          {@const pct = g.target > 0 ? Math.min(100, (g.current / g.target) * 100) : 0}
+          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="text-base font-semibold">{g.name}</h3>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--surface-elevated)] border border-[var(--border)] capitalize">
+                {g.type}
+              </span>
+            </div>
+            <div class="h-2 rounded-full bg-[var(--surface-elevated)] overflow-hidden">
+              <div class="h-full rounded-full bg-[var(--accent)]" style="width: {pct}%"></div>
+            </div>
+            <div class="flex justify-between text-xs tabular-nums">
+              <span><strong>{formatMoney(g.current)}</strong> of {formatMoney(g.target)} ({pct.toFixed(1)}%)</span>
+              <span class="text-[var(--muted)]">{g.targetDate}</span>
+            </div>
+          </div>
+        {/each}
+      </div>
+    {/if}
+  {/if}
 </div>
