@@ -169,6 +169,7 @@
   let liabilities = $state<LiabilityRow[]>([]);
   let allocationItems = $state<AllocationAggregate[]>([]);
   let allocationTargets = $state<AllocationTargetSummary[]>([]);
+  let allocationTimeline = $state<Array<{ date?: string; aggregates?: Record<string, AllocationAggregate> }>>([]);
   let currencyExposure = $state<CurrencyExposureItem[]>([]);
   let investmentIncomeTotal = $state(0);
   let dividendTTM = $state(0);
@@ -236,9 +237,11 @@
         ),
         apiGet<{
           aggregates?: Record<string, AllocationAggregate>;
+          aggregates_timeline?: Array<{ date?: string; aggregates?: Record<string, AllocationAggregate> }>;
           allocation_targets?: AllocationTargetSummary[];
         }>("/api/allocation").catch(() => ({
           aggregates: {} as Record<string, AllocationAggregate>,
+          aggregates_timeline: [] as Array<{ date?: string; aggregates?: Record<string, AllocationAggregate> }>,
           allocation_targets: [] as AllocationTargetSummary[]
         })),
         apiGet<{ currency_exposure?: CurrencyExposureItem[] }>("/api/currency-exposure").catch(
@@ -296,6 +299,7 @@
       allocationItems = Object.values(allocRes.aggregates || {})
         .filter((a) => (a.market_amount || 0) > 0)
         .sort((a, b) => (b.market_amount || 0) - (a.market_amount || 0));
+      allocationTimeline = allocRes.aggregates_timeline || [];
       allocationTargets = allocRes.allocation_targets || [];
       currencyExposure = fxExpRes.currency_exposure || [];
       investmentIncomeTotal = incRes.ttm_total || 0;
@@ -361,6 +365,37 @@
         .filter((s) => s.amount > 0);
       const total = segments.reduce((s, x) => s + x.amount, 0);
       return { label: m, total, segments };
+    });
+  });
+
+  const allocationTimelineColumns = $derived.by((): StackedBarColumn[] => {
+    if (allocationTimeline.length === 0) return [];
+    const topNames = allocationItems
+      .slice(0, 8)
+      .map((a) => a.name || a.account || "Asset");
+    const topSet = new Set(topNames);
+    return allocationTimeline.slice(-24).map((pt) => {
+      const vals = Object.values(pt.aggregates || {});
+      const byName = new Map<string, number>();
+      let other = 0;
+      let total = 0;
+      for (const a of vals) {
+        const amt = Math.max(0, a.market_amount || 0);
+        if (amt <= 0) continue;
+        total += amt;
+        const n = a.name || a.account || "Asset";
+        if (topSet.has(n)) byName.set(n, (byName.get(n) || 0) + amt);
+        else other += amt;
+      }
+      const segments = topNames
+        .map((n, idx) => ({
+          name: n,
+          amount: byName.get(n) || 0,
+          color: invPalette[idx % invPalette.length]
+        }))
+        .filter((s) => s.amount > 0);
+      if (other > 0) segments.push({ name: "Other", amount: other, color: "#94a3b8" });
+      return { label: (pt.date || "").slice(0, 7), total, segments };
     });
   });
 
@@ -1017,19 +1052,37 @@
         {#if allocationItems.length === 0}
           <p class="text-sm text-[var(--muted)]">No allocation data available.</p>
         {:else}
-          <div class="space-y-3">
-            {#each allocationItems.slice(0, 15) as item}
+          <!-- Allocation by Category by Value (Proportional Stacked Bar) -->
+          <div class="h-5 rounded-lg overflow-hidden flex w-full bg-[var(--surface-elevated)]">
+            {#each allocationItems.slice(0, 8) as item, idx}
+              {@const pct = totalAllocation > 0 ? (item.market_amount / totalAllocation) * 100 : 0}
+              {#if pct > 0.5}
+                <div
+                  style="width: {pct}%; background: {invPalette[idx % invPalette.length]}"
+                  title="{item.name || item.account || 'Asset'}: {formatMoney(item.market_amount)} ({pct.toFixed(1)}%)"
+                ></div>
+              {/if}
+            {/each}
+          </div>
+          <div class="space-y-3 pt-1">
+            {#each allocationItems.slice(0, 15) as item, idx}
               {@const pct = totalAllocation > 0 ? (item.market_amount / totalAllocation) * 100 : 0}
               <div class="space-y-1 text-xs">
                 <div class="flex justify-between">
-                  <span class="font-medium truncate">{item.name || item.account || "Asset"}</span>
+                  <span class="font-medium truncate inline-flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-xs shrink-0" style="background: {invPalette[idx % invPalette.length]}"></span>
+                    {item.name || item.account || "Asset"}
+                  </span>
                   <span class="tabular-nums">
                     <strong>{formatMoney(item.market_amount)}</strong>
                     <span class="text-[var(--muted)] ml-1">({pct.toFixed(1)}%)</span>
                   </span>
                 </div>
                 <div class="h-1.5 rounded-full bg-[var(--surface-elevated)] overflow-hidden">
-                  <div class="h-full rounded-full bg-[var(--accent)]" style="width: {pct}%"></div>
+                  <div
+                    class="h-full rounded-full"
+                    style="width: {pct}%; background: {invPalette[idx % invPalette.length]}"
+                  ></div>
                 </div>
               </div>
             {/each}
@@ -1122,6 +1175,53 @@
         {/if}
       {/if}
     </div>
+
+    {#if allocationTimelineColumns.length > 0}
+      <div class="mt-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+        <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Allocation Timeline
+        </div>
+        <StackedBarChart columns={allocationTimelineColumns} />
+      </div>
+    {/if}
+
+    {#if allocationItems.length > 0}
+      <div class="mt-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+        <div class="px-4 py-3 border-b border-[var(--border)] text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Portfolio Allocation Table
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
+              <tr>
+                <th class="py-2.5 px-4 font-medium">Account</th>
+                <th class="py-2.5 px-4 text-right font-medium">Market Value</th>
+                <th class="py-2.5 px-4 text-right font-medium">% of Portfolio</th>
+                <th class="py-2.5 px-4 font-medium w-48">Share</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--border)] tabular-nums">
+              {#each allocationItems as item, idx}
+                {@const pct = totalAllocation > 0 ? (item.market_amount / totalAllocation) * 100 : 0}
+                <tr class="hover:bg-[var(--surface-elevated)]/50">
+                  <td class="py-2 px-4 font-medium">{item.account || item.name || "Asset"}</td>
+                  <td class="py-2 px-4 text-right font-semibold">{formatMoney(item.market_amount)}</td>
+                  <td class="py-2 px-4 text-right">{pct.toFixed(2)}%</td>
+                  <td class="py-2 px-4">
+                    <div class="h-2 rounded-full bg-[var(--surface-elevated)] overflow-hidden">
+                      <div
+                        class="h-full rounded-full"
+                        style="width: {pct}%; background: {invPalette[idx % invPalette.length]}"
+                      ></div>
+                    </div>
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {/if}
   {:else if activeTab === "portfolio"}
     {#if portfolioSecurityType.length === 0 && portfolioRating.length === 0 && portfolioIndustry.length === 0 && portfolioNameAndType.length === 0}
       <div
