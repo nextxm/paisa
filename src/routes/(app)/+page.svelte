@@ -299,59 +299,57 @@
             {#if widget.id === "networth"}
               <div class="tile is-parent">
                 <div class="tile is-child">
-                  <div class="content">
-                    <p class="subtitle">
+                  <div class="box dashboard-card">
+                    <div class="dashboard-card-header">
                       <a class="secondary-link has-text-grey" href="/assets/networth">Assets</a>
-                    </p>
-                    <div class="content">
-                      {#if networth}
-                        <nav class="level grid-2">
-                          <LevelItem
-                            narrow
-                            title="Net worth"
-                            color={COLORS.primary}
-                            value={formatCurrency(networth.balanceAmount)}
-                          />
-
-                          <LevelItem
-                            narrow
-                            title="Net Investment"
-                            color={COLORS.secondary}
-                            value={formatCurrency(networth.netInvestmentAmount)}
-                          />
-                        </nav>
-                        <nav class="level grid-2">
-                          <LevelItem
-                            narrow
-                            title="Gain / Loss"
-                            color={networth.gainAmount >= 0 ? COLORS.gainText : COLORS.lossText}
-                            value={formatCurrency(networth.gainAmount)}
-                          />
-
-                          <LevelItem narrow title="XIRR" value={formatFloat(xirr)} />
-                        </nav>
-                      {/if}
+                      <a class="dashboard-card-link" href="/assets/networth">View →</a>
                     </div>
+                    {#if networth}
+                      <nav class="level grid-2 mb-3">
+                        <LevelItem
+                          narrow
+                          title="Net worth"
+                          color={COLORS.primary}
+                          value={formatCurrency(networth.balanceAmount)}
+                        />
+
+                        <LevelItem
+                          narrow
+                          title="Net Investment"
+                          color={COLORS.secondary}
+                          value={formatCurrency(networth.netInvestmentAmount)}
+                        />
+                      </nav>
+                      <nav class="level grid-2 mb-0">
+                        <LevelItem
+                          narrow
+                          title="Gain / Loss"
+                          color={networth.gainAmount >= 0 ? COLORS.gainText : COLORS.lossText}
+                          value={formatCurrency(networth.gainAmount)}
+                        />
+
+                        <LevelItem narrow title="XIRR" value={formatFloat(xirr)} />
+                      </nav>
+                    {/if}
                   </div>
                 </div>
               </div>
             {:else if widget.id === "checkingBalances" && !_.isEmpty(checkingBalancesForWidget)}
               <div class="tile is-parent">
                 <article class="tile is-child">
-                  <div class="content">
-                    <p class="subtitle">
+                  <div class="box dashboard-card">
+                    <div class="dashboard-card-header">
                       <a class="secondary-link has-text-grey" href="/assets/balance"
                         >Checking Balance</a
                       >
-                    </p>
-                    <div class="content">
-                      <div class="masonry-grid masonry-grid-400">
-                        {#each checkingBalancesForWidget as assetBreakdown}
-                          <div class="is-flex-grow-1">
-                            <BalanceCard {assetBreakdown} />
-                          </div>
-                        {/each}
-                      </div>
+                      <a class="dashboard-card-link" href="/assets/balance">View all →</a>
+                    </div>
+                    <div class="masonry-grid masonry-grid-400">
+                      {#each checkingBalancesForWidget as assetBreakdown}
+                        <div class="is-flex-grow-1">
+                          <BalanceCard {assetBreakdown} />
+                        </div>
+                      {/each}
                     </div>
                   </div>
                 </article>
@@ -359,38 +357,39 @@
             {:else if widget.id === "investmentIncome"}
               <div class="tile is-parent">
                 <article class="tile is-child">
-                  <div class="content">
-                    <p class="subtitle">
+                  <div class="box dashboard-card">
+                    <div class="dashboard-card-header">
                       <a class="secondary-link has-text-grey" href="/income/investment"
                         >Investment Income</a
                       >
-                    </p>
-                    <div class="content">
-                      <nav class="level grid-2">
-                        <LevelItem
-                          narrow
-                          title="TTM Dividend"
-                          color={COLORS.gainText}
-                          value={formatCurrency(investmentIncomeDividendTTM)}
-                        />
-                        <LevelItem
-                          narrow
-                          title="TTM Interest"
-                          color={COLORS.gainText}
-                          value={formatCurrency(investmentIncomeInterestTTM)}
-                        />
-                      </nav>
+                      <a class="dashboard-card-link" href="/income/investment">Details →</a>
                     </div>
+                    <nav class="level grid-2 mb-0">
+                      <LevelItem
+                        narrow
+                        title="TTM Dividend"
+                        color={COLORS.gainText}
+                        value={formatCurrency(investmentIncomeDividendTTM)}
+                      />
+                      <LevelItem
+                        narrow
+                        title="TTM Interest"
+                        color={COLORS.gainText}
+                        value={formatCurrency(investmentIncomeInterestTTM)}
+                      />
+                    </nav>
                   </div>
                 </article>
               </div>
             {:else if widget.id === "cashFlow"}
               <div class="tile is-parent">
                 <article class="tile is-child min-w-0">
-                  <p class="subtitle">
-                    <a class="secondary-link has-text-grey" href="/cash_flow/monthly">Cash Flow</a>
-                  </p>
-                  <div class="content box px-2 pb-0">
+                  <div class="box dashboard-card pb-2">
+                    <div class="dashboard-card-header">
+                      <a class="secondary-link has-text-grey" href="/cash_flow/monthly">Cash Flow</a
+                      >
+                      <a class="dashboard-card-link" href="/cash_flow/monthly">Details →</a>
+                    </div>
                     <ZeroState item={cashFlows}>
                       <strong>Oops!</strong> You have not made any transactions in the last 3 months.
                     </ZeroState>
@@ -410,15 +409,14 @@
             {:else if widget.id === "budget" && currentBudget}
               <div class="tile is-parent">
                 <div class="tile is-child">
-                  <div class="content">
-                    <p class="subtitle">
+                  <div class="box dashboard-card">
+                    <div class="dashboard-card-header">
                       <a class="secondary-link has-text-grey" href="/expense/budget">Budget</a>
-                    </p>
-                    <div class="content">
-                      {#each budgetAccountsForWidget as accountBudget (accountBudget)}
-                        <BudgetCard compact {accountBudget} />
-                      {/each}
+                      <a class="dashboard-card-link" href="/expense/budget">Manage →</a>
                     </div>
+                    {#each budgetAccountsForWidget as accountBudget (accountBudget)}
+                      <BudgetCard compact {accountBudget} />
+                    {/each}
                   </div>
                 </div>
               </div>
@@ -426,15 +424,14 @@
               <div class="tile">
                 <div class="tile is-parent is-12">
                   <article class="tile is-child">
-                    <div class="content">
-                      <p class="subtitle">
+                    <div class="box dashboard-card">
+                      <div class="dashboard-card-header">
                         <a class="secondary-link has-text-grey" href="/planning/goals">Goals</a>
-                      </p>
-                      <div class="content">
-                        {#each goalSummariesForWidget as goal}
-                          <GoalSummaryCard {goal} small />
-                        {/each}
+                        <a class="dashboard-card-link" href="/planning/goals">View all →</a>
                       </div>
+                      {#each goalSummariesForWidget as goal}
+                        <GoalSummaryCard {goal} small />
+                      {/each}
                     </div>
                   </article>
                 </div>
@@ -449,21 +446,25 @@
             {#if widget.id === "expenses"}
               <div class="tile is-parent is-12">
                 <article class="tile is-child">
-                  <p
-                    class="subtitle is-flex is-flex-wrap-wrap is-justify-content-space-between is-align-items-end"
-                    style="gap: 0.5rem"
-                  >
-                    <span
-                      ><a class="secondary-link has-text-grey" href="/expense/monthly">Expenses</a>
-                      <span
-                        class="is-size-5 has-text-weight-bold px-2"
-                        style="color: {COLORS.expenses}"
-                        >{formatCurrency(totalExpense)} {USER_CONFIG.default_currency}</span
-                      ></span
+                  <div class="box dashboard-card">
+                    <div
+                      class="dashboard-card-header is-flex-wrap-wrap"
+                      style="gap: 0.5rem; align-items: flex-end;"
                     >
-                    <LastNMonths n={3} bind:value={month} />
-                  </p>
-                  <div class="content box px-3">
+                      <div>
+                        <a class="secondary-link has-text-grey" href="/expense/monthly">Expenses</a>
+                        <div
+                          class="is-size-5 has-text-weight-bold mt-1"
+                          style="color: {COLORS.expenses}; font-variant-numeric: tabular-nums;"
+                        >
+                          {formatCurrency(totalExpense)}
+                          <span class="is-size-7 has-text-grey has-text-weight-normal"
+                            >{USER_CONFIG.default_currency}</span
+                          >
+                        </div>
+                      </div>
+                      <LastNMonths n={3} bind:value={month} />
+                    </div>
                     <ZeroState item={selectedExpenses}>
                       <strong>Hurray!</strong> You have no expenses this month.
                     </ZeroState>
@@ -474,21 +475,20 @@
             {:else if widget.id === "recurring" && !_.isEmpty(transactionSequencesForWidget)}
               <div class="tile is-parent is-12">
                 <article class="tile is-child">
-                  <div class="content">
-                    <p class="subtitle">
+                  <div class="box dashboard-card">
+                    <div class="dashboard-card-header">
                       <a class="secondary-link has-text-grey" href="/cash_flow/recurring"
                         >Recurring</a
                       >
-                    </p>
-                    <div class="content box">
-                      <div
-                        class="grid grid-rows-1 overflow-hidden"
-                        style="grid-auto-rows: 0px; grid-template-columns: repeat(auto-fit, minmax(130px, 150px));"
-                      >
-                        {#each transactionSequencesForWidget as ts (ts)}
-                          <UpcomingCard transactionSequece={ts} />
-                        {/each}
-                      </div>
+                      <a class="dashboard-card-link" href="/cash_flow/recurring">View all →</a>
+                    </div>
+                    <div
+                      class="grid grid-rows-1 overflow-hidden"
+                      style="grid-auto-rows: 0px; grid-template-columns: repeat(auto-fit, minmax(130px, 150px));"
+                    >
+                      {#each transactionSequencesForWidget as ts (ts)}
+                        <UpcomingCard transactionSequece={ts} />
+                      {/each}
                     </div>
                   </div>
                 </article>
@@ -620,6 +620,33 @@
 </Modal>
 
 <style lang="scss">
+  .dashboard-card {
+    padding: 1.15rem 1.25rem;
+  }
+
+  .dashboard-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.85rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .dashboard-card-link {
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+    opacity: 0.75;
+  }
+
+  .dashboard-card-link:hover {
+    opacity: 1;
+  }
+
   .masonry-grid {
     display: grid;
     gap: 10px;
@@ -628,15 +655,6 @@
 
   .masonry-grid-400 {
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-  }
-
-  p.subtitle {
-    margin-bottom: 0.5rem !important;
-  }
-
-  p.subtitle a.secondary-link {
-    text-transform: uppercase;
-    font-size: 1rem;
   }
 
   .widget-picker-column :global(.dndDraggingSource) {

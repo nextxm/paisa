@@ -14,11 +14,19 @@
   let visible = $derived(_.take(transactions, limit));
 </script>
 
-<div class="box px-3">
-  <div class="content">
-    <p class="subtitle">
+<div class="box dashboard-card" style="padding: 1.15rem 1.25rem;">
+  <div class="content mb-0">
+    <div
+      class="is-flex is-justify-content-space-between is-align-items-center mb-3"
+      style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;"
+    >
       <a class="secondary-link has-text-grey" href="/ledger/transaction">Recent Transactions</a>
-    </p>
+      <a
+        href="/ledger/transaction"
+        style="font-size: 0.72rem; font-weight: 500; text-transform: none; letter-spacing: normal; opacity: 0.75;"
+        >All transactions →</a
+      >
+    </div>
     <div>
       <div class="masonry-grid masonry-grid-500">
         {#each visible as t (t.id)}
@@ -47,14 +55,5 @@
       margin-right: 0 !important;
       min-width: 0;
     }
-  }
-
-  p.subtitle {
-    margin-bottom: 0.5rem !important;
-  }
-
-  p.subtitle a.secondary-link {
-    text-transform: uppercase;
-    font-size: 1rem;
   }
 </style>
