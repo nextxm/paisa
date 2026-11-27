@@ -1,16 +1,21 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Search } from "lucide-svelte";
+  import { Download, Search } from "lucide-svelte";
   import TransactionDrawer from "$lib/components/TransactionDrawer.svelte";
-  import { apiGet, formatMoney, formatShortDate, type Transaction } from "$lib/api";
+  import { apiGet, formatMoney, formatShortDate, runtime, type Transaction } from "$lib/api";
 
   let transactions = $state<Transaction[]>([]);
   let query = $state("");
+  let fromDate = $state("");
+  let toDate = $state("");
+  let accountFilter = $state("");
   let loading = $state(true);
   let error = $state<string | null>(null);
   let selectedTransaction = $state<Transaction | null>(null);
 
-  onMount(async () => {
+  async function loadTransactions() {
+    loading = true;
+    error = null;
     try {
       const res = await apiGet<{ transactions?: Transaction[] }>("/api/transaction");
       transactions = res.transactions || [];
@@ -19,12 +24,17 @@
     } finally {
       loading = false;
     }
-  });
+  }
+
+  onMount(loadTransactions);
 
   const filtered = $derived.by(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return transactions;
     return transactions.filter((tx) => {
+      if (fromDate && tx.date < fromDate) return false;
+      if (toDate && tx.date > toDate) return false;
+      if (accountFilter && !tx.postings.some((p) => p.account === accountFilter)) return false;
+      if (!q) return true;
       if (tx.payee?.toLowerCase().includes(q)) return true;
       if (tx.narration?.toLowerCase().includes(q)) return true;
       if (tx.date?.includes(q)) return true;
@@ -32,7 +42,33 @@
     });
   });
 
-  const visible = $derived(filtered.slice(0, 200));
+  const visible = $derived(filtered.slice(0, 250));
+
+  function exportCSV() {
+    const rows = [
+      ["Date", "Payee", "Narration", "Account", "Amount", "Commodity"].join(","),
+      ...filtered.map((tx) => {
+        const p = tx.postings[0];
+        const esc = (s: string) => `"${(s || "").replaceAll('"', '""')}"`;
+        return [
+          tx.date,
+          esc(tx.payee || ""),
+          esc(tx.narration || ""),
+          esc(p?.account || ""),
+          p?.amount ?? 0,
+          p?.commodity || runtime.defaultCurrency
+        ].join(",");
+      })
+    ].join("\n");
+
+    const blob = new Blob([rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "paisa-transactions.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 </script>
 
 <div class="space-y-5">
@@ -44,15 +80,65 @@
       </p>
     </div>
 
-    <div class="relative w-full sm:w-80">
+    <button
+      type="button"
+      class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--surface-elevated)] cursor-pointer"
+      onclick={exportCSV}
+    >
+      <Download class="w-3.5 h-3.5" />
+      <span>Export CSV</span>
+    </button>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-3 flex flex-wrap items-center gap-2.5">
+    <div class="relative flex-1 min-w-48">
       <Search class="w-4 h-4 text-[var(--muted)] absolute left-3 top-1/2 -translate-y-1/2" />
       <input
         type="search"
         bind:value={query}
-        placeholder="Filter by payee, account, or date…"
-        class="w-full pl-9 pr-3 py-1.5 rounded-lg text-sm bg-[var(--surface)] border border-[var(--border)] outline-none focus:border-[var(--accent)]"
+        placeholder="Search payee, narration, or account…"
+        class="w-full pl-9 pr-3 py-1.5 rounded-lg text-xs bg-[var(--surface-elevated)] border border-[var(--border)] outline-none focus:border-[var(--accent)]"
       />
     </div>
+
+    <input
+      type="date"
+      bind:value={fromDate}
+      aria-label="From date"
+      class="px-2.5 py-1.5 rounded-lg text-xs bg-[var(--surface-elevated)] border border-[var(--border)] outline-none"
+    />
+    <input
+      type="date"
+      bind:value={toDate}
+      aria-label="To date"
+      class="px-2.5 py-1.5 rounded-lg text-xs bg-[var(--surface-elevated)] border border-[var(--border)] outline-none"
+    />
+    <select
+      bind:value={accountFilter}
+      aria-label="Filter by account"
+      class="px-2.5 py-1.5 rounded-lg text-xs bg-[var(--surface-elevated)] border border-[var(--border)] outline-none max-w-52"
+    >
+      <option value="">All accounts</option>
+      {#each runtime.accounts as acc}
+        <option value={acc}>{acc}</option>
+      {/each}
+    </select>
+
+    {#if query || fromDate || toDate || accountFilter}
+      <button
+        type="button"
+        class="px-2.5 py-1.5 rounded-lg text-xs text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
+        onclick={() => {
+          query = "";
+          fromDate = "";
+          toDate = "";
+          accountFilter = "";
+        }}
+      >
+        Clear
+      </button>
+    {/if}
   </div>
 
   {#if loading}
@@ -111,4 +197,4 @@
   {/if}
 </div>
 
-<TransactionDrawer bind:transaction={selectedTransaction} />
+<TransactionDrawer bind:transaction={selectedTransaction} onSaved={loadTransactions} />

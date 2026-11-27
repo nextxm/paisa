@@ -19,6 +19,9 @@ export interface Transaction {
   narration: string;
   status?: string;
   tags?: string[];
+  fileName?: string;
+  beginLine?: number;
+  endLine?: number;
   postings: Posting[];
 }
 
@@ -44,6 +47,42 @@ export interface DashboardResponse {
     ttm_dividend?: number;
     ttm_interest?: number;
   };
+  cashFlows?: Array<{
+    date: string;
+    income: number;
+    expenses: number;
+    investment: number;
+    balance: number;
+  }>;
+  budget?: {
+    budgetsByMonth?: Record<
+      string,
+      {
+        accounts: Array<{
+          account: string;
+          forecast: number;
+          actual: number;
+          available: number;
+        }>;
+      }
+    >;
+  };
+  goalSummaries?: Array<{
+    id: string;
+    name: string;
+    type: string;
+    current: number;
+    target: number;
+    targetDate: string;
+  }>;
+  transactionSequences?: Array<{
+    name?: string;
+    payee?: string;
+    narration?: string;
+    account?: string;
+    frequency?: string;
+    next_date?: string;
+  }>;
   expenses?: Record<string, Posting[]>;
   transactions?: Transaction[];
 }
