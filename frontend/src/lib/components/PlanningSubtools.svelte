@@ -194,9 +194,38 @@
   }
 
   // ---- Tax state ----
+  interface HarvestableItem {
+    account: string;
+    tax_category?: string;
+    total_units?: number;
+    harvestable_units: number;
+    unrealized_gain?: number;
+    taxable_unrealized_gain?: number;
+    current_unit_price?: number;
+  }
+
+  interface FYCapitalGainEntry {
+    sell_price?: number;
+    tax?: {
+      gain?: number;
+      taxable?: number;
+      short_term?: number;
+      long_term?: number;
+      slab?: number;
+    };
+  }
+
+  interface CapitalGainAccount {
+    account?: string;
+    fy?: Record<string, FYCapitalGainEntry>;
+  }
+
+  let taxSubTab = $state<"harvest" | "capital_gains" | "schedule_al">("harvest");
   let taxLoading = $state(false);
-  let harvestables = $state<Array<{ account?: string; unrealized_loss?: number; stcg?: number; ltcg?: number }>>([]);
-  let capitalGains = $state<Array<{ account?: string; stcg?: number; ltcg?: number }>>([]);
+  let targetHarvestGain = $state(100000);
+  let harvestables = $state<HarvestableItem[]>([]);
+  let capitalGains = $state<CapitalGainAccount[]>([]);
+  let selectedCgYear = $state("");
   let scheduleAls = $state<
     Record<
       string,
@@ -211,6 +240,42 @@
   >({});
   let selectedScheduleYear = $state("");
 
+  const cgYears = $derived.by(() => {
+    const set = new Set<string>();
+    for (const c of capitalGains) {
+      for (const y of Object.keys(c.fy || {})) set.add(y);
+    }
+    return Array.from(set).sort().reverse();
+  });
+
+  const activeCgRows = $derived.by(() => {
+    if (!selectedCgYear) return [];
+    return capitalGains
+      .filter((c) => Boolean(c.fy?.[selectedCgYear]))
+      .map((c) => ({
+        account: c.account || "Account",
+        fy: c.fy![selectedCgYear]
+      }));
+  });
+
+  const activeCgTotals = $derived.by(() => {
+    let withdrawn = 0;
+    let gain = 0;
+    let taxable = 0;
+    let stTax = 0;
+    let ltTax = 0;
+    let slab = 0;
+    for (const r of activeCgRows) {
+      withdrawn += r.fy.sell_price || 0;
+      gain += r.fy.tax?.gain || 0;
+      taxable += r.fy.tax?.taxable || 0;
+      stTax += r.fy.tax?.short_term || 0;
+      ltTax += r.fy.tax?.long_term || 0;
+      slab += r.fy.tax?.slab || 0;
+    }
+    return { withdrawn, gain, taxable, stTax, ltTax, slab };
+  });
+
   async function loadTax() {
     taxLoading = true;
     try {
@@ -219,8 +284,18 @@
         fetch("/api/capital_gains").then((r) => (r.ok ? r.json() : { capital_gains: {} })),
         fetch("/api/schedule_al").then((r) => (r.ok ? r.json() : { schedule_als: {} }))
       ]);
-      harvestables = Object.values(hRes.harvestables || {});
-      capitalGains = Object.values(cgRes.capital_gains || {});
+      harvestables = (Object.values(hRes.harvestables || {}) as HarvestableItem[]).filter(
+        (h) => (h.harvestable_units || 0) > 0
+      );
+      capitalGains = Object.values(cgRes.capital_gains || {}) as CapitalGainAccount[];
+      const cgYrs = new Set<string>();
+      for (const c of capitalGains) {
+        for (const y of Object.keys(c.fy || {})) cgYrs.add(y);
+      }
+      const sortedCg = Array.from(cgYrs).sort().reverse();
+      if (sortedCg.length > 0 && !selectedCgYear) {
+        selectedCgYear = sortedCg[0];
+      }
       scheduleAls = salRes.schedule_als || {};
       const yrs = Object.keys(scheduleAls).sort().reverse();
       if (yrs.length > 0 && !selectedScheduleYear) {
@@ -532,92 +607,214 @@
     </div>
   </div>
 {:else}
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-      <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-        Tax Harvesting Opportunities ({harvestables.length})
-      </h3>
+  <div class="space-y-5">
+    <div class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface)] p-0.5 text-xs">
+      {#each [
+        { id: "harvest", label: `Tax Harvesting (${harvestables.length})` },
+        { id: "capital_gains", label: `Capital Gains (${cgYears.length} FY)` },
+        { id: "schedule_al", label: `Schedule AL (${Object.keys(scheduleAls).length} FY)` }
+      ] as st}
+        <button
+          type="button"
+          onclick={() => (taxSubTab = st.id as typeof taxSubTab)}
+          class="px-3 py-1.5 rounded-md cursor-pointer {taxSubTab === st.id
+            ? 'bg-[var(--surface-elevated)] font-semibold text-[var(--text)]'
+            : 'text-[var(--muted)] hover:text-[var(--text)]'}"
+        >
+          {st.label}
+        </button>
+      {/each}
+    </div>
+
+    {#if taxSubTab === "harvest"}
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <span class="text-[var(--muted)]">Target Taxable Gain for Redemption Estimator:</span>
+        <input
+          type="number"
+          step="10000"
+          bind:value={targetHarvestGain}
+          class="w-36 px-2.5 py-1 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] tabular-nums"
+        />
+      </div>
+
       {#if harvestables.length === 0}
-        <p class="text-sm text-[var(--muted)]">No harvesting candidates found.</p>
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center text-sm text-[var(--muted)]">
+          No tax harvesting opportunities found.
+        </div>
       {:else}
-        <div class="divide-y divide-[var(--border)] text-sm tabular-nums">
-          {#each harvestables.slice(0, 12) as h}
-            <div class="py-2 flex justify-between gap-2">
-              <span class="truncate">{h.account || "Holding"}</span>
-              <span class="font-medium">{formatMoney(h.unrealized_loss || h.ltcg || 0)}</span>
-            </div>
-          {/each}
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
+                <tr>
+                  <th class="py-2.5 px-4 font-medium">Account</th>
+                  <th class="py-2.5 px-3 font-medium">Category</th>
+                  <th class="py-2.5 px-3 text-right font-medium">Harvestable Units</th>
+                  <th class="py-2.5 px-3 text-right font-medium">Unit Price</th>
+                  <th class="py-2.5 px-3 text-right font-medium">Unrealized Gain</th>
+                  <th class="py-2.5 px-3 text-right font-medium">Taxable Gain</th>
+                  <th class="py-2.5 px-4 text-right font-medium">Est. Units for Target</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--border)] tabular-nums">
+                {#each harvestables as h}
+                  {@const avgTaxablePerUnit =
+                    (h.harvestable_units || 0) > 0 && (h.taxable_unrealized_gain || 0) > 0
+                      ? (h.taxable_unrealized_gain || 0) / h.harvestable_units
+                      : 0}
+                  {@const estUnits =
+                    avgTaxablePerUnit > 0
+                      ? Math.min(h.harvestable_units, targetHarvestGain / avgTaxablePerUnit)
+                      : 0}
+                  <tr class="hover:bg-[var(--surface-elevated)]/50">
+                    <td class="py-2.5 px-4 font-medium">{h.account}</td>
+                    <td class="py-2.5 px-3 text-xs text-[var(--muted)]">{h.tax_category || "—"}</td>
+                    <td class="py-2.5 px-3 text-right">{(h.harvestable_units || 0).toFixed(2)}</td>
+                    <td class="py-2.5 px-3 text-right">{formatMoney(h.current_unit_price || 0)}</td>
+                    <td class="py-2.5 px-3 text-right text-[var(--gain)]">
+                      {formatMoney(h.unrealized_gain || 0)}
+                    </td>
+                    <td class="py-2.5 px-3 text-right font-semibold">
+                      {formatMoney(h.taxable_unrealized_gain || 0)}
+                    </td>
+                    <td class="py-2.5 px-4 text-right text-xs text-[var(--accent)]">
+                      {estUnits > 0 ? `${estUnits.toFixed(2)} (${formatMoney(estUnits * (h.current_unit_price || 0))})` : "—"}
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
         </div>
       {/if}
-    </div>
-
-    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-      <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-        Capital Gains Summary ({capitalGains.length})
-      </h3>
-      {#if capitalGains.length === 0}
-        <p class="text-sm text-[var(--muted)]">No capital gains recorded.</p>
+    {:else if taxSubTab === "capital_gains"}
+      {#if cgYears.length === 0}
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center text-sm text-[var(--muted)]">
+          No realized capital gains recorded.
+        </div>
       {:else}
-        <div class="divide-y divide-[var(--border)] text-sm tabular-nums">
-          {#each capitalGains.slice(0, 12) as cg}
-            <div class="py-2 flex justify-between gap-2">
-              <span class="truncate">{cg.account || "Account"}</span>
-              <span class="font-medium">
-                {formatMoney((cg.stcg || 0) + (cg.ltcg || 0))}
-              </span>
-            </div>
-          {/each}
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Financial Year Capital Gains
+          </span>
+          <select
+            bind:value={selectedCgYear}
+            class="px-2.5 py-1 rounded-lg text-xs bg-[var(--surface)] border border-[var(--border)] outline-none"
+          >
+            {#each cgYears as yr}
+              <option value={yr}>{yr}</option>
+            {/each}
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-3.5">
+            <div class="text-[11px] uppercase tracking-wider text-[var(--muted)]">Withdrawn</div>
+            <div class="text-base font-semibold tabular-nums mt-1">{formatMoney(activeCgTotals.withdrawn)}</div>
+          </div>
+          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-3.5">
+            <div class="text-[11px] uppercase tracking-wider text-[var(--muted)]">Gain</div>
+            <div class="text-base font-semibold tabular-nums mt-1 text-[var(--gain)]">{formatMoney(activeCgTotals.gain)}</div>
+          </div>
+          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-3.5">
+            <div class="text-[11px] uppercase tracking-wider text-[var(--muted)]">Taxable Gain</div>
+            <div class="text-base font-semibold tabular-nums mt-1">{formatMoney(activeCgTotals.taxable)}</div>
+          </div>
+          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-3.5">
+            <div class="text-[11px] uppercase tracking-wider text-[var(--muted)]">STCG Tax</div>
+            <div class="text-base font-semibold tabular-nums mt-1 text-[var(--loss)]">{formatMoney(activeCgTotals.stTax)}</div>
+          </div>
+          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-3.5">
+            <div class="text-[11px] uppercase tracking-wider text-[var(--muted)]">LTCG Tax</div>
+            <div class="text-base font-semibold tabular-nums mt-1 text-[var(--loss)]">{formatMoney(activeCgTotals.ltTax)}</div>
+          </div>
+          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-3.5">
+            <div class="text-[11px] uppercase tracking-wider text-[var(--muted)]">Slab Tax</div>
+            <div class="text-base font-semibold tabular-nums mt-1 text-[var(--loss)]">{formatMoney(activeCgTotals.slab)}</div>
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
+                <tr>
+                  <th class="py-2.5 px-4 font-medium">Account</th>
+                  <th class="py-2.5 px-3 text-right font-medium">Withdrawn</th>
+                  <th class="py-2.5 px-3 text-right font-medium">Gain</th>
+                  <th class="py-2.5 px-3 text-right font-medium">Taxable</th>
+                  <th class="py-2.5 px-3 text-right font-medium">STCG Tax</th>
+                  <th class="py-2.5 px-4 text-right font-medium">LTCG Tax</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--border)] tabular-nums">
+                {#each activeCgRows as row}
+                  <tr class="hover:bg-[var(--surface-elevated)]/50">
+                    <td class="py-2 px-4 font-medium">{row.account}</td>
+                    <td class="py-2 px-3 text-right">{formatMoney(row.fy.sell_price || 0)}</td>
+                    <td class="py-2 px-3 text-right text-[var(--gain)]">{formatMoney(row.fy.tax?.gain || 0)}</td>
+                    <td class="py-2 px-3 text-right">{formatMoney(row.fy.tax?.taxable || 0)}</td>
+                    <td class="py-2 px-3 text-right text-[var(--loss)]">{formatMoney(row.fy.tax?.short_term || 0)}</td>
+                    <td class="py-2 px-4 text-right text-[var(--loss)]">{formatMoney(row.fy.tax?.long_term || 0)}</td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
         </div>
       {/if}
-    </div>
-  </div>
-
-  <!-- Schedule AL -->
-  {#if Object.keys(scheduleAls).length > 0}
-    {@const activeSchedule = scheduleAls[selectedScheduleYear]}
-    <div class="mt-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
-      <div class="px-5 py-3 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-            Schedule AL (Assets &amp; Liabilities Statement)
-          </h3>
-          {#if activeSchedule?.date}
-            <p class="text-xs text-[var(--muted)] mt-0.5">As on {activeSchedule.date.slice(0, 10)}</p>
+    {:else}
+      {#if Object.keys(scheduleAls).length === 0}
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center text-sm text-[var(--muted)]">
+          No Schedule AL data available.
+        </div>
+      {:else}
+        {@const activeSchedule = scheduleAls[selectedScheduleYear]}
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+          <div class="px-5 py-3 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                Schedule AL (Assets &amp; Liabilities Statement)
+              </h3>
+              {#if activeSchedule?.date}
+                <p class="text-xs text-[var(--muted)] mt-0.5">As on {activeSchedule.date.slice(0, 10)}</p>
+              {/if}
+            </div>
+            <select
+              bind:value={selectedScheduleYear}
+              class="px-2.5 py-1 rounded-lg text-xs bg-[var(--surface-elevated)] border border-[var(--border)] outline-none"
+            >
+              {#each Object.keys(scheduleAls).sort().reverse() as yr}
+                <option value={yr}>FY {yr}</option>
+              {/each}
+            </select>
+          </div>
+          {#if activeSchedule?.entries?.length}
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm text-left">
+                <thead class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
+                  <tr>
+                    <th class="py-2 px-4 font-medium">Code</th>
+                    <th class="py-2 px-4 font-medium">Section</th>
+                    <th class="py-2 px-4 font-medium">Details</th>
+                    <th class="py-2 px-4 text-right font-medium">Amount</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--border)] tabular-nums">
+                  {#each activeSchedule.entries as entry}
+                    <tr class="hover:bg-[var(--surface-elevated)]/50">
+                      <td class="py-2 px-4 font-mono text-xs text-[var(--muted)]">{entry.section?.code || "—"}</td>
+                      <td class="py-2 px-4 font-medium">{entry.section?.section || "—"}</td>
+                      <td class="py-2 px-4 text-xs text-[var(--muted)]">{entry.section?.details || "—"}</td>
+                      <td class="py-2 px-4 text-right font-semibold">{formatMoney(entry.amount || 0)}</td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </div>
           {/if}
         </div>
-        <select
-          bind:value={selectedScheduleYear}
-          class="px-2.5 py-1 rounded-lg text-xs bg-[var(--surface-elevated)] border border-[var(--border)] outline-none"
-        >
-          {#each Object.keys(scheduleAls).sort().reverse() as yr}
-            <option value={yr}>FY {yr}</option>
-          {/each}
-        </select>
-      </div>
-      {#if activeSchedule?.entries?.length}
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm text-left">
-            <thead class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
-              <tr>
-                <th class="py-2 px-4 font-medium">Code</th>
-                <th class="py-2 px-4 font-medium">Section</th>
-                <th class="py-2 px-4 font-medium">Details</th>
-                <th class="py-2 px-4 text-right font-medium">Amount</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-[var(--border)] tabular-nums">
-              {#each activeSchedule.entries as entry}
-                <tr class="hover:bg-[var(--surface-elevated)]/50">
-                  <td class="py-2 px-4 font-mono text-xs text-[var(--muted)]">{entry.section?.code || "—"}</td>
-                  <td class="py-2 px-4 font-medium">{entry.section?.section || "—"}</td>
-                  <td class="py-2 px-4 text-xs text-[var(--muted)]">{entry.section?.details || "—"}</td>
-                  <td class="py-2 px-4 text-right font-semibold">{formatMoney(entry.amount || 0)}</td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
       {/if}
-    </div>
-  {/if}
+    {/if}
+  </div>
 {/if}
