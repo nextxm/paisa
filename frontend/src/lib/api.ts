@@ -11,6 +11,7 @@ export interface Posting {
   date: string;
   account: string;
   amount: number;
+  quantity?: number;
   commodity?: string;
   payee?: string;
   narration?: string;

@@ -9,6 +9,7 @@
     appPath,
     formatMoney,
     formatShortDate,
+    runtime,
     triggerSync,
     type AssetBreakdown,
     type DashboardResponse,
@@ -393,9 +394,15 @@
                     <span class="text-xs font-medium truncate" title={account.group}>
                       {account.group.split(":").slice(1).join(":") || account.group}
                     </span>
-                    <span class="text-sm font-semibold tabular-nums shrink-0">
-                      {formatMoney(account.marketAmount)}
-                    </span>
+                    <div class="text-sm font-semibold tabular-nums shrink-0 text-right">
+                      {#if account.originalBalances && account.originalBalances.length > 0}
+                        {#each account.originalBalances as ob}
+                          <div>{formatMoney(ob.amount, ob.currency)}</div>
+                        {/each}
+                      {:else}
+                        {formatMoney(account.marketAmount)}
+                      {/if}
+                    </div>
                   </div>
                 {/each}
               </div>
@@ -607,29 +614,42 @@
             {:else}
               <div class="divide-y divide-[var(--border)]">
                 {#each recentTransactions as tx (tx.id)}
-                  {@const primaryPosting = tx.postings[0]}
                   <button
                     type="button"
-                    class="w-full py-2.5 flex items-center justify-between gap-3 text-left hover:bg-[var(--surface-elevated)]/50 px-1.5 -mx-1.5 rounded-lg transition-colors cursor-pointer"
+                    class="w-full py-2.5 text-left hover:bg-[var(--surface-elevated)]/50 px-1.5 -mx-1.5 rounded-lg transition-colors cursor-pointer space-y-1.5"
                     onclick={() => (selectedTransaction = tx)}
                   >
-                    <div class="min-w-0">
-                      <div class="text-sm font-medium truncate">
+                    <div class="flex items-baseline justify-between gap-2">
+                      <span class="text-sm font-medium truncate">
                         {tx.payee || tx.narration || "Transaction"}
-                      </div>
-                      <div class="text-xs text-[var(--muted)] truncate">
-                        {formatShortDate(tx.date)} · {primaryPosting?.account || ""}
-                      </div>
-                    </div>
-                    {#if primaryPosting}
-                      <span
-                        class="text-sm font-semibold tabular-nums shrink-0 {primaryPosting.amount < 0
-                          ? 'text-[var(--loss)]'
-                          : ''}"
-                      >
-                        {formatMoney(primaryPosting.amount)}
                       </span>
-                    {/if}
+                      <span class="text-xs text-[var(--muted)] shrink-0 tabular-nums">
+                        {formatShortDate(tx.date)}
+                      </span>
+                    </div>
+                    <div class="space-y-0.5">
+                      {#each tx.postings as posting}
+                        <div class="flex items-baseline justify-between gap-2 text-xs">
+                          <span class="text-[var(--muted)] truncate" title={posting.account}>
+                            {posting.account}
+                          </span>
+                          <span
+                            class="tabular-nums font-medium shrink-0 {posting.amount < 0
+                              ? 'text-[var(--loss)]'
+                              : ''}"
+                          >
+                            {#if posting.commodity && posting.commodity !== runtime.defaultCurrency && posting.quantity !== undefined}
+                              <span>{formatMoney(posting.quantity, posting.commodity)}</span>
+                              <span class="text-[var(--muted)] font-normal ml-1">
+                                ({formatMoney(posting.amount)})
+                              </span>
+                            {:else}
+                              {formatMoney(posting.amount)}
+                            {/if}
+                          </span>
+                        </div>
+                      {/each}
+                    </div>
                   </button>
                 {/each}
               </div>
