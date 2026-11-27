@@ -84,6 +84,7 @@
   let monthWiseTaxes = $state<Record<string, Posting[]>>({});
   let monthWiseLiabilities = $state<Record<string, Posting[]>>({});
   let breakdownLevel = $state<1 | 2 | "all">(2);
+  let expenseTrendGranularity = $state<"monthly" | "yearly">("monthly");
   let yearlyStatements = $state<Record<string, IncomeStatement>>({});
   let sankeyLinks = $state<SankeyLink[]>([]);
   let sankeyLoading = $state(false);
@@ -246,6 +247,16 @@
       expenses: c.expenses,
       investment: c.investment,
       balance: c.balance
+    }))
+  );
+
+  const expenseTrendPoints = $derived<MonthlyBarPoint[]>(
+    (expenseTrendGranularity === "yearly" ? yearlyFlows : windowedFlows).map((c) => ({
+      date: c.date,
+      income: 0,
+      expenses: c.expenses,
+      investment: 0,
+      balance: 0
     }))
   );
 
@@ -835,6 +846,35 @@
       {/if}
     </div>
   {:else if activeTab === "expenses"}
+    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Spending Trend ({expenseTrendGranularity === "yearly" ? "Yearly" : "Monthly"})
+        </span>
+        <div class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5 text-xs">
+          <button
+            type="button"
+            class="px-2.5 py-1 rounded-md cursor-pointer {expenseTrendGranularity === 'monthly'
+              ? 'bg-[var(--surface)] font-semibold'
+              : 'text-[var(--muted)]'}"
+            onclick={() => (expenseTrendGranularity = "monthly")}
+          >
+            Monthly
+          </button>
+          <button
+            type="button"
+            class="px-2.5 py-1 rounded-md cursor-pointer {expenseTrendGranularity === 'yearly'
+              ? 'bg-[var(--surface)] font-semibold'
+              : 'text-[var(--muted)]'}"
+            onclick={() => (expenseTrendGranularity = "yearly")}
+          >
+            Yearly
+          </button>
+        </div>
+      </div>
+      <BarTrendChart data={expenseTrendPoints} />
+    </div>
+
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
