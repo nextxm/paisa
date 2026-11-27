@@ -26,7 +26,7 @@
     dismissed_count: number;
   }
 
-  let activeTab = $state<LedgerTab>("health");
+  let activeTab = $state<LedgerTab>("import");
   let healthFilter = $state<HealthFilter>("fix");
   let search = $state("");
 
@@ -133,10 +133,10 @@
   <!-- Tabs -->
   <div class="border-b border-[var(--border)] flex items-center gap-6 text-sm overflow-x-auto">
     {#each [
-      { id: "health", label: `Data Health (${summary.fix_count + summary.review_count})` },
       { id: "import", label: "Import" },
       { id: "editor", label: "Journal Editor" },
-      { id: "sheets", label: "Sheets" }
+      { id: "sheets", label: "Sheets" },
+      { id: "health", label: `Data Health (${summary.fix_count + summary.review_count})` }
     ] as tab}
       <button
         type="button"
