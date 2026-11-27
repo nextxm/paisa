@@ -64,12 +64,12 @@ export const dashboardWidgetRegistry: DashboardWidgetMeta[] = [
     defaultColumn: "left",
     defaultVisible: true
   },
-  { id: "cashFlow", title: "Cash Flow", defaultColumn: "left", defaultVisible: true },
+  { id: "cashFlow", title: "Cash Flow", defaultColumn: "left", defaultVisible: false },
   {
     id: "budget",
     title: "Budget",
     defaultColumn: "left",
-    defaultVisible: true,
+    defaultVisible: false,
     configOptions: [
       {
         key: "maxAccounts",
@@ -84,7 +84,7 @@ export const dashboardWidgetRegistry: DashboardWidgetMeta[] = [
     id: "goals",
     title: "Goals",
     defaultColumn: "left",
-    defaultVisible: true,
+    defaultVisible: false,
     configOptions: [
       {
         key: "maxItems",
@@ -100,7 +100,7 @@ export const dashboardWidgetRegistry: DashboardWidgetMeta[] = [
     id: "recurring",
     title: "Recurring",
     defaultColumn: "right",
-    defaultVisible: true,
+    defaultVisible: false,
     configOptions: [
       {
         key: "maxItems",

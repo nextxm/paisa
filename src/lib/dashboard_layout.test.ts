@@ -75,4 +75,18 @@ describe("dashboard layout", () => {
     expect(allMinimal.find((w) => w.id === "budget")?.visible).toBe(false);
     expect(allMinimal.length).toBe(9);
   });
+
+  test("creates default layout with only core widgets visible", () => {
+    const defaults = createDefaultDashboardLayout();
+    const allDefaults = [...defaults.left, ...defaults.right];
+
+    expect(allDefaults.filter((w) => w.visible).map((w) => w.id)).toEqual([
+      "networth",
+      "checkingBalances",
+      "investmentIncome",
+      "expenses",
+      "recentTransactions"
+    ]);
+    expect(allDefaults.length).toBe(9);
+  });
 });
