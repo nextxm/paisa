@@ -104,10 +104,13 @@
   let yearlyIncomeCards = $state<
     Array<{ year?: string; net_income?: number; net_tax?: number; gross_income?: number }>
   >([]);
+  let incomeTimeline = $state<Array<{ date: string; postings?: Posting[] }>>([]);
+  let taxTimeline = $state<Array<{ date: string; postings?: Posting[] }>>([]);
+  let ttmInvestmentIncome = $state(0);
 
   onMount(async () => {
     try {
-      const [cfRes, expRes, stmtRes, budgetRes, recRes, incRes] = await Promise.all([
+      const [cfRes, expRes, stmtRes, budgetRes, recRes, incRes, invIncRes] = await Promise.all([
         apiGet<{ cash_flows?: CashFlowRow[] }>("/api/cash_flow"),
         apiGet<{
           month_wise?: {
@@ -135,7 +138,10 @@
             net_tax?: number;
             gross_income?: number;
           }>;
-        }>("/api/income").catch(() => ({ yearly_cards: [] }))
+          income_timeline?: Array<{ date: string; postings?: Posting[] }>;
+          tax_timeline?: Array<{ date: string; postings?: Posting[] }>;
+        }>("/api/income").catch(() => ({ yearly_cards: [], income_timeline: [], tax_timeline: [] })),
+        apiGet<{ ttm_total?: number }>("/api/income/investment").catch(() => ({ ttm_total: 0 }))
       ]);
 
       cashFlows = (cfRes.cash_flows || []).map((c) => ({
@@ -156,6 +162,9 @@
       availableForBudgeting = budgetRes.availableForBudgeting || 0;
       recurringItems = recRes.transaction_sequences || [];
       yearlyIncomeCards = incRes.yearly_cards || [];
+      incomeTimeline = incRes.income_timeline || [];
+      taxTimeline = incRes.tax_timeline || [];
+      ttmInvestmentIncome = invIncRes.ttm_total || 0;
 
       const availableMonths = Object.keys(monthWiseExpenses).sort();
       if (availableMonths.length > 0 && !monthWiseExpenses[selectedMonth]) {
@@ -344,6 +353,36 @@
       .map(([commodity, amount]) => ({ commodity, amount }))
       .sort((a, b) => a.commodity.localeCompare(b.commodity));
   });
+
+  const incomeSummary = $derived.by(() => {
+    const gross = incomeTimeline.reduce(
+      (sum, row) => sum + (row.postings || []).reduce((s, p) => s - (p.amount || 0), 0),
+      0
+    );
+    const tax = taxTimeline.reduce(
+      (sum, row) => sum + (row.postings || []).reduce((s, p) => s + (p.amount || 0), 0),
+      0
+    );
+    return {
+      gross: gross || yearlyIncomeCards.reduce((s, c) => s + (c.gross_income || 0), 0),
+      tax: tax || yearlyIncomeCards.reduce((s, c) => s + (c.net_tax || 0), 0)
+    };
+  });
+
+  const monthlyIncomeBarPoints = $derived<MonthlyBarPoint[]>(
+    incomeTimeline.map((row) => {
+      const inc = (row.postings || []).reduce((s, p) => s - (p.amount || 0), 0);
+      const taxRow = taxTimeline.find((t) => t.date === row.date);
+      const tax = taxRow ? (taxRow.postings || []).reduce((s, p) => s + (p.amount || 0), 0) : 0;
+      return {
+        date: row.date,
+        income: Math.max(0, inc),
+        expenses: Math.max(0, tax),
+        investment: 0,
+        balance: 0
+      };
+    })
+  );
 
   const statementYears = $derived(Object.keys(yearlyStatements).sort().reverse());
   const currentStatement = $derived(selectedYear ? yearlyStatements[selectedYear] : undefined);
@@ -1054,39 +1093,169 @@
       {/if}
     </div>
   {:else if activeTab === "income"}
-    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
-      {#if yearlyIncomeCards.length === 0}
-        <div class="p-8 text-center text-sm text-[var(--muted)]">
-          No yearly income timeline data available.
+    <div class="space-y-5">
+      <!-- Income Timeline Summary KPIs -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
+          <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Gross Income
+          </div>
+          <div class="text-2xl font-semibold tabular-nums text-[var(--gain)] mt-1">
+            {formatMoney(incomeSummary.gross)}
+          </div>
         </div>
-      {:else}
-        <table class="w-full text-sm text-left">
-          <thead
-            class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50"
-          >
-            <tr>
-              <th class="py-2.5 px-4 font-medium">Year</th>
-              <th class="py-2.5 px-4 text-right font-medium">Gross Income</th>
-              <th class="py-2.5 px-4 text-right font-medium">Tax</th>
-              <th class="py-2.5 px-4 text-right font-medium">Net Income</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-[var(--border)] tabular-nums">
-            {#each yearlyIncomeCards as yc}
-              <tr class="hover:bg-[var(--surface-elevated)]/50">
-                <td class="py-2.5 px-4 font-medium">{yc.year || "—"}</td>
-                <td class="py-2.5 px-4 text-right">{formatMoney(yc.gross_income || 0)}</td>
-                <td class="py-2.5 px-4 text-right text-[var(--loss)]">
-                  {formatMoney(yc.net_tax || 0)}
-                </td>
-                <td class="py-2.5 px-4 text-right font-semibold text-[var(--gain)]">
-                  {formatMoney(yc.net_income || 0)}
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
+          <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Net Tax
+          </div>
+          <div class="text-2xl font-semibold tabular-nums text-[var(--loss)] mt-1">
+            {formatMoney(incomeSummary.tax)}
+          </div>
+        </div>
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
+          <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            TTM Investment Income
+          </div>
+          <div class="text-2xl font-semibold tabular-nums text-[var(--accent)] mt-1">
+            {formatMoney(ttmInvestmentIncome)}
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart 1: Monthly Income Timeline -->
+      {#if monthlyIncomeBarPoints.length > 0}
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted)]">
+            <span class="font-semibold uppercase tracking-wider">Monthly Income Timeline</span>
+            <div class="flex items-center gap-4">
+              <span class="inline-flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-xs bg-[var(--gain)] inline-block"></span>
+                Gross Income
+              </span>
+              <span class="inline-flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-xs bg-[var(--loss)] inline-block"></span>
+                Tax
+              </span>
+            </div>
+          </div>
+          <BarTrendChart data={monthlyIncomeBarPoints} />
+        </div>
       {/if}
+
+      <!-- Charts 2, 3, 4: Financial Year Income Timelines -->
+      {#if yearlyIncomeCards.length > 0}
+        {@const maxGross = Math.max(1, ...yearlyIncomeCards.map((c) => Math.max(c.gross_income || 0, c.net_tax || 0)))}
+        {@const maxNet = Math.max(1, ...yearlyIncomeCards.map((c) => c.net_income || 0))}
+        {@const maxTax = Math.max(1, ...yearlyIncomeCards.map((c) => c.net_tax || 0))}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <!-- Chart 2: Yearly Gross vs Tax -->
+          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-3">
+            <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+              Yearly Gross Income vs Tax
+            </div>
+            <div class="h-44 flex items-end gap-2 pt-4">
+              {#each yearlyIncomeCards as yc}
+                {@const gH = Math.max(2, ((yc.gross_income || 0) / maxGross) * 130)}
+                {@const tH = Math.max(0, ((yc.net_tax || 0) / maxGross) * 130)}
+                <div class="flex-1 flex flex-col items-center gap-1 min-w-0">
+                  <div class="w-full flex items-end justify-center gap-1 h-[130px]">
+                    <div
+                      class="w-3.5 rounded-t bg-[var(--gain)]/85"
+                      style="height: {gH}px"
+                      title="Gross: {formatMoney(yc.gross_income || 0)}"
+                    ></div>
+                    <div
+                      class="w-3.5 rounded-t bg-[var(--loss)]/85"
+                      style="height: {tH}px"
+                      title="Tax: {formatMoney(yc.net_tax || 0)}"
+                    ></div>
+                  </div>
+                  <span class="text-[10px] text-[var(--muted)] truncate">{yc.year}</span>
+                </div>
+              {/each}
+            </div>
+          </div>
+
+          <!-- Chart 3: Yearly Net Income -->
+          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-3">
+            <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+              Yearly Net Income
+            </div>
+            <div class="h-44 flex items-end gap-2 pt-4">
+              {#each yearlyIncomeCards as yc}
+                {@const nH = Math.max(2, ((yc.net_income || 0) / maxNet) * 130)}
+                <div class="flex-1 flex flex-col items-center gap-1 min-w-0">
+                  <div class="w-full flex items-end justify-center h-[130px]">
+                    <div
+                      class="w-6 rounded-t bg-[var(--gain)]/85"
+                      style="height: {nH}px"
+                      title="Net Income: {formatMoney(yc.net_income || 0)}"
+                    ></div>
+                  </div>
+                  <span class="text-[10px] text-[var(--muted)] truncate">{yc.year}</span>
+                </div>
+              {/each}
+            </div>
+          </div>
+
+          <!-- Chart 4: Yearly Net Tax -->
+          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-3">
+            <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+              Yearly Net Tax
+            </div>
+            <div class="h-44 flex items-end gap-2 pt-4">
+              {#each yearlyIncomeCards as yc}
+                {@const txH = Math.max(2, ((yc.net_tax || 0) / maxTax) * 130)}
+                <div class="flex-1 flex flex-col items-center gap-1 min-w-0">
+                  <div class="w-full flex items-end justify-center h-[130px]">
+                    <div
+                      class="w-6 rounded-t bg-[var(--loss)]/85"
+                      style="height: {txH}px"
+                      title="Net Tax: {formatMoney(yc.net_tax || 0)}"
+                    ></div>
+                  </div>
+                  <span class="text-[10px] text-[var(--muted)] truncate">{yc.year}</span>
+                </div>
+              {/each}
+            </div>
+          </div>
+        </div>
+      {/if}
+
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+        {#if yearlyIncomeCards.length === 0}
+          <div class="p-8 text-center text-sm text-[var(--muted)]">
+            No yearly income timeline data available.
+          </div>
+        {:else}
+          <table class="w-full text-sm text-left">
+            <thead
+              class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50"
+            >
+              <tr>
+                <th class="py-2.5 px-4 font-medium">Year</th>
+                <th class="py-2.5 px-4 text-right font-medium">Gross Income</th>
+                <th class="py-2.5 px-4 text-right font-medium">Tax</th>
+                <th class="py-2.5 px-4 text-right font-medium">Net Income</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--border)] tabular-nums">
+              {#each yearlyIncomeCards as yc}
+                <tr class="hover:bg-[var(--surface-elevated)]/50">
+                  <td class="py-2.5 px-4 font-medium">{yc.year || "—"}</td>
+                  <td class="py-2.5 px-4 text-right">{formatMoney(yc.gross_income || 0)}</td>
+                  <td class="py-2.5 px-4 text-right text-[var(--loss)]">
+                    {formatMoney(yc.net_tax || 0)}
+                  </td>
+                  <td class="py-2.5 px-4 text-right font-semibold text-[var(--gain)]">
+                    {formatMoney(yc.net_income || 0)}
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        {/if}
+      </div>
     </div>
   {:else if activeTab === "expenses"}
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4">
