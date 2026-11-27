@@ -82,6 +82,11 @@
   let yearlyStatements = $state<Record<string, IncomeStatement>>({});
   let sankeyLinks = $state<SankeyLink[]>([]);
   let sankeyLoading = $state(false);
+  let sankeyFrom = $state("");
+  let sankeyTo = $state("");
+  let dailyExpenses = $state<Array<{ date: string; amount: number; category?: string }>>([]);
+  let dailyLoading = $state(false);
+  let recurringView = $state<"list" | "calendar">("calendar");
   let budgetsByMonth = $state<Record<string, BudgetMonth>>({});
   let availableForBudgeting = $state(0);
   let recurringItems = $state<RecurringItem[]>([]);
@@ -94,9 +99,9 @@
       const [cfRes, expRes, stmtRes, budgetRes, recRes, incRes] = await Promise.all([
         apiGet<{ cash_flows?: CashFlowRow[] }>("/api/cash_flow"),
         apiGet<{ month_wise?: { expenses?: Record<string, Posting[]> } }>("/api/expense"),
-        apiGet<{ yearly?: Record<string, IncomeStatement> }>("/api/income_statement").catch(
-          () => ({ yearly: {} })
-        ),
+        apiGet<{ yearly?: Record<string, IncomeStatement> }>("/api/income_statement").catch(() => ({
+          yearly: {}
+        })),
         apiGet<{
           budgetsByMonth?: Record<string, BudgetMonth>;
           availableForBudgeting?: number;
@@ -147,9 +152,11 @@
   async function loadSankey() {
     sankeyLoading = true;
     try {
-      const res = await apiGet<{ links?: SankeyLink[] }>(
-        `/api/sankey?period=${encodeURIComponent(sankeyPeriod)}`
-      );
+      const url =
+        sankeyFrom && sankeyTo
+          ? `/api/sankey?from=${encodeURIComponent(sankeyFrom)}&to=${encodeURIComponent(sankeyTo)}`
+          : `/api/sankey?period=${encodeURIComponent(sankeyPeriod)}`;
+      const res = await apiGet<{ links?: SankeyLink[] }>(url);
       sankeyLinks = (res.links || []).slice().sort((a, b) => b.value - a.value);
     } catch {
       sankeyLinks = [];
@@ -158,16 +165,37 @@
     }
   }
 
+  async function loadDailyExpenses() {
+    if (!selectedMonth) return;
+    dailyLoading = true;
+    try {
+      const from = dayjs(`${selectedMonth}-01`).startOf("month").format("YYYY-MM-DD");
+      const to = dayjs(`${selectedMonth}-01`).endOf("month").format("YYYY-MM-DD");
+      const res = await apiGet<{
+        daily?: Array<{ date: string; amount: number; category?: string }>;
+        expenses?: Array<{ date: string; amount: number; category?: string }>;
+      }>(`/api/expense/daily?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&group_by=category`);
+      dailyExpenses = res.daily || res.expenses || [];
+    } catch {
+      dailyExpenses = [];
+    } finally {
+      dailyLoading = false;
+    }
+  }
+
   $effect(() => {
     if (activeTab === "sankey") {
       const _p = sankeyPeriod;
+      const _f = sankeyFrom;
+      const _t = sankeyTo;
       void loadSankey();
+    }
+    if (activeTab === "expenses" && selectedMonth) {
+      void loadDailyExpenses();
     }
   });
 
-  const windowedFlows = $derived(
-    monthsWindow > 0 ? cashFlows.slice(-monthsWindow) : cashFlows
-  );
+  const windowedFlows = $derived(monthsWindow > 0 ? cashFlows.slice(-monthsWindow) : cashFlows);
 
   const yearlyFlows = $derived.by(() => {
     const byYear = new Map<string, CashFlowRow>();
@@ -231,8 +259,7 @@
     const map = new Map<string, number>();
     for (const p of selectedMonthPostings) {
       const parts = p.account.split(":");
-      const key =
-        groupDepth === 1 ? parts.slice(0, 2).join(":") : parts.slice(0, 3).join(":");
+      const key = groupDepth === 1 ? parts.slice(0, 2).join(":") : parts.slice(0, 3).join(":");
       map.set(key, (map.get(key) || 0) + (p.amount || 0));
     }
     return Array.from(map.entries())
@@ -365,15 +392,7 @@
 
   <!-- Underline Tabs -->
   <div class="border-b border-[var(--border)] flex items-center gap-6 text-sm overflow-x-auto">
-    {#each [
-      { id: "cashflow", label: "Cash Flow" },
-      { id: "statement", label: "Income Statement" },
-      { id: "sankey", label: "Money Flow" },
-      { id: "income", label: "Income Timeline" },
-      { id: "expenses", label: "Expenses" },
-      { id: "budget", label: "Budget" },
-      { id: "recurring", label: "Recurring" }
-    ] as tab}
+    {#each [{ id: "cashflow", label: "Cash Flow" }, { id: "statement", label: "Income Statement" }, { id: "sankey", label: "Money Flow" }, { id: "income", label: "Income Timeline" }, { id: "expenses", label: "Expenses" }, { id: "budget", label: "Budget" }, { id: "recurring", label: "Recurring" }] as tab}
       <button
         type="button"
         class="pb-2.5 border-b-2 transition-colors whitespace-nowrap cursor-pointer {activeTab ===
@@ -557,6 +576,35 @@
     {/if}
   {:else if activeTab === "sankey"}
     <div class="space-y-5">
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <span class="font-semibold uppercase tracking-wider text-[var(--muted)]">Custom Date Range</span>
+        <div class="flex flex-wrap items-center gap-2">
+          <input
+            type="date"
+            bind:value={sankeyFrom}
+            class="px-2.5 py-1 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] tabular-nums"
+          />
+          <span class="text-[var(--muted)]">to</span>
+          <input
+            type="date"
+            bind:value={sankeyTo}
+            class="px-2.5 py-1 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] tabular-nums"
+          />
+          {#if sankeyFrom || sankeyTo}
+            <button
+              type="button"
+              onclick={() => {
+                sankeyFrom = "";
+                sankeyTo = "";
+              }}
+              class="px-2.5 py-1 rounded-lg border border-[var(--border)] hover:border-[var(--accent)] cursor-pointer"
+            >
+              Reset
+            </button>
+          {/if}
+        </div>
+      </div>
+
       <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5">
         {#if sankeyLoading}
           <div class="h-48 animate-pulse"></div>
@@ -643,11 +691,7 @@
           <div
             class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5 text-xs"
           >
-            {#each [
-              { id: "breakdown", label: "Breakdown" },
-              { id: "heatmap", label: "Heatmap" },
-              { id: "trends", label: "MoM / YoY" }
-            ] as v}
+            {#each [{ id: "breakdown", label: "Breakdown" }, { id: "heatmap", label: "Heatmap" }, { id: "trends", label: "MoM / YoY" }] as v}
               <button
                 type="button"
                 class="px-2.5 py-1 rounded-md cursor-pointer {expenseView === v.id
@@ -766,6 +810,29 @@
           </div>
         </div>
       {/if}
+
+      {#if dailyExpenses.length > 0 || dailyLoading}
+        <div class="pt-4 border-t border-[var(--border)] space-y-2.5">
+          <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Daily Spending Breakdown ({dailyExpenses.length} entries)
+          </div>
+          {#if dailyLoading}
+            <div class="h-16 animate-pulse rounded-lg bg-[var(--surface-elevated)]"></div>
+          {:else}
+            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 text-xs tabular-nums">
+              {#each dailyExpenses.slice(0, 18) as d}
+                <div class="p-2 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)]">
+                  <div class="text-[var(--muted)]">{dayjs(d.date).format("DD MMM")}</div>
+                  <div class="font-semibold mt-0.5">{formatMoney(Math.abs(d.amount || 0))}</div>
+                  {#if d.category}
+                    <div class="text-[10px] text-[var(--muted)] truncate">{d.category}</div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/if}
     </div>
   {:else if activeTab === "budget"}
     <div class="space-y-4">
@@ -790,7 +857,9 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           {#each currentBudgetAccounts as b}
             {@const pct = b.forecast > 0 ? Math.min(100, (b.actual / b.forecast) * 100) : 0}
-            <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-2.5">
+            <div
+              class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-2.5"
+            >
               <div class="flex items-center justify-between gap-2">
                 <span class="text-sm font-medium truncate">
                   {b.account.replace(/^Expenses:/, "")}
@@ -821,29 +890,76 @@
       {/if}
     </div>
   {:else}
-    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Recurring Bills &amp; Income ({recurringItems.length})
+        </span>
+        <div class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface)] p-0.5 text-xs">
+          <button
+            type="button"
+            class="px-2.5 py-1 rounded-md cursor-pointer {recurringView === 'calendar'
+              ? 'bg-[var(--surface-elevated)] font-semibold'
+              : 'text-[var(--muted)]'}"
+            onclick={() => (recurringView = "calendar")}
+          >
+            Calendar Grid
+          </button>
+          <button
+            type="button"
+            class="px-2.5 py-1 rounded-md cursor-pointer {recurringView === 'list'
+              ? 'bg-[var(--surface-elevated)] font-semibold'
+              : 'text-[var(--muted)]'}"
+            onclick={() => (recurringView = "list")}
+          >
+            List
+          </button>
+        </div>
+      </div>
+
       {#if recurringItems.length === 0}
-        <div class="p-8 text-center text-sm text-[var(--muted)]">
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center text-sm text-[var(--muted)]">
           No recurring transactions configured.
         </div>
-      {:else}
-        <div class="divide-y divide-[var(--border)]">
-          {#each recurringItems as item}
-            <div class="px-4 py-3 flex items-center justify-between gap-3 text-sm">
-              <div class="min-w-0">
-                <div class="font-medium truncate">
-                  {item.name || item.payee || item.narration || item.account || "Recurring item"}
-                </div>
-                <div class="text-xs text-[var(--muted)]">
-                  {item.frequency || "Recurring"}
-                  {item.next_date ? ` · Next: ${item.next_date}` : ""}
-                </div>
+      {:else if recurringView === "calendar"}
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
+          <div class="grid grid-cols-7 gap-2 text-xs">
+            {#each Array.from({ length: 31 }, (_, i) => i + 1) as day}
+              {@const itemsForDay = recurringItems.filter((it) => {
+                if (!it.next_date) return false;
+                return dayjs(it.next_date).date() === day;
+              })}
+              <div class="min-h-16 p-2 rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/40">
+                <div class="font-semibold text-[var(--muted)] tabular-nums">{day}</div>
+                {#each itemsForDay as it}
+                  <div class="mt-1 px-1.5 py-0.5 rounded bg-[var(--accent)]/15 text-[var(--accent)] truncate text-[10px] font-medium">
+                    {it.name || it.payee || it.account || "Bill"}
+                  </div>
+                {/each}
               </div>
-              {#if item.amount !== undefined}
-                <span class="font-semibold tabular-nums">{formatMoney(item.amount)}</span>
-              {/if}
-            </div>
-          {/each}
+            {/each}
+          </div>
+        </div>
+      {:else}
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+          <div class="divide-y divide-[var(--border)]">
+            {#each recurringItems as item}
+              <div class="px-4 py-3 flex items-center justify-between gap-3 text-sm">
+                <div class="min-w-0">
+                  <div class="font-medium truncate">
+                    {item.name || item.payee || item.narration || item.account || "Recurring item"}
+                  </div>
+                  <div class="text-xs text-[var(--muted)]">
+                    {item.frequency || "Recurring"}
+                    {item.next_date ? ` · Next: ${item.next_date}` : ""}
+                  </div>
+                </div>
+                {#if item.amount !== undefined}
+                  <span class="font-semibold tabular-nums">{formatMoney(item.amount)}</span>
+                {/if}
+              </div>
+            {/each}
+          </div>
         </div>
       {/if}
     </div>
