@@ -68,9 +68,7 @@
   const windowedTimeline = $derived(
     yearsWindow > 0 ? timeline.slice(-(yearsWindow * 12)) : timeline
   );
-  const latestPoint = $derived(
-    timeline.length > 0 ? timeline[timeline.length - 1] : null
-  );
+  const latestPoint = $derived(timeline.length > 0 ? timeline[timeline.length - 1] : null);
 
   const filteredAssets = $derived(
     assetBreakdowns.filter(
@@ -118,12 +116,7 @@
 
   <!-- Underline Tabs -->
   <div class="border-b border-[var(--border)] flex items-center gap-6 text-sm overflow-x-auto">
-    {#each [
-      { id: "overview", label: "Overview" },
-      { id: "assets", label: "Assets" },
-      { id: "investments", label: "Investments" },
-      { id: "liabilities", label: "Liabilities" }
-    ] as tab}
+    {#each [{ id: "overview", label: "Overview" }, { id: "assets", label: "Assets" }, { id: "investments", label: "Investments" }, { id: "liabilities", label: "Liabilities" }] as tab}
       <button
         type="button"
         class="pb-2.5 border-b-2 transition-colors whitespace-nowrap cursor-pointer {activeTab ===
@@ -218,9 +211,7 @@
   {:else if activeTab === "investments"}
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
       {#if gains.length === 0}
-        <div class="p-8 text-center text-sm text-[var(--muted)]">
-          No investment holdings found.
-        </div>
+        <div class="p-8 text-center text-sm text-[var(--muted)]">No investment holdings found.</div>
       {:else}
         <div class="overflow-x-auto">
           <table class="w-full text-sm text-left">
@@ -261,9 +252,7 @@
   {:else}
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
       {#if liabilities.length === 0}
-        <div class="p-8 text-center text-sm text-[var(--muted)]">
-          No liabilities recorded.
-        </div>
+        <div class="p-8 text-center text-sm text-[var(--muted)]">No liabilities recorded.</div>
       {:else}
         <div class="overflow-x-auto">
           <table class="w-full text-sm text-left">

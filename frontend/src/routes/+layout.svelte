@@ -21,13 +21,7 @@
   } from "lucide-svelte";
   import Logo from "$lib/components/Logo.svelte";
   import QuickAddModal from "$lib/components/QuickAddModal.svelte";
-  import {
-    getTheme,
-    loadRuntimeConfig,
-    toggleObscure,
-    toggleTheme,
-    triggerSync
-  } from "$lib/api";
+  import { getTheme, loadRuntimeConfig, toggleObscure, toggleTheme, triggerSync } from "$lib/api";
   import { onMount, tick, type Snippet } from "svelte";
 
   let { children }: { children: Snippet } = $props();

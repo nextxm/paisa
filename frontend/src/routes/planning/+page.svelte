@@ -148,9 +148,7 @@
     return pts;
   }
 
-  const effectiveExpected = $derived(
-    adjustForInflation ? toReal(expectedCagr) : expectedCagr
-  );
+  const effectiveExpected = $derived(adjustForInflation ? toReal(expectedCagr) : expectedCagr);
   const effectiveConservative = $derived(
     adjustForInflation ? toReal(expectedCagr - cagrSpread) : expectedCagr - cagrSpread
   );
@@ -162,9 +160,7 @@
   const conservativePoints = $derived(buildSeries(effectiveConservative));
   const optimisticPoints = $derived(buildSeries(effectiveOptimistic));
 
-  const targetCorpus = $derived(
-    base && swr > 0 ? base.annual_expenses / (swr / 100) : 0
-  );
+  const targetCorpus = $derived(base && swr > 0 ? base.annual_expenses / (swr / 100) : 0);
 
   const yearsToFire = $derived.by(() => {
     if (targetCorpus <= 0) return null;
@@ -181,9 +177,7 @@
   });
 
   const fireProgress = $derived(
-    base && targetCorpus > 0
-      ? Math.min(100, (base.current_networth / targetCorpus) * 100)
-      : 0
+    base && targetCorpus > 0 ? Math.min(100, (base.current_networth / targetCorpus) * 100) : 0
   );
 
   const tableRows = $derived.by(() => {
@@ -366,18 +360,26 @@
     </div>
   {:else if activeTab === "projection"}
     {#if showDna && dna}
-      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+      <div
+        class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs"
+      >
         <div>
           <div class="text-[var(--muted)] uppercase font-semibold">Annual Income</div>
-          <div class="text-base font-semibold tabular-nums mt-0.5">{formatMoney(dna.annual_income)}</div>
+          <div class="text-base font-semibold tabular-nums mt-0.5">
+            {formatMoney(dna.annual_income)}
+          </div>
         </div>
         <div>
           <div class="text-[var(--muted)] uppercase font-semibold">Annual Expenses</div>
-          <div class="text-base font-semibold tabular-nums mt-0.5">{formatMoney(dna.annual_expenses)}</div>
+          <div class="text-base font-semibold tabular-nums mt-0.5">
+            {formatMoney(dna.annual_expenses)}
+          </div>
         </div>
         <div>
           <div class="text-[var(--muted)] uppercase font-semibold">Savings Rate</div>
-          <div class="text-base font-semibold tabular-nums mt-0.5">{dna.savings_rate.toFixed(1)}%</div>
+          <div class="text-base font-semibold tabular-nums mt-0.5">
+            {dna.savings_rate.toFixed(1)}%
+          </div>
         </div>
         <div>
           <div class="text-[var(--muted)] uppercase font-semibold">Historical Return</div>
@@ -396,7 +398,9 @@
         </div>
         <div class="text-2xl font-semibold tabular-nums mt-1">
           {#if mode === "montecarlo"}
-            {simData?.simulation.fire_year_p50 ? `${simData.simulation.fire_year_p50} years` : `Not in ${years}y`}
+            {simData?.simulation.fire_year_p50
+              ? `${simData.simulation.fire_year_p50} years`
+              : `Not in ${years}y`}
           {:else}
             {yearsToFire !== null ? `${yearsToFire} years` : `Not in ${years}y`}
           {/if}
@@ -426,9 +430,7 @@
         </div>
         <div class="text-2xl font-semibold tabular-nums mt-1">
           {formatMoney(
-            mode === "montecarlo"
-              ? simData?.simulation.target_corpus || targetCorpus
-              : targetCorpus
+            mode === "montecarlo" ? simData?.simulation.target_corpus || targetCorpus : targetCorpus
           )}
         </div>
       </div>
@@ -436,7 +438,9 @@
 
     <!-- Levers + Chart -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-      <div class="lg:col-span-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4">
+      <div
+        class="lg:col-span-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4"
+      >
         <h2 class="text-sm font-semibold">Core Levers</h2>
         <div class="space-y-3.5 text-xs">
           <div>
@@ -444,7 +448,13 @@
               <span class="font-medium">Projection Horizon</span>
               <span class="tabular-nums font-semibold">{years} years</span>
             </div>
-            <input type="range" min="1" max="40" bind:value={years} class="w-full accent-[var(--accent)]" />
+            <input
+              type="range"
+              min="1"
+              max="40"
+              bind:value={years}
+              class="w-full accent-[var(--accent)]"
+            />
           </div>
           <div>
             <div class="flex justify-between mb-1">
@@ -503,14 +513,28 @@
                   <span>Safe Withdrawal Rate</span>
                   <span class="tabular-nums">{swr}%</span>
                 </div>
-                <input type="range" min="2" max="7" step="0.1" bind:value={swr} class="w-full accent-[var(--accent)]" />
+                <input
+                  type="range"
+                  min="2"
+                  max="7"
+                  step="0.1"
+                  bind:value={swr}
+                  class="w-full accent-[var(--accent)]"
+                />
               </div>
               <div>
                 <div class="flex justify-between mb-1">
                   <span>Inflation Rate</span>
                   <span class="tabular-nums">{inflationRate}%</span>
                 </div>
-                <input type="range" min="0" max="15" step="0.5" bind:value={inflationRate} class="w-full accent-[var(--accent)]" />
+                <input
+                  type="range"
+                  min="0"
+                  max="15"
+                  step="0.5"
+                  bind:value={inflationRate}
+                  class="w-full accent-[var(--accent)]"
+                />
               </div>
               {#if mode === "montecarlo"}
                 <div>
@@ -518,7 +542,14 @@
                     <span>Volatility</span>
                     <span class="tabular-nums">{volatility}%</span>
                   </div>
-                  <input type="range" min="2" max="40" step="0.5" bind:value={volatility} class="w-full accent-[var(--accent)]" />
+                  <input
+                    type="range"
+                    min="2"
+                    max="40"
+                    step="0.5"
+                    bind:value={volatility}
+                    class="w-full accent-[var(--accent)]"
+                  />
                 </div>
               {:else}
                 <div>
@@ -526,7 +557,14 @@
                     <span>Scenario Spread</span>
                     <span class="tabular-nums">±{cagrSpread}%</span>
                   </div>
-                  <input type="range" min="1" max="10" step="0.5" bind:value={cagrSpread} class="w-full accent-[var(--accent)]" />
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="0.5"
+                    bind:value={cagrSpread}
+                    class="w-full accent-[var(--accent)]"
+                  />
                 </div>
               {/if}
             </div>
@@ -555,14 +593,14 @@
     <!-- Year-by-Year Table (Simple mode) -->
     {#if mode === "simple"}
       <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
-        <div class="px-4 py-3 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
+        <div
+          class="px-4 py-3 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3"
+        >
           <h3 class="text-sm font-semibold">Year-by-Year Projection</h3>
-          <div class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5 text-xs">
-            {#each [
-              { key: "expected", label: "Expected" },
-              { key: "conservative", label: "Conservative" },
-              { key: "optimistic", label: "Optimistic" }
-            ] as s}
+          <div
+            class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5 text-xs"
+          >
+            {#each [{ key: "expected", label: "Expected" }, { key: "conservative", label: "Conservative" }, { key: "optimistic", label: "Optimistic" }] as s}
               <button
                 type="button"
                 class="px-2.5 py-1 rounded-md cursor-pointer {activeScenario === s.key
@@ -577,7 +615,9 @@
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm text-left">
-            <thead class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
+            <thead
+              class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50"
+            >
               <tr>
                 <th class="py-2.5 px-4 font-medium">Year</th>
                 <th class="py-2.5 px-4 text-right font-medium">Starting</th>
@@ -592,14 +632,20 @@
                   <td class="py-2 px-4 font-medium">
                     Year {r.year}
                     {#if r.isFire}
-                      <span class="ml-1.5 px-1.5 py-0.5 text-[10px] rounded bg-[var(--accent)]/15 text-[var(--accent)] font-semibold">
+                      <span
+                        class="ml-1.5 px-1.5 py-0.5 text-[10px] rounded bg-[var(--accent)]/15 text-[var(--accent)] font-semibold"
+                      >
                         FIRE
                       </span>
                     {/if}
                   </td>
                   <td class="py-2 px-4 text-right">{formatMoney(r.start)}</td>
                   <td class="py-2 px-4 text-right">{formatMoney(r.contribution)}</td>
-                  <td class="py-2 px-4 text-right {r.returnAmount >= 0 ? 'text-[var(--gain)]' : 'text-[var(--loss)]'}">
+                  <td
+                    class="py-2 px-4 text-right {r.returnAmount >= 0
+                      ? 'text-[var(--gain)]'
+                      : 'text-[var(--loss)]'}"
+                  >
                     {formatMoney(r.returnAmount)}
                   </td>
                   <td class="py-2 px-4 text-right font-semibold">{formatMoney(r.end)}</td>
@@ -613,7 +659,9 @@
   {:else}
     <!-- Goals Tab -->
     {#if goals.length === 0}
-      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center text-sm text-[var(--muted)]">
+      <div
+        class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center text-sm text-[var(--muted)]"
+      >
         No goals configured yet.
       </div>
     {:else}
@@ -623,7 +671,9 @@
           <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
             <div class="flex items-center justify-between gap-2">
               <h3 class="text-base font-semibold">{g.name}</h3>
-              <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--surface-elevated)] border border-[var(--border)] capitalize">
+              <span
+                class="text-xs px-2 py-0.5 rounded-full bg-[var(--surface-elevated)] border border-[var(--border)] capitalize"
+              >
                 {g.type}
               </span>
             </div>
@@ -631,7 +681,11 @@
               <div class="h-full rounded-full bg-[var(--accent)]" style="width: {pct}%"></div>
             </div>
             <div class="flex justify-between text-xs tabular-nums">
-              <span><strong>{formatMoney(g.current)}</strong> of {formatMoney(g.target)} ({pct.toFixed(1)}%)</span>
+              <span
+                ><strong>{formatMoney(g.current)}</strong> of {formatMoney(g.target)} ({pct.toFixed(
+                  1
+                )}%)</span
+              >
               <span class="text-[var(--muted)]">{g.targetDate}</span>
             </div>
           </div>
