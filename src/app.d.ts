@@ -78,8 +78,7 @@ interface DoctorConfig {
   asset_allocation_missing: DoctorRuleConfig;
 }
 
-interface LabsConfig {
-}
+interface LabsConfig {}
 
 interface UserConfig {
   default_currency: string;
