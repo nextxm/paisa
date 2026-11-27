@@ -286,52 +286,38 @@
       label: "Net Worth",
       href: "/assets",
       children: [
+        { label: "Net Worth & Balances", href: "/networth", dateRangeSelector: true },
+        { label: "Asset Balances", href: "/balance", hide: true },
+        { label: "Investments", href: "/investment" },
+        { label: "Performance & Gain (XIRR)", href: "/gain", hide: true },
         {
-          label: "Net Worth",
-          href: "",
-          children: [
-            { label: "Net Worth History", href: "/networth", dateRangeSelector: true },
-            { label: "Asset Balances", href: "/balance" }
-          ]
+          label: "Target Asset Allocation",
+          href: "/allocation",
+          help: "allocation-targets",
+          hide: true
         },
         {
-          label: "Investments & Portfolio",
-          href: "",
-          children: [
-            { label: "Holdings & Valuation", href: "/investment" },
-            { label: "Performance & Gain (XIRR)", href: "/gain" },
-            {
-              label: "Target Asset Allocation",
-              href: "/allocation",
-              help: "allocation-targets"
-            },
-            {
-              label: "Underlying Portfolio",
-              href: "/portfolio",
-              tag: "alpha",
-              help: "analysis"
-            },
-            {
-              label: "Investment Income",
-              href: "/../income/investment",
-              financialYearPicker: true
-            }
-          ]
+          label: "Underlying Portfolio",
+          href: "/portfolio",
+          tag: "alpha",
+          help: "analysis",
+          hide: true
         },
         {
-          label: "Liabilities & Debt",
-          href: "/../liabilities",
-          children: [
-            { label: "Liabilities Balances", href: "/balance" },
-            {
-              label: "Credit Cards",
-              href: "/credit_cards",
-              help: "credit-cards"
-            },
-            { label: "Loan Repayments", href: "/repayment" },
-            { label: "Interest Analysis", href: "/interest" }
-          ]
-        }
+          label: "Investment Income",
+          href: "/../income/investment",
+          financialYearPicker: true,
+          hide: true
+        },
+        { label: "Debt & Credit Cards", href: "/../liabilities/balance" },
+        {
+          label: "Credit Cards",
+          href: "/../liabilities/credit_cards",
+          help: "credit-cards",
+          hide: true
+        },
+        { label: "Loan Repayments", href: "/../liabilities/repayment", hide: true },
+        { label: "Interest Analysis", href: "/../liabilities/interest", hide: true }
       ]
     },
     {

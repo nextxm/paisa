@@ -1,5 +1,6 @@
 <script lang="ts">
   import COLORS from "$lib/colors";
+  import InvestmentTabs from "$lib/components/InvestmentTabs.svelte";
   import LevelItem from "$lib/components/LevelItem.svelte";
   import SparklineChart from "$lib/components/SparklineChart.svelte";
   import {
@@ -58,6 +59,8 @@
     void fetchInvestment($year);
   });
 </script>
+
+<InvestmentTabs />
 
 <section class="section tab-income">
   <div class="container">
