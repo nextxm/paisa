@@ -160,14 +160,7 @@ type CreditCard struct {
 	ExpirationDate  string `json:"expiration_date" yaml:"expiration_date"`
 }
 
-type FireflyConfig struct {
-	URL            string   `json:"url" yaml:"url"`
-	Token          string   `json:"token" yaml:"token"`
-	IgnoreAccounts []string `json:"ignore_accounts" yaml:"ignore_accounts"`
-}
-
 type Labs struct {
-	FireflyReconcile bool `json:"firefly_reconcile" yaml:"firefly_reconcile"`
 }
 
 type Config struct {
@@ -229,8 +222,6 @@ type Config struct {
 
 	CreditCards []CreditCard `json:"credit_cards" yaml:"credit_cards"`
 
-	Firefly FireflyConfig `json:"firefly" yaml:"firefly"`
-
 	Labs Labs `json:"labs" yaml:"labs"`
 
 	CheckingAccounts []string `json:"checking_accounts" yaml:"checking_accounts"`
@@ -270,8 +261,7 @@ var defaultConfig = Config{
 	Goals:                      Goals{Retirement: []RetirementGoal{}, Savings: []SavingsGoal{}, Life: []LifeGoal{}},
 	UserAccounts:               []UserAccount{},
 	CreditCards:                []CreditCard{},
-	Firefly:                    FireflyConfig{IgnoreAccounts: []string{}},
-	Labs:                       Labs{FireflyReconcile: false},
+	Labs:                       Labs{},
 	CheckingAccounts:           []string{"Assets:Checking"},
 	InactiveAccounts:           []string{},
 	DisableMissingPriceLogging: false,

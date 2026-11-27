@@ -82,14 +82,7 @@
     "provider_debug_http": false,
     "disable_missing_price_logging": false,
     "credit_cards": [],
-    "firefly": {
-      "url": "",
-      "token": "",
-      "ignore_accounts": []
-    },
-    "labs": {
-      "firefly_reconcile": false
-    },
+    "labs": {},
     "checking_accounts": [
       "Assets:Checking"
     ],
@@ -610,30 +603,6 @@
         "minimum": 1,
         "type": "integer"
       },
-      "firefly": {
-        "additionalProperties": false,
-        "description": "Firefly III integration settings",
-        "properties": {
-          "ignore_accounts": {
-            "description": "Accounts to ignore from reconciliation",
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "ui:widget": "accounts"
-          },
-          "token": {
-            "description": "Firefly III Personal Access Token",
-            "type": "string",
-            "ui:widget": "password"
-          },
-          "url": {
-            "description": "Firefly III base URL (e.g. https://firefly.example.com)",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "goals": {
         "description": "Track your progress towards financial milestones like retirement or specific savings targets.",
         "properties": {
@@ -983,13 +952,7 @@
       "labs": {
         "additionalProperties": false,
         "description": "Experimental features (Labs)",
-        "properties": {
-          "firefly_reconcile": {
-            "default": false,
-            "description": "Enable Firefly III balance reconciliation",
-            "type": "boolean"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "ledger_cli": {

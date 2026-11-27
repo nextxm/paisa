@@ -459,8 +459,6 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.POST("/api/parser/parse", ParseTransactionHandler(db))
 	writeGroup.POST("/api/parser/create-transaction", CreateParsedTransactionHandler(db))
 	writeGroup.POST("/api/transaction/add", AddTransactionHandler(db))
-	writeGroup.POST("/api/webhooks/firefly", FireflyWebhookHandler(db))
-	router.GET("/api/firefly/reconcile", FireflyReconcileHandler(db))
 	router.GET("/api/harvest", func(c *gin.Context) {
 		c.JSON(200, GetHarvest(db))
 	})

@@ -206,9 +206,6 @@
         { label: "Data Health", href: "/../more/doctor", help: "doctor" },
         { label: "Configuration", href: "/../more/config", help: "config" },
         { label: "Sheets", href: "/../more/sheets", help: "sheets", disablePreload: true },
-        ...(USER_CONFIG.labs?.firefly_reconcile
-          ? [{ label: "Reconciliation", href: "/../more/reconciliation" }]
-          : []),
         { label: "System Logs", href: "/../more/logs" },
         { label: "About", href: "/../more/about" }
       ]

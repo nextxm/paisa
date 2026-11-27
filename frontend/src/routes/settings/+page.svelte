@@ -7,7 +7,7 @@
   import ConfigPanel from "$lib/components/ConfigPanel.svelte";
   import type { JsonSchemaNode } from "$lib/components/ConfigSchemaField.svelte";
 
-  type SettingsTab = "config" | "logs" | "about" | "firefly";
+  type SettingsTab = "config" | "logs" | "about";
 
   interface LogEntry {
     time?: string;
@@ -22,13 +22,12 @@
   let configAccounts = $state<string[]>([]);
   let configError = $state<string | null>(null);
   let logs = $state<LogEntry[]>([]);
-  let fireflyItems = $state<Array<Record<string, unknown>>>([]);
 
   const buildInfo = __BUILD_INFO__;
 
   onMount(async () => {
     try {
-      const [cfgRes, logRes, ffRes] = await Promise.all([
+      const [cfgRes, logRes] = await Promise.all([
         apiGet<{
           config?: Record<string, unknown>;
           schema?: JsonSchemaNode;
@@ -37,16 +36,12 @@
           configError = e instanceof Error ? e.message : "Failed to load configuration";
           return null;
         }),
-        apiGet<{ logs?: LogEntry[] }>("/api/logs").catch(() => ({ logs: [] })),
-        apiGet<{ items?: Array<Record<string, unknown>> }>("/api/firefly/reconcile").catch(() => ({
-          items: []
-        }))
+        apiGet<{ logs?: LogEntry[] }>("/api/logs").catch(() => ({ logs: [] }))
       ]);
       configJson = cfgRes?.config || null;
       configSchema = cfgRes?.schema || null;
       configAccounts = cfgRes?.accounts || [];
       logs = logRes.logs || [];
-      fireflyItems = ffRes.items || [];
     } finally {
       loading = false;
     }
@@ -65,7 +60,6 @@
     {#each [
       { id: "config", label: "Configuration" },
       { id: "logs", label: `System Logs (${logs.length})` },
-      { id: "firefly", label: `Firefly (${fireflyItems.length})` },
       { id: "about", label: "About" }
     ] as tab}
       <button
@@ -110,17 +104,6 @@
             </div>
           {/each}
         </div>
-      {/if}
-    </div>
-  {:else if activeTab === "firefly"}
-    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-      <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-        Firefly III Reconciliation ({fireflyItems.length})
-      </h3>
-      {#if fireflyItems.length === 0}
-        <p class="text-sm text-[var(--muted)]">No Firefly reconciliation items configured or pending.</p>
-      {:else}
-        <pre class="text-xs font-mono bg-[var(--surface-elevated)] p-3 rounded-lg overflow-x-auto max-h-96">{JSON.stringify(fireflyItems, null, 2)}</pre>
       {/if}
     </div>
   {:else}

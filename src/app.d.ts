@@ -78,14 +78,7 @@ interface DoctorConfig {
   asset_allocation_missing: DoctorRuleConfig;
 }
 
-interface FireflyConfig {
-  url: string;
-  token: string;
-  ignore_accounts: string[];
-}
-
 interface LabsConfig {
-  firefly_reconcile: boolean;
 }
 
 interface UserConfig {
@@ -114,7 +107,6 @@ interface UserConfig {
     inactive: boolean;
   }[];
   doctor: DoctorConfig;
-  firefly?: FireflyConfig;
   labs?: LabsConfig;
   last_price_update?: string;
   is_journal_dirty: boolean;

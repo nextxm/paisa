@@ -6,7 +6,6 @@
     Columns3,
     Copy,
     FilePlus2,
-    GitCompare,
     Save,
     SlidersHorizontal,
     Sparkles,
@@ -33,7 +32,7 @@
     type StagedTransaction
   } from "$lib/import_helpers";
 
-  type ImportMode = "smart" | "template" | "reconcile";
+  type ImportMode = "smart" | "template";
   let importMode = $state<ImportMode>("smart");
 
   // Shared metadata
@@ -118,20 +117,6 @@
   let destinationFile = $state("");
   let savingToFile = $state(false);
   let newPresetName = $state("");
-
-  // ---- Firefly Reconciliation State ----
-  interface ReconcileItem {
-    firefly_account: string;
-    paisa_account?: string;
-    firefly_balance: string;
-    paisa_balance: string;
-    currency: string;
-    diff: string;
-    ignored?: boolean;
-  }
-  let reconcileItems = $state<ReconcileItem[]>([]);
-  let reconcileLoading = $state(false);
-  let reconcileError = $state<string | null>(null);
 
   const selectedTemplate = $derived(templates.find((t) => t.name === selectedTemplateName) ?? null);
   const selectedPreset = $derived(presets.find((p) => p.name === selectedPresetName) ?? null);
@@ -729,50 +714,6 @@
       savingToFile = false;
     }
   }
-
-  // ---- Reconciliation ----
-  async function loadReconcile() {
-    reconcileLoading = true;
-    reconcileError = null;
-    try {
-      const res = await fetch("/api/firefly/reconcile", { headers: authHeaders() });
-      const data = (await res.json()) as { items?: ReconcileItem[]; message?: string; error?: string };
-      if (!res.ok) {
-        reconcileError = data.message || data.error || `HTTP ${res.status}`;
-        reconcileItems = [];
-        return;
-      }
-      reconcileItems = data.items || [];
-    } catch (e) {
-      reconcileError = e instanceof Error ? e.message : "Failed to load Firefly reconciliation";
-    } finally {
-      reconcileLoading = false;
-    }
-  }
-
-  async function toggleIgnoreReconcile(item: ReconcileItem) {
-    const nextIgnored = !item.ignored;
-    reconcileItems = reconcileItems.map((it) =>
-      it.firefly_account === item.firefly_account ? { ...it, ignored: nextIgnored } : it
-    );
-    const cfgRes = await apiGet<{ config?: Record<string, unknown> }>("/api/config").catch(() => null);
-    const cfg = cfgRes?.config || {};
-    const firefly = ((cfg.firefly as Record<string, unknown>) || {}) as {
-      ignore_accounts?: string[];
-      [k: string]: unknown;
-    };
-    const currentIgnored = Array.isArray(firefly.ignore_accounts) ? firefly.ignore_accounts : [];
-    const updatedIgnored = nextIgnored
-      ? Array.from(new Set([...currentIgnored, item.firefly_account]))
-      : currentIgnored.filter((a) => a !== item.firefly_account);
-    await fetch("/api/config", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({
-        config: { ...cfg, firefly: { ...firefly, ignore_accounts: updatedIgnored } }
-      })
-    });
-  }
 </script>
 
 <div class="space-y-4">
@@ -803,20 +744,6 @@
       >
         <Code2 class="w-3.5 h-3.5" />
         <span>Template Editor</span>
-      </button>
-      <button
-        type="button"
-        onclick={() => {
-          importMode = "reconcile";
-          if (reconcileItems.length === 0 && !reconcileError) void loadReconcile();
-        }}
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md cursor-pointer {importMode ===
-        'reconcile'
-          ? 'bg-[var(--accent)] text-[var(--accent-fg)] font-semibold'
-          : 'text-[var(--muted)] hover:text-[var(--text)]'}"
-      >
-        <GitCompare class="w-3.5 h-3.5" />
-        <span>Reconciliation</span>
       </button>
     </div>
 
@@ -1400,85 +1327,6 @@
           {/if}
         </div>
       </div>
-    </div>
-  {:else}
-    <!-- Firefly III Reconciliation -->
-    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
-      <div class="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
-        <div>
-          <h2 class="text-sm font-semibold">Firefly III Reconciliation</h2>
-          <p class="text-xs text-[var(--muted)]">Compare Firefly III account balances against Paisa ledger balances</p>
-        </div>
-        <button
-          type="button"
-          onclick={loadReconcile}
-          disabled={reconcileLoading}
-          class="px-3 py-1.5 rounded-lg text-xs border border-[var(--border)] hover:border-[var(--accent)] cursor-pointer disabled:opacity-50"
-        >
-          {reconcileLoading ? "Refreshing…" : "Refresh"}
-        </button>
-      </div>
-
-      {#if reconcileLoading}
-        <div class="p-8 text-center text-xs text-[var(--muted)]">Loading reconciliation data…</div>
-      {:else if reconcileError}
-        <div class="p-6 text-xs text-[var(--muted)] space-y-1">
-          <div class="font-semibold text-[var(--loss)]">{reconcileError}</div>
-          <p>Enable <code>labs.firefly_reconcile</code> and configure your Firefly III token under Settings → Configuration to use this view.</p>
-        </div>
-      {:else if reconcileItems.length === 0}
-        <div class="p-8 text-center text-xs text-[var(--muted)]">No reconciliation items found.</div>
-      {:else}
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs text-left">
-            <thead class="uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/60">
-              <tr>
-                <th class="py-2.5 px-4">Firefly Account</th>
-                <th class="py-2.5 px-4">Paisa Account</th>
-                <th class="py-2.5 px-4 text-right">Firefly Balance</th>
-                <th class="py-2.5 px-4 text-right">Paisa Balance</th>
-                <th class="py-2.5 px-4 text-right">Diff</th>
-                <th class="py-2.5 px-4 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-[var(--border)] tabular-nums">
-              {#each reconcileItems as item}
-                <tr class={item.ignored ? "opacity-50" : ""}>
-                  <td class="py-2.5 px-4 font-medium">
-                    {item.firefly_account}
-                    {#if item.ignored}
-                      <span class="ml-1.5 px-1.5 py-0.5 rounded bg-[var(--surface-elevated)] text-[10px]">Ignored</span>
-                    {/if}
-                  </td>
-                  <td class="py-2.5 px-4">
-                    {#if item.paisa_account}
-                      <span class="font-mono">{item.paisa_account}</span>
-                    {:else}
-                      <span class="text-[var(--loss)]">Not linked</span>
-                    {/if}
-                  </td>
-                  <td class="py-2.5 px-4 text-right">{item.firefly_balance} {item.currency}</td>
-                  <td class="py-2.5 px-4 text-right">{item.paisa_balance} {item.currency}</td>
-                  <td class="py-2.5 px-4 text-right font-semibold {parseFloat(item.diff) === 0 ? 'text-[var(--gain)]' : 'text-[var(--loss)]'}">
-                    {item.diff} {item.currency}
-                  </td>
-                  <td class="py-2.5 px-4 text-center">
-                    {#if !runtime.readonly}
-                      <button
-                        type="button"
-                        onclick={() => toggleIgnoreReconcile(item)}
-                        class="px-2 py-0.5 rounded border border-[var(--border)] hover:border-[var(--accent)] cursor-pointer"
-                      >
-                        {item.ignored ? "Unignore" : "Ignore"}
-                      </button>
-                    {/if}
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      {/if}
     </div>
   {/if}
 </div>

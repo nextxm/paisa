@@ -123,12 +123,6 @@ export const CONFIG_GROUPS: ConfigGroup[] = [
         description: "Export full zip archive of journals, configuration, and sheet files"
       },
       {
-        id: "firefly",
-        label: "Firefly III",
-        schemaKeys: ["firefly"],
-        description: "Configure Firefly III integration for reconciliation"
-      },
-      {
         id: "labs",
         label: "Labs",
         schemaKeys: ["labs"],
