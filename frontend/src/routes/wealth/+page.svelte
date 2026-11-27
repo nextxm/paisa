@@ -145,6 +145,9 @@
       year?: string;
       start_date?: string;
       end_date?: string;
+      gross_salary_income?: number;
+      gross_other_income?: number;
+      net_tax?: number;
       net_investment?: number;
       net_income?: number;
       net_expense?: number;
@@ -896,44 +899,45 @@
         </div>
 
         <!-- Yearly Summary Cards / Tables -->
-        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {#each [...investmentYearly].reverse() as y}
-            {@const fyLabel = y.start_date && y.end_date ? `${y.start_date.slice(0, 4)} – ${y.end_date.slice(2, 4)}` : y.year || "—"}
-            <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-2 text-xs">
-              <div class="flex items-center justify-between border-b border-[var(--border)] pb-1.5">
-                <span class="font-semibold text-sm">FY {fyLabel}</span>
-                {#if y.savings_rate !== undefined}
-                  <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] tabular-nums">
-                    {(y.savings_rate * 100).toFixed(1)}% saved
-                  </span>
-                {/if}
+            {@const fyLabel = y.start_date && y.end_date ? `${y.start_date.slice(0, 4)} - ${y.end_date.slice(2, 4)}` : y.year || "—"}
+            <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden text-xs">
+              <div class="px-4 py-2.5 border-b border-[var(--border)] bg-[var(--surface-elevated)]/40 font-semibold text-sm">
+                {fyLabel}
               </div>
-              <div class="space-y-1 tabular-nums">
-                {#if y.net_investment !== undefined}
-                  <div class="flex justify-between">
-                    <span class="text-[var(--muted)]">Net Investment</span>
-                    <strong class="text-[var(--accent)]">{formatMoney(y.net_investment)}</strong>
-                  </div>
-                {/if}
-                {#if y.net_income !== undefined}
-                  <div class="flex justify-between">
-                    <span class="text-[var(--muted)]">Net Income</span>
-                    <span class="text-[var(--gain)]">{formatMoney(y.net_income)}</span>
-                  </div>
-                {/if}
-                {#if y.net_expense !== undefined}
-                  <div class="flex justify-between">
-                    <span class="text-[var(--muted)]">Net Expense</span>
-                    <span class="text-[var(--loss)]">{formatMoney(y.net_expense)}</span>
-                  </div>
-                {/if}
-                {#if y.market_value !== undefined}
-                  <div class="flex justify-between">
-                    <span class="text-[var(--muted)]">Market Value</span>
-                    <strong>{formatMoney(y.market_value)}</strong>
-                  </div>
-                {/if}
-              </div>
+              <table class="w-full text-left">
+                <tbody class="divide-y divide-[var(--border)]/60 tabular-nums">
+                  <tr class="hover:bg-[var(--surface-elevated)]/30">
+                    <td class="py-1.5 px-4 text-[var(--muted)]">Gross Salary Income</td>
+                    <td class="py-1.5 px-4 text-right font-semibold">{formatMoney(y.gross_salary_income || 0)}</td>
+                  </tr>
+                  <tr class="hover:bg-[var(--surface-elevated)]/30">
+                    <td class="py-1.5 px-4 text-[var(--muted)]">Gross Other Income</td>
+                    <td class="py-1.5 px-4 text-right font-semibold">{formatMoney(y.gross_other_income || 0)}</td>
+                  </tr>
+                  <tr class="hover:bg-[var(--surface-elevated)]/30">
+                    <td class="py-1.5 px-4 text-[var(--muted)]">Tax</td>
+                    <td class="py-1.5 px-4 text-right font-semibold">{formatMoney(y.net_tax || 0)}</td>
+                  </tr>
+                  <tr class="hover:bg-[var(--surface-elevated)]/30">
+                    <td class="py-1.5 px-4 text-[var(--muted)]">Net Income</td>
+                    <td class="py-1.5 px-4 text-right font-semibold">{formatMoney(y.net_income || 0)}</td>
+                  </tr>
+                  <tr class="hover:bg-[var(--surface-elevated)]/30">
+                    <td class="py-1.5 px-4 text-[var(--muted)]">Net Expense</td>
+                    <td class="py-1.5 px-4 text-right font-semibold">{formatMoney(y.net_expense || 0)}</td>
+                  </tr>
+                  <tr class="hover:bg-[var(--surface-elevated)]/30">
+                    <td class="py-1.5 px-4 text-[var(--muted)]">Investment</td>
+                    <td class="py-1.5 px-4 text-right font-semibold">{formatMoney(y.net_investment || 0)}</td>
+                  </tr>
+                  <tr class="hover:bg-[var(--surface-elevated)]/30">
+                    <td class="py-1.5 px-4 text-[var(--muted)]">Savings Rate</td>
+                    <td class="py-1.5 px-4 text-right font-semibold">{(y.savings_rate || 0).toFixed(2)}%</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           {/each}
         </div>
