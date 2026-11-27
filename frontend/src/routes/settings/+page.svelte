@@ -12,7 +12,9 @@
   interface LogEntry {
     time?: string;
     level?: string;
+    msg?: string;
     message?: string;
+    [key: string]: unknown;
   }
 
   let activeTab = $state<SettingsTab>("config");
@@ -91,16 +93,32 @@
       {#if logs.length === 0}
         <div class="p-8 text-center text-sm text-[var(--muted)]">No system logs available.</div>
       {:else}
-        <div class="divide-y divide-[var(--border)] font-mono text-xs">
-          {#each logs.slice(0, 150) as log}
-            <div class="px-4 py-2 flex items-start gap-3">
+        <div class="divide-y divide-[var(--border)] font-mono text-xs overflow-x-auto">
+          {#each logs.slice(0, 200) as log}
+            {@const extraFields = Object.entries(log).filter(
+              ([k]) => k !== "time" && k !== "level" && k !== "msg" && k !== "message"
+            )}
+            {@const levelTone =
+              log.level === "error" || log.level === "fatal"
+                ? "text-[var(--loss)]"
+                : log.level === "warning" || log.level === "warn"
+                  ? "text-[var(--warning)]"
+                  : "text-[var(--accent)]"}
+            <div class="px-4 py-2 flex items-baseline gap-3 min-w-[720px]">
               <span class="text-[var(--muted)] shrink-0">
-                {log.time ? dayjs(log.time).format("HH:mm:ss") : ""}
+                {log.time ? dayjs(log.time).format("YYYY-MM-DD HH:mm:ss") : ""}
               </span>
-              <span class="uppercase font-semibold shrink-0 w-14 text-[var(--muted)]">
+              <span class="uppercase font-semibold shrink-0 w-16 {levelTone}">
                 {log.level || "info"}
               </span>
-              <span class="break-all">{log.message || ""}</span>
+              <span class="break-words">{log.msg ?? log.message ?? ""}</span>
+              {#if extraFields.length > 0}
+                <span class="text-[11px] text-[var(--muted)] flex flex-wrap gap-x-2 gap-y-0.5 ml-auto">
+                  {#each extraFields as [fk, fv]}
+                    <span><span class="opacity-70">{fk}=</span>{String(fv)}</span>
+                  {/each}
+                </span>
+              {/if}
             </div>
           {/each}
         </div>

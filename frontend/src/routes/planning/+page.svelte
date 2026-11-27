@@ -703,6 +703,26 @@
             Running 1,000 Monte Carlo simulations…
           </div>
         {:else}
+          {#if mode === "simple"}
+            <div class="grid grid-cols-3 gap-3 mb-4 text-xs">
+              {#each [
+                { key: "conservative", label: "Conservative", cagr: effectiveConservative, pts: conservativePoints, tone: "text-[var(--warning)]" },
+                { key: "expected", label: "Expected", cagr: effectiveExpected, pts: expectedPoints, tone: "text-[var(--accent)]" },
+                { key: "optimistic", label: "Optimistic", cagr: effectiveOptimistic, pts: optimisticPoints, tone: "text-[var(--gain)]" }
+              ] as sc}
+                {@const finalVal = sc.pts[sc.pts.length - 1]?.balance ?? 0}
+                <div class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/40 px-3 py-2">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="font-semibold {sc.tone}">{sc.label}</span>
+                    <span class="font-mono text-[11px] text-[var(--muted)]">
+                      {sc.cagr.toFixed(1)}% {adjustForInflation ? "Real " : ""}CAGR
+                    </span>
+                  </div>
+                  <div class="text-sm font-semibold tabular-nums mt-0.5">{formatMoney(finalVal)}</div>
+                </div>
+              {/each}
+            </div>
+          {/if}
           <ProjectionChart
             {mode}
             conservative={conservativePoints}
@@ -726,7 +746,11 @@
             <div
               class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5 text-xs"
             >
-              {#each [{ key: "expected", label: "Expected" }, { key: "conservative", label: "Conservative" }, { key: "optimistic", label: "Optimistic" }] as s}
+              {#each [
+                { key: "expected", label: "Expected", cagr: effectiveExpected },
+                { key: "conservative", label: "Conservative", cagr: effectiveConservative },
+                { key: "optimistic", label: "Optimistic", cagr: effectiveOptimistic }
+              ] as s}
                 <button
                   type="button"
                   class="px-2.5 py-1 rounded-md cursor-pointer {activeScenario === s.key
@@ -734,10 +758,18 @@
                     : 'text-[var(--muted)]'}"
                   onclick={() => (activeScenario = s.key as ScenarioKey)}
                 >
-                  {s.label}
+                  {s.label} ({s.cagr.toFixed(1)}%)
                 </button>
               {/each}
             </div>
+            <span class="px-2 py-1 rounded-md bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--muted)]">
+              {(activeScenario === "expected"
+                ? effectiveExpected
+                : activeScenario === "conservative"
+                  ? effectiveConservative
+                  : effectiveOptimistic
+              ).toFixed(1)}% {adjustForInflation ? "Real " : ""}CAGR
+            </span>
             <button
               type="button"
               onclick={exportProjectionCsv}
