@@ -3,6 +3,7 @@
   import { page } from "$app/stores";
   import { goto, invalidateAll } from "$app/navigation";
   import {
+    Activity,
     ArrowLeftRight,
     BookOpen,
     Compass,
@@ -10,6 +11,7 @@
     EyeOff,
     Home,
     Landmark,
+    LogOut,
     Moon,
     PanelLeftClose,
     PanelLeftOpen,
@@ -22,8 +24,10 @@
   import Logo from "$lib/components/Logo.svelte";
   import QuickAddModal from "$lib/components/QuickAddModal.svelte";
   import {
+    authHeaders,
     getTheme,
     loadRuntimeConfig,
+    logout,
     runtime,
     toggleObscure,
     toggleTheme,
@@ -42,6 +46,9 @@
   let obscure = $state(false);
   let syncing = $state(false);
   let syncMenuOpen = $state(false);
+  let jobsMenuOpen = $state(false);
+  let jobs = $state<Array<{ id: string; name?: string; status?: string; message?: string }>>([]);
+  let hasToken = $state(false);
   let renderKey = $state(0);
 
   const navItems = [
@@ -65,11 +72,35 @@
       : []
   );
 
-  onMount(async () => {
+  onMount(() => {
     theme = getTheme();
-    const state = await loadRuntimeConfig();
-    obscure = state.obscure;
-    renderKey += 1;
+    try {
+      hasToken = Boolean(localStorage.getItem("token"));
+    } catch {}
+    void loadRuntimeConfig().then((state) => {
+      obscure = state.obscure;
+      renderKey += 1;
+    });
+
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource("/api/jobs/stream");
+      es.onmessage = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.data) as { jobs?: typeof jobs } | (typeof jobs)[number];
+          if (Array.isArray((parsed as { jobs?: typeof jobs }).jobs)) {
+            jobs = (parsed as { jobs: typeof jobs }).jobs;
+          } else if ((parsed as { id?: string }).id) {
+            const job = parsed as (typeof jobs)[number];
+            const idx = jobs.findIndex((j) => j.id === job.id);
+            jobs = idx >= 0 ? jobs.map((j, i) => (i === idx ? job : j)) : [job, ...jobs].slice(0, 20);
+          }
+        } catch {}
+      };
+    } catch {}
+    return () => {
+      es?.close();
+    };
   });
 
   function openCommandPalette() {
@@ -270,6 +301,69 @@
             <Moon class="w-4 h-4" />
           {/if}
         </button>
+
+        <!-- Jobs Monitor -->
+        <div class="relative">
+          <button
+            type="button"
+            class="p-2 rounded-lg text-[var(--muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--text)] cursor-pointer relative"
+            onclick={() => (jobsMenuOpen = !jobsMenuOpen)}
+            aria-label="Background jobs"
+            title="Background jobs"
+          >
+            <Activity class="w-4 h-4" />
+            {#if jobs.some((j) => j.status === "running" || j.status === "pending")}
+              <span class="w-2 h-2 rounded-full bg-[var(--accent)] absolute top-1.5 right-1.5 animate-pulse"></span>
+            {/if}
+          </button>
+          {#if jobsMenuOpen}
+            <div
+              class="absolute right-0 mt-1 w-72 rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-lg p-3 z-40 text-xs space-y-2"
+            >
+              <div class="flex items-center justify-between">
+                <span class="font-semibold uppercase tracking-wider text-[var(--muted)]">
+                  Background Jobs ({jobs.length})
+                </span>
+                {#if jobs.length > 0}
+                  <button
+                    type="button"
+                    class="text-[var(--accent)] hover:underline cursor-pointer"
+                    onclick={async () => {
+                      await fetch("/api/jobs/clear", { method: "POST", headers: authHeaders() }).catch(() => {});
+                      jobs = [];
+                    }}
+                  >
+                    Clear
+                  </button>
+                {/if}
+              </div>
+              {#if jobs.length === 0}
+                <p class="text-[var(--muted)]">No active or recent jobs.</p>
+              {:else}
+                <div class="max-h-48 overflow-y-auto divide-y divide-[var(--border)]">
+                  {#each jobs.slice(0, 8) as j}
+                    <div class="py-1.5 flex items-center justify-between gap-2">
+                      <span class="truncate font-medium">{j.name || j.id}</span>
+                      <span class="text-[var(--muted)] capitalize shrink-0">{j.status || "done"}</span>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          {/if}
+        </div>
+
+        {#if hasToken}
+          <button
+            type="button"
+            class="p-2 rounded-lg text-[var(--muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--loss)] cursor-pointer"
+            onclick={() => void logout()}
+            aria-label="Sign out"
+            title="Sign out"
+          >
+            <LogOut class="w-4 h-4" />
+          </button>
+        {/if}
       </div>
     </header>
 

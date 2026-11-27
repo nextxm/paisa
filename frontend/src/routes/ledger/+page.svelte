@@ -4,7 +4,7 @@
   import { CheckCircle2, Search } from "lucide-svelte";
   import LedgerEditorPanel from "$lib/components/LedgerEditorPanel.svelte";
   import LedgerToolsPanels from "$lib/components/LedgerToolsPanels.svelte";
-  import { apiGet, formatMoney, formatShortDate, runtime, updateConfig, type Posting } from "$lib/api";
+  import { apiGet, authHeaders, formatMoney, formatShortDate, runtime, updateConfig, type Posting } from "$lib/api";
 
   type LedgerTab =
     | "health"
@@ -431,6 +431,46 @@
       {:else}
         <p class="text-sm text-[var(--muted)]">Configuration unavailable.</p>
       {/if}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Backup &amp; Export
+        </h3>
+        <p class="text-xs text-[var(--muted)]">
+          Download a ZIP archive of your ledger files and configuration.
+        </p>
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onclick={async () => {
+              const res = await fetch("/api/backup/export", { headers: authHeaders() });
+              if (!res.ok) return;
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "paisa-backup.zip";
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            class="px-3 py-1.5 rounded-lg bg-[var(--accent)] text-[var(--accent-fg)] text-xs font-medium cursor-pointer"
+          >
+            Export Backup (.zip)
+          </button>
+        </div>
+      </div>
+
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-2">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          About Paisa
+        </h3>
+        <p class="text-sm font-medium">Paisa Personal Finance Manager</p>
+        <p class="text-xs text-[var(--muted)]">
+          Double-entry accounting powered by ledger-cli, Go, SQLite, and SvelteKit.
+        </p>
+      </div>
     </div>
   {:else}
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">

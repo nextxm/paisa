@@ -151,10 +151,39 @@ export async function loadRuntimeConfig(): Promise<RuntimeState> {
   return runtime;
 }
 
+export function authHeaders(): Record<string, string> {
+  try {
+    const token = localStorage.getItem("token");
+    return token ? { "X-Auth": token } : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function logout(): Promise<void> {
+  try {
+    const headers = authHeaders();
+    if (headers["X-Auth"]) {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers }
+      }).catch(() => {});
+    }
+    localStorage.removeItem("token");
+  } catch {}
+  if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+    window.location.href = "/login";
+  }
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(path, {
-    headers: { Accept: "application/json" }
+    headers: { Accept: "application/json", ...authHeaders() }
   });
+  if (res.status === 401 && typeof window !== "undefined" && window.location.pathname !== "/login") {
+    window.location.href = "/login";
+    throw new Error("Unauthorized");
+  }
   if (!res.ok) {
     throw new Error(`${res.status} ${res.statusText}`);
   }
