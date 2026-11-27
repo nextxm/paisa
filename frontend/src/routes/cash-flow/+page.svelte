@@ -2,9 +2,17 @@
   import dayjs from "dayjs";
   import { onMount } from "svelte";
   import BarTrendChart, { type MonthlyBarPoint } from "$lib/components/BarTrendChart.svelte";
+  import SankeyChart from "$lib/components/SankeyChart.svelte";
   import { apiGet, formatMoney, type Posting } from "$lib/api";
 
-  type StudioTab = "cashflow" | "statement" | "sankey" | "expenses" | "budget" | "recurring";
+  type StudioTab =
+    | "cashflow"
+    | "statement"
+    | "sankey"
+    | "income"
+    | "expenses"
+    | "budget"
+    | "recurring";
   type CashFlowGranularity = "monthly" | "yearly";
   type ExpenseView = "breakdown" | "heatmap" | "trends";
   type SankeyPeriod = "month" | "quarter" | "year";
@@ -77,10 +85,13 @@
   let budgetsByMonth = $state<Record<string, BudgetMonth>>({});
   let availableForBudgeting = $state(0);
   let recurringItems = $state<RecurringItem[]>([]);
+  let yearlyIncomeCards = $state<
+    Array<{ year?: string; net_income?: number; net_tax?: number; gross_income?: number }>
+  >([]);
 
   onMount(async () => {
     try {
-      const [cfRes, expRes, stmtRes, budgetRes, recRes] = await Promise.all([
+      const [cfRes, expRes, stmtRes, budgetRes, recRes, incRes] = await Promise.all([
         apiGet<{ cash_flows?: CashFlowRow[] }>("/api/cash_flow"),
         apiGet<{ month_wise?: { expenses?: Record<string, Posting[]> } }>("/api/expense"),
         apiGet<{ yearly?: Record<string, IncomeStatement> }>("/api/income_statement").catch(
@@ -92,7 +103,15 @@
         }>("/api/budget").catch(() => ({ budgetsByMonth: {}, availableForBudgeting: 0 })),
         apiGet<{ transaction_sequences?: RecurringItem[] }>("/api/recurring").catch(() => ({
           transaction_sequences: []
-        }))
+        })),
+        apiGet<{
+          yearly_cards?: Array<{
+            year?: string;
+            net_income?: number;
+            net_tax?: number;
+            gross_income?: number;
+          }>;
+        }>("/api/income").catch(() => ({ yearly_cards: [] }))
       ]);
 
       cashFlows = (cfRes.cash_flows || []).map((c) => ({
@@ -107,6 +126,7 @@
       budgetsByMonth = budgetRes.budgetsByMonth || {};
       availableForBudgeting = budgetRes.availableForBudgeting || 0;
       recurringItems = recRes.transaction_sequences || [];
+      yearlyIncomeCards = incRes.yearly_cards || [];
 
       const availableMonths = Object.keys(monthWiseExpenses).sort();
       if (availableMonths.length > 0 && !monthWiseExpenses[selectedMonth]) {
@@ -349,6 +369,7 @@
       { id: "cashflow", label: "Cash Flow" },
       { id: "statement", label: "Income Statement" },
       { id: "sankey", label: "Money Flow" },
+      { id: "income", label: "Income Timeline" },
       { id: "expenses", label: "Expenses" },
       { id: "budget", label: "Budget" },
       { id: "recurring", label: "Recurring" }
@@ -535,36 +556,75 @@
       </div>
     {/if}
   {:else if activeTab === "sankey"}
+    <div class="space-y-5">
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5">
+        {#if sankeyLoading}
+          <div class="h-48 animate-pulse"></div>
+        {:else}
+          <SankeyChart links={sankeyLinks} />
+        {/if}
+      </div>
+
+      {#if sankeyLinks.length > 0}
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead
+                class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50"
+              >
+                <tr>
+                  <th class="py-2.5 px-4 font-medium">From</th>
+                  <th class="py-2.5 px-4 font-medium">To</th>
+                  <th class="py-2.5 px-4 text-right font-medium">Flow</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--border)] tabular-nums">
+                {#each sankeyLinks.slice(0, 40) as link}
+                  <tr class="hover:bg-[var(--surface-elevated)]/50">
+                    <td class="py-2 px-4 text-[var(--muted)]">{link.source}</td>
+                    <td class="py-2 px-4 font-medium">{link.target}</td>
+                    <td class="py-2 px-4 text-right font-semibold">{formatMoney(link.value)}</td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {/if}
+    </div>
+  {:else if activeTab === "income"}
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
-      {#if sankeyLoading}
-        <div class="h-48 animate-pulse"></div>
-      {:else if sankeyLinks.length === 0}
+      {#if yearlyIncomeCards.length === 0}
         <div class="p-8 text-center text-sm text-[var(--muted)]">
-          No money flow links found for this {sankeyPeriod}.
+          No yearly income timeline data available.
         </div>
       {:else}
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm text-left">
-            <thead
-              class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50"
-            >
-              <tr>
-                <th class="py-2.5 px-4 font-medium">From</th>
-                <th class="py-2.5 px-4 font-medium">To</th>
-                <th class="py-2.5 px-4 text-right font-medium">Flow</th>
+        <table class="w-full text-sm text-left">
+          <thead
+            class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50"
+          >
+            <tr>
+              <th class="py-2.5 px-4 font-medium">Year</th>
+              <th class="py-2.5 px-4 text-right font-medium">Gross Income</th>
+              <th class="py-2.5 px-4 text-right font-medium">Tax</th>
+              <th class="py-2.5 px-4 text-right font-medium">Net Income</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[var(--border)] tabular-nums">
+            {#each yearlyIncomeCards as yc}
+              <tr class="hover:bg-[var(--surface-elevated)]/50">
+                <td class="py-2.5 px-4 font-medium">{yc.year || "—"}</td>
+                <td class="py-2.5 px-4 text-right">{formatMoney(yc.gross_income || 0)}</td>
+                <td class="py-2.5 px-4 text-right text-[var(--loss)]">
+                  {formatMoney(yc.net_tax || 0)}
+                </td>
+                <td class="py-2.5 px-4 text-right font-semibold text-[var(--gain)]">
+                  {formatMoney(yc.net_income || 0)}
+                </td>
               </tr>
-            </thead>
-            <tbody class="divide-y divide-[var(--border)] tabular-nums">
-              {#each sankeyLinks.slice(0, 40) as link}
-                <tr class="hover:bg-[var(--surface-elevated)]/50">
-                  <td class="py-2 px-4 text-[var(--muted)]">{link.source}</td>
-                  <td class="py-2 px-4 font-medium">{link.target}</td>
-                  <td class="py-2 px-4 text-right font-semibold">{formatMoney(link.value)}</td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
+            {/each}
+          </tbody>
+        </table>
       {/if}
     </div>
   {:else if activeTab === "expenses"}
