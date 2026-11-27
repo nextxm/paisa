@@ -5,6 +5,14 @@ RUN npm install
 COPY . .
 RUN npx svelte-kit sync && npm run build
 
+# Stage 0b: Build new UI under /v2 subpath
+FROM --platform=$BUILDPLATFORM node:22-alpine3.21 AS web-v2
+WORKDIR /usr/src/paisa/frontend
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm install
+COPY frontend/ .
+RUN PAISA_EMBED=1 PAISA_BASE=/v2 npx svelte-kit sync && PAISA_EMBED=1 PAISA_BASE=/v2 npm run build
+
 # Stage 1: Fetch tools natively for the TARGET architecture
 FROM alpine:3.21 AS tool-provider
 RUN apk add --no-cache ledger beancount
@@ -25,6 +33,7 @@ COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 COPY . .
 COPY --from=web /usr/src/paisa/web/static ./web/static
+COPY --from=web-v2 /usr/src/paisa/web/static/v2 ./web/static/v2
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o paisa
 
 FROM alpine:3.21

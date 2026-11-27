@@ -1,5 +1,11 @@
 import dayjs from "dayjs";
 
+import { base } from "$app/paths";
+
+export function appPath(path: string): string {
+  return `${base}${path}`;
+}
+
 export interface Posting {
   id?: number;
   date: string;
@@ -118,7 +124,7 @@ export function toggleObscure(): boolean {
   runtime.obscure = !runtime.obscure;
   try {
     localStorage.setItem("paisa-v2-obscure", String(runtime.obscure));
-  } catch {}
+  } catch { }
   return runtime.obscure;
 }
 
@@ -167,12 +173,12 @@ export async function logout(): Promise<void> {
       await fetch("/api/auth/logout", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...headers }
-      }).catch(() => {});
+      }).catch(() => { });
     }
     localStorage.removeItem("token");
-  } catch {}
-  if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-    window.location.href = "/login";
+  } catch { }
+  if (typeof window !== "undefined" && !window.location.pathname.endsWith("/login")) {
+    window.location.href = appPath("/login");
   }
 }
 
@@ -180,8 +186,8 @@ export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(path, {
     headers: { Accept: "application/json", ...authHeaders() }
   });
-  if (res.status === 401 && typeof window !== "undefined" && window.location.pathname !== "/login") {
-    window.location.href = "/login";
+  if (res.status === 401 && typeof window !== "undefined" && !window.location.pathname.endsWith("/login")) {
+    window.location.href = appPath("/login");
     throw new Error("Unauthorized");
   }
   if (!res.ok) {
@@ -270,6 +276,6 @@ export function toggleTheme(): "light" | "dark" {
   document.documentElement.style.colorScheme = next;
   try {
     localStorage.setItem("paisa-v2-theme", next);
-  } catch {}
+  } catch { }
   return next;
 }

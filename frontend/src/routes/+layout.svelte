@@ -23,7 +23,9 @@
   } from "lucide-svelte";
   import Logo from "$lib/components/Logo.svelte";
   import QuickAddModal from "$lib/components/QuickAddModal.svelte";
+  import { base } from "$app/paths";
   import {
+    appPath,
     authHeaders,
     getTheme,
     loadRuntimeConfig,
@@ -143,8 +145,9 @@
   }
 
   function isActive(href: string, current: string): boolean {
-    if (href === "/") return current === "/";
-    return current.startsWith(href);
+    const clean = base && current.startsWith(base) ? current.slice(base.length) || "/" : current;
+    if (href === "/") return clean === "/";
+    return clean.startsWith(href);
   }
 </script>
 
@@ -159,7 +162,7 @@
   >
     <div class="h-13 px-4 flex items-center justify-between border-b border-[var(--border)]">
       {#if !sidebarCollapsed}
-        <a href="/" class="flex items-center gap-2 font-semibold text-base tracking-tight">
+        <a href={appPath("/")} class="flex items-center gap-2 font-semibold text-base tracking-tight">
           <Logo size={22} />
           <span>Paisa</span>
         </a>
@@ -183,7 +186,7 @@
         {@const Icon = item.icon}
         {@const active = isActive(item.href, pathname)}
         <a
-          href={item.href}
+          href={appPath(item.href)}
           class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors {active
             ? 'bg-[var(--surface-elevated)] text-[var(--text)]'
             : 'text-[var(--muted)] hover:bg-[var(--surface-elevated)]/60 hover:text-[var(--text)]'}"
@@ -205,7 +208,7 @@
       class="sticky top-0 z-20 h-13 px-4 sm:px-6 bg-[var(--surface)] border-b border-[var(--border)] flex items-center justify-between gap-3"
     >
       <div class="flex items-center gap-3">
-        <a href="/" class="md:hidden flex items-center gap-2 font-semibold text-base">
+        <a href={appPath("/")} class="md:hidden flex items-center gap-2 font-semibold text-base">
           <Logo size={22} />
           <span>Paisa</span>
         </a>
@@ -384,7 +387,7 @@
     {@const Icon = item.icon}
     {@const active = isActive(item.href, pathname)}
     <a
-      href={item.href}
+      href={appPath(item.href)}
       class="flex flex-col items-center justify-center gap-0.5 text-[11px] {active
         ? 'text-[var(--accent)] font-semibold'
         : 'text-[var(--muted)]'}"
@@ -425,7 +428,7 @@
             class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-left hover:bg-[var(--surface-elevated)] cursor-pointer"
             onclick={() => {
               cmdOpen = false;
-              goto(item.href);
+              goto(appPath(item.href));
             }}
           >
             <Icon class="w-4 h-4 text-[var(--muted)]" />
@@ -442,7 +445,7 @@
               class="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-xs text-left hover:bg-[var(--surface-elevated)] cursor-pointer truncate"
               onclick={() => {
                 cmdOpen = false;
-                goto(`/accounts/${encodeURIComponent(acc)}`);
+                goto(appPath(`/accounts/${encodeURIComponent(acc)}`));
               }}
             >
               <Landmark class="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />

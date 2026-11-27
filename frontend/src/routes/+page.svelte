@@ -6,6 +6,7 @@
   import BarTrendChart from "$lib/components/BarTrendChart.svelte";
   import {
     apiGet,
+    appPath,
     formatMoney,
     formatShortDate,
     triggerSync,
@@ -252,7 +253,7 @@
           in your ledger.
         </span>
       </div>
-      <a href="/ledger" class="text-xs font-medium text-[var(--accent)] hover:underline shrink-0">
+      <a href={appPath("/ledger")} class="text-xs font-medium text-[var(--accent)] hover:underline shrink-0">
         Review →
       </a>
     </div>
@@ -337,7 +338,7 @@
                 Net Worth
               </span>
               <a
-                href="/wealth"
+                href={appPath("/wealth")}
                 class="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--text)]"
               >
                 <span>Wealth</span>
@@ -374,7 +375,7 @@
                 Checking Balances
               </span>
               <a
-                href="/wealth"
+                href={appPath("/wealth")}
                 class="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--text)]"
               >
                 <span>All accounts</span>
@@ -407,7 +408,7 @@
                 Investment Income (TTM)
               </span>
               <a
-                href="/wealth"
+                href={appPath("/wealth")}
                 class="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--text)]"
               >
                 <span>Details</span>
@@ -435,7 +436,7 @@
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Cash Flow
               </span>
-              <a href="/cash-flow" class="text-xs text-[var(--muted)] hover:text-[var(--text)]">
+              <a href={appPath("/cash-flow")} class="text-xs text-[var(--muted)] hover:text-[var(--text)]">
                 Details →
               </a>
             </div>
@@ -467,7 +468,7 @@
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Budget ({dayjs(`${selectedMonth}-01`).format("MMM YYYY")})
               </span>
-              <a href="/cash-flow" class="text-xs text-[var(--muted)] hover:text-[var(--text)]">
+              <a href={appPath("/cash-flow")} class="text-xs text-[var(--muted)] hover:text-[var(--text)]">
                 Manage →
               </a>
             </div>
@@ -497,7 +498,7 @@
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Goals
               </span>
-              <a href="/planning" class="text-xs text-[var(--muted)] hover:text-[var(--text)]">
+              <a href={appPath("/planning")} class="text-xs text-[var(--muted)] hover:text-[var(--text)]">
                 View all →
               </a>
             </div>
@@ -572,7 +573,7 @@
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Recurring
               </span>
-              <a href="/cash-flow" class="text-xs text-[var(--muted)] hover:text-[var(--text)]">
+              <a href={appPath("/cash-flow")} class="text-xs text-[var(--muted)] hover:text-[var(--text)]">
                 View all →
               </a>
             </div>
@@ -594,7 +595,7 @@
                 Recent Transactions
               </span>
               <a
-                href="/transactions"
+                href={appPath("/transactions")}
                 class="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--text)]"
               >
                 <span>View all</span>

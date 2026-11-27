@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import { appPath } from "$lib/api";
   import Logo from "$lib/components/Logo.svelte";
 
   let username = $state("");
@@ -27,7 +28,7 @@
           localStorage.setItem("token", data.token);
         } catch {}
       }
-      await goto("/");
+      await goto(appPath("/"));
     } catch (err) {
       error = err instanceof Error ? err.message : "Login failed";
     } finally {

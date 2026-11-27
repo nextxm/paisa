@@ -2,7 +2,7 @@
   import { page } from "$app/stores";
   import { onMount } from "svelte";
   import { ArrowLeft, StickyNote, Trash2 } from "lucide-svelte";
-  import { apiGet, authHeaders, formatMoney, formatShortDate, runtime, type Transaction } from "$lib/api";
+  import { apiGet, appPath, authHeaders, formatMoney, formatShortDate, runtime, type Transaction } from "$lib/api";
 
   const accountName = $derived(decodeURIComponent($page.params.name || ""));
 
@@ -94,7 +94,7 @@
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
       <a
-        href="/transactions"
+        href={appPath("/transactions")}
         class="inline-flex items-center gap-1.5 text-xs text-[var(--muted)] hover:text-[var(--text)] mb-1"
       >
         <ArrowLeft class="w-3.5 h-3.5" />
@@ -103,7 +103,7 @@
       <h1 class="text-xl font-semibold tracking-tight break-all">{accountName}</h1>
     </div>
     <a
-      href={`/transactions?account=${encodeURIComponent(accountName)}`}
+      href={appPath(`/transactions?account=${encodeURIComponent(accountName)}`)}
       class="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-medium hover:border-[var(--accent)]"
     >
       Filter in Transactions
