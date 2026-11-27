@@ -3,9 +3,19 @@
   import { onMount } from "svelte";
   import { CheckCircle2, Search } from "lucide-svelte";
   import LedgerEditorPanel from "$lib/components/LedgerEditorPanel.svelte";
-  import { apiGet, formatMoney, formatShortDate, type Posting } from "$lib/api";
+  import LedgerToolsPanels from "$lib/components/LedgerToolsPanels.svelte";
+  import { apiGet, formatMoney, formatShortDate, runtime, updateConfig, type Posting } from "$lib/api";
 
-  type LedgerTab = "health" | "editor" | "postings" | "prices" | "settings" | "logs";
+  type LedgerTab =
+    | "health"
+    | "editor"
+    | "import"
+    | "postings"
+    | "prices"
+    | "fx"
+    | "sheets"
+    | "settings"
+    | "logs";
   type HealthFilter = "fix" | "review" | "dismissed" | "all";
 
   interface DoctorFinding {
@@ -59,6 +69,9 @@
   let postings = $state<Posting[]>([]);
   let prices = $state<PriceRow[]>([]);
   let configJson = $state<Record<string, unknown> | null>(null);
+  let configDraft = $state("");
+  let configSaving = $state(false);
+  let configMessage = $state<string | null>(null);
   let logs = $state<LogEntry[]>([]);
 
   async function loadHealth() {
@@ -94,6 +107,7 @@
 
       postings = postingRes.postings || [];
       configJson = cfgRes.config || null;
+      configDraft = configJson ? JSON.stringify(configJson, null, 2) : "";
 
       if (Array.isArray(priceRes.prices)) {
         prices = priceRes.prices;
@@ -204,8 +218,11 @@
     {#each [
       { id: "health", label: `Data Health (${summary.fix_count + summary.review_count})` },
       { id: "editor", label: "Journal Editor" },
+      { id: "import", label: "Import" },
       { id: "postings", label: `Postings (${postings.length})` },
       { id: "prices", label: `Market Prices (${prices.length})` },
+      { id: "fx", label: "FX Rates" },
+      { id: "sheets", label: "Sheets" },
       { id: "settings", label: "Settings" },
       { id: "logs", label: `Logs (${logs.length})` }
     ] as tab}
@@ -295,6 +312,8 @@
     {/if}
   {:else if activeTab === "editor"}
     <LedgerEditorPanel />
+  {:else if activeTab === "import" || activeTab === "fx" || activeTab === "sheets"}
+    <LedgerToolsPanels mode={activeTab} />
   {:else if activeTab === "postings"}
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
       <div class="overflow-x-auto">
@@ -367,13 +386,48 @@
     </div>
   {:else if activeTab === "settings"}
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-      <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-        Active Configuration (`paisa.yaml`)
-      </h3>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Active Configuration (`paisa.yaml`)
+        </h3>
+        {#if !runtime.readonly && configJson}
+          <button
+            type="button"
+            disabled={configSaving}
+            onclick={async () => {
+              configSaving = true;
+              configMessage = null;
+              try {
+                const parsed = JSON.parse(configDraft) as Record<string, unknown>;
+                const res = await updateConfig(parsed);
+                if (res.success) {
+                  configJson = parsed;
+                  configMessage = "Configuration saved.";
+                } else {
+                  configMessage = res.error || "Failed to save configuration.";
+                }
+              } catch (e) {
+                configMessage = e instanceof Error ? e.message : "Invalid JSON";
+              } finally {
+                configSaving = false;
+              }
+            }}
+            class="px-3 py-1.5 rounded-lg bg-[var(--accent)] text-[var(--accent-fg)] text-xs font-medium cursor-pointer disabled:opacity-50"
+          >
+            {configSaving ? "Saving…" : "Save Config"}
+          </button>
+        {/if}
+      </div>
+      {#if configMessage}
+        <p class="text-xs text-[var(--muted)]">{configMessage}</p>
+      {/if}
       {#if configJson}
-        <pre
-          class="p-4 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] font-mono text-xs overflow-x-auto"
-        >{JSON.stringify(configJson, null, 2)}</pre>
+        <textarea
+          bind:value={configDraft}
+          readonly={runtime.readonly}
+          rows="20"
+          class="w-full p-4 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] font-mono text-xs outline-none focus:border-[var(--accent)]"
+        ></textarea>
       {:else}
         <p class="text-sm text-[var(--muted)]">Configuration unavailable.</p>
       {/if}
