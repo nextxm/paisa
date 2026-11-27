@@ -14,6 +14,7 @@
     | "prices"
     | "fx"
     | "sheets"
+    | "firefly"
     | "settings"
     | "logs";
   type HealthFilter = "fix" | "review" | "dismissed" | "all";
@@ -73,6 +74,10 @@
   let configSaving = $state(false);
   let configMessage = $state<string | null>(null);
   let logs = $state<LogEntry[]>([]);
+  let duplicates = $state<Array<Record<string, unknown>>>([]);
+  let outliers = $state<Array<Record<string, unknown>>>([]);
+  let providers = $state<Array<{ code?: string; name?: string }>>([]);
+  let fireflyItems = $state<Array<Record<string, unknown>>>([]);
 
   async function loadHealth() {
     const res = await apiGet<{ findings?: DoctorFinding[]; summary?: DoctorSummary }>(
@@ -89,7 +94,7 @@
 
   onMount(async () => {
     try {
-      const [, postingRes, priceRes, cfgRes, logRes] = await Promise.all([
+      const [, postingRes, priceRes, cfgRes, logRes, dupRes, provRes, ffRes] = await Promise.all([
         loadHealth(),
         apiGet<{ postings?: Posting[] }>("/api/posting").catch(() => ({ postings: [] })),
         apiGet<{ prices?: Record<string, PriceRow[]> | PriceRow[] }>("/api/price").catch(() => ({
@@ -102,12 +107,25 @@
         })
           .then((r) => (r.ok ? r.json() : { config: null }))
           .catch(() => ({ config: null })),
-        apiGet<{ logs?: LogEntry[] }>("/api/logs").catch(() => ({ logs: [] }))
+        apiGet<{ logs?: LogEntry[] }>("/api/logs").catch(() => ({ logs: [] })),
+        apiGet<{ duplicates?: Array<Record<string, unknown>>; outliers?: Array<Record<string, unknown>> }>(
+          "/api/diagnosis/duplicates"
+        ).catch(() => ({ duplicates: [], outliers: [] })),
+        apiGet<{ providers?: Array<{ code?: string; name?: string }> }>("/api/price/providers").catch(
+          () => ({ providers: [] })
+        ),
+        apiGet<{ items?: Array<Record<string, unknown>> }>("/api/firefly/reconcile").catch(() => ({
+          items: []
+        }))
       ]);
 
       postings = postingRes.postings || [];
       configJson = cfgRes.config || null;
       configDraft = configJson ? JSON.stringify(configJson, null, 2) : "";
+      duplicates = dupRes.duplicates || [];
+      outliers = dupRes.outliers || [];
+      providers = provRes.providers || [];
+      fireflyItems = ffRes.items || [];
 
       if (Array.isArray(priceRes.prices)) {
         prices = priceRes.prices;
@@ -223,6 +241,7 @@
       { id: "prices", label: `Market Prices (${prices.length})` },
       { id: "fx", label: "FX Rates" },
       { id: "sheets", label: "Sheets" },
+      { id: "firefly", label: `Firefly (${fireflyItems.length})` },
       { id: "settings", label: "Settings" },
       { id: "logs", label: `Logs (${logs.length})` }
     ] as tab}
@@ -310,6 +329,23 @@
         {/each}
       </div>
     {/if}
+
+    {#if duplicates.length > 0 || outliers.length > 0}
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-2">
+          <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Potential Duplicates ({duplicates.length})
+          </div>
+          <pre class="text-xs font-mono bg-[var(--surface-elevated)] p-2.5 rounded-lg overflow-x-auto max-h-40">{JSON.stringify(duplicates.slice(0, 10), null, 2)}</pre>
+        </div>
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-2">
+          <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Outlier Transactions ({outliers.length})
+          </div>
+          <pre class="text-xs font-mono bg-[var(--surface-elevated)] p-2.5 rounded-lg overflow-x-auto max-h-40">{JSON.stringify(outliers.slice(0, 10), null, 2)}</pre>
+        </div>
+      </div>
+    {/if}
   {:else if activeTab === "editor"}
     <LedgerEditorPanel />
   {:else if activeTab === "import" || activeTab === "fx" || activeTab === "sheets"}
@@ -350,7 +386,39 @@
       </div>
     </div>
   {:else if activeTab === "prices"}
-    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+    <div class="space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-[var(--muted)]">Providers ({providers.length}):</span>
+          {#each providers as prov}
+            <span class="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--border)]">
+              {prov.name || prov.code || "Provider"}
+            </span>
+          {/each}
+        </div>
+        <div class="flex items-center gap-2">
+          <a
+            href="/api/price/export"
+            class="px-2.5 py-1.5 rounded-lg bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--accent)] font-medium"
+          >
+            Export Prices CSV
+          </a>
+          {#if !runtime.readonly}
+            <button
+              type="button"
+              onclick={async () => {
+                const res = await fetch("/api/price/delete", { method: "POST", headers: authHeaders() });
+                if (res.ok) prices = [];
+              }}
+              class="px-2.5 py-1.5 rounded-lg border border-[var(--border)] text-[var(--loss)] hover:bg-[var(--loss)]/10 cursor-pointer"
+            >
+              Clear Prices
+            </button>
+          {/if}
+        </div>
+      </div>
+
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
       {#if filteredPrices.length === 0}
         <div class="p-8 text-center text-sm text-[var(--muted)]">No price entries found.</div>
       {:else}
@@ -382,6 +450,18 @@
             </tbody>
           </table>
         </div>
+      {/if}
+    </div>
+    </div>
+  {:else if activeTab === "firefly"}
+    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+        Firefly III Reconciliation ({fireflyItems.length})
+      </h3>
+      {#if fireflyItems.length === 0}
+        <p class="text-sm text-[var(--muted)]">No Firefly reconciliation items configured or pending.</p>
+      {:else}
+        <pre class="text-xs font-mono bg-[var(--surface-elevated)] p-3 rounded-lg overflow-x-auto max-h-96">{JSON.stringify(fireflyItems, null, 2)}</pre>
       {/if}
     </div>
   {:else if activeTab === "settings"}

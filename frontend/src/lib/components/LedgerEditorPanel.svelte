@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Save } from "lucide-svelte";
-  import { apiGet, runtime, triggerSync } from "$lib/api";
+  import { Save, ShieldCheck, Trash2 } from "lucide-svelte";
+  import { apiGet, authHeaders, runtime, triggerSync } from "$lib/api";
 
   interface LedgerFile {
     file_name: string;
@@ -63,6 +63,33 @@
       saving = false;
     }
   }
+
+  async function validateFile() {
+    if (!selectedFileName) return;
+    status = null;
+    error = null;
+    const res = await fetch("/api/editor/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ name: selectedFileName, content })
+    });
+    const data = (await res.json()) as { errors?: Array<{ line?: number; message?: string }>; output?: string };
+    if (data.errors && data.errors.length > 0) {
+      error = data.errors.map((e) => `Line ${e.line ?? "?"}: ${e.message ?? "Syntax error"}`).join(" · ");
+    } else {
+      status = "Ledger syntax valid.";
+    }
+  }
+
+  async function deleteBackups() {
+    if (!selectedFileName) return;
+    const res = await fetch("/api/editor/file/delete_backups", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ name: selectedFileName })
+    });
+    if (res.ok) status = "Backups deleted.";
+  }
 </script>
 
 {#if loading}
@@ -91,15 +118,33 @@
       </div>
 
       {#if !runtime.readonly}
-        <button
-          type="button"
-          disabled={saving}
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 disabled:opacity-50 cursor-pointer"
-          onclick={saveFile}
-        >
-          <Save class="w-3.5 h-3.5" />
-          <span>{saving ? "Saving…" : "Save & Sync"}</span>
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-[var(--border)] hover:border-[var(--accent)] cursor-pointer"
+            onclick={validateFile}
+          >
+            <ShieldCheck class="w-3.5 h-3.5" />
+            <span>Validate</span>
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-[var(--border)] hover:border-[var(--loss)] text-[var(--muted)] hover:text-[var(--loss)] cursor-pointer"
+            onclick={deleteBackups}
+          >
+            <Trash2 class="w-3.5 h-3.5" />
+            <span>Clear Backups</span>
+          </button>
+          <button
+            type="button"
+            disabled={saving}
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 disabled:opacity-50 cursor-pointer"
+            onclick={saveFile}
+          >
+            <Save class="w-3.5 h-3.5" />
+            <span>{saving ? "Saving…" : "Save & Sync"}</span>
+          </button>
+        </div>
       {/if}
     </div>
 
