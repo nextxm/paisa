@@ -25,10 +25,12 @@ jobs:
         cp "$(brew --prefix ledger)/bin/ledger" internal/binary/ledger
         npm install
         npm run build
+        npm --prefix frontend install
+        PAISA_EMBED=1 PAISA_BASE=/v2 npm --prefix frontend run build
         go build
         cp paisa paisa-cli-macos-amd64
         cd desktop
-        go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        go install github.com/wailsapp/wails/v2/cmd/wails@v2.6.0
         wails build
         create-dmg --volname "Paisa" --window-pos 200 120 --window-size 800 400 --icon-size 100  --icon "Paisa.app" 200 190 --app-drop-link 600 185 --hide-extension "Paisa.app" --volicon build/bin/Paisa.app/Contents/Resources/iconfile.icns  "Paisa.dmg" build/bin/Paisa.app
         cd ..

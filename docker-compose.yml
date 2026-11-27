@@ -11,5 +11,16 @@ services:
       - ./data:/root
     environment:
       - TZ=Asia/Kolkata
+
+  paisa-v2:
+    build:
+      context: .
+      dockerfile: Dockerfile.v2
+    container_name: paisa-v2
+    restart: unless-stopped
+    depends_on:
+      - paisa
+    ports:
+      - "7501:80"
     # Old UI: http://localhost:7500/
-    # New UI: http://localhost:7500/v2/
+    # New UI: http://localhost:7501/ (and http://localhost:7500/v2/)

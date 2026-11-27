@@ -28,6 +28,8 @@ jobs:
         choco install nsis
         npm install
         npm run build
+        npm --prefix frontend install
+        $env:PAISA_EMBED="1"; $env:PAISA_BASE="/v2"; npm --prefix frontend run build
         wget https://github.com/FullofQuarks/Windows-Ledger-Binaries/releases/download/v3.3.2/ledger.exe
         cp ledger.exe internal/binary/ledger
         pip install beancount pyinstaller
@@ -59,7 +61,7 @@ jobs:
         cp paisa.exe paisa-cli-windows-amd64.exe
         $env:PATH += ";C:\Program Files (x86)\NSIS\Bin"
         cd desktop
-        go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        go install github.com/wailsapp/wails/v2/cmd/wails@v2.6.0
         wails build -tags webkit2_40 -nsis -webview2 embed
         cd ..
         cp .\desktop\build\bin\paisa-amd64-installer.exe paisa-app-windows-amd64.exe
