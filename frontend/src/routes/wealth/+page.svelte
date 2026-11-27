@@ -8,6 +8,7 @@
     | "assets"
     | "investments"
     | "allocation"
+    | "portfolio"
     | "income"
     | "liabilities";
 
@@ -25,6 +26,32 @@
     repaid_amount?: number;
     interest_amount?: number;
     balance_amount?: number;
+  }
+
+  interface PortfolioAggregate {
+    id: string;
+    group: string;
+    sub_group: string;
+    amount: number;
+    percentage: number;
+  }
+
+  interface InterestAccount {
+    account: string;
+    apr: number;
+    overview_timeline?: Array<{
+      date: string;
+      drawn_amount: number;
+      repaid_amount: number;
+      interest_amount: number;
+    }>;
+  }
+
+  interface RepaymentRow {
+    date: string;
+    account?: string;
+    amount?: number;
+    repaid_amount?: number;
   }
 
   interface AllocationAggregate {
@@ -58,6 +85,10 @@
   let activeTab = $state<WealthTab>("overview");
   let yearsWindow = $state<number>(0);
   let search = $state("");
+  let asOfDate = $state(new Date().toISOString().slice(0, 10));
+  let reportCurrency = $state("");
+  let availableCurrencies = $state<string[]>([]);
+  let assetsRefreshing = $state(false);
 
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -72,37 +103,91 @@
   let investmentIncomeTotal = $state(0);
   let investmentIncomeHoldings = $state<InvestmentIncomeHolding[]>([]);
   let creditCards = $state<CreditCardSummary[]>([]);
+  let portfolioSecurityType = $state<PortfolioAggregate[]>([]);
+  let portfolioRating = $state<PortfolioAggregate[]>([]);
+  let portfolioIndustry = $state<PortfolioAggregate[]>([]);
+  let interestAccounts = $state<InterestAccount[]>([]);
+  let repayments = $state<RepaymentRow[]>([]);
+
+  async function refreshAssets() {
+    assetsRefreshing = true;
+    try {
+      const params = new URLSearchParams();
+      if (asOfDate) params.set("as_of_date", asOfDate);
+      if (reportCurrency) params.set("report_currency", reportCurrency);
+      const q = params.toString();
+      const balRes = await apiGet<{ asset_breakdowns?: Record<string, AssetBreakdown> }>(
+        q ? `/api/assets/balance?${q}` : "/api/assets/balance"
+      );
+      assetBreakdowns = Object.values(balRes.asset_breakdowns || {}).sort(
+        (a, b) => (b.marketAmount || 0) - (a.marketAmount || 0)
+      );
+    } finally {
+      assetsRefreshing = false;
+    }
+  }
 
   onMount(async () => {
     try {
-      const [nwRes, balRes, gainRes, liabRes, allocRes, fxExpRes, incRes, ccRes] =
-        await Promise.all([
-          apiGet<{ xirr?: number; networthTimeline?: NetworthPoint[] }>("/api/networth"),
-          apiGet<{ asset_breakdowns?: Record<string, AssetBreakdown> }>(
-            "/api/assets/balance"
-          ).catch(() => ({ asset_breakdowns: {} as Record<string, AssetBreakdown> })),
-          apiGet<{ gain_breakdown?: GainRow[] }>("/api/gain").catch(() => ({
-            gain_breakdown: [] as GainRow[]
-          })),
-          apiGet<{ liability_breakdowns?: LiabilityRow[] }>("/api/liabilities/balance").catch(
-            () => ({ liability_breakdowns: [] as LiabilityRow[] })
-          ),
-          apiGet<{ aggregates?: Record<string, AllocationAggregate> }>("/api/allocation").catch(
-            () => ({ aggregates: {} as Record<string, AllocationAggregate> })
-          ),
-          apiGet<{ currency_exposure?: CurrencyExposureItem[] }>("/api/currency-exposure").catch(
-            () => ({ currency_exposure: [] as CurrencyExposureItem[] })
-          ),
-          apiGet<{ ttm_total?: number; holdings?: InvestmentIncomeHolding[] }>(
-            "/api/income/investment"
-          ).catch(() => ({ ttm_total: 0, holdings: [] as InvestmentIncomeHolding[] })),
-          apiGet<{ creditCards?: CreditCardSummary[] }>("/api/credit_cards").catch(() => ({
-            creditCards: [] as CreditCardSummary[]
-          }))
-        ]);
+      const [
+        nwRes,
+        balRes,
+        currRes,
+        gainRes,
+        liabRes,
+        allocRes,
+        fxExpRes,
+        incRes,
+        ccRes,
+        portRes,
+        intRes,
+        repRes
+      ] = await Promise.all([
+        apiGet<{ xirr?: number; networthTimeline?: NetworthPoint[] }>("/api/networth"),
+        apiGet<{ asset_breakdowns?: Record<string, AssetBreakdown> }>(
+          "/api/assets/balance"
+        ).catch(() => ({ asset_breakdowns: {} as Record<string, AssetBreakdown> })),
+        apiGet<{ currencies?: string[] }>("/api/price/currencies").catch(() => ({
+          currencies: [] as string[]
+        })),
+        apiGet<{ gain_breakdown?: GainRow[] }>("/api/gain").catch(() => ({
+          gain_breakdown: [] as GainRow[]
+        })),
+        apiGet<{ liability_breakdowns?: LiabilityRow[] }>("/api/liabilities/balance").catch(
+          () => ({ liability_breakdowns: [] as LiabilityRow[] })
+        ),
+        apiGet<{ aggregates?: Record<string, AllocationAggregate> }>("/api/allocation").catch(
+          () => ({ aggregates: {} as Record<string, AllocationAggregate> })
+        ),
+        apiGet<{ currency_exposure?: CurrencyExposureItem[] }>("/api/currency-exposure").catch(
+          () => ({ currency_exposure: [] as CurrencyExposureItem[] })
+        ),
+        apiGet<{ ttm_total?: number; holdings?: InvestmentIncomeHolding[] }>(
+          "/api/income/investment"
+        ).catch(() => ({ ttm_total: 0, holdings: [] as InvestmentIncomeHolding[] })),
+        apiGet<{ creditCards?: CreditCardSummary[] }>("/api/credit_cards").catch(() => ({
+          creditCards: [] as CreditCardSummary[]
+        })),
+        apiGet<{
+          security_type?: PortfolioAggregate[];
+          rating?: PortfolioAggregate[];
+          industry?: PortfolioAggregate[];
+        }>("/api/portfolio_allocation").catch(() => ({
+          security_type: [] as PortfolioAggregate[],
+          rating: [] as PortfolioAggregate[],
+          industry: [] as PortfolioAggregate[]
+        })),
+        apiGet<{ interest_timeline_breakdown?: Record<string, InterestAccount> | InterestAccount[] }>(
+          "/api/liabilities/interest"
+        ).catch(() => ({ interest_timeline_breakdown: [] as InterestAccount[] })),
+        apiGet<{ repayments?: RepaymentRow[] }>("/api/liabilities/repayment").catch(() => ({
+          repayments: [] as RepaymentRow[]
+        }))
+      ]);
 
       timeline = nwRes.networthTimeline || [];
       xirr = nwRes.xirr || 0;
+      availableCurrencies = currRes.currencies || [];
       assetBreakdowns = Object.values(balRes.asset_breakdowns || {}).sort(
         (a, b) => (b.marketAmount || 0) - (a.marketAmount || 0)
       );
@@ -117,6 +202,13 @@
       investmentIncomeTotal = incRes.ttm_total || 0;
       investmentIncomeHoldings = incRes.holdings || [];
       creditCards = ccRes.creditCards || [];
+      portfolioSecurityType = portRes.security_type || [];
+      portfolioRating = portRes.rating || [];
+      portfolioIndustry = portRes.industry || [];
+      interestAccounts = Array.isArray(intRes.interest_timeline_breakdown)
+        ? intRes.interest_timeline_breakdown
+        : Object.values(intRes.interest_timeline_breakdown || {});
+      repayments = repRes.repayments || [];
     } catch (e) {
       error = e instanceof Error ? e.message : "Failed to load wealth data";
     } finally {
@@ -167,12 +259,32 @@
         {/each}
       </div>
     {:else if activeTab === "assets"}
-      <input
-        type="search"
-        bind:value={search}
-        placeholder="Filter asset accounts…"
-        class="px-3 py-1.5 rounded-lg text-xs bg-[var(--surface)] border border-[var(--border)] outline-none focus:border-[var(--accent)]"
-      />
+      <div class="flex flex-wrap items-center gap-2">
+        <input
+          type="date"
+          bind:value={asOfDate}
+          onchange={refreshAssets}
+          class="px-2.5 py-1.5 rounded-lg text-xs bg-[var(--surface)] border border-[var(--border)] outline-none focus:border-[var(--accent)] tabular-nums"
+        />
+        {#if availableCurrencies.length > 1}
+          <select
+            bind:value={reportCurrency}
+            onchange={refreshAssets}
+            class="px-2.5 py-1.5 rounded-lg text-xs bg-[var(--surface)] border border-[var(--border)] outline-none focus:border-[var(--accent)]"
+          >
+            <option value="">Default Currency</option>
+            {#each availableCurrencies as cur}
+              <option value={cur}>{cur}</option>
+            {/each}
+          </select>
+        {/if}
+        <input
+          type="search"
+          bind:value={search}
+          placeholder="Filter asset accounts…"
+          class="px-3 py-1.5 rounded-lg text-xs bg-[var(--surface)] border border-[var(--border)] outline-none focus:border-[var(--accent)]"
+        />
+      </div>
     {/if}
   </div>
 
@@ -183,6 +295,7 @@
       { id: "assets", label: "Assets" },
       { id: "investments", label: "Investments" },
       { id: "allocation", label: "Allocation" },
+      { id: "portfolio", label: "Portfolio" },
       { id: "income", label: "Inv. Income" },
       { id: "liabilities", label: "Debt & Cards" }
     ] as tab}
@@ -367,6 +480,51 @@
         {/if}
       </div>
     </div>
+  {:else if activeTab === "portfolio"}
+    {#if portfolioSecurityType.length === 0 && portfolioRating.length === 0 && portfolioIndustry.length === 0}
+      <div
+        class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center text-sm text-[var(--muted)]"
+      >
+        No underlying portfolio breakdown metadata available.
+      </div>
+    {:else}
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {#each [
+          { title: "By Security Type", items: portfolioSecurityType },
+          { title: "By Credit Rating", items: portfolioRating },
+          { title: "By Industry", items: portfolioIndustry }
+        ] as group}
+          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+              {group.title}
+            </h3>
+            {#if group.items.length === 0}
+              <p class="text-xs text-[var(--muted)]">No data.</p>
+            {:else}
+              <div class="space-y-2.5">
+                {#each group.items.slice(0, 12) as item}
+                  <div class="space-y-1 text-xs">
+                    <div class="flex justify-between gap-2">
+                      <span class="font-medium truncate">{item.group || item.sub_group || "Other"}</span>
+                      <span class="tabular-nums whitespace-nowrap">
+                        <strong>{formatMoney(item.amount || 0)}</strong>
+                        <span class="text-[var(--muted)] ml-1">({(item.percentage || 0).toFixed(1)}%)</span>
+                      </span>
+                    </div>
+                    <div class="h-1.5 rounded-full bg-[var(--surface-elevated)] overflow-hidden">
+                      <div
+                        class="h-full rounded-full bg-[var(--accent)]"
+                        style="width: {Math.min(100, item.percentage || 0)}%"
+                      ></div>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {/each}
+      </div>
+    {/if}
   {:else if activeTab === "income"}
     <div class="space-y-4">
       <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
@@ -468,6 +626,46 @@
           </div>
         {/if}
       </div>
+
+      {#if interestAccounts.length > 0 || repayments.length > 0}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {#if interestAccounts.length > 0}
+            <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                Effective APR by Liability
+              </h3>
+              <div class="divide-y divide-[var(--border)] text-sm tabular-nums">
+                {#each interestAccounts as acc}
+                  <div class="py-2 flex justify-between gap-2">
+                    <span class="truncate font-medium">{acc.account}</span>
+                    <span class="font-semibold">{(acc.apr || 0).toFixed(2)}% APR</span>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
+
+          {#if repayments.length > 0}
+            <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                Recent Repayments ({repayments.length})
+              </h3>
+              <div class="divide-y divide-[var(--border)] text-sm tabular-nums">
+                {#each repayments.slice(-8).reverse() as rep}
+                  <div class="py-2 flex justify-between gap-2">
+                    <span class="truncate text-xs text-[var(--muted)]">
+                      {formatShortDate(rep.date)} {rep.account ? `· ${rep.account}` : ""}
+                    </span>
+                    <span class="font-medium text-[var(--gain)]">
+                      {formatMoney(rep.repaid_amount ?? rep.amount ?? 0)}
+                    </span>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
+        </div>
+      {/if}
     </div>
   {/if}
 </div>

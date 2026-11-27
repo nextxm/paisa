@@ -36,6 +36,19 @@
   let taxLoading = $state(false);
   let harvestables = $state<Array<{ account?: string; unrealized_loss?: number; stcg?: number; ltcg?: number }>>([]);
   let capitalGains = $state<Array<{ account?: string; stcg?: number; ltcg?: number }>>([]);
+  let scheduleAls = $state<
+    Record<
+      string,
+      {
+        date?: string;
+        entries?: Array<{
+          section: { code: string; section: string; details: string };
+          amount: number;
+        }>;
+      }
+    >
+  >({});
+  let selectedScheduleYear = $state("");
 
   async function runWhatIf() {
     whatifLoading = true;
@@ -109,12 +122,18 @@
   async function loadTax() {
     taxLoading = true;
     try {
-      const [hRes, cgRes] = await Promise.all([
+      const [hRes, cgRes, salRes] = await Promise.all([
         fetch("/api/harvest").then((r) => (r.ok ? r.json() : { harvestables: {} })),
-        fetch("/api/capital_gains").then((r) => (r.ok ? r.json() : { capital_gains: {} }))
+        fetch("/api/capital_gains").then((r) => (r.ok ? r.json() : { capital_gains: {} })),
+        fetch("/api/schedule_al").then((r) => (r.ok ? r.json() : { schedule_als: {} }))
       ]);
       harvestables = Object.values(hRes.harvestables || {});
       capitalGains = Object.values(cgRes.capital_gains || {});
+      scheduleAls = salRes.schedule_als || {};
+      const yrs = Object.keys(scheduleAls).sort().reverse();
+      if (yrs.length > 0 && !selectedScheduleYear) {
+        selectedScheduleYear = yrs[0];
+      }
     } finally {
       taxLoading = false;
     }
@@ -284,4 +303,53 @@
       {/if}
     </div>
   </div>
+
+  <!-- Schedule AL -->
+  {#if Object.keys(scheduleAls).length > 0}
+    {@const activeSchedule = scheduleAls[selectedScheduleYear]}
+    <div class="mt-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+      <div class="px-5 py-3 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Schedule AL (Assets &amp; Liabilities Statement)
+          </h3>
+          {#if activeSchedule?.date}
+            <p class="text-xs text-[var(--muted)] mt-0.5">As on {activeSchedule.date.slice(0, 10)}</p>
+          {/if}
+        </div>
+        <select
+          bind:value={selectedScheduleYear}
+          class="px-2.5 py-1 rounded-lg text-xs bg-[var(--surface-elevated)] border border-[var(--border)] outline-none"
+        >
+          {#each Object.keys(scheduleAls).sort().reverse() as yr}
+            <option value={yr}>FY {yr}</option>
+          {/each}
+        </select>
+      </div>
+      {#if activeSchedule?.entries?.length}
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
+              <tr>
+                <th class="py-2 px-4 font-medium">Code</th>
+                <th class="py-2 px-4 font-medium">Section</th>
+                <th class="py-2 px-4 font-medium">Details</th>
+                <th class="py-2 px-4 text-right font-medium">Amount</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--border)] tabular-nums">
+              {#each activeSchedule.entries as entry}
+                <tr class="hover:bg-[var(--surface-elevated)]/50">
+                  <td class="py-2 px-4 font-mono text-xs text-[var(--muted)]">{entry.section?.code || "—"}</td>
+                  <td class="py-2 px-4 font-medium">{entry.section?.section || "—"}</td>
+                  <td class="py-2 px-4 text-xs text-[var(--muted)]">{entry.section?.details || "—"}</td>
+                  <td class="py-2 px-4 text-right font-semibold">{formatMoney(entry.amount || 0)}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      {/if}
+    </div>
+  {/if}
 {/if}

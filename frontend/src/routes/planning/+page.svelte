@@ -7,7 +7,7 @@
     type ProjectionPoint
   } from "$lib/components/ProjectionChart.svelte";
   import PlanningSubtools from "$lib/components/PlanningSubtools.svelte";
-  import { apiGet, formatMoney, runtime } from "$lib/api";
+  import { apiGet, formatMoney, getFullConfig, runtime, updateConfig } from "$lib/api";
 
   type PlanningTab = "projection" | "goals" | "whatif" | "drawdown" | "tax";
   type ProjectionMode = "simple" | "montecarlo";
@@ -64,6 +64,15 @@
     targetDate: string;
   }
 
+  interface LifeGoalConfig {
+    name: string;
+    target_date: string;
+    target_amount: number;
+    monthly_allocation?: number;
+    inflation_rate?: number | null;
+    funded_by?: string[];
+  }
+
   let activeTab = $state<PlanningTab>("projection");
   let mode = $state<ProjectionMode>("simple");
   let activeScenario = $state<ScenarioKey>("expected");
@@ -73,6 +82,10 @@
   let dna = $state<FinancialProfile | null>(null);
   let base = $state<BaseProjectionResponse | null>(null);
   let goals = $state<GoalSummary[]>([]);
+  let rawConfig = $state<Record<string, unknown> | null>(null);
+  let lifeGoals = $state<LifeGoalConfig[]>([]);
+  let savingLifeGoals = $state(false);
+  let lifeGoalStatus = $state<string | null>(null);
 
   // Core 3 levers
   let years = $state(15);
@@ -95,17 +108,23 @@
 
   onMount(async () => {
     try {
-      const [projRes, dnaRes, goalsRes] = await Promise.all([
+      const [projRes, dnaRes, goalsRes, cfg] = await Promise.all([
         apiGet<BaseProjectionResponse>("/api/networth/projection"),
         apiGet<{ profile: FinancialProfile }>("/api/projection/dna").catch(() => ({
           profile: null
         })),
-        apiGet<{ goals?: GoalSummary[] }>("/api/goals").catch(() => ({ goals: [] }))
+        apiGet<{ goals?: GoalSummary[] }>("/api/goals").catch(() => ({ goals: [] })),
+        getFullConfig().catch(() => null)
       ]);
 
       base = projRes;
       dna = dnaRes.profile;
       goals = goalsRes.goals || [];
+      if (cfg) {
+        rawConfig = cfg;
+        const g = (cfg.goals as Record<string, unknown> | undefined) || {};
+        lifeGoals = Array.isArray(g.life) ? (g.life as LifeGoalConfig[]) : [];
+      }
 
       monthlyContribution = Math.round(projRes.monthly_contribution || 0);
       expectedCagr = projRes.expected_cagr || 10;
@@ -134,6 +153,78 @@
 
   function toReal(nominalPct: number): number {
     return ((1 + nominalPct / 100) / (1 + inflationRate / 100) - 1) * 100;
+  }
+
+  function exportProjectionCsv() {
+    const headers = ["Year", "Starting", "Contribution", "Return", "Ending", "FIRE"];
+    const lines = [
+      headers.join(","),
+      ...tableRows.map((r) =>
+        [
+          r.year,
+          r.start.toFixed(2),
+          r.contribution.toFixed(2),
+          r.returnAmount.toFixed(2),
+          r.end.toFixed(2),
+          r.isFire ? "YES" : "NO"
+        ].join(",")
+      )
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `paisa-projection-${activeScenario}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function addLifeGoal() {
+    lifeGoals = [
+      ...lifeGoals,
+      {
+        name: "New Milestone",
+        target_date: dayjs().add(3, "year").format("YYYY-MM-DD"),
+        target_amount: 500000,
+        monthly_allocation: 0,
+        funded_by: []
+      }
+    ];
+  }
+
+  function removeLifeGoal(idx: number) {
+    lifeGoals = lifeGoals.filter((_, i) => i !== idx);
+  }
+
+  async function saveLifeGoals() {
+    if (!rawConfig) return;
+    savingLifeGoals = true;
+    lifeGoalStatus = null;
+    const nextConfig: Record<string, unknown> = structuredClone(rawConfig);
+    const prevGoals = (nextConfig.goals as Record<string, unknown> | undefined) || {};
+    nextConfig.goals = {
+      retirement: prevGoals.retirement || [],
+      savings: prevGoals.savings || [],
+      life: lifeGoals.map((g, i) => ({
+        ...g,
+        priority: lifeGoals.length - i,
+        target_amount: Number(g.target_amount || 0),
+        monthly_allocation: Number(g.monthly_allocation || 0),
+        funded_by: g.funded_by || []
+      }))
+    };
+    const res = await updateConfig(nextConfig);
+    savingLifeGoals = false;
+    if (res.success) {
+      rawConfig = nextConfig;
+      lifeGoalStatus = "Saved life milestones.";
+      try {
+        const goalsRes = await apiGet<{ goals?: GoalSummary[] }>("/api/goals");
+        goals = goalsRes.goals || [];
+      } catch {}
+    } else {
+      lifeGoalStatus = res.error || "Failed to save life milestones.";
+    }
   }
 
   function buildSeries(cagrPct: number): ProjectionPoint[] {
@@ -627,20 +718,29 @@
           class="px-4 py-3 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3"
         >
           <h3 class="text-sm font-semibold">Year-by-Year Projection</h3>
-          <div
-            class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5 text-xs"
-          >
-            {#each [{ key: "expected", label: "Expected" }, { key: "conservative", label: "Conservative" }, { key: "optimistic", label: "Optimistic" }] as s}
-              <button
-                type="button"
-                class="px-2.5 py-1 rounded-md cursor-pointer {activeScenario === s.key
-                  ? 'bg-[var(--surface)] font-semibold'
-                  : 'text-[var(--muted)]'}"
-                onclick={() => (activeScenario = s.key as ScenarioKey)}
-              >
-                {s.label}
-              </button>
-            {/each}
+          <div class="flex flex-wrap items-center gap-2">
+            <div
+              class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5 text-xs"
+            >
+              {#each [{ key: "expected", label: "Expected" }, { key: "conservative", label: "Conservative" }, { key: "optimistic", label: "Optimistic" }] as s}
+                <button
+                  type="button"
+                  class="px-2.5 py-1 rounded-md cursor-pointer {activeScenario === s.key
+                    ? 'bg-[var(--surface)] font-semibold'
+                    : 'text-[var(--muted)]'}"
+                  onclick={() => (activeScenario = s.key as ScenarioKey)}
+                >
+                  {s.label}
+                </button>
+              {/each}
+            </div>
+            <button
+              type="button"
+              onclick={exportProjectionCsv}
+              class="px-2.5 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] text-xs font-medium hover:border-[var(--accent)] cursor-pointer"
+            >
+              Export CSV
+            </button>
           </div>
         </div>
         <div class="overflow-x-auto">
@@ -720,6 +820,99 @@
             </div>
           </div>
         {/each}
+      </div>
+    {/if}
+
+    <!-- Life Milestones Editor -->
+    {#if !runtime.readonly && rawConfig}
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4 mt-5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-sm font-semibold">Life Milestones</h3>
+            <p class="text-xs text-[var(--muted)]">
+              Add or edit life goals persisted to your Paisa configuration
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              onclick={addLifeGoal}
+              class="px-3 py-1.5 rounded-lg border border-[var(--border)] text-xs font-medium hover:border-[var(--accent)] cursor-pointer"
+            >
+              + Add Milestone
+            </button>
+            <button
+              type="button"
+              disabled={savingLifeGoals}
+              onclick={saveLifeGoals}
+              class="px-3 py-1.5 rounded-lg bg-[var(--accent)] text-[var(--accent-fg)] text-xs font-medium cursor-pointer disabled:opacity-60"
+            >
+              {savingLifeGoals ? "Saving…" : "Save Milestones"}
+            </button>
+          </div>
+        </div>
+
+        {#if lifeGoalStatus}
+          <p class="text-xs text-[var(--muted)]">{lifeGoalStatus}</p>
+        {/if}
+
+        {#if lifeGoals.length === 0}
+          <p class="text-xs text-[var(--muted)]">No life milestones configured.</p>
+        {:else}
+          <div class="space-y-3">
+            {#each lifeGoals as lg, idx}
+              <div
+                class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end p-3 rounded-lg bg-[var(--surface-elevated)]/60 border border-[var(--border)] text-xs"
+              >
+                <div class="sm:col-span-4">
+                  <label class="block text-[var(--muted)] mb-1" for={`lg-name-${idx}`}>Name</label>
+                  <input
+                    id={`lg-name-${idx}`}
+                    type="text"
+                    bind:value={lg.name}
+                    class="w-full px-2.5 py-1.5 rounded-md bg-[var(--surface)] border border-[var(--border)] outline-none"
+                  />
+                </div>
+                <div class="sm:col-span-3">
+                  <label class="block text-[var(--muted)] mb-1" for={`lg-date-${idx}`}>Target Date</label>
+                  <input
+                    id={`lg-date-${idx}`}
+                    type="date"
+                    bind:value={lg.target_date}
+                    class="w-full px-2.5 py-1.5 rounded-md bg-[var(--surface)] border border-[var(--border)] outline-none tabular-nums"
+                  />
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-[var(--muted)] mb-1" for={`lg-amt-${idx}`}>Target Amount</label>
+                  <input
+                    id={`lg-amt-${idx}`}
+                    type="number"
+                    bind:value={lg.target_amount}
+                    class="w-full px-2.5 py-1.5 rounded-md bg-[var(--surface)] border border-[var(--border)] outline-none tabular-nums"
+                  />
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-[var(--muted)] mb-1" for={`lg-sip-${idx}`}>Monthly Alloc</label>
+                  <input
+                    id={`lg-sip-${idx}`}
+                    type="number"
+                    bind:value={lg.monthly_allocation}
+                    class="w-full px-2.5 py-1.5 rounded-md bg-[var(--surface)] border border-[var(--border)] outline-none tabular-nums"
+                  />
+                </div>
+                <div class="sm:col-span-1 flex justify-end">
+                  <button
+                    type="button"
+                    onclick={() => removeLifeGoal(idx)}
+                    class="px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--loss)] hover:bg-[var(--loss)]/10 cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
       </div>
     {/if}
   {:else}

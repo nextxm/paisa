@@ -161,6 +161,38 @@ export async function apiGet<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
+export async function getFullConfig(): Promise<Record<string, unknown>> {
+  const res = await fetch("/connect/paisa.v1.PaisaService/GetConfig", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: "{}"
+  });
+  if (!res.ok) {
+    throw new Error(`${res.status} ${res.statusText}`);
+  }
+  const data = (await res.json()) as { config?: Record<string, unknown> };
+  return data.config || {};
+}
+
+export async function updateConfig(
+  config: Record<string, unknown>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch("/connect/paisa.v1.PaisaService/UpdateConfig", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ config })
+    });
+    if (!res.ok) {
+      return { success: false, error: `${res.status} ${res.statusText}` };
+    }
+    const data = (await res.json()) as { success?: boolean };
+    return { success: Boolean(data.success) };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Save failed" };
+  }
+}
+
 export async function triggerSync(
   opts: { journal?: boolean; prices?: boolean; portfolios?: boolean } = { journal: true }
 ): Promise<boolean> {
