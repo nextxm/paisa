@@ -1,6 +1,7 @@
 <script lang="ts">
   import COLORS from "$lib/colors";
   import BoxLabel from "$lib/components/BoxLabel.svelte";
+  import CashFlowTabs from "$lib/components/CashFlowTabs.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
   import LevelItem from "$lib/components/LevelItem.svelte";
   import {
@@ -46,6 +47,8 @@
     ttmInvestmentIncome = ttmTotal;
   });
 </script>
+
+<CashFlowTabs />
 
 <section class="section tab-income">
   <div class="container">

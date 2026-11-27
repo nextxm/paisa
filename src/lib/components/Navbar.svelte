@@ -224,68 +224,61 @@
       label: "Cash Flow",
       href: "/cash_flow",
       children: [
+        { label: "Cash Flow", href: "/monthly", dateRangeSelector: true },
         {
-          label: "Cash Flow",
-          href: "",
-          children: [
-            { label: "Monthly Cash Flow", href: "/monthly", dateRangeSelector: true },
-            {
-              label: "Yearly Cash Flow",
-              href: "/yearly",
-              financialYearPicker: true,
-              maxDepthSelector: true
-            },
-            {
-              label: "Income Statement",
-              href: "/income_statement",
-              financialYearPicker: true
-            }
-          ]
+          label: "Yearly Cash Flow",
+          href: "/yearly",
+          financialYearPicker: true,
+          maxDepthSelector: true,
+          hide: true
         },
         {
-          label: "Expenses & Budget",
-          href: "/../expense",
-          children: [
-            { label: "Budget Tracker", href: "/budget", help: "budget", monthPicker: true },
-            {
-              label: "Monthly Expenses",
-              href: "/monthly",
-              help: "expenses",
-              monthPicker: true,
-              dateRangeSelector: true
-            },
-            { label: "Yearly Expenses", href: "/yearly", financialYearPicker: true },
-            { label: "Expense Breakdown", href: "/sankey", dateRangeSelector: true },
-            { label: "Heatmap", href: "/heatmap" },
-            { label: "Year-over-Year (YoY)", href: "/yoy" },
-            { label: "Month-over-Month (MoM)", href: "/mom" }
-          ]
+          label: "Income Statement",
+          href: "/income_statement",
+          financialYearPicker: true,
+          hide: true
         },
         {
-          label: "Income & Returns",
-          href: "/../income",
-          children: [
-            { label: "Income Timeline", href: "" },
-            {
-              label: "Investment Income",
-              href: "/investment",
-              financialYearPicker: true
-            }
-          ]
+          label: "Money Flow (Sankey)",
+          href: "/sankey",
+          sankeyPeriodSelector: true,
+          hide: true
         },
         {
-          label: "Flows & Recurring",
-          href: "",
-          children: [
-            { label: "Money Flow (Sankey)", href: "/sankey", sankeyPeriodSelector: true },
-            {
-              label: "Recurring Bills",
-              href: "/recurring",
-              help: "recurring",
-              monthPicker: true,
-              recurringIcons: true
-            }
-          ]
+          label: "Expenses",
+          href: "/../expense/monthly",
+          help: "expenses",
+          monthPicker: true,
+          dateRangeSelector: true
+        },
+        {
+          label: "Yearly Expenses",
+          href: "/../expense/yearly",
+          financialYearPicker: true,
+          hide: true
+        },
+        {
+          label: "Expense Breakdown",
+          href: "/../expense/sankey",
+          dateRangeSelector: true,
+          hide: true
+        },
+        { label: "Heatmap", href: "/../expense/heatmap", hide: true },
+        { label: "Year-over-Year (YoY)", href: "/../expense/yoy", hide: true },
+        { label: "Month-over-Month (MoM)", href: "/../expense/mom", hide: true },
+        { label: "Income Timeline", href: "/../income", hide: true },
+        {
+          label: "Budget",
+          href: "/../expense/budget",
+          help: "budget",
+          monthPicker: true
+        },
+        {
+          label: "Recurring Bills",
+          href: "/recurring",
+          help: "recurring",
+          monthPicker: true,
+          recurringIcons: true
         }
       ]
     },
@@ -317,6 +310,11 @@
               href: "/portfolio",
               tag: "alpha",
               help: "analysis"
+            },
+            {
+              label: "Investment Income",
+              href: "/../income/investment",
+              financialYearPicker: true
             }
           ]
         },
@@ -589,66 +587,71 @@
             >
             <div class="navbar-dropdown {!isMobile() && 'is-boxed'}">
               {#each link.children as sublink}
-                {@const href = resolveHref(link.href, sublink.href)}
-                {#if _.isEmpty(sublink.children)}
-                  <a
-                    class="navbar-item"
-                    {href}
-                    data-sveltekit-preload-code={sublink.disablePreload ? "tap" : "hover"}
-                    data-sveltekit-preload-data="tap"
-                    class:is-active={normalizedPath.startsWith(href)}
-                  >
-                    {sublink.label}
-                    {#if sublink.href === "/doctor" && $dataQualityIssueCount > 0}
-                      <span
-                        class="tag is-danger is-rounded is-small ml-2"
-                        title="{$dataQualityIssueCount} data quality issue(s)"
-                        >{$dataQualityIssueCount}</span
-                      >
-                    {/if}
-                  </a>
-                {:else}
-                  <div class="nested has-dropdown navbar-item">
+                {#if !sublink.hide}
+                  {@const href = resolveHref(link.href, sublink.href)}
+                  {#if _.isEmpty(sublink.children)}
                     <a
-                      href={"#"}
-                      role="button"
-                      class="navbar-link is-arrowless is-flex is-justify-content-space-between is-active"
+                      class="navbar-item"
+                      {href}
+                      data-sveltekit-preload-code={sublink.disablePreload ? "tap" : "hover"}
+                      data-sveltekit-preload-data="tap"
                       class:is-active={normalizedPath.startsWith(href)}
-                      onclick={(e) => {
-                        e.preventDefault();
-                        isMobile() && e.currentTarget.parentElement?.classList.toggle("is-active");
-                      }}
-                      onkeydown={(e) =>
-                        e.key === "Enter" &&
-                        isMobile() &&
-                        e.currentTarget.parentElement?.classList.toggle("is-active")}
                     >
-                      <span>{sublink.label}</span>
-                      <span class="icon is-small">
-                        <i
-                          class="fas {isMobile() ? 'fa-angle-down' : 'fa-angle-right'}"
-                          aria-hidden="true"
-                        ></i>
-                      </span>
+                      {sublink.label}
+                      {#if sublink.href === "/doctor" && $dataQualityIssueCount > 0}
+                        <span
+                          class="tag is-danger is-rounded is-small ml-2"
+                          title="{$dataQualityIssueCount} data quality issue(s)"
+                          >{$dataQualityIssueCount}</span
+                        >
+                      {/if}
                     </a>
+                  {:else}
+                    <div class="nested has-dropdown navbar-item">
+                      <a
+                        href={"#"}
+                        role="button"
+                        class="navbar-link is-arrowless is-flex is-justify-content-space-between is-active"
+                        class:is-active={normalizedPath.startsWith(href)}
+                        onclick={(e) => {
+                          e.preventDefault();
+                          isMobile() &&
+                            e.currentTarget.parentElement?.classList.toggle("is-active");
+                        }}
+                        onkeydown={(e) =>
+                          e.key === "Enter" &&
+                          isMobile() &&
+                          e.currentTarget.parentElement?.classList.toggle("is-active")}
+                      >
+                        <span>{sublink.label}</span>
+                        <span class="icon is-small">
+                          <i
+                            class="fas {isMobile() ? 'fa-angle-down' : 'fa-angle-right'}"
+                            aria-hidden="true"
+                          ></i>
+                        </span>
+                      </a>
 
-                    <div class="dropdown-menu">
-                      <div class="dropdown-content">
-                        {#each sublink.children as subsublink}
-                          {@const subsubHref = resolveHref(href, subsublink.href)}
-                          <a
-                            href={subsubHref}
-                            class="navbar-item"
-                            data-sveltekit-preload-code={subsublink.disablePreload
-                              ? "tap"
-                              : "hover"}
-                            data-sveltekit-preload-data="tap"
-                            class:is-active={normalizedPath == subsubHref}>{subsublink.label}</a
-                          >
-                        {/each}
+                      <div class="dropdown-menu">
+                        <div class="dropdown-content">
+                          {#each sublink.children as subsublink}
+                            {#if !subsublink.hide}
+                              {@const subsubHref = resolveHref(href, subsublink.href)}
+                              <a
+                                href={subsubHref}
+                                class="navbar-item"
+                                data-sveltekit-preload-code={subsublink.disablePreload
+                                  ? "tap"
+                                  : "hover"}
+                                data-sveltekit-preload-data="tap"
+                                class:is-active={normalizedPath == subsubHref}>{subsublink.label}</a
+                              >
+                            {/if}
+                          {/each}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  {/if}
                 {/if}
               {/each}
             </div>
