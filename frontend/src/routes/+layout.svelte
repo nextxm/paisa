@@ -6,6 +6,7 @@
     Activity,
     ArrowLeftRight,
     BookOpen,
+    Coins,
     Compass,
     Eye,
     EyeOff,
@@ -18,6 +19,7 @@
     Plus,
     RefreshCw,
     Search,
+    Settings,
     Sun,
     TrendingUp
   } from "lucide-svelte";
@@ -59,7 +61,9 @@
     { label: "Cash Flow", href: "/cash-flow", icon: TrendingUp },
     { label: "Wealth", href: "/wealth", icon: Landmark },
     { label: "Planning", href: "/planning", icon: Compass },
-    { label: "Ledger", href: "/ledger", icon: BookOpen }
+    { label: "Ledger", href: "/ledger", icon: BookOpen },
+    { label: "Market Data", href: "/market-data", icon: Coins },
+    { label: "Settings", href: "/settings", icon: Settings }
   ];
 
   const pathname = $derived($page.url.pathname);

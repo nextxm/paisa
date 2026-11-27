@@ -93,7 +93,19 @@
     });
   });
 
+  let viewMode = $state<"transactions" | "postings">("transactions");
   const visible = $derived(filtered.slice(0, 250));
+  const visiblePostings = $derived.by(() => {
+    const rows: Array<{ tx: Transaction; posting: Transaction["postings"][number] }> = [];
+    for (const tx of filtered) {
+      for (const p of tx.postings || []) {
+        if (accountFilter && p.account !== accountFilter) continue;
+        rows.push({ tx, posting: p });
+        if (rows.length >= 400) return rows;
+      }
+    }
+    return rows;
+  });
 
   function saveCurrentSearch() {
     const label = query || accountFilter || tagFilter || "Filtered View";
@@ -190,10 +202,31 @@
 <div class="space-y-4">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
-      <h1 class="text-xl font-semibold tracking-tight">Transactions</h1>
+      <h1 class="text-xl font-semibold tracking-tight">Transactions &amp; Postings</h1>
       <p class="text-xs text-[var(--muted)] mt-0.5 tabular-nums">
         {filtered.length.toLocaleString()} matching transactions
       </p>
+    </div>
+
+    <div class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface)] p-0.5 text-xs">
+      <button
+        type="button"
+        onclick={() => (viewMode = "transactions")}
+        class="px-3 py-1.5 rounded-md cursor-pointer {viewMode === 'transactions'
+          ? 'bg-[var(--surface-elevated)] font-semibold text-[var(--text)]'
+          : 'text-[var(--muted)]'}"
+      >
+        Transactions
+      </button>
+      <button
+        type="button"
+        onclick={() => (viewMode = "postings")}
+        class="px-3 py-1.5 rounded-md cursor-pointer {viewMode === 'postings'
+          ? 'bg-[var(--surface-elevated)] font-semibold text-[var(--text)]'
+          : 'text-[var(--muted)]'}"
+      >
+        Postings
+      </button>
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
@@ -481,6 +514,68 @@
     <div class="rounded-xl border border-[var(--loss)]/30 bg-[var(--loss)]/10 p-4 text-sm">
       <p class="font-medium text-[var(--loss)]">Could not load transactions</p>
       <p class="text-xs text-[var(--muted)] mt-1">{error}</p>
+    </div>
+  {:else if viewMode === "postings"}
+    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead
+            class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50"
+          >
+            <tr>
+              <th class="py-2.5 px-4 font-medium">Date</th>
+              <th class="py-2.5 px-4 font-medium">Account</th>
+              <th class="py-2.5 px-4 font-medium">Payee / Narration</th>
+              <th class="py-2.5 px-4 text-right font-medium">Original / FX</th>
+              <th class="py-2.5 px-4 text-right font-medium">Default ({runtime.defaultCurrency})</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[var(--border)] tabular-nums">
+            {#each visiblePostings as row}
+              {@const p = row.posting}
+              {@const isForeign =
+                Boolean(p.commodity) &&
+                p.commodity !== runtime.defaultCurrency &&
+                p.quantity !== undefined}
+              {@const fxRate =
+                isForeign && Math.abs(p.quantity || 0) > 0
+                  ? Math.abs((p.amount || 0) / (p.quantity || 1))
+                  : null}
+              <tr
+                class="hover:bg-[var(--surface-elevated)]/50 transition-colors cursor-pointer"
+                onclick={() => (selectedTransaction = row.tx)}
+              >
+                <td class="py-2 px-4 text-xs text-[var(--muted)] whitespace-nowrap">
+                  {formatShortDate(row.tx.date)}
+                </td>
+                <td class="py-2 px-4 text-xs font-medium">{p.account}</td>
+                <td class="py-2 px-4 text-xs text-[var(--muted)] max-w-xs truncate">
+                  {row.tx.payee || row.tx.narration || "—"}
+                </td>
+                <td class="py-2 px-4 text-right text-xs whitespace-nowrap text-[var(--muted)]">
+                  {#if isForeign}
+                    <span class="font-medium text-[var(--text)]">
+                      {formatMoney(p.quantity ?? 0, p.commodity)}
+                    </span>
+                    {#if fxRate !== null}
+                      <span class="ml-1 text-[10px]">(@ {fxRate.toFixed(2)})</span>
+                    {/if}
+                  {:else}
+                    <span>—</span>
+                  {/if}
+                </td>
+                <td
+                  class="py-2 px-4 text-right text-xs font-semibold whitespace-nowrap {(p.amount || 0) < 0
+                    ? 'text-[var(--loss)]'
+                    : 'text-[var(--gain)]'}"
+                >
+                  {formatMoney(p.amount)}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
     </div>
   {:else}
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
