@@ -492,33 +492,70 @@
             <tr>
               <th class="py-2.5 px-4 font-medium">Date</th>
               <th class="py-2.5 px-4 font-medium">Payee / Narration</th>
-              <th class="py-2.5 px-4 font-medium">Account</th>
-              <th class="py-2.5 px-4 text-right font-medium">Amount</th>
+              <th class="py-2.5 px-4 font-medium">Postings (Debit / Credit)</th>
+              <th class="py-2.5 px-4 text-right font-medium">Original / FX</th>
+              <th class="py-2.5 px-4 text-right font-medium">Default ({runtime.defaultCurrency})</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-[var(--border)] tabular-nums">
             {#each visible as tx (tx.id)}
-              {@const primary = tx.postings[0]}
               <tr
-                class="hover:bg-[var(--surface-elevated)]/50 transition-colors cursor-pointer"
+                class="hover:bg-[var(--surface-elevated)]/50 transition-colors cursor-pointer align-top"
                 onclick={() => (selectedTransaction = tx)}
               >
                 <td class="py-2.5 px-4 text-xs text-[var(--muted)] whitespace-nowrap">
                   {formatShortDate(tx.date)}
                 </td>
-                <td class="py-2.5 px-4 font-medium max-w-xs truncate">
-                  {tx.payee || tx.narration || "—"}
+                <td class="py-2.5 px-4 font-medium max-w-xs">
+                  <div class="truncate">{tx.payee || "—"}</div>
+                  {#if tx.narration}
+                    <div class="text-xs font-normal text-[var(--muted)] truncate">{tx.narration}</div>
+                  {/if}
                 </td>
-                <td class="py-2.5 px-4 text-xs text-[var(--muted)] max-w-xs truncate">
-                  {primary?.account || ""}
+                <td class="py-2.5 px-4 text-xs space-y-1">
+                  {#each tx.postings as p}
+                    <div class="truncate text-[var(--muted)]" title={p.account}>
+                      <span
+                        class="inline-block w-1.5 h-1.5 rounded-full mr-1.5 {(p.amount || 0) >= 0
+                          ? 'bg-[var(--gain)]'
+                          : 'bg-[var(--loss)]'}"
+                      ></span>
+                      {p.account}
+                    </div>
+                  {/each}
                 </td>
-                <td
-                  class="py-2.5 px-4 text-right font-medium whitespace-nowrap {(primary?.amount ||
-                    0) < 0
-                    ? 'text-[var(--loss)]'
-                    : ''}"
-                >
-                  {primary ? formatMoney(primary.amount) : "—"}
+                <td class="py-2.5 px-4 text-right text-xs whitespace-nowrap space-y-1">
+                  {#each tx.postings as p}
+                    {@const isForeign =
+                      Boolean(p.commodity) &&
+                      p.commodity !== runtime.defaultCurrency &&
+                      p.quantity !== undefined}
+                    {@const fxRate =
+                      isForeign && Math.abs(p.quantity || 0) > 0
+                        ? Math.abs((p.amount || 0) / (p.quantity || 1))
+                        : null}
+                    <div class="text-[var(--muted)]">
+                      {#if isForeign}
+                        <span class="font-medium text-[var(--text)]">
+                          {formatMoney(p.quantity ?? 0, p.commodity)}
+                        </span>
+                        {#if fxRate !== null}
+                          <span class="ml-1 text-[10px]">
+                            (@ {fxRate.toFixed(2)})
+                          </span>
+                        {/if}
+                      {:else}
+                        <span>—</span>
+                      {/if}
+                    </div>
+                  {/each}
+                </td>
+                <td class="py-2.5 px-4 text-right font-medium whitespace-nowrap space-y-1 text-xs">
+                  {#each tx.postings as p}
+                    <div class={(p.amount || 0) < 0 ? "text-[var(--loss)]" : "text-[var(--gain)]"}>
+                      {formatMoney(p.amount)}
+                    </div>
+                  {/each}
                 </td>
               </tr>
             {/each}
