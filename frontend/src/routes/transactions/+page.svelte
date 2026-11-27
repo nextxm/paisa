@@ -1,10 +1,11 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import { onMount } from "svelte";
-  import { Bookmark, Download, Pencil, Search, X } from "lucide-svelte";
+  import { Bookmark, Download, Pencil, Search, SlidersHorizontal, Trash2, X } from "lucide-svelte";
   import TransactionDrawer from "$lib/components/TransactionDrawer.svelte";
   import {
     apiGet,
+    authHeaders,
     formatMoney,
     formatShortDate,
     runtime,
@@ -34,6 +35,15 @@
   let bulkFrom = $state("");
   let bulkTo = $state("");
   let bulkRunning = $state(false);
+
+  let rulesOpen = $state(false);
+  let rules = $state<
+    Array<{ id: string; name?: string; match_payee?: string; target_account?: string; enabled?: boolean }>
+  >([]);
+  let newRuleName = $state("");
+  let newRulePayee = $state("");
+  let newRuleAccount = $state("Expenses:Misc");
+  let rulesSaving = $state(false);
 
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -200,6 +210,40 @@
       <button
         type="button"
         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--surface-elevated)] cursor-pointer"
+        onclick={async () => {
+          rulesOpen = !rulesOpen;
+          if (rulesOpen && rules.length === 0) {
+            const r = await apiGet<{ rules?: typeof rules }>("/api/rules").catch(() => ({ rules: [] }));
+            rules = r.rules || [];
+          }
+        }}
+      >
+        <SlidersHorizontal class="w-3.5 h-3.5" />
+        <span>Rules</span>
+      </button>
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--surface-elevated)] cursor-pointer"
+        onclick={async () => {
+          const res = await apiGet<{ balancedPostings?: unknown[] }>("/api/transaction/balanced").catch(() => null);
+          if (!res) return;
+          const blob = new Blob([JSON.stringify(res.balancedPostings || [], null, 2)], {
+            type: "application/json"
+          });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "paisa-balanced-postings.json";
+          a.click();
+          URL.revokeObjectURL(url);
+        }}
+      >
+        <Download class="w-3.5 h-3.5" />
+        <span>Balanced</span>
+      </button>
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--surface-elevated)] cursor-pointer"
         onclick={exportCSV}
       >
         <Download class="w-3.5 h-3.5" />
@@ -215,6 +259,91 @@
       </button>
     </div>
   </div>
+
+  {#if rulesOpen}
+    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-3 text-xs">
+      <div class="font-semibold">Auto-Categorization Rules ({rules.length})</div>
+      {#if !runtime.readonly}
+        <div class="flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            bind:value={newRuleName}
+            placeholder="Rule name…"
+            class="px-2.5 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)]"
+          />
+          <input
+            type="text"
+            bind:value={newRulePayee}
+            placeholder="Match payee…"
+            class="flex-1 min-w-36 px-2.5 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)]"
+          />
+          <input
+            type="text"
+            bind:value={newRuleAccount}
+            placeholder="Target account…"
+            class="flex-1 min-w-36 px-2.5 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)]"
+          />
+          <button
+            type="button"
+            disabled={rulesSaving || !newRulePayee.trim()}
+            class="px-3 py-1.5 rounded-lg bg-[var(--accent)] text-[var(--accent-fg)] font-medium cursor-pointer disabled:opacity-50"
+            onclick={async () => {
+              rulesSaving = true;
+              try {
+                const res = await fetch("/api/rules", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", ...authHeaders() },
+                  body: JSON.stringify({
+                    name: newRuleName.trim() || `Rule: ${newRulePayee.trim()}`,
+                    match_payee: newRulePayee.trim(),
+                    target_account: newRuleAccount.trim(),
+                    enabled: true
+                  })
+                });
+                if (res.ok) {
+                  newRuleName = "";
+                  newRulePayee = "";
+                  const r = await apiGet<{ rules?: typeof rules }>("/api/rules");
+                  rules = r.rules || [];
+                }
+              } finally {
+                rulesSaving = false;
+              }
+            }}
+          >
+            Add Rule
+          </button>
+        </div>
+      {/if}
+      {#if rules.length > 0}
+        <div class="divide-y divide-[var(--border)] max-h-48 overflow-y-auto">
+          {#each rules as rule}
+            <div class="py-1.5 flex items-center justify-between gap-2">
+              <div class="truncate">
+                <span class="font-medium">{rule.name || rule.match_payee}</span>
+                <span class="text-[var(--muted)] ml-2">→ {rule.target_account}</span>
+              </div>
+              {#if !runtime.readonly}
+                <button
+                  type="button"
+                  class="text-[var(--loss)] hover:underline cursor-pointer shrink-0"
+                  onclick={async () => {
+                    await fetch(`/api/rules/${encodeURIComponent(rule.id)}`, {
+                      method: "DELETE",
+                      headers: authHeaders()
+                    });
+                    rules = rules.filter((r) => r.id !== rule.id);
+                  }}
+                >
+                  <Trash2 class="w-3.5 h-3.5" />
+                </button>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  {/if}
 
   {#if bulkOpen}
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-3 text-xs">

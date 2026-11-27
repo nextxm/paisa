@@ -442,7 +442,7 @@
               class="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-xs text-left hover:bg-[var(--surface-elevated)] cursor-pointer truncate"
               onclick={() => {
                 cmdOpen = false;
-                goto(`/transactions?account=${encodeURIComponent(acc)}`);
+                goto(`/accounts/${encodeURIComponent(acc)}`);
               }}
             >
               <Landmark class="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
