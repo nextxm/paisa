@@ -847,6 +847,27 @@
     }
   }
 
+  .navbar {
+    min-height: 3.5rem;
+  }
+
+  @media screen and (min-width: 1024px) {
+    .navbar-start > .navbar-item > .navbar-link.is-active,
+    .navbar-start > a.navbar-item.is-active {
+      font-weight: 600;
+    }
+
+    .navbar-dropdown.is-boxed {
+      border-radius: 10px;
+      border: 1px solid rgba(128, 128, 128, 0.16);
+      padding: 0.35rem;
+    }
+
+    .navbar-dropdown .navbar-item {
+      border-radius: 6px;
+    }
+  }
+
   @media screen and (max-width: 640px) {
     .navbar-brand {
       flex-wrap: wrap;

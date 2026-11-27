@@ -1,4 +1,6 @@
 $grey-lightest: hsl(0, 0%, 93%) !default;
+$body-background-color: #f8fafc;
+$navbar-background-color: #ffffff;
 
 $diff-add-bg-light: rgba(70, 149, 74, 0.15);
 $diff-add-bg-dark: rgba(70, 149, 74, 0.4);
@@ -8,3 +10,22 @@ $diff-del-bg-dark: rgba(229, 83, 75, 0.4);
 $card-header-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
 
 @import "./app.scss";
+
+html[data-theme="light"] {
+  background: #f8fafc;
+
+  &.paisa {
+    .box {
+      background-color: #ffffff;
+    }
+
+    .navbar,
+    .section-tabs-bar {
+      background-color: #ffffff;
+    }
+
+    .navbar {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+    }
+  }
+}

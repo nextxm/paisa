@@ -39,7 +39,7 @@ html[data-theme="dark"] {
 
   @import "./app.scss";
 
-  background: $white-bis;
+  background: $white;
 
   @include mobile {
     .navbar-menu {
@@ -48,6 +48,15 @@ html[data-theme="dark"] {
   }
 
   &.paisa {
+    .navbar,
+    .section-tabs-bar {
+      background-color: $white-bis;
+    }
+
+    .navbar {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
     .box {
       background-color: $white-bis;
       color: $grey-darker;
