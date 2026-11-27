@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import LineAreaChart, { type NetworthPoint } from "$lib/components/LineAreaChart.svelte";
-  import { apiGet, formatMoney, formatShortDate, type AssetBreakdown } from "$lib/api";
+  import { apiGet, authHeaders, formatMoney, formatShortDate, type AssetBreakdown } from "$lib/api";
 
   type WealthTab =
     | "overview"
@@ -89,6 +89,22 @@
   let reportCurrency = $state("");
   let availableCurrencies = $state<string[]>([]);
   let assetsRefreshing = $state(false);
+  let hideZeroAssets = $state(true);
+
+  let rebalanceCash = $state(50000);
+  let rebalanceResult = $state<{
+    suggestions?: Array<{ name?: string; account?: string; amount: number; target?: number; current?: number }>;
+    allocations?: Array<{ name?: string; amount: number }>;
+  } | null>(null);
+  let rebalanceLoading = $state(false);
+
+  let selectedHolding = $state<string | null>(null);
+  let holdingDetail = $state<Record<string, unknown> | null>(null);
+  let selectedCard = $state<string | null>(null);
+  let cardDetail = $state<Record<string, unknown> | null>(null);
+  let investmentYearly = $state<
+    Array<{ year?: string; invested?: number; market_value?: number; gain?: number }>
+  >([]);
 
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -141,7 +157,8 @@
         ccRes,
         portRes,
         intRes,
-        repRes
+        repRes,
+        invRes
       ] = await Promise.all([
         apiGet<{ xirr?: number; networthTimeline?: NetworthPoint[] }>("/api/networth"),
         apiGet<{ asset_breakdowns?: Record<string, AssetBreakdown> }>(
@@ -182,6 +199,9 @@
         ).catch(() => ({ interest_timeline_breakdown: [] as InterestAccount[] })),
         apiGet<{ repayments?: RepaymentRow[] }>("/api/liabilities/repayment").catch(() => ({
           repayments: [] as RepaymentRow[]
+        })),
+        apiGet<{ yearly_cards?: typeof investmentYearly }>("/api/investment").catch(() => ({
+          yearly_cards: [] as typeof investmentYearly
         }))
       ]);
 
@@ -209,6 +229,7 @@
         ? intRes.interest_timeline_breakdown
         : Object.values(intRes.interest_timeline_breakdown || {});
       repayments = repRes.repayments || [];
+      investmentYearly = invRes.yearly_cards || [];
     } catch (e) {
       error = e instanceof Error ? e.message : "Failed to load wealth data";
     } finally {
@@ -227,10 +248,38 @@
   const filteredAssets = $derived(
     assetBreakdowns.filter(
       (a) =>
-        Math.abs(a.marketAmount || 0) > 0.01 &&
+        (!hideZeroAssets || Math.abs(a.marketAmount || 0) > 0.01) &&
         a.group.toLowerCase().includes(search.trim().toLowerCase())
     )
   );
+
+  function exportAssetsCsv() {
+    const lines = [
+      ["Account", "MarketValue"].join(","),
+      ...filteredAssets.map((a) => [`"${a.group.replace(/"/g, '""')}"`, (a.marketAmount || 0).toFixed(2)].join(","))
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `paisa-assets-${asOfDate}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function runRebalance() {
+    rebalanceLoading = true;
+    try {
+      const res = await fetch("/api/allocation/rebalance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ cash: Number(rebalanceCash) || 0 })
+      });
+      if (res.ok) rebalanceResult = await res.json();
+    } finally {
+      rebalanceLoading = false;
+    }
+  }
 </script>
 
 <div class="space-y-5">
@@ -284,6 +333,17 @@
           placeholder="Filter asset accounts…"
           class="px-3 py-1.5 rounded-lg text-xs bg-[var(--surface)] border border-[var(--border)] outline-none focus:border-[var(--accent)]"
         />
+        <label class="inline-flex items-center gap-1.5 text-xs text-[var(--muted)] cursor-pointer">
+          <input type="checkbox" bind:checked={hideZeroAssets} />
+          Hide zero
+        </label>
+        <button
+          type="button"
+          onclick={exportAssetsCsv}
+          class="px-2.5 py-1.5 rounded-lg text-xs bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--accent)] cursor-pointer"
+        >
+          Export CSV
+        </button>
       </div>
     {/if}
   </div>
@@ -412,7 +472,15 @@
             </thead>
             <tbody class="divide-y divide-[var(--border)] tabular-nums">
               {#each gains as g}
-                <tr class="hover:bg-[var(--surface-elevated)]/50">
+                <tr
+                  class="hover:bg-[var(--surface-elevated)]/50 cursor-pointer"
+                  onclick={async () => {
+                    selectedHolding = g.account;
+                    holdingDetail = await apiGet<Record<string, unknown>>(
+                      `/api/gain/${encodeURIComponent(g.account)}`
+                    ).catch(() => null);
+                  }}
+                >
                   <td class="py-2.5 px-4 font-medium">{g.account}</td>
                   <td class="py-2.5 px-4 text-right">{formatMoney(g.investmentAmount || 0)}</td>
                   <td class="py-2.5 px-4 text-right font-semibold">
@@ -433,6 +501,54 @@
         </div>
       {/if}
     </div>
+
+    {#if selectedHolding && holdingDetail}
+      <div class="mt-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-2">
+        <div class="flex items-center justify-between">
+          <h4 class="text-sm font-semibold">Holding Detail: {selectedHolding}</h4>
+          <button
+            type="button"
+            onclick={() => (selectedHolding = null)}
+            class="text-xs text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
+          >
+            Close
+          </button>
+        </div>
+        <pre class="text-xs font-mono bg-[var(--surface-elevated)] p-3 rounded-lg overflow-x-auto max-h-60">{JSON.stringify(holdingDetail, null, 2)}</pre>
+      </div>
+    {/if}
+
+    {#if investmentYearly.length > 0}
+      <div class="mt-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+        <div class="px-4 py-3 border-b border-[var(--border)] text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Yearly Invested vs Market Value
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
+              <tr>
+                <th class="py-2 px-4 font-medium">Year</th>
+                <th class="py-2 px-4 text-right font-medium">Invested</th>
+                <th class="py-2 px-4 text-right font-medium">Market Value</th>
+                <th class="py-2 px-4 text-right font-medium">Gain</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--border)] tabular-nums">
+              {#each investmentYearly as y}
+                <tr>
+                  <td class="py-2 px-4 font-medium">{y.year || "—"}</td>
+                  <td class="py-2 px-4 text-right">{formatMoney(y.invested || 0)}</td>
+                  <td class="py-2 px-4 text-right font-semibold">{formatMoney(y.market_value || 0)}</td>
+                  <td class="py-2 px-4 text-right {(y.gain || 0) >= 0 ? 'text-[var(--gain)]' : 'text-[var(--loss)]'}">
+                    {formatMoney(y.gain || 0)}
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {/if}
   {:else if activeTab === "allocation"}
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
       <div class="lg:col-span-8 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
@@ -479,6 +595,44 @@
           </div>
         {/if}
       </div>
+    </div>
+
+    <div class="mt-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Cash Rebalance Calculator
+        </h3>
+        <div class="flex items-center gap-2 text-xs">
+          <input
+            type="number"
+            bind:value={rebalanceCash}
+            class="w-32 px-2.5 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] tabular-nums"
+          />
+          <button
+            type="button"
+            disabled={rebalanceLoading}
+            onclick={runRebalance}
+            class="px-3 py-1.5 rounded-lg bg-[var(--accent)] text-[var(--accent-fg)] font-medium cursor-pointer disabled:opacity-50"
+          >
+            {rebalanceLoading ? "Calculating…" : "Calculate Rebalance"}
+          </button>
+        </div>
+      </div>
+      {#if rebalanceResult}
+        {@const items = rebalanceResult.suggestions || rebalanceResult.allocations || []}
+        {#if items.length > 0}
+          <div class="divide-y divide-[var(--border)] text-sm tabular-nums">
+            {#each items as item}
+              <div class="py-2 flex justify-between gap-2">
+                <span class="font-medium">{item.name || "Asset"}</span>
+                <span class="font-semibold text-[var(--accent)]">{formatMoney(item.amount || 0)}</span>
+              </div>
+            {/each}
+          </div>
+        {:else}
+          <pre class="text-xs font-mono bg-[var(--surface-elevated)] p-3 rounded-lg overflow-x-auto">{JSON.stringify(rebalanceResult, null, 2)}</pre>
+        {/if}
+      {/if}
     </div>
   {:else if activeTab === "portfolio"}
     {#if portfolioSecurityType.length === 0 && portfolioRating.length === 0 && portfolioIndustry.length === 0}
@@ -570,7 +724,16 @@
       {#if creditCards.length > 0}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           {#each creditCards as cc}
-            <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-2">
+            <button
+              type="button"
+              onclick={async () => {
+                selectedCard = cc.account;
+                cardDetail = await apiGet<Record<string, unknown>>(
+                  `/api/credit_cards/${encodeURIComponent(cc.account)}`
+                ).catch(() => null);
+              }}
+              class="text-left rounded-xl bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--accent)] p-4 space-y-2 cursor-pointer"
+            >
               <div class="flex justify-between items-center">
                 <span class="font-semibold text-sm">{cc.name || cc.account}</span>
                 {#if cc.due_date}
@@ -581,9 +744,26 @@
                 <span class="text-[var(--muted)]">Balance</span>
                 <span class="font-semibold text-[var(--loss)]">{formatMoney(cc.balance || 0)}</span>
               </div>
-            </div>
+            </button>
           {/each}
         </div>
+        {#if selectedCard && cardDetail}
+          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                Card Statement Detail: {selectedCard}
+              </span>
+              <button
+                type="button"
+                onclick={() => (selectedCard = null)}
+                class="text-xs text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+            <pre class="text-xs font-mono bg-[var(--surface-elevated)] p-3 rounded-lg overflow-x-auto max-h-56">{JSON.stringify(cardDetail, null, 2)}</pre>
+          </div>
+        {/if}
       {/if}
 
       <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">

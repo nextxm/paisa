@@ -82,6 +82,8 @@
   let dna = $state<FinancialProfile | null>(null);
   let base = $state<BaseProjectionResponse | null>(null);
   let goals = $state<GoalSummary[]>([]);
+  let projectedGoals = $state<Array<{ name?: string; fire_probability?: number; projected_date?: string }>>([]);
+  let selectedGoalDetail = $state<{ name: string; data: Record<string, unknown> } | null>(null);
   let rawConfig = $state<Record<string, unknown> | null>(null);
   let lifeGoals = $state<LifeGoalConfig[]>([]);
   let savingLifeGoals = $state(false);
@@ -108,18 +110,20 @@
 
   onMount(async () => {
     try {
-      const [projRes, dnaRes, goalsRes, cfg] = await Promise.all([
+      const [projRes, dnaRes, goalsRes, projGoalsRes, cfg] = await Promise.all([
         apiGet<BaseProjectionResponse>("/api/networth/projection"),
         apiGet<{ profile: FinancialProfile }>("/api/projection/dna").catch(() => ({
           profile: null
         })),
         apiGet<{ goals?: GoalSummary[] }>("/api/goals").catch(() => ({ goals: [] })),
+        apiGet<{ goals?: typeof projectedGoals }>("/api/projection/goals").catch(() => ({ goals: [] })),
         getFullConfig().catch(() => null)
       ]);
 
       base = projRes;
       dna = dnaRes.profile;
       goals = goalsRes.goals || [];
+      projectedGoals = projGoalsRes.goals || [];
       if (cfg) {
         rawConfig = cfg;
         const g = (cfg.goals as Record<string, unknown> | undefined) || {};
@@ -798,14 +802,32 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {#each goals as g (g.id)}
           {@const pct = g.target > 0 ? Math.min(100, (g.current / g.target) * 100) : 0}
-          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+          {@const pg = projectedGoals.find((p) => p.name === g.name)}
+          <button
+            type="button"
+            onclick={async () => {
+              if (g.type !== "retirement" && g.type !== "savings") return;
+              const data = await apiGet<Record<string, unknown>>(
+                `/api/goals/${g.type}/${encodeURIComponent(g.name)}`
+              ).catch(() => null);
+              if (data) selectedGoalDetail = { name: g.name, data };
+            }}
+            class="text-left rounded-xl bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--accent)] p-5 space-y-3 cursor-pointer"
+          >
             <div class="flex items-center justify-between gap-2">
               <h3 class="text-base font-semibold">{g.name}</h3>
-              <span
-                class="text-xs px-2 py-0.5 rounded-full bg-[var(--surface-elevated)] border border-[var(--border)] capitalize"
-              >
-                {g.type}
-              </span>
+              <div class="flex items-center gap-1.5">
+                {#if pg?.fire_probability !== undefined}
+                  <span class="text-[11px] px-2 py-0.5 rounded-full bg-[var(--accent)]/15 text-[var(--accent)] font-medium tabular-nums">
+                    {(pg.fire_probability * 100).toFixed(0)}% prob
+                  </span>
+                {/if}
+                <span
+                  class="text-xs px-2 py-0.5 rounded-full bg-[var(--surface-elevated)] border border-[var(--border)] capitalize"
+                >
+                  {g.type}
+                </span>
+              </div>
             </div>
             <div class="h-2 rounded-full bg-[var(--surface-elevated)] overflow-hidden">
               <div class="h-full rounded-full bg-[var(--accent)]" style="width: {pct}%"></div>
@@ -818,9 +840,24 @@
               >
               <span class="text-[var(--muted)]">{g.targetDate}</span>
             </div>
-          </div>
+          </button>
         {/each}
       </div>
+      {#if selectedGoalDetail}
+        <div class="mt-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-semibold">Goal Detail: {selectedGoalDetail.name}</h4>
+            <button
+              type="button"
+              onclick={() => (selectedGoalDetail = null)}
+              class="text-xs text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+          <pre class="text-xs font-mono bg-[var(--surface-elevated)] p-3 rounded-lg overflow-x-auto max-h-60">{JSON.stringify(selectedGoalDetail.data, null, 2)}</pre>
+        </div>
+      {/if}
     {/if}
 
     <!-- Life Milestones Editor -->
