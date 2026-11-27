@@ -21,7 +21,14 @@
   } from "lucide-svelte";
   import Logo from "$lib/components/Logo.svelte";
   import QuickAddModal from "$lib/components/QuickAddModal.svelte";
-  import { getTheme, loadRuntimeConfig, toggleObscure, toggleTheme, triggerSync } from "$lib/api";
+  import {
+    getTheme,
+    loadRuntimeConfig,
+    runtime,
+    toggleObscure,
+    toggleTheme,
+    triggerSync
+  } from "$lib/api";
   import { onMount, tick, type Snippet } from "svelte";
 
   let { children }: { children: Snippet } = $props();
@@ -34,6 +41,7 @@
   let theme = $state<"light" | "dark">("light");
   let obscure = $state(false);
   let syncing = $state(false);
+  let syncMenuOpen = $state(false);
   let renderKey = $state(0);
 
   const navItems = [
@@ -48,6 +56,13 @@
   const pathname = $derived($page.url.pathname);
   const filteredCommands = $derived(
     navItems.filter((item) => item.label.toLowerCase().includes(cmdQuery.trim().toLowerCase()))
+  );
+  const filteredAccounts = $derived(
+    cmdQuery.trim().length > 1
+      ? runtime.accounts
+          .filter((a) => a.toLowerCase().includes(cmdQuery.trim().toLowerCase()))
+          .slice(0, 8)
+      : []
   );
 
   onMount(async () => {
@@ -79,10 +94,11 @@
     }
   }
 
-  async function handleSync() {
+  async function handleSync(opts: { journal?: boolean; prices?: boolean; portfolios?: boolean }) {
+    syncMenuOpen = false;
     syncing = true;
     try {
-      await triggerSync({ journal: true });
+      await triggerSync(opts);
       await invalidateAll();
       renderKey += 1;
     } finally {
@@ -189,15 +205,44 @@
           <span class="hidden sm:inline">Quick Add</span>
         </button>
 
-        <button
-          type="button"
-          class="p-2 rounded-lg text-[var(--muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--text)] cursor-pointer"
-          onclick={handleSync}
-          aria-label="Sync journal"
-          title="Sync journal"
-        >
-          <RefreshCw class="w-4 h-4 {syncing ? 'animate-spin' : ''}" />
-        </button>
+        <div class="relative">
+          <button
+            type="button"
+            class="p-2 rounded-lg text-[var(--muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--text)] cursor-pointer"
+            onclick={() => (syncMenuOpen = !syncMenuOpen)}
+            aria-label="Sync options"
+            title="Sync"
+          >
+            <RefreshCw class="w-4 h-4 {syncing ? 'animate-spin' : ''}" />
+          </button>
+          {#if syncMenuOpen}
+            <div
+              class="absolute right-0 mt-1 w-44 rounded-lg bg-[var(--surface)] border border-[var(--border)] shadow-lg p-1 text-xs z-30"
+            >
+              <button
+                type="button"
+                class="w-full text-left px-3 py-1.5 rounded-md hover:bg-[var(--surface-elevated)] cursor-pointer"
+                onclick={() => handleSync({ journal: true })}
+              >
+                Update Journal
+              </button>
+              <button
+                type="button"
+                class="w-full text-left px-3 py-1.5 rounded-md hover:bg-[var(--surface-elevated)] cursor-pointer"
+                onclick={() => handleSync({ prices: true })}
+              >
+                Refresh Prices
+              </button>
+              <button
+                type="button"
+                class="w-full text-left px-3 py-1.5 rounded-md hover:bg-[var(--surface-elevated)] cursor-pointer"
+                onclick={() => handleSync({ portfolios: true })}
+              >
+                Refresh Portfolios
+              </button>
+            </div>
+          {/if}
+        </div>
 
         <button
           type="button"
@@ -293,6 +338,24 @@
             <span>{item.label}</span>
           </button>
         {/each}
+        {#if filteredAccounts.length > 0}
+          <div class="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Accounts
+          </div>
+          {#each filteredAccounts as acc}
+            <button
+              type="button"
+              class="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-xs text-left hover:bg-[var(--surface-elevated)] cursor-pointer truncate"
+              onclick={() => {
+                cmdOpen = false;
+                goto(`/transactions?account=${encodeURIComponent(acc)}`);
+              }}
+            >
+              <Landmark class="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
+              <span class="truncate">{acc}</span>
+            </button>
+          {/each}
+        {/if}
       </div>
     </div>
   </div>

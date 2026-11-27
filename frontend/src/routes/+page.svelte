@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { AlertTriangle, ArrowUpRight, SlidersHorizontal, X } from "lucide-svelte";
   import TransactionDrawer from "$lib/components/TransactionDrawer.svelte";
+  import BarTrendChart from "$lib/components/BarTrendChart.svelte";
   import {
     apiGet,
     formatMoney,
@@ -17,6 +18,7 @@
     | "networth"
     | "checking"
     | "investmentIncome"
+    | "cashFlow"
     | "expenses"
     | "recentTransactions"
     | "budget"
@@ -27,6 +29,7 @@
     networth: "Net Worth",
     checking: "Checking Balances",
     investmentIncome: "Investment Income (TTM)",
+    cashFlow: "Cash Flow",
     expenses: "Monthly Expenses",
     recentTransactions: "Recent Transactions",
     budget: "Budget",
@@ -38,6 +41,7 @@
     networth: true,
     checking: true,
     investmentIncome: true,
+    cashFlow: false,
     expenses: true,
     recentTransactions: true,
     budget: false,
@@ -99,6 +103,7 @@
             networth: true,
             checking: true,
             investmentIncome: true,
+            cashFlow: true,
             expenses: true,
             recentTransactions: true,
             budget: true,
@@ -124,6 +129,15 @@
   );
   const ttmDividend = $derived(dashboard?.investmentIncome?.ttm_dividend || 0);
   const ttmInterest = $derived(dashboard?.investmentIncome?.ttm_interest || 0);
+  const homeCashFlows = $derived(
+    (dashboard?.cashFlows || []).slice(-6).map((c) => ({
+      date: c.date,
+      income: Math.abs(c.income || 0),
+      expenses: Math.abs(c.expenses || 0),
+      investment: Math.abs(c.investment || 0),
+      balance: c.balance || 0
+    }))
+  );
   const monthExpenses = $derived(dashboard?.expenses?.[selectedMonth] || []);
   const totalExpenses = $derived(monthExpenses.reduce((sum, p) => sum + (p.amount || 0), 0));
   const recentTransactions = $derived((dashboard?.transactions || []).slice(0, 8));
@@ -322,6 +336,20 @@
                 </div>
               </div>
             </div>
+          </section>
+        {/if}
+
+        {#if visibleWidgets.cashFlow && homeCashFlows.length > 0}
+          <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                Cash Flow
+              </span>
+              <a href="/cash-flow" class="text-xs text-[var(--muted)] hover:text-[var(--text)]">
+                Details →
+              </a>
+            </div>
+            <BarTrendChart data={homeCashFlows} />
           </section>
         {/if}
 
