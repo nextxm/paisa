@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Trash2, X } from "lucide-svelte";
+  import { Plus, Trash2, X } from "lucide-svelte";
   import { formatMoney, formatShortDate, runtime, triggerSync, type Transaction } from "$lib/api";
 
   let {
@@ -12,8 +12,13 @@
     onSaved?: () => void;
   } = $props();
 
-  let tab = $state<"details" | "edit">("details");
+  let tab = $state<"details" | "structured" | "raw">("details");
   let rawText = $state("");
+  let editDate = $state("");
+  let editPayee = $state("");
+  let editNarration = $state("");
+  let editPostings = $state<Array<{ account: string; amount: string; commodity: string }>>([]);
+
   let loadingRaw = $state(false);
   let saving = $state(false);
   let error = $state<string | null>(null);
@@ -32,11 +37,18 @@
       tab = "details";
       rawText = "";
       error = null;
+      editDate = transaction.date || "";
+      editPayee = transaction.payee || "";
+      editNarration = transaction.narration || "";
+      editPostings = (transaction.postings || []).map((p) => ({
+        account: p.account,
+        amount: String(p.amount),
+        commodity: p.commodity || runtime.defaultCurrency || currency
+      }));
     }
   });
 
-  async function openEdit() {
-    tab = "edit";
+  async function ensureRawLoaded() {
     if (!transaction?.fileName || rawText) return;
     loadingRaw = true;
     error = null;
@@ -58,10 +70,25 @@
     }
   }
 
-  async function saveRaw(action: "replace" | "delete") {
+  function serializeStructured(): string {
+    const header = `${editDate} ${editPayee || editNarration || "Transaction"}`.trim();
+    const lines = editPostings
+      .filter((p) => p.account.trim())
+      .map((p) => `  ${p.account.trim()}  ${p.amount.trim()} ${p.commodity.trim()}`.trimEnd());
+    return [header, ...lines].join("\n");
+  }
+
+  async function savePatch(action: "replace" | "delete") {
     if (!transaction?.fileName) return;
     saving = true;
     error = null;
+    const content =
+      action === "delete"
+        ? ""
+        : tab === "structured"
+          ? serializeStructured()
+          : rawText;
+
     try {
       const res = await fetch("/api/transaction/patch", {
         method: "POST",
@@ -71,7 +98,7 @@
           begin_line: transaction.beginLine,
           end_line: transaction.endLine,
           action,
-          content: action === "replace" ? rawText : ""
+          content
         })
       });
       const data = (await res.json()) as { saved?: boolean; message?: string };
@@ -139,12 +166,24 @@
           </button>
           <button
             type="button"
-            class="py-2.5 border-b-2 cursor-pointer {tab === 'edit'
+            class="py-2.5 border-b-2 cursor-pointer {tab === 'structured'
               ? 'border-[var(--accent)] font-semibold text-[var(--text)]'
               : 'border-transparent text-[var(--muted)]'}"
-            onclick={openEdit}
+            onclick={() => (tab = "structured")}
           >
-            Edit Entry
+            Edit Fields
+          </button>
+          <button
+            type="button"
+            class="py-2.5 border-b-2 cursor-pointer {tab === 'raw'
+              ? 'border-[var(--accent)] font-semibold text-[var(--text)]'
+              : 'border-transparent text-[var(--muted)]'}"
+            onclick={() => {
+              tab = "raw";
+              void ensureRawLoaded();
+            }}
+          >
+            Raw Ledger
           </button>
         </div>
       {/if}
@@ -201,6 +240,100 @@
               {/each}
             </div>
           </div>
+        {:else if tab === "structured"}
+          {#if error}
+            <div
+              class="rounded-lg bg-[var(--loss)]/10 border border-[var(--loss)]/30 px-3 py-2 text-xs text-[var(--loss)]"
+            >
+              {error}
+            </div>
+          {/if}
+
+          <div class="space-y-3 text-xs">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[var(--muted)] mb-1" for="ed-date">Date</label>
+                <input
+                  id="ed-date"
+                  type="date"
+                  bind:value={editDate}
+                  class="w-full px-2.5 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)]"
+                />
+              </div>
+              <div>
+                <label class="block text-[var(--muted)] mb-1" for="ed-payee">Payee</label>
+                <input
+                  id="ed-payee"
+                  type="text"
+                  bind:value={editPayee}
+                  class="w-full px-2.5 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)]"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div class="text-[var(--muted)] font-medium">Postings</div>
+              {#each editPostings as p, i}
+                <div class="flex items-center gap-1.5">
+                  <input
+                    list="drawer-accounts"
+                    bind:value={p.account}
+                    class="flex-1 px-2 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)]"
+                  />
+                  <input
+                    type="text"
+                    bind:value={p.amount}
+                    class="w-20 px-2 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] tabular-nums text-right"
+                  />
+                  <button
+                    type="button"
+                    class="p-1 text-[var(--muted)] hover:text-[var(--loss)] cursor-pointer"
+                    onclick={() => (editPostings = editPostings.filter((_, idx) => idx !== i))}
+                    aria-label="Remove posting"
+                  >
+                    <Trash2 class="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              {/each}
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 text-[var(--accent)] cursor-pointer"
+                onclick={() =>
+                  (editPostings = [
+                    ...editPostings,
+                    { account: "", amount: "0", commodity: runtime.defaultCurrency }
+                  ])}
+              >
+                <Plus class="w-3.5 h-3.5" />
+                <span>Add posting</span>
+              </button>
+              <datalist id="drawer-accounts">
+                {#each runtime.accounts as acc}
+                  <option value={acc}></option>
+                {/each}
+              </datalist>
+            </div>
+
+            <div class="flex items-center justify-between pt-2">
+              <button
+                type="button"
+                disabled={saving}
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-[var(--loss)] border border-[var(--loss)]/30 hover:bg-[var(--loss)]/10 cursor-pointer"
+                onclick={() => savePatch("delete")}
+              >
+                <Trash2 class="w-3.5 h-3.5" />
+                <span>Delete</span>
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                class="px-4 py-1.5 rounded-lg font-medium bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 cursor-pointer"
+                onclick={() => savePatch("replace")}
+              >
+                {saving ? "Saving…" : "Save Changes"}
+              </button>
+            </div>
+          </div>
         {:else}
           {#if error}
             <div
@@ -227,7 +360,7 @@
                   type="button"
                   disabled={saving}
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--loss)] border border-[var(--loss)]/30 hover:bg-[var(--loss)]/10 cursor-pointer"
-                  onclick={() => saveRaw("delete")}
+                  onclick={() => savePatch("delete")}
                 >
                   <Trash2 class="w-3.5 h-3.5" />
                   <span>Delete</span>
@@ -236,7 +369,7 @@
                   type="button"
                   disabled={saving}
                   class="px-4 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 disabled:opacity-50 cursor-pointer"
-                  onclick={() => saveRaw("replace")}
+                  onclick={() => savePatch("replace")}
                 >
                   {saving ? "Saving…" : "Save Changes"}
                 </button>
