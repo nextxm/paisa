@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Paisa</title>
+    <script>
+      (() => {
+        try {
+          const pref = localStorage.getItem("paisa-v2-theme");
+          const theme =
+            pref === "light" || pref === "dark"
+              ? pref
+              : window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+        } catch {}
+      })();
+    </script>
+    %sveltekit.head%
+  </head>
+  <body class="bg-[var(--bg)] text-[var(--text)] antialiased">
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>
