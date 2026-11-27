@@ -79,6 +79,11 @@
 
   let cashFlows = $state<CashFlowRow[]>([]);
   let monthWiseExpenses = $state<Record<string, Posting[]>>({});
+  let monthWiseIncomes = $state<Record<string, Posting[]>>({});
+  let monthWiseInvestments = $state<Record<string, Posting[]>>({});
+  let monthWiseTaxes = $state<Record<string, Posting[]>>({});
+  let monthWiseLiabilities = $state<Record<string, Posting[]>>({});
+  let breakdownLevel = $state<1 | 2 | "all">(2);
   let yearlyStatements = $state<Record<string, IncomeStatement>>({});
   let sankeyLinks = $state<SankeyLink[]>([]);
   let sankeyLoading = $state(false);
@@ -98,7 +103,15 @@
     try {
       const [cfRes, expRes, stmtRes, budgetRes, recRes, incRes] = await Promise.all([
         apiGet<{ cash_flows?: CashFlowRow[] }>("/api/cash_flow"),
-        apiGet<{ month_wise?: { expenses?: Record<string, Posting[]> } }>("/api/expense"),
+        apiGet<{
+          month_wise?: {
+            incomes?: Record<string, Posting[]>;
+            expenses?: Record<string, Posting[]>;
+            investments?: Record<string, Posting[]>;
+            taxes?: Record<string, Posting[]>;
+            liabilities?: Record<string, Posting[]>;
+          };
+        }>("/api/expense"),
         apiGet<{ yearly?: Record<string, IncomeStatement> }>("/api/income_statement").catch(() => ({
           yearly: {}
         })),
@@ -127,6 +140,10 @@
         tax: Math.abs(c.tax || 0)
       }));
       monthWiseExpenses = expRes.month_wise?.expenses || {};
+      monthWiseIncomes = expRes.month_wise?.incomes || {};
+      monthWiseInvestments = expRes.month_wise?.investments || {};
+      monthWiseTaxes = expRes.month_wise?.taxes || {};
+      monthWiseLiabilities = expRes.month_wise?.liabilities || {};
       yearlyStatements = stmtRes.yearly || {};
       budgetsByMonth = budgetRes.budgetsByMonth || {};
       availableForBudgeting = budgetRes.availableForBudgeting || 0;
@@ -249,6 +266,33 @@
   const totalExpenses = $derived(activeFlowRows.reduce((s, c) => s + c.expenses, 0));
   const totalInvestments = $derived(activeFlowRows.reduce((s, c) => s + c.investment, 0));
   const totalNetSavings = $derived(totalIncome - totalExpenses);
+
+  function aggregateByLevel(postings: Posting[], negate: boolean, level: 1 | 2 | "all") {
+    const map = new Map<string, number>();
+    for (const p of postings) {
+      const parts = p.account.split(":");
+      const key =
+        level === "all"
+          ? p.account
+          : level === 1
+            ? parts.slice(0, 2).join(":")
+            : parts.slice(0, 3).join(":");
+      const val = negate ? -(p.amount || 0) : p.amount || 0;
+      map.set(key, (map.get(key) || 0) + val);
+    }
+    return Array.from(map.entries())
+      .map(([account, amount]) => ({ account, amount }))
+      .filter((r) => Math.abs(r.amount) > 0.01)
+      .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+  }
+
+  const monthlyBreakdown = $derived({
+    incomes: aggregateByLevel(monthWiseIncomes[selectedMonth] || [], true, breakdownLevel),
+    expenses: aggregateByLevel(monthWiseExpenses[selectedMonth] || [], false, breakdownLevel),
+    investments: aggregateByLevel(monthWiseInvestments[selectedMonth] || [], false, breakdownLevel),
+    taxes: aggregateByLevel(monthWiseTaxes[selectedMonth] || [], false, breakdownLevel),
+    liabilities: aggregateByLevel(monthWiseLiabilities[selectedMonth] || [], true, breakdownLevel)
+  });
 
   const statementYears = $derived(Object.keys(yearlyStatements).sort().reverse());
   const currentStatement = $derived(selectedYear ? yearlyStatements[selectedYear] : undefined);
@@ -541,6 +585,77 @@
             {/each}
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Monthly Breakdown by Category -->
+    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="text-sm font-semibold">
+            Monthly Breakdown ({selectedMonth ? dayjs(`${selectedMonth}-01`).format("MMMM YYYY") : "—"})
+          </h3>
+          <p class="text-xs text-[var(--muted)]">
+            Income, Expenses, Investments, Taxes, and Liabilities for the selected month
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          {#if availableMonths.length > 0}
+            <select
+              bind:value={selectedMonth}
+              class="px-2.5 py-1 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] outline-none"
+            >
+              {#each availableMonths as m}
+                <option value={m}>{dayjs(`${m}-01`).format("MMM YYYY")}</option>
+              {/each}
+            </select>
+          {/if}
+          <div class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5">
+            {#each [{ v: 1, l: "Level 1" }, { v: 2, l: "Level 2" }, { v: "all", l: "All" }] as opt}
+              <button
+                type="button"
+                onclick={() => (breakdownLevel = opt.v as 1 | 2 | "all")}
+                class="px-2.5 py-1 rounded-md cursor-pointer {breakdownLevel === opt.v
+                  ? 'bg-[var(--surface)] font-semibold'
+                  : 'text-[var(--muted)]'}"
+              >
+                {opt.l}
+              </button>
+            {/each}
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {#each [
+          { title: "Income", rows: monthlyBreakdown.incomes, color: "text-[var(--gain)]" },
+          { title: "Expenses", rows: monthlyBreakdown.expenses, color: "text-[var(--loss)]" },
+          { title: "Investments", rows: monthlyBreakdown.investments, color: "text-[var(--accent)]" },
+          { title: "Taxes", rows: monthlyBreakdown.taxes, color: "text-[var(--warning)]" },
+          { title: "Liabilities", rows: monthlyBreakdown.liabilities, color: "text-[var(--muted)]" }
+        ] as sec}
+          {#if sec.rows.length > 0}
+            {@const secTotal = sec.rows.reduce((s, r) => s + r.amount, 0)}
+            <div class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/40 p-4 space-y-2.5">
+              <div class="flex items-center justify-between border-b border-[var(--border)] pb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                  {sec.title}
+                </span>
+                <span class="text-sm font-semibold tabular-nums {sec.color}">
+                  {formatMoney(secTotal)}
+                </span>
+              </div>
+              <div class="divide-y divide-[var(--border)]/60 text-xs tabular-nums">
+                {#each sec.rows as r}
+                  <div class="py-1.5 flex justify-between gap-2">
+                    <span class="truncate">{r.account}</span>
+                    <span class="font-medium shrink-0">{formatMoney(r.amount)}</span>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
+        {/each}
       </div>
     </div>
   {:else if activeTab === "statement"}
