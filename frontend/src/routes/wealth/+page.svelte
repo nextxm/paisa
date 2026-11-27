@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import LineAreaChart, { type NetworthPoint } from "$lib/components/LineAreaChart.svelte";
-  import { apiGet, appPath, authHeaders, formatMoney, formatShortDate, type AssetBreakdown } from "$lib/api";
+  import StackedBarChart, { type StackedBarColumn } from "$lib/components/StackedBarChart.svelte";
+  import { apiGet, appPath, authHeaders, formatMoney, formatShortDate, type AssetBreakdown, type Posting } from "$lib/api";
 
   type WealthTab =
     | "overview"
@@ -138,8 +139,21 @@
   let holdingDetail = $state<Record<string, unknown> | null>(null);
   let selectedCard = $state<string | null>(null);
   let cardDetail = $state<Record<string, unknown> | null>(null);
+  let investmentPostings = $state<Posting[]>([]);
   let investmentYearly = $state<
-    Array<{ year?: string; invested?: number; market_value?: number; gain?: number }>
+    Array<{
+      year?: string;
+      start_date?: string;
+      end_date?: string;
+      net_investment?: number;
+      net_income?: number;
+      net_expense?: number;
+      savings_rate?: number;
+      invested?: number;
+      market_value?: number;
+      gain?: number;
+      postings?: Posting[];
+    }>
   >([]);
 
   let loading = $state(true);
@@ -260,7 +274,8 @@
         apiGet<{ repayments?: RepaymentRow[] }>("/api/liabilities/repayment").catch(() => ({
           repayments: [] as RepaymentRow[]
         })),
-        apiGet<{ yearly_cards?: typeof investmentYearly }>("/api/investment").catch(() => ({
+        apiGet<{ assets?: Posting[]; yearly_cards?: typeof investmentYearly }>("/api/investment").catch(() => ({
+          assets: [] as Posting[],
           yearly_cards: [] as typeof investmentYearly
         }))
       ]);
@@ -298,6 +313,7 @@
         ? intRes.interest_timeline_breakdown
         : Object.values(intRes.interest_timeline_breakdown || {});
       repayments = repRes.repayments || [];
+      investmentPostings = invRes.assets || [];
       investmentYearly = invRes.yearly_cards || [];
     } catch (e) {
       error = e instanceof Error ? e.message : "Failed to load wealth data";
@@ -313,6 +329,37 @@
   const totalAllocation = $derived(
     allocationItems.reduce((sum, a) => sum + (a.market_amount || 0), 0)
   );
+
+  const invPalette = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#14b8a6", "#6366f1"];
+  const monthlyInvestmentColumns = $derived.by((): StackedBarColumn[] => {
+    if (investmentPostings.length === 0) return [];
+    const byMonth = new Map<string, Map<string, number>>();
+    const catTotals = new Map<string, number>();
+    for (const p of investmentPostings) {
+      const m = (p.date || "").slice(0, 7);
+      if (!m) continue;
+      const cat = (p.account || "").split(":")[1] || p.account || "Investment";
+      const amt = Math.abs(p.amount || 0);
+      if (amt <= 0) continue;
+      if (!byMonth.has(m)) byMonth.set(m, new Map());
+      byMonth.get(m)!.set(cat, (byMonth.get(m)!.get(cat) || 0) + amt);
+      catTotals.set(cat, (catTotals.get(cat) || 0) + amt);
+    }
+    const cats = Array.from(catTotals.keys()).sort();
+    const months = Array.from(byMonth.keys()).sort().slice(-24);
+    return months.map((m) => {
+      const bucket = byMonth.get(m)!;
+      const segments = cats
+        .map((c, idx) => ({
+          name: c,
+          amount: bucket.get(c) || 0,
+          color: invPalette[idx % invPalette.length]
+        }))
+        .filter((s) => s.amount > 0);
+      const total = segments.reduce((s, x) => s + x.amount, 0);
+      return { label: m, total, segments };
+    });
+  });
 
   function toggleAssetSort(field: AssetSortField) {
     if (assetSortField === field) {
@@ -813,34 +860,82 @@
       </div>
     {/if}
 
-    {#if investmentYearly.length > 0}
-      <div class="mt-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
-        <div class="px-4 py-3 border-b border-[var(--border)] text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-          Yearly Invested vs Market Value
+    {#if monthlyInvestmentColumns.length > 0}
+      <div class="mt-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+        <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Monthly Investment Timeline (Last 24 Months)
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm text-left">
-            <thead class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
-              <tr>
-                <th class="py-2 px-4 font-medium">Year</th>
-                <th class="py-2 px-4 text-right font-medium">Invested</th>
-                <th class="py-2 px-4 text-right font-medium">Market Value</th>
-                <th class="py-2 px-4 text-right font-medium">Gain</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-[var(--border)] tabular-nums">
-              {#each investmentYearly as y}
-                <tr>
-                  <td class="py-2 px-4 font-medium">{y.year || "—"}</td>
-                  <td class="py-2 px-4 text-right">{formatMoney(y.invested || 0)}</td>
-                  <td class="py-2 px-4 text-right font-semibold">{formatMoney(y.market_value || 0)}</td>
-                  <td class="py-2 px-4 text-right {(y.gain || 0) >= 0 ? 'text-[var(--gain)]' : 'text-[var(--loss)]'}">
-                    {formatMoney(y.gain || 0)}
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
+        <StackedBarChart columns={monthlyInvestmentColumns} />
+      </div>
+    {/if}
+
+    {#if investmentYearly.length > 0}
+      {@const maxFyInv = Math.max(1, ...investmentYearly.map((y) => Math.abs(y.net_investment ?? y.invested ?? 0)))}
+      <div class="mt-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Chart 2: Financial Year Investment Timeline -->
+        <div class="lg:col-span-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+          <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Financial Year Investment Timeline
+          </div>
+          <div class="h-44 flex items-end gap-2 pt-4">
+            {#each investmentYearly as y}
+              {@const val = y.net_investment ?? y.invested ?? 0}
+              {@const h = Math.max(2, (Math.abs(val) / maxFyInv) * 130)}
+              {@const fyLabel = y.start_date && y.end_date ? `${y.start_date.slice(0, 4)}-${y.end_date.slice(2, 4)}` : y.year || "—"}
+              <div class="flex-1 flex flex-col items-center gap-1 min-w-0" title="{fyLabel}: {formatMoney(val)}">
+                <div class="w-full flex items-end justify-center h-[130px]">
+                  <div
+                    class="w-6 rounded-t {val >= 0 ? 'bg-[var(--accent)]/85' : 'bg-[var(--loss)]/85'}"
+                    style="height: {h}px"
+                  ></div>
+                </div>
+                <span class="text-[10px] text-[var(--muted)] truncate">{fyLabel}</span>
+              </div>
+            {/each}
+          </div>
+        </div>
+
+        <!-- Yearly Summary Cards / Tables -->
+        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {#each [...investmentYearly].reverse() as y}
+            {@const fyLabel = y.start_date && y.end_date ? `${y.start_date.slice(0, 4)} – ${y.end_date.slice(2, 4)}` : y.year || "—"}
+            <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-2 text-xs">
+              <div class="flex items-center justify-between border-b border-[var(--border)] pb-1.5">
+                <span class="font-semibold text-sm">FY {fyLabel}</span>
+                {#if y.savings_rate !== undefined}
+                  <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] tabular-nums">
+                    {(y.savings_rate * 100).toFixed(1)}% saved
+                  </span>
+                {/if}
+              </div>
+              <div class="space-y-1 tabular-nums">
+                {#if y.net_investment !== undefined}
+                  <div class="flex justify-between">
+                    <span class="text-[var(--muted)]">Net Investment</span>
+                    <strong class="text-[var(--accent)]">{formatMoney(y.net_investment)}</strong>
+                  </div>
+                {/if}
+                {#if y.net_income !== undefined}
+                  <div class="flex justify-between">
+                    <span class="text-[var(--muted)]">Net Income</span>
+                    <span class="text-[var(--gain)]">{formatMoney(y.net_income)}</span>
+                  </div>
+                {/if}
+                {#if y.net_expense !== undefined}
+                  <div class="flex justify-between">
+                    <span class="text-[var(--muted)]">Net Expense</span>
+                    <span class="text-[var(--loss)]">{formatMoney(y.net_expense)}</span>
+                  </div>
+                {/if}
+                {#if y.market_value !== undefined}
+                  <div class="flex justify-between">
+                    <span class="text-[var(--muted)]">Market Value</span>
+                    <strong>{formatMoney(y.market_value)}</strong>
+                  </div>
+                {/if}
+              </div>
+            </div>
+          {/each}
         </div>
       </div>
     {/if}
