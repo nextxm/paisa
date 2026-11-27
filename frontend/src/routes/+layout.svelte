@@ -1,21 +1,33 @@
 <script lang="ts">
   import "../app.css";
   import { page } from "$app/stores";
-  import { goto } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
   import {
     ArrowLeftRight,
     BookOpen,
     Compass,
+    Eye,
+    EyeOff,
     Home,
     Landmark,
     Moon,
     PanelLeftClose,
     PanelLeftOpen,
+    Plus,
+    RefreshCw,
     Search,
     Sun,
     TrendingUp
   } from "lucide-svelte";
-  import { getTheme, toggleTheme } from "$lib/api";
+  import Logo from "$lib/components/Logo.svelte";
+  import QuickAddModal from "$lib/components/QuickAddModal.svelte";
+  import {
+    getTheme,
+    loadRuntimeConfig,
+    toggleObscure,
+    toggleTheme,
+    triggerSync
+  } from "$lib/api";
   import { onMount, tick, type Snippet } from "svelte";
 
   let { children }: { children: Snippet } = $props();
@@ -24,7 +36,11 @@
   let cmdOpen = $state(false);
   let cmdQuery = $state("");
   let cmdInput = $state<HTMLInputElement | null>(null);
+  let quickAddOpen = $state(false);
   let theme = $state<"light" | "dark">("light");
+  let obscure = $state(false);
+  let syncing = $state(false);
+  let renderKey = $state(0);
 
   const navItems = [
     { label: "Home", href: "/", icon: Home },
@@ -40,8 +56,11 @@
     navItems.filter((item) => item.label.toLowerCase().includes(cmdQuery.trim().toLowerCase()))
   );
 
-  onMount(() => {
+  onMount(async () => {
     theme = getTheme();
+    const state = await loadRuntimeConfig();
+    obscure = state.obscure;
+    renderKey += 1;
   });
 
   function openCommandPalette() {
@@ -58,9 +77,28 @@
       } else {
         openCommandPalette();
       }
+    } else if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "a") {
+      e.preventDefault();
+      quickAddOpen = true;
     } else if (e.key === "Escape" && cmdOpen) {
       cmdOpen = false;
     }
+  }
+
+  async function handleSync() {
+    syncing = true;
+    try {
+      await triggerSync({ journal: true });
+      await invalidateAll();
+      renderKey += 1;
+    } finally {
+      syncing = false;
+    }
+  }
+
+  function handleObscure() {
+    obscure = toggleObscure();
+    renderKey += 1;
   }
 
   function isActive(href: string, current: string): boolean {
@@ -81,11 +119,7 @@
     <div class="h-13 px-4 flex items-center justify-between border-b border-[var(--border)]">
       {#if !sidebarCollapsed}
         <a href="/" class="flex items-center gap-2 font-semibold text-base tracking-tight">
-          <span
-            class="w-6 h-6 rounded-md bg-[var(--accent)] text-[var(--accent-fg)] flex items-center justify-center text-xs font-bold"
-          >
-            P
-          </span>
+          <Logo size={22} />
           <span>Paisa</span>
         </a>
       {/if}
@@ -131,11 +165,7 @@
     >
       <div class="flex items-center gap-3">
         <a href="/" class="md:hidden flex items-center gap-2 font-semibold text-base">
-          <span
-            class="w-6 h-6 rounded-md bg-[var(--accent)] text-[var(--accent-fg)] flex items-center justify-center text-xs font-bold"
-          >
-            P
-          </span>
+          <Logo size={22} />
           <span>Paisa</span>
         </a>
 
@@ -154,7 +184,41 @@
         </button>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1.5">
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 cursor-pointer"
+          onclick={() => (quickAddOpen = true)}
+          title="Quick Add Transaction (Ctrl+Shift+A)"
+        >
+          <Plus class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">Quick Add</span>
+        </button>
+
+        <button
+          type="button"
+          class="p-2 rounded-lg text-[var(--muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--text)] cursor-pointer"
+          onclick={handleSync}
+          aria-label="Sync journal"
+          title="Sync journal"
+        >
+          <RefreshCw class="w-4 h-4 {syncing ? 'animate-spin' : ''}" />
+        </button>
+
+        <button
+          type="button"
+          class="p-2 rounded-lg text-[var(--muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--text)] cursor-pointer"
+          onclick={handleObscure}
+          aria-label="Toggle privacy mode"
+          title={obscure ? "Show numbers" : "Hide numbers"}
+        >
+          {#if obscure}
+            <EyeOff class="w-4 h-4" />
+          {:else}
+            <Eye class="w-4 h-4" />
+          {/if}
+        </button>
+
         <button
           type="button"
           class="p-2 rounded-lg text-[var(--muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--text)] cursor-pointer"
@@ -171,7 +235,9 @@
     </header>
 
     <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6">
-      {@render children()}
+      {#key renderKey}
+        {@render children()}
+      {/key}
     </main>
   </div>
 </div>
@@ -237,3 +303,5 @@
     </div>
   </div>
 {/if}
+
+<QuickAddModal bind:open={quickAddOpen} onSaved={() => (renderKey += 1)} />

@@ -48,6 +48,70 @@ export interface DashboardResponse {
   transactions?: Transaction[];
 }
 
+export interface RuntimeState {
+  defaultCurrency: string;
+  locale: string;
+  readonly: boolean;
+  accounts: string[];
+  obscure: boolean;
+  loaded: boolean;
+}
+
+export const runtime: RuntimeState = {
+  defaultCurrency: "INR",
+  locale: "en-IN",
+  readonly: false,
+  accounts: [],
+  obscure: false,
+  loaded: false
+};
+
+export function initObscureFromStorage(): boolean {
+  try {
+    runtime.obscure = localStorage.getItem("paisa-v2-obscure") === "true";
+  } catch {
+    runtime.obscure = false;
+  }
+  return runtime.obscure;
+}
+
+export function toggleObscure(): boolean {
+  runtime.obscure = !runtime.obscure;
+  try {
+    localStorage.setItem("paisa-v2-obscure", String(runtime.obscure));
+  } catch {}
+  return runtime.obscure;
+}
+
+export async function loadRuntimeConfig(): Promise<RuntimeState> {
+  initObscureFromStorage();
+  try {
+    const res = await fetch("/connect/paisa.v1.PaisaService/GetConfig", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: "{}"
+    });
+    if (res.ok) {
+      const data = (await res.json()) as {
+        config?: { default_currency?: string; locale?: string; readonly?: boolean };
+        accounts?: string[];
+      };
+      if (data.config?.default_currency) {
+        runtime.defaultCurrency = data.config.default_currency;
+      }
+      if (data.config?.locale) {
+        runtime.locale = data.config.locale;
+      }
+      runtime.readonly = Boolean(data.config?.readonly);
+      runtime.accounts = data.accounts || [];
+      runtime.loaded = true;
+    }
+  } catch {
+    // Keep defaults if backend config endpoint is unavailable
+  }
+  return runtime;
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(path, {
     headers: { Accept: "application/json" }
@@ -58,15 +122,35 @@ export async function apiGet<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-export function formatMoney(amount: number, currency = "INR"): string {
+export async function triggerSync(
+  opts: { journal?: boolean; prices?: boolean; portfolios?: boolean } = { journal: true }
+): Promise<boolean> {
   try {
-    return new Intl.NumberFormat(currency === "INR" ? "en-IN" : "en-US", {
+    const res = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(opts)
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export function formatMoney(amount: number, currency?: string): string {
+  if (runtime.obscure) {
+    return "••••••";
+  }
+  const curr = currency || runtime.defaultCurrency || "INR";
+  const locale = runtime.locale || (curr === "INR" ? "en-IN" : "en-US");
+  try {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
-      currency,
+      currency: curr,
       maximumFractionDigits: 0
     }).format(amount || 0);
   } catch {
-    return `${Math.round(amount || 0).toLocaleString()} ${currency}`;
+    return `${Math.round(amount || 0).toLocaleString()} ${curr}`;
   }
 }
 
