@@ -1,7 +1,6 @@
 <script lang="ts">
   import COLORS from "$lib/colors";
   import LegendCard from "$lib/components/LegendCard.svelte";
-  import LevelItem from "$lib/components/LevelItem.svelte";
   import { renderNetworth } from "$lib/networth";
   import {
     ajax,
@@ -15,6 +14,19 @@
   import { onDestroy, onMount } from "svelte";
   import dayjs from "dayjs";
   import { debounce } from "lodash";
+  import {
+    buildProjectionRows,
+    calibrateFromDna,
+    firstFireCrossingDate,
+    generateScenarioCSV,
+    getScenarioCSVFilename,
+    monthDiff,
+    parseVal,
+    projectNetworth,
+    toRealCagr,
+    type ProjectionScenarioKey,
+    type ProjectionScenarioTable
+  } from "./projection";
 
   let svg: Element | undefined = $state();
   let destroy: () => void;
@@ -23,244 +35,87 @@
   let baseData: NetworthProjectionResponse | null = $state(null);
   let dnaProfile: FinancialProfile | null = $state(null);
 
+  // Core 3 levers
   let years = $state(15);
-  let conservativeCagr = $state(6);
-  let expectedCagr = $state(9);
-  let optimisticCagr = $state(12);
   let monthlyContribution = $state(0);
+  let expectedCagr = $state(9);
+
+  // Collapsible assumptions
   let swr = $state(4);
   let inflationRate = $state(6);
+  let cagrSpread = $state(3);
+  let adjustForInflation = $state(true);
+
+  let showAssumptions = $state(false);
+  let showDnaDrawer = $state(false);
+  let activeScenarioKey: ProjectionScenarioKey = $state("expected");
   let controlsInitialized = $state(false);
 
+  // Debounced calculation values
   let calcYears = $state(15);
-  let calcConservativeCagr = $state(6);
-  let calcExpectedCagr = $state(9);
-  let calcOptimisticCagr = $state(12);
   let calcMonthlyContribution = $state(0);
+  let calcExpectedCagr = $state(9);
   let calcSwr = $state(4);
   let calcInflationRate = $state(6);
-
-  type ProjectionTableRow = {
-    year: number;
-    startingCorpus: number;
-    annualContribution: number;
-    returnAmount: number;
-    endingCorpus: number;
-    expenses: number;
-  };
-
-  type ProjectionScenarioTable = {
-    label: string;
-    cagr: number;
-    rows: ProjectionTableRow[];
-  };
-
-  function buildProjectionRows(
-    startingCorpus: number,
-    annualExpenses: number,
-    inflationPercent: number,
-    cagrPercent: number,
-    monthlyContribution: number,
-    years: number
-  ): ProjectionTableRow[] {
-    const rows: ProjectionTableRow[] = [];
-    let currentCorpus = startingCorpus;
-    const annualContribution = monthlyContribution * 12;
-    const cagr = cagrPercent / 100;
-    const monthlyRate = Math.pow(1 + cagr, 1 / 12) - 1;
-
-    for (let year = 1; year <= years; year++) {
-      const inflatedExpenses =
-        annualExpenses * Math.pow(1 + inflationPercent / 100, Math.max(year - 1, 0));
-      const yearStartCorpus = currentCorpus;
-      let yearlyReturn = 0;
-
-      for (let m = 0; m < 12; m++) {
-        const monthReturn = currentCorpus * monthlyRate;
-        yearlyReturn += monthReturn;
-        currentCorpus = currentCorpus + monthReturn + monthlyContribution;
-      }
-
-      const endingCorpus = currentCorpus;
-
-      rows.push({
-        year,
-        startingCorpus: yearStartCorpus,
-        annualContribution,
-        returnAmount: yearlyReturn,
-        endingCorpus,
-        expenses: inflatedExpenses
-      });
-    }
-
-    return rows;
-  }
+  let calcCagrSpread = $state(3);
+  let calcAdjustForInflation = $state(true);
 
   function calibrateSliders() {
     if (!dnaProfile) return;
 
-    if (dnaProfile.monthly_contribution !== undefined && dnaProfile.monthly_contribution !== null) {
-      monthlyContribution = Math.min(
-        1000000,
-        Math.max(-100000, Math.round(dnaProfile.monthly_contribution))
-      );
-    }
+    const calibrated = calibrateFromDna(dnaProfile, {
+      monthlyContribution,
+      expectedCagr,
+      cagrSpread,
+      inflationRate
+    });
 
-    if (dnaProfile.price_months_covered >= 3 && dnaProfile.historical_return > 0) {
-      const returnVal = Math.round(dnaProfile.historical_return * 10) / 10;
-      expectedCagr = Math.min(35, Math.max(-5, returnVal));
-      const spread =
-        dnaProfile.return_volatility > 0 ? Math.round(dnaProfile.return_volatility * 10) / 10 : 3;
-      conservativeCagr = Math.min(30, Math.max(-5, Math.round((expectedCagr - spread) * 10) / 10));
-      optimisticCagr = Math.min(40, Math.max(-5, Math.round((expectedCagr + spread) * 10) / 10));
-    }
-
-    if (dnaProfile.expense_years_covered >= 2 && dnaProfile.expense_growth_rate > 0) {
-      const expenseRate = Math.round(dnaProfile.expense_growth_rate * 10) / 10;
-      inflationRate = Math.min(15, Math.max(0, expenseRate));
-    }
+    monthlyContribution = calibrated.monthlyContribution;
+    expectedCagr = calibrated.expectedCagr;
+    cagrSpread = calibrated.cagrSpread;
+    inflationRate = calibrated.inflationRate;
 
     calcMonthlyContribution = monthlyContribution;
     calcExpectedCagr = expectedCagr;
-    calcConservativeCagr = conservativeCagr;
-    calcOptimisticCagr = optimisticCagr;
+    calcCagrSpread = cagrSpread;
     calcInflationRate = inflationRate;
     updateCalculations.flush();
   }
 
-  function parseVal(val: number | null | undefined, fallback: number): number {
-    if (val === null || val === undefined || isNaN(Number(val))) {
-      return fallback;
-    }
-    return Number(val);
-  }
-
   function exportScenarioCSV(scenario: ProjectionScenarioTable) {
-    const headers = [
-      "Year",
-      "Starting Corpus",
-      "Annual Contribution",
-      "Return",
-      "Ending Corpus",
-      "Inflated Expenses"
-    ];
-    const round = (val: number) => Math.round((val || 0) * 100) / 100;
-    const csvContent = [
-      headers.join(","),
-      ...scenario.rows.map((row) =>
-        [
-          row.year,
-          round(row.startingCorpus),
-          round(row.annualContribution),
-          round(row.returnAmount),
-          round(row.endingCorpus),
-          round(row.expenses)
-        ].join(",")
-      )
-    ].join("\n");
-
+    const csvContent = generateScenarioCSV(scenario);
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    const slug = scenario.label
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
     link.href = url;
-    link.download = `paisa-projection-${slug || "scenario"}.csv`;
+    link.download = getScenarioCSVFilename(scenario.label);
     link.click();
     URL.revokeObjectURL(url);
   }
 
   const updateCalculations = debounce(() => {
     calcYears = Math.max(1, parseVal(years, 15));
-    calcConservativeCagr = parseVal(conservativeCagr, 6);
-    calcExpectedCagr = parseVal(expectedCagr, 9);
-    calcOptimisticCagr = parseVal(optimisticCagr, 12);
     calcMonthlyContribution = parseVal(monthlyContribution, 0);
+    calcExpectedCagr = parseVal(expectedCagr, 9);
     calcSwr = parseVal(swr, 4);
     calcInflationRate = parseVal(inflationRate, 6);
+    calcCagrSpread = Math.max(0.5, parseVal(cagrSpread, 3));
+    calcAdjustForInflation = adjustForInflation;
   }, 100);
 
   $effect(() => {
     const _y = years;
-    const _cc = conservativeCagr;
-    const _ec = expectedCagr;
-    const _oc = optimisticCagr;
     const _mc = monthlyContribution;
+    const _ec = expectedCagr;
     const _s = swr;
     const _i = inflationRate;
+    const _sp = cagrSpread;
+    const _adj = adjustForInflation;
 
     if (controlsInitialized) {
       updateCalculations();
     }
   });
-
-  function projectNetworth(
-    startDate: dayjs.Dayjs,
-    currentNetworth: number,
-    monthlyContribution: number,
-    cagrPercent: number,
-    months: number
-  ) {
-    if (months <= 0) return [];
-    const cagr = cagrPercent / 100;
-    const monthlyRate = Math.pow(1 + cagr, 1 / 12) - 1;
-    const points = [];
-    let current = currentNetworth;
-    for (let i = 1; i <= months; i++) {
-      current = current * (1 + monthlyRate) + monthlyContribution;
-      points.push({
-        date: startDate.add(i, "month"),
-        balanceAmount: Math.round(current * 100) / 100
-      });
-    }
-    return points;
-  }
-
-  function firstCrossingDate(
-    points: { date: dayjs.Dayjs; balanceAmount: number }[],
-    threshold: number
-  ): dayjs.Dayjs | null {
-    for (const p of points) {
-      if (p.balanceAmount >= threshold) {
-        return p.date;
-      }
-    }
-    return null;
-  }
-
-  function monthDiff(from: dayjs.Dayjs, to: dayjs.Dayjs): number {
-    const months = (to.year() - from.year()) * 12 + (to.month() - from.month());
-    return months < 0 ? 0 : months;
-  }
-
-  function projectionMilestones(
-    expected: { date: dayjs.Dayjs; balanceAmount: number }[],
-    fireTarget: number
-  ) {
-    const milestones = [];
-    const oneCrore = 10000000;
-    const cDate1 = firstCrossingDate(expected, oneCrore);
-    if (cDate1) {
-      milestones.push({
-        label: "You will hit 1Cr",
-        date: cDate1,
-        amount: oneCrore
-      });
-    }
-    if (fireTarget > 0) {
-      const cDate2 = firstCrossingDate(expected, fireTarget);
-      if (cDate2) {
-        milestones.push({
-          label: "FIRE target reached",
-          date: cDate2,
-          amount: Math.round(fireTarget * 100) / 100
-        });
-      }
-    }
-    return milestones;
-  }
 
   const projection = $derived.by(() => {
     if (!baseData) return null;
@@ -270,57 +125,78 @@
     const now = dayjs();
     const months = calcYears * 12;
 
+    const nominalConservative = calcExpectedCagr - calcCagrSpread;
+    const nominalExpected = calcExpectedCagr;
+    const nominalOptimistic = calcExpectedCagr + calcCagrSpread;
+
+    const effectiveConservative = calcAdjustForInflation
+      ? toRealCagr(nominalConservative, calcInflationRate)
+      : nominalConservative;
+    const effectiveExpected = calcAdjustForInflation
+      ? toRealCagr(nominalExpected, calcInflationRate)
+      : nominalExpected;
+    const effectiveOptimistic = calcAdjustForInflation
+      ? toRealCagr(nominalOptimistic, calcInflationRate)
+      : nominalOptimistic;
+
     const conservative = projectNetworth(
       now,
       currentNetworth,
       calcMonthlyContribution,
-      calcConservativeCagr,
+      effectiveConservative,
       months
     );
     const expected = projectNetworth(
       now,
       currentNetworth,
       calcMonthlyContribution,
-      calcExpectedCagr,
+      effectiveExpected,
       months
     );
     const optimistic = projectNetworth(
       now,
       currentNetworth,
       calcMonthlyContribution,
-      calcOptimisticCagr,
+      effectiveOptimistic,
       months
     );
 
-    let targetCorpus = 0;
+    const baseTargetCorpus = calcSwr > 0 ? annualExpenses / (calcSwr / 100) : 0;
+    const targetInflation = calcAdjustForInflation ? 0 : calcInflationRate;
+
+    let displayTargetCorpus = baseTargetCorpus;
     let fireProgress = 0;
     let yearsToFIRE: number | null = null;
-    if (calcSwr > 0) {
-      targetCorpus = annualExpenses / (calcSwr / 100);
-      if (targetCorpus > 0) {
-        fireProgress = (currentNetworth / targetCorpus) * 100;
-        if (fireProgress > 100) {
-          fireProgress = 100;
-        }
-        const crossedDate = firstCrossingDate(expected, targetCorpus);
-        if (crossedDate) {
-          const monthsToFire = monthDiff(now, crossedDate);
-          yearsToFIRE = Math.round((monthsToFire / 12) * 100) / 100;
-        }
+    let fireDate: dayjs.Dayjs | null = null;
+
+    const milestones = [];
+
+    if (baseTargetCorpus > 0) {
+      fireProgress = Math.min(100, (currentNetworth / baseTargetCorpus) * 100);
+      const crossing = firstFireCrossingDate(expected, baseTargetCorpus, targetInflation);
+      if (crossing) {
+        const monthsToFire = monthDiff(now, crossing.date);
+        yearsToFIRE = Math.round((monthsToFire / 12) * 100) / 100;
+        fireDate = crossing.date;
+        displayTargetCorpus = crossing.targetAtCrossing;
+        milestones.push({
+          label: "FIRE target reached",
+          date: crossing.date,
+          amount: crossing.targetAtCrossing
+        });
       }
     }
-
-    const milestones = projectionMilestones(expected, targetCorpus);
 
     return {
       current_networth: currentNetworth,
       savings_rate: baseData.savings_rate,
       monthly_contribution: calcMonthlyContribution,
-      derived_contribution: baseData.derived_contribution,
       annual_expenses: annualExpenses,
       swr: calcSwr,
-      target_corpus: targetCorpus,
+      base_target_corpus: baseTargetCorpus,
+      target_corpus: displayTargetCorpus,
       years_to_fire: yearsToFIRE,
+      fire_date: fireDate,
       fire_progress_percent: fireProgress,
       projection: {
         conservative,
@@ -328,9 +204,10 @@
         optimistic
       },
       milestones,
-      conservative_cagr: calcConservativeCagr,
-      expected_cagr: calcExpectedCagr,
-      optimistic_cagr: calcOptimisticCagr
+      conservative_cagr: effectiveConservative,
+      expected_cagr: effectiveExpected,
+      optimistic_cagr: effectiveOptimistic,
+      table_inflation: targetInflation
     };
   });
 
@@ -339,43 +216,59 @@
 
     return [
       {
-        label: "Conservative Scenario",
-        cagr: projection.conservative_cagr,
-        rows: buildProjectionRows(
-          projection.current_networth,
-          projection.annual_expenses,
-          calcInflationRate,
-          projection.conservative_cagr,
-          projection.monthly_contribution,
-          calcYears
-        )
-      },
-      {
+        key: "expected",
         label: "Expected Scenario",
         cagr: projection.expected_cagr,
         rows: buildProjectionRows(
           projection.current_networth,
           projection.annual_expenses,
-          calcInflationRate,
+          projection.table_inflation,
           projection.expected_cagr,
           projection.monthly_contribution,
-          calcYears
+          calcYears,
+          projection.swr
         )
       },
       {
+        key: "conservative",
+        label: "Conservative Scenario",
+        cagr: projection.conservative_cagr,
+        rows: buildProjectionRows(
+          projection.current_networth,
+          projection.annual_expenses,
+          projection.table_inflation,
+          projection.conservative_cagr,
+          projection.monthly_contribution,
+          calcYears,
+          projection.swr
+        )
+      },
+      {
+        key: "optimistic",
         label: "Optimistic Scenario",
         cagr: projection.optimistic_cagr,
         rows: buildProjectionRows(
           projection.current_networth,
           projection.annual_expenses,
-          calcInflationRate,
+          projection.table_inflation,
           projection.optimistic_cagr,
           projection.monthly_contribution,
-          calcYears
+          calcYears,
+          projection.swr
         )
       }
     ];
   });
+
+  const activeScenario = $derived(
+    projectionScenarioTables?.find((s) => s.key === activeScenarioKey) ??
+      projectionScenarioTables?.[0] ??
+      null
+  );
+
+  const firstFireYearInTable = $derived(
+    activeScenario?.rows.find((r) => r.isFireReached)?.year ?? null
+  );
 
   $effect(() => {
     if (svg && points.length > 0) {
@@ -436,19 +329,22 @@
       ];
 
       years = Math.round(baseData.projection.expected.length / 12) || 15;
-      conservativeCagr = baseData.conservative_cagr;
       expectedCagr = baseData.expected_cagr;
-      optimisticCagr = baseData.optimistic_cagr;
+      const derivedSpread = Math.max(
+        0.5,
+        Math.round(((baseData.optimistic_cagr - baseData.conservative_cagr) / 2 || 3) * 10) / 10
+      );
+      cagrSpread = derivedSpread;
       monthlyContribution = baseData.monthly_contribution;
       swr = baseData.swr;
 
       calcYears = years;
-      calcConservativeCagr = conservativeCagr;
       calcExpectedCagr = expectedCagr;
-      calcOptimisticCagr = optimisticCagr;
+      calcCagrSpread = cagrSpread;
       calcMonthlyContribution = monthlyContribution;
       calcSwr = swr;
       calcInflationRate = inflationRate;
+      calcAdjustForInflation = adjustForInflation;
 
       controlsInitialized = true;
     }
@@ -462,243 +358,68 @@
   });
 </script>
 
-<section class="section tab-projection">
+<section class="section tab-projection py-5">
   <div class="container is-fluid">
-    <div class="columns">
-      <div class="column is-4">
-        <div class="box">
-          <nav class="level grid-2">
-            <LevelItem
-              title="Current Net Worth"
-              color={COLORS.primary}
-              value={formatCurrency(projection?.current_networth || 0)}
-            />
-            <LevelItem
-              title="Monthly Contribution"
-              color={COLORS.secondary}
-              value={formatCurrency(projection?.monthly_contribution || 0)}
-            />
-            <LevelItem
-              title="Annual Expenses"
-              color={COLORS.lossText}
-              value={formatCurrency(projection?.annual_expenses || 0)}
-            />
-            <LevelItem
-              title="Target Corpus"
-              color={COLORS.tertiary}
-              value={formatCurrency(projection?.target_corpus || 0)}
-            />
-            <LevelItem
-              title="Years to FIRE"
-              value={projection?.years_to_fire !== null && projection?.years_to_fire !== undefined
-                ? `${formatFloat(projection?.years_to_fire || 0)} years`
-                : "Not in projection window"}
-            />
-            <LevelItem
-              title="FIRE Progress"
-              value={`${formatFloat(projection?.fire_progress_percent || 0)}%`}
-            />
-          </nav>
-        </div>
-        <div class="box">
-          <div class="field">
-            <label class="label is-size-7" for="projection-years"
-              >Projection Years: {years ?? ""}</label
-            >
-            <div class="control-row">
-              <input
-                id="projection-years"
-                class="slider-input"
-                type="range"
-                min="1"
-                max={Math.max(40, Number(years) || 40)}
-                step="1"
-                bind:value={years}
-              />
-              <input
-                id="projection-years-input"
-                class="input is-small number-input"
-                type="number"
-                min="1"
-                step="1"
-                bind:value={years}
-                aria-label="Projection Years"
-              />
-            </div>
-          </div>
-          <div class="field">
-            <label class="label is-size-7" for="projection-conservative-cagr"
-              >Conservative CAGR: {formatFloat(conservativeCagr ?? 0)}%</label
-            >
-            <div class="control-row">
-              <input
-                id="projection-conservative-cagr"
-                class="slider-input"
-                type="range"
-                min={Math.min(-5, Number(conservativeCagr) || -5)}
-                max={Math.max(30, Number(conservativeCagr) || 30)}
-                step="0.5"
-                bind:value={conservativeCagr}
-              />
-              <input
-                id="projection-conservative-cagr-input"
-                class="input is-small number-input"
-                type="number"
-                step="0.1"
-                bind:value={conservativeCagr}
-                aria-label="Conservative CAGR"
-              />
-            </div>
-          </div>
-
-          <div class="field">
-            <label class="label is-size-7" for="projection-expected-cagr"
-              >Expected CAGR: {formatFloat(expectedCagr ?? 0)}%</label
-            >
-            <div class="control-row">
-              <input
-                id="projection-expected-cagr"
-                class="slider-input"
-                type="range"
-                min={Math.min(-5, Number(expectedCagr) || -5)}
-                max={Math.max(35, Number(expectedCagr) || 35)}
-                step="0.5"
-                bind:value={expectedCagr}
-              />
-              <input
-                id="projection-expected-cagr-input"
-                class="input is-small number-input"
-                type="number"
-                step="0.1"
-                bind:value={expectedCagr}
-                aria-label="Expected CAGR"
-              />
-            </div>
-          </div>
-          <div class="field">
-            <label class="label is-size-7" for="projection-optimistic-cagr"
-              >Optimistic CAGR: {formatFloat(optimisticCagr ?? 0)}%</label
-            >
-            <div class="control-row">
-              <input
-                id="projection-optimistic-cagr"
-                class="slider-input"
-                type="range"
-                min={Math.min(-5, Number(optimisticCagr) || -5)}
-                max={Math.max(40, Number(optimisticCagr) || 40)}
-                step="0.5"
-                bind:value={optimisticCagr}
-              />
-              <input
-                id="projection-optimistic-cagr-input"
-                class="input is-small number-input"
-                type="number"
-                step="0.1"
-                bind:value={optimisticCagr}
-                aria-label="Optimistic CAGR"
-              />
-            </div>
-          </div>
-          <div class="field">
-            <label class="label is-size-7" for="projection-monthly-contribution"
-              >Monthly Contribution: {formatCurrency(monthlyContribution ?? 0)}</label
-            >
-            <div class="control-row">
-              <input
-                id="projection-monthly-contribution"
-                class="slider-input"
-                type="range"
-                min={Math.min(-100000, Number(monthlyContribution) || 0)}
-                max={Math.max(1000000, Number(monthlyContribution) || 0)}
-                step="any"
-                bind:value={monthlyContribution}
-              />
-              <input
-                id="projection-monthly-contribution-input"
-                class="input is-small number-input"
-                type="number"
-                step="any"
-                bind:value={monthlyContribution}
-                aria-label="Monthly Contribution"
-              />
-            </div>
-          </div>
-          <div class="field">
-            <label class="label is-size-7" for="projection-swr"
-              >Safe Withdrawal Rate (SWR): {formatFloat(swr ?? 0)}%</label
-            >
-            <div class="control-row">
-              <input
-                id="projection-swr"
-                class="slider-input"
-                type="range"
-                min={Math.min(2, Number(swr) || 2)}
-                max={Math.max(8, Number(swr) || 8)}
-                step="0.1"
-                bind:value={swr}
-              />
-              <input
-                id="projection-swr-input"
-                class="input is-small number-input"
-                type="number"
-                min="0"
-                step="0.1"
-                bind:value={swr}
-                aria-label="Safe Withdrawal Rate"
-              />
-            </div>
-          </div>
-          <div class="field">
-            <label class="label is-size-7" for="projection-inflation"
-              >Inflation Rate: {formatFloat(inflationRate ?? 0)}%</label
-            >
-            <div class="control-row">
-              <input
-                id="projection-inflation"
-                class="slider-input"
-                type="range"
-                min={Math.min(0, Number(inflationRate) || 0)}
-                max={Math.max(15, Number(inflationRate) || 15)}
-                step="0.1"
-                bind:value={inflationRate}
-              />
-              <input
-                id="projection-inflation-input"
-                class="input is-small number-input"
-                type="number"
-                min="0"
-                step="0.1"
-                bind:value={inflationRate}
-                aria-label="Inflation Rate"
-              />
-            </div>
-          </div>
-        </div>
+    <!-- Compact Header with DNA Actions -->
+    <div
+      class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap gap-3 mb-4"
+    >
+      <div>
+        <h1 class="title is-4 mb-1">Net Worth Projection</h1>
+        {#if projection}
+          <p class="is-size-7 has-text-grey">
+            Baseline: <strong>{formatCurrency(projection.current_networth)}</strong> net worth ·
+            <strong>{formatCurrency(projection.annual_expenses)}</strong>/yr expenses ·
+            {calcAdjustForInflation
+              ? "Shown in today's money (real)"
+              : "Shown in future money (nominal)"}
+          </p>
+        {/if}
       </div>
-      <div class="column is-8">
-        <div class="box overflow-x-auto">
-          <LegendCard {legends} clazz="mb-2 overflow-x-auto" />
-          <svg bind:this={svg} height={500} width="100%" />
-        </div>
-      </div>
-    </div>
 
-    {#if dnaProfile}
-      <div class="box mt-5">
-        <div
-          class="is-flex is-justify-content-space-between is-align-items-start is-flex-wrap-wrap gap-2 mb-4"
-        >
-          <div>
-            <h3 class="title is-5 mb-2">Your Financial DNA</h3>
-            <p class="is-size-7 has-text-grey">
-              Parameters inferred from your ledger history. These feed into the projection engine
-              and can be used to calibrate the sliders above.
-            </p>
-          </div>
+      {#if dnaProfile}
+        <div class="is-flex is-align-items-center gap-2">
           <button
             class="button is-small is-primary is-light"
             type="button"
             onclick={calibrateSliders}
+          >
+            <span class="icon is-small"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+            <span>Calibrate from Ledger</span>
+          </button>
+          <button
+            class="button is-small is-light"
+            type="button"
+            aria-expanded={showDnaDrawer}
+            onclick={() => (showDnaDrawer = !showDnaDrawer)}
+          >
+            <span class="icon is-small"><i class="fa-solid fa-dna"></i></span>
+            <span>Financial DNA</span>
+            <span class="icon is-small">
+              <i class="fa-solid {showDnaDrawer ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
+            </span>
+          </button>
+        </div>
+      {/if}
+    </div>
+
+    <!-- Collapsible Financial DNA Drawer -->
+    {#if dnaProfile && showDnaDrawer}
+      <div class="box mb-4 dna-drawer">
+        <div
+          class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap gap-2 mb-3"
+        >
+          <p class="is-size-7 has-text-grey mb-0">
+            Inferred from your ledger history. Click <strong>Calibrate from Ledger</strong> to apply these
+            rates to your projection.
+          </p>
+          <button
+            class="button is-small is-primary"
+            type="button"
+            onclick={() => {
+              calibrateSliders();
+              showDnaDrawer = false;
+            }}
           >
             Apply to Sliders
           </button>
@@ -757,72 +478,404 @@
       </div>
     {/if}
 
-    {#if projectionScenarioTables}
-      <div class="box mt-5">
-        <div class="content mb-4">
-          <h3 class="title is-5 mb-2">Year-by-Year Projection Tables</h3>
-          <p class="is-size-7 has-text-grey">
-            Annual contributions represent net savings after expenses. Ending corpus is calculated
-            as starting corpus + annual contribution + return. Inflated expenses show the annual
-            cost of living and FIRE benchmark adjusted for inflation.
-          </p>
+    <!-- Outcome KPIs Strip -->
+    <div class="columns is-multiline mb-4">
+      <div class="column is-4">
+        <div class="box outcome-card">
+          <div class="outcome-label">Years to FIRE</div>
+          <div class="outcome-value">
+            {#if projection?.years_to_fire !== null && projection?.years_to_fire !== undefined}
+              {formatFloat(projection.years_to_fire)} years
+            {:else}
+              Not in {calcYears}y window
+            {/if}
+          </div>
+          <div class="outcome-sub">
+            {#if projection?.fire_date}
+              Estimated by {projection.fire_date.format("MMM YYYY")}
+            {:else}
+              Increase horizon or monthly savings
+            {/if}
+          </div>
         </div>
+      </div>
+      <div class="column is-4">
+        <div class="box outcome-card">
+          <div class="outcome-label">FIRE Progress</div>
+          <div class="outcome-value">{formatFloat(projection?.fire_progress_percent || 0)}%</div>
+          <progress
+            class="progress is-small is-primary mt-2 mb-1"
+            value={projection?.fire_progress_percent || 0}
+            max="100"
+          ></progress>
+          <div class="outcome-sub">
+            {formatCurrency(projection?.current_networth || 0)} of
+            {formatCurrency(projection?.base_target_corpus || 0)} today's target
+          </div>
+        </div>
+      </div>
+      <div class="column is-4">
+        <div class="box outcome-card">
+          <div class="outcome-label">
+            Target Corpus
+            <span class="tag is-light is-small ml-1">
+              {calcAdjustForInflation ? "Real" : "Nominal"}
+            </span>
+          </div>
+          <div class="outcome-value">{formatCurrency(projection?.target_corpus || 0)}</div>
+          <div class="outcome-sub">
+            {formatFloat(calcSwr)}% SWR on {formatCurrency(projection?.annual_expenses || 0)}/yr
+          </div>
+        </div>
+      </div>
+    </div>
 
-        {#each projectionScenarioTables as scenario}
-          <div class="mb-5">
-            <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
-              <h4 class="title is-6 mb-0">{scenario.label}</h4>
-              <div class="is-flex is-align-items-center gap-2">
-                <span class="tag is-light">{formatFloat(scenario.cagr)}% CAGR</span>
-                <button
-                  type="button"
-                  class="button is-small is-light"
-                  onclick={() => exportScenarioCSV(scenario)}
-                >
-                  <span class="icon is-small"><i class="fa-solid fa-file-csv"></i></span>
-                  <span>Export CSV</span>
-                </button>
-              </div>
-            </div>
+    <!-- Main Workspace: 3 Core Levers + Chart -->
+    <div class="columns">
+      <div class="column is-4">
+        <div class="box">
+          <h2 class="title is-6 mb-3">Core Levers</h2>
 
-            <div class="table-container">
-              <table class="table is-striped is-hoverable is-fullwidth is-size-7">
-                <thead>
-                  <tr>
-                    <th>Year</th>
-                    <th class="has-text-right">Starting Corpus</th>
-                    <th class="has-text-right">Annual Contribution</th>
-                    <th class="has-text-right">Return</th>
-                    <th class="has-text-right">Ending Corpus</th>
-                    <th class="has-text-right">Inflated Expenses</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {#each scenario.rows as row}
-                    <tr>
-                      <td>{row.year}</td>
-                      <td class="has-text-right">{formatCurrency(row.startingCorpus)}</td>
-                      <td class="has-text-right">{formatCurrency(row.annualContribution)}</td>
-                      <td
-                        class={`has-text-right ${row.returnAmount >= 0 ? "has-text-success" : "has-text-danger"}`}
-                      >
-                        {formatCurrency(row.returnAmount)}
-                      </td>
-                      <td class="has-text-right">{formatCurrency(row.endingCorpus)}</td>
-                      <td class="has-text-right has-text-grey">{formatCurrency(row.expenses)}</td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
+          <div class="field">
+            <label class="label is-size-7" for="projection-years"
+              >Projection Horizon: {years ?? ""} years</label
+            >
+            <div class="control-row">
+              <input
+                id="projection-years"
+                class="slider-input"
+                type="range"
+                min="1"
+                max={Math.max(40, Number(years) || 40)}
+                step="1"
+                bind:value={years}
+              />
+              <input
+                id="projection-years-input"
+                class="input is-small number-input"
+                type="number"
+                min="1"
+                step="1"
+                bind:value={years}
+                aria-label="Projection Years"
+              />
             </div>
           </div>
-        {/each}
+
+          <div class="field">
+            <label class="label is-size-7" for="projection-monthly-contribution"
+              >Monthly Contribution: {formatCurrency(monthlyContribution ?? 0)}</label
+            >
+            <div class="control-row">
+              <input
+                id="projection-monthly-contribution"
+                class="slider-input"
+                type="range"
+                min={Math.min(-100000, Number(monthlyContribution) || 0)}
+                max={Math.max(1000000, Number(monthlyContribution) || 0)}
+                step="any"
+                bind:value={monthlyContribution}
+              />
+              <input
+                id="projection-monthly-contribution-input"
+                class="input is-small number-input"
+                type="number"
+                step="any"
+                bind:value={monthlyContribution}
+                aria-label="Monthly Contribution"
+              />
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label is-size-7" for="projection-expected-cagr"
+              >Expected Return (CAGR): {formatFloat(expectedCagr ?? 0)}%</label
+            >
+            <div class="control-row">
+              <input
+                id="projection-expected-cagr"
+                class="slider-input"
+                type="range"
+                min={Math.min(-5, Number(expectedCagr) || -5)}
+                max={Math.max(35, Number(expectedCagr) || 35)}
+                step="0.5"
+                bind:value={expectedCagr}
+              />
+              <input
+                id="projection-expected-cagr-input"
+                class="input is-small number-input"
+                type="number"
+                step="0.1"
+                bind:value={expectedCagr}
+                aria-label="Expected CAGR"
+              />
+            </div>
+          </div>
+
+          <!-- Collapsible Assumptions -->
+          <div class="assumptions-section mt-4 pt-3">
+            <button
+              type="button"
+              class="assumptions-toggle"
+              aria-expanded={showAssumptions}
+              onclick={() => (showAssumptions = !showAssumptions)}
+            >
+              <span class="is-size-7 has-text-weight-semibold">
+                Assumptions
+                <span class="has-text-grey has-text-weight-normal ml-1">
+                  ({formatFloat(swr)}% SWR · {formatFloat(inflationRate)}% inf · ±{formatFloat(
+                    cagrSpread
+                  )}%)
+                </span>
+              </span>
+              <span class="icon is-small">
+                <i class="fa-solid {showAssumptions ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
+              </span>
+            </button>
+
+            {#if showAssumptions}
+              <div class="mt-3">
+                <div class="field">
+                  <label class="checkbox is-size-7">
+                    <input type="checkbox" bind:checked={adjustForInflation} />
+                    <span class="ml-1">Adjust for inflation (show in today's money)</span>
+                  </label>
+                </div>
+
+                <div class="field">
+                  <label class="label is-size-7" for="projection-swr"
+                    >Safe Withdrawal Rate (SWR): {formatFloat(swr ?? 0)}%</label
+                  >
+                  <div class="control-row">
+                    <input
+                      id="projection-swr"
+                      class="slider-input"
+                      type="range"
+                      min={Math.min(2, Number(swr) || 2)}
+                      max={Math.max(8, Number(swr) || 8)}
+                      step="0.1"
+                      bind:value={swr}
+                    />
+                    <input
+                      id="projection-swr-input"
+                      class="input is-small number-input"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      bind:value={swr}
+                      aria-label="Safe Withdrawal Rate"
+                    />
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="label is-size-7" for="projection-inflation"
+                    >Inflation Rate: {formatFloat(inflationRate ?? 0)}%</label
+                  >
+                  <div class="control-row">
+                    <input
+                      id="projection-inflation"
+                      class="slider-input"
+                      type="range"
+                      min={Math.min(0, Number(inflationRate) || 0)}
+                      max={Math.max(15, Number(inflationRate) || 15)}
+                      step="0.1"
+                      bind:value={inflationRate}
+                    />
+                    <input
+                      id="projection-inflation-input"
+                      class="input is-small number-input"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      bind:value={inflationRate}
+                      aria-label="Inflation Rate"
+                    />
+                  </div>
+                </div>
+
+                <div class="field mb-0">
+                  <label class="label is-size-7" for="projection-spread"
+                    >Scenario Spread: ±{formatFloat(cagrSpread ?? 0)}%</label
+                  >
+                  <div class="control-row">
+                    <input
+                      id="projection-spread"
+                      class="slider-input"
+                      type="range"
+                      min="0.5"
+                      max="15"
+                      step="0.5"
+                      bind:value={cagrSpread}
+                    />
+                    <input
+                      id="projection-spread-input"
+                      class="input is-small number-input"
+                      type="number"
+                      min="0.5"
+                      max="15"
+                      step="0.5"
+                      bind:value={cagrSpread}
+                      aria-label="Scenario Spread"
+                    />
+                  </div>
+                </div>
+              </div>
+            {/if}
+          </div>
+        </div>
+      </div>
+
+      <div class="column is-8">
+        <div class="box overflow-x-auto">
+          <LegendCard {legends} clazz="mb-2 overflow-x-auto" />
+          <svg bind:this={svg} height={440} width="100%" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Single Tabbed Year-by-Year Table -->
+    {#if projectionScenarioTables && activeScenario}
+      <div class="box mt-4">
+        <div
+          class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap gap-3 mb-3"
+        >
+          <div>
+            <h3 class="title is-5 mb-1">Year-by-Year Projection</h3>
+            <p class="is-size-7 has-text-grey mb-0">
+              {calcAdjustForInflation
+                ? "Values adjusted for inflation (real terms)."
+                : "Nominal values with expenses and FIRE target growing by inflation."}
+            </p>
+          </div>
+
+          <div class="is-flex is-align-items-center is-flex-wrap-wrap gap-2">
+            <div class="tabs is-toggle is-small mb-0">
+              <ul>
+                <li class={activeScenarioKey === "expected" ? "is-active" : ""}>
+                  <a
+                    href="#expected"
+                    onclick={(e) => {
+                      e.preventDefault();
+                      activeScenarioKey = "expected";
+                    }}>Expected</a
+                  >
+                </li>
+                <li class={activeScenarioKey === "conservative" ? "is-active" : ""}>
+                  <a
+                    href="#conservative"
+                    onclick={(e) => {
+                      e.preventDefault();
+                      activeScenarioKey = "conservative";
+                    }}>Conservative</a
+                  >
+                </li>
+                <li class={activeScenarioKey === "optimistic" ? "is-active" : ""}>
+                  <a
+                    href="#optimistic"
+                    onclick={(e) => {
+                      e.preventDefault();
+                      activeScenarioKey = "optimistic";
+                    }}>Optimistic</a
+                  >
+                </li>
+              </ul>
+            </div>
+
+            <span class="tag is-light">
+              {formatFloat(activeScenario.cagr)}% {calcAdjustForInflation ? "Real " : ""}CAGR
+            </span>
+            <button
+              type="button"
+              class="button is-small is-light"
+              onclick={() => exportScenarioCSV(activeScenario)}
+            >
+              <span class="icon is-small"><i class="fa-solid fa-file-csv"></i></span>
+              <span>Export CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="table is-striped is-hoverable is-fullwidth is-size-7">
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th class="has-text-right">Starting Corpus</th>
+                <th class="has-text-right">Annual Contribution</th>
+                <th class="has-text-right">Return</th>
+                <th class="has-text-right">Ending Corpus</th>
+                <th class="has-text-right">Annual Expenses</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each activeScenario.rows as row}
+                <tr class={row.year === firstFireYearInTable ? "is-fire-row" : ""}>
+                  <td>
+                    {row.year}
+                    {#if row.year === firstFireYearInTable}
+                      <span class="tag is-primary is-light is-small ml-1">FIRE</span>
+                    {/if}
+                  </td>
+                  <td class="has-text-right">{formatCurrency(row.startingCorpus)}</td>
+                  <td class="has-text-right">{formatCurrency(row.annualContribution)}</td>
+                  <td
+                    class={`has-text-right ${row.returnAmount >= 0 ? "has-text-success" : "has-text-danger"}`}
+                  >
+                    {formatCurrency(row.returnAmount)}
+                  </td>
+                  <td class="has-text-right has-text-weight-semibold">
+                    {formatCurrency(row.endingCorpus)}
+                  </td>
+                  <td class="has-text-right has-text-grey">{formatCurrency(row.expenses)}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
       </div>
     {/if}
   </div>
 </section>
 
 <style>
+  .outcome-card {
+    height: 100%;
+    padding: 1rem 1.25rem;
+  }
+  .outcome-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.65;
+    margin-bottom: 0.25rem;
+  }
+  .outcome-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .outcome-sub {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-top: 0.25rem;
+  }
+  .assumptions-section {
+    border-top: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+  }
+  .assumptions-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    color: inherit;
+    text-align: left;
+  }
   .control-row {
     display: flex !important;
     align-items: center !important;
@@ -878,5 +931,8 @@
     opacity: 0.5;
     margin-top: 0.25rem;
     font-style: italic;
+  }
+  .is-fire-row {
+    background-color: rgba(72, 95, 199, 0.08) !important;
   }
 </style>

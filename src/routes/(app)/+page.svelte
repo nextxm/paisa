@@ -37,7 +37,6 @@
     type AssetBreakdown
   } from "$lib/utils";
   import _ from "lodash";
-  import { onMount } from "svelte";
   import type { PageData } from "./$types";
 
   import BudgetCard from "$lib/components/BudgetCard.svelte";
@@ -71,7 +70,9 @@
   let expenses: { [key: string]: Posting[] } = $derived(data.dashboard.expenses);
   let xirr = $derived(data.dashboard.networth.xirr);
   let networth: Networth = $derived(data.dashboard.networth.networth);
-  let renderer: ((data: Posting[]) => void) | undefined = $state();
+  let cashflowSvg: SVGSVGElement | undefined = $state();
+  let expensesSvg: SVGSVGElement | undefined = $state();
+  let expensesRenderer: ((data: Posting[]) => void) | undefined = $state();
   let selectedExpenses = $derived(expenses[month] || []);
   let totalExpense = $derived(_.sumBy(selectedExpenses, (p) => p.amount));
   let transactions: Transaction[] = $derived(data.dashboard.transactions);
@@ -113,8 +114,32 @@
   );
 
   $effect(() => {
-    if (renderer) {
-      renderer(selectedExpenses);
+    if (expensesSvg) {
+      const postings = _.chain(expenses).values().flatten().value();
+      const z = expense.colorScale(postings);
+      expensesRenderer = expense.renderCurrentExpensesBreakdown(z);
+    } else {
+      expensesRenderer = undefined;
+    }
+  });
+
+  $effect(() => {
+    if (expensesSvg && expensesRenderer) {
+      expensesRenderer(selectedExpenses);
+    }
+  });
+
+  $effect(() => {
+    if (cashflowSvg) {
+      const { renderer: cashflowRenderer, legends } = cashFlow.renderMonthlyFlow(
+        "#d3-current-cash-flow",
+        {
+          rotate: false,
+          balance: _.last(cashFlows)?.balance || 0
+        }
+      );
+      cashflowRenderer(cashFlows);
+      cashflowLegends = legends;
     }
   });
 
@@ -205,22 +230,6 @@
     const value = Number(layoutEntry.config[key]);
     return Number.isNaN(value) ? fallback : value;
   }
-
-  onMount(() => {
-    const postings = _.chain(expenses).values().flatten().value();
-    const z = expense.colorScale(postings);
-    renderer = expense.renderCurrentExpensesBreakdown(z);
-
-    const { renderer: cashflowRenderer, legends } = cashFlow.renderMonthlyFlow(
-      "#d3-current-cash-flow",
-      {
-        rotate: false,
-        balance: _.last(cashFlows)?.balance || 0
-      }
-    );
-    cashflowRenderer(cashFlows);
-    cashflowLegends = legends;
-  });
 </script>
 
 <section class="section" class:is-hidden={!isEmpty}>
@@ -389,6 +398,7 @@
                     <LegendCard legends={cashflowLegends} clazz="mb-2 overflow-x-auto" />
 
                     <svg
+                      bind:this={cashflowSvg}
                       class:is-not-visible={_.isEmpty(cashFlows)}
                       id="d3-current-cash-flow"
                       height="250"
@@ -457,7 +467,7 @@
                     <ZeroState item={selectedExpenses}>
                       <strong>Hurray!</strong> You have no expenses this month.
                     </ZeroState>
-                    <svg id="d3-current-month-breakdown" width="100%" />
+                    <svg bind:this={expensesSvg} id="d3-current-month-breakdown" width="100%" />
                   </div>
                 </article>
               </div>
