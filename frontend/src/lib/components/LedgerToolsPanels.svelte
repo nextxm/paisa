@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { apiGet, formatMoney, formatShortDate, runtime, triggerSync } from "$lib/api";
+  import { apiGet, authHeaders, formatMoney, formatShortDate, runtime, triggerSync } from "$lib/api";
 
   let {
     mode
@@ -31,6 +31,8 @@
   >([]);
   let includedStaged = $state<boolean[]>([]);
   let importPresets = $state<Array<{ id?: string; name?: string; delimiter?: string }>>([]);
+  let importTemplates = $state<Array<{ name: string; base_account?: string; delimiter?: string }>>([]);
+  let newTemplateName = $state("");
 
   async function handleFileSelect(e: Event) {
     const input = e.currentTarget as HTMLInputElement;
@@ -151,8 +153,10 @@
   }
 
   // ---- Sheets state ----
-  let sheets = $state<Array<{ name: string; content: string }>>([]);
+  let sheets = $state<Array<{ name: string; content: string; versions?: string[] }>>([]);
   let selectedSheetName = $state("");
+  let selectedSheetVersion = $state("");
+  const activeSheetObj = $derived(sheets.find((s) => s.name === selectedSheetName));
   let sheetDraft = $state("");
   let newSheetName = $state("");
   let sheetSaving = $state(false);
@@ -219,6 +223,9 @@
     if (mode === "import") {
       void apiGet<{ presets?: typeof importPresets }>("/api/import/presets")
         .then((r) => (importPresets = r.presets || []))
+        .catch(() => {});
+      void apiGet<{ templates?: typeof importTemplates }>("/api/templates")
+        .then((r) => (importTemplates = r.templates || []))
         .catch(() => {});
     }
     if (mode === "fx") void loadFxFiltersAndRates();
@@ -295,6 +302,74 @@
           {/each}
         </div>
       {/if}
+
+      <div class="flex flex-wrap items-center gap-2 text-xs pt-1 border-t border-[var(--border)]/60">
+        <span class="text-[var(--muted)]">Templates ({importTemplates.length}):</span>
+        {#each importTemplates as tpl}
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-[var(--border)] bg-[var(--surface-elevated)]">
+            <button
+              type="button"
+              onclick={() => {
+                if (tpl.base_account) importBaseAccount = tpl.base_account;
+                if (tpl.delimiter) importDelimiter = tpl.delimiter;
+              }}
+              class="hover:text-[var(--accent)] cursor-pointer"
+            >
+              {tpl.name}
+            </button>
+            {#if !runtime.readonly}
+              <button
+                type="button"
+                onclick={async () => {
+                  await fetch("/api/templates/delete", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", ...authHeaders() },
+                    body: JSON.stringify({ name: tpl.name })
+                  });
+                  importTemplates = importTemplates.filter((t) => t.name !== tpl.name);
+                }}
+                class="text-[var(--muted)] hover:text-[var(--loss)] cursor-pointer"
+              >
+                ×
+              </button>
+            {/if}
+          </span>
+        {/each}
+        {#if !runtime.readonly}
+          <input
+            type="text"
+            bind:value={newTemplateName}
+            placeholder="Save template name…"
+            class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] border border-[var(--border)] outline-none"
+          />
+          <button
+            type="button"
+            onclick={async () => {
+              const name = newTemplateName.trim();
+              if (!name) return;
+              const res = await fetch("/api/templates/upsert", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", ...authHeaders() },
+                body: JSON.stringify({
+                  name,
+                  base_account: importBaseAccount,
+                  delimiter: importDelimiter
+                })
+              });
+              if (res.ok) {
+                newTemplateName = "";
+                const r = await apiGet<{ templates?: typeof importTemplates }>("/api/templates").catch(() => ({
+                  templates: []
+                }));
+                importTemplates = r.templates || [];
+              }
+            }}
+            class="px-2 py-0.5 rounded border border-[var(--border)] hover:border-[var(--accent)] cursor-pointer"
+          >
+            Save Template
+          </button>
+        {/if}
+      </div>
 
       {#if importFileName || importMessage}
         <p class="text-xs text-[var(--muted)]">
@@ -487,17 +562,64 @@
     </div>
 
     <div class="lg:col-span-9 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-3">
-      <div class="flex items-center justify-between gap-2">
+      <div class="flex flex-wrap items-center justify-between gap-2">
         <span class="text-sm font-semibold">{selectedSheetName || "Select a sheet"}</span>
         {#if !runtime.readonly && selectedSheetName}
-          <button
-            type="button"
-            disabled={sheetSaving}
-            onclick={saveSheet}
-            class="px-3 py-1.5 rounded-lg bg-[var(--accent)] text-[var(--accent-fg)] text-xs font-medium cursor-pointer disabled:opacity-50"
-          >
-            {sheetSaving ? "Saving…" : "Save Sheet"}
-          </button>
+          <div class="flex flex-wrap items-center gap-2">
+            {#if activeSheetObj?.versions?.length}
+              <select
+                bind:value={selectedSheetVersion}
+                class="px-2 py-1 rounded-md text-xs bg-[var(--surface-elevated)] border border-[var(--border)]"
+              >
+                <option value="">Version…</option>
+                {#each activeSheetObj.versions as v}
+                  <option value={v}>{v}</option>
+                {/each}
+              </select>
+              <button
+                type="button"
+                disabled={!selectedSheetVersion}
+                onclick={async () => {
+                  if (!selectedSheetVersion) return;
+                  const res = await fetch("/api/sheets/file", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", ...authHeaders() },
+                    body: JSON.stringify({ name: selectedSheetName, version: selectedSheetVersion })
+                  });
+                  const d = (await res.json()) as { file?: { content?: string } };
+                  if (d.file?.content !== undefined) {
+                    sheetDraft = d.file.content;
+                    sheetMessage = `Loaded version ${selectedSheetVersion}`;
+                  }
+                }}
+                class="px-2.5 py-1 rounded-lg border border-[var(--border)] text-xs cursor-pointer disabled:opacity-50"
+              >
+                Revert
+              </button>
+            {/if}
+            <button
+              type="button"
+              onclick={async () => {
+                await fetch("/api/sheets/file/delete_backups", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", ...authHeaders() },
+                  body: JSON.stringify({ name: selectedSheetName })
+                });
+                sheetMessage = "Sheet backups cleared.";
+              }}
+              class="px-2.5 py-1 rounded-lg border border-[var(--border)] text-xs text-[var(--muted)] hover:text-[var(--loss)] cursor-pointer"
+            >
+              Clear Backups
+            </button>
+            <button
+              type="button"
+              disabled={sheetSaving}
+              onclick={saveSheet}
+              class="px-3 py-1.5 rounded-lg bg-[var(--accent)] text-[var(--accent-fg)] text-xs font-medium cursor-pointer disabled:opacity-50"
+            >
+              {sheetSaving ? "Saving…" : "Save Sheet"}
+            </button>
+          </div>
         {/if}
       </div>
       {#if sheetMessage}

@@ -90,6 +90,11 @@
   let availableCurrencies = $state<string[]>([]);
   let assetsRefreshing = $state(false);
   let hideZeroAssets = $state(true);
+  let flatAssets = $state(true);
+  let targetsEditing = $state(false);
+  let targetDraft = $state<Record<string, number>>({});
+  let targetsSaving = $state(false);
+  let targetsMessage = $state<string | null>(null);
 
   let rebalanceCash = $state(50000);
   let rebalanceResult = $state<{
@@ -249,6 +254,7 @@
     assetBreakdowns.filter(
       (a) =>
         (!hideZeroAssets || Math.abs(a.marketAmount || 0) > 0.01) &&
+        (flatAssets || a.group.split(":").length <= 2) &&
         a.group.toLowerCase().includes(search.trim().toLowerCase())
     )
   );
@@ -336,6 +342,10 @@
         <label class="inline-flex items-center gap-1.5 text-xs text-[var(--muted)] cursor-pointer">
           <input type="checkbox" bind:checked={hideZeroAssets} />
           Hide zero
+        </label>
+        <label class="inline-flex items-center gap-1.5 text-xs text-[var(--muted)] cursor-pointer">
+          <input type="checkbox" bind:checked={flatAssets} />
+          Flat
         </label>
         <button
           type="button"
@@ -552,9 +562,74 @@
   {:else if activeTab === "allocation"}
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
       <div class="lg:col-span-8 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-          Asset Allocation
-        </h3>
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Asset Allocation
+          </h3>
+          <button
+            type="button"
+            onclick={() => {
+              if (!targetsEditing) {
+                const next: Record<string, number> = {};
+                for (const a of allocationItems) {
+                  const key = a.name || a.account || "Asset";
+                  next[key] = totalAllocation > 0 ? Math.round((a.market_amount / totalAllocation) * 100) : 0;
+                }
+                targetDraft = next;
+              }
+              targetsEditing = !targetsEditing;
+              targetsMessage = null;
+            }}
+            class="text-xs text-[var(--accent)] hover:underline cursor-pointer"
+          >
+            {targetsEditing ? "Done" : "Edit Targets"}
+          </button>
+        </div>
+        {#if targetsEditing}
+          <div class="p-3 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] space-y-2 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {#each Object.keys(targetDraft) as key}
+                <div class="flex items-center justify-between gap-2">
+                  <span class="truncate">{key}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    bind:value={targetDraft[key]}
+                    class="w-20 px-2 py-1 rounded bg-[var(--surface)] border border-[var(--border)] text-right tabular-nums"
+                  />
+                </div>
+              {/each}
+            </div>
+            <div class="flex items-center justify-between pt-1">
+              <span class="text-[var(--muted)]">{targetsMessage || ""}</span>
+              <button
+                type="button"
+                disabled={targetsSaving}
+                onclick={async () => {
+                  targetsSaving = true;
+                  const payload = Object.entries(targetDraft).map(([name, target]) => ({
+                    name,
+                    target: Number(target) || 0,
+                    drift: 5,
+                    accounts: [],
+                    commodities: []
+                  }));
+                  const res = await fetch("/api/allocation/targets", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", ...authHeaders() },
+                    body: JSON.stringify(payload)
+                  });
+                  targetsSaving = false;
+                  targetsMessage = res.ok ? "Targets saved." : "Failed to save targets.";
+                }}
+                class="px-3 py-1 rounded bg-[var(--accent)] text-[var(--accent-fg)] font-medium cursor-pointer"
+              >
+                {targetsSaving ? "Saving…" : "Save Targets"}
+              </button>
+            </div>
+          </div>
+        {/if}
         {#if allocationItems.length === 0}
           <p class="text-sm text-[var(--muted)]">No allocation data available.</p>
         {:else}

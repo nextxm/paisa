@@ -24,6 +24,8 @@
 
   // Drawdown state
   let drawdownAmount = $state(500000);
+  let drawdownGlob = $state("Assets:Equity:*");
+  let drawdownImpact = $state(false);
   let drawdownLoading = $state(false);
   let drawdownData = $state<{
     total_tax?: number;
@@ -92,9 +94,9 @@
           amount: drawdownAmount,
           buckets: [
             {
-              name: "Equity First",
+              name: "Primary Bucket",
               accounts: [],
-              account_glob: "Assets:Equity:*",
+              account_glob: drawdownGlob,
               tax_category: "",
               override_tax_category: "equity",
               holding_period_months: 12
@@ -108,7 +110,7 @@
               holding_period_months: 0
             }
           ],
-          include_projection_impact: false
+          include_projection_impact: drawdownImpact
         })
       });
       if (res.ok) {
@@ -224,6 +226,19 @@
           class="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] tabular-nums"
         />
       </div>
+      <div>
+        <label class="block text-[var(--muted)] mb-1" for="dd-glob">Primary Bucket Glob</label>
+        <input
+          id="dd-glob"
+          type="text"
+          bind:value={drawdownGlob}
+          class="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] font-mono"
+        />
+      </div>
+      <label class="inline-flex items-center gap-1.5 py-1.5 cursor-pointer text-[var(--muted)]">
+        <input type="checkbox" bind:checked={drawdownImpact} />
+        Include projection impact
+      </label>
       <button
         type="button"
         disabled={drawdownLoading}

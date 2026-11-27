@@ -90,6 +90,7 @@
   let sankeyLoading = $state(false);
   let sankeyFrom = $state("");
   let sankeyTo = $state("");
+  let sankeyExpenseOnly = $state(false);
   let dailyExpenses = $state<Array<{ date: string; amount: number; category?: string }>>([]);
   let dailyLoading = $state(false);
   let recurringView = $state<"list" | "calendar">("calendar");
@@ -170,10 +171,11 @@
   async function loadSankey() {
     sankeyLoading = true;
     try {
-      const url =
+      const baseUrl =
         sankeyFrom && sankeyTo
           ? `/api/sankey?from=${encodeURIComponent(sankeyFrom)}&to=${encodeURIComponent(sankeyTo)}`
           : `/api/sankey?period=${encodeURIComponent(sankeyPeriod)}`;
+      const url = sankeyExpenseOnly ? `${baseUrl}&expense_only=true` : baseUrl;
       const res = await apiGet<{ links?: SankeyLink[] }>(url);
       sankeyLinks = (res.links || []).slice().sort((a, b) => b.value - a.value);
     } catch {
@@ -206,6 +208,7 @@
       const _p = sankeyPeriod;
       const _f = sankeyFrom;
       const _t = sankeyTo;
+      const _e = sankeyExpenseOnly;
       void loadSankey();
     }
     if (activeTab === "expenses" && selectedMonth) {
@@ -747,7 +750,13 @@
   {:else if activeTab === "sankey"}
     <div class="space-y-5">
       <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <span class="font-semibold uppercase tracking-wider text-[var(--muted)]">Custom Date Range</span>
+        <div class="flex items-center gap-3">
+          <span class="font-semibold uppercase tracking-wider text-[var(--muted)]">Flow Filter</span>
+          <label class="inline-flex items-center gap-1.5 cursor-pointer">
+            <input type="checkbox" bind:checked={sankeyExpenseOnly} />
+            Expenses only
+          </label>
+        </div>
         <div class="flex flex-wrap items-center gap-2">
           <input
             type="date"

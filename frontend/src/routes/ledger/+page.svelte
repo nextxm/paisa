@@ -391,8 +391,24 @@
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-[var(--muted)]">Providers ({providers.length}):</span>
           {#each providers as prov}
-            <span class="px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--border)]">
-              {prov.name || prov.code || "Provider"}
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--border)]">
+              <span>{prov.name || prov.code || "Provider"}</span>
+              {#if !runtime.readonly && prov.code}
+                <button
+                  type="button"
+                  title="Delete provider"
+                  onclick={async () => {
+                    const res = await fetch(
+                      `/api/price/providers/delete/${encodeURIComponent(prov.code || "")}`,
+                      { method: "POST", headers: authHeaders() }
+                    );
+                    if (res.ok) providers = providers.filter((p) => p.code !== prov.code);
+                  }}
+                  class="text-[var(--muted)] hover:text-[var(--loss)] cursor-pointer"
+                >
+                  ×
+                </button>
+              {/if}
             </span>
           {/each}
         </div>
