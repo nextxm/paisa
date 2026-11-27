@@ -31,6 +31,10 @@
     startingBalance: number;
     endingBalance: number;
     income?: Record<string, number>;
+    interest?: Record<string, number>;
+    pnl?: Record<string, number>;
+    equity?: Record<string, number>;
+    liabilities?: Record<string, number>;
     expenses?: Record<string, number>;
     tax?: Record<string, number>;
   }
@@ -343,6 +347,58 @@
 
   const statementYears = $derived(Object.keys(yearlyStatements).sort().reverse());
   const currentStatement = $derived(selectedYear ? yearlyStatements[selectedYear] : undefined);
+
+  type StatementGroupKey = "income" | "tax" | "interest" | "pnl" | "equity" | "liabilities" | "expenses";
+  const statementGroupDefs: Array<{ key: StatementGroupKey; label: string; multiplier: number }> = [
+    { key: "income", label: "Income", multiplier: -1 },
+    { key: "tax", label: "Tax", multiplier: -1 },
+    { key: "interest", label: "Interest", multiplier: -1 },
+    { key: "pnl", label: "Gain / Loss", multiplier: 1 },
+    { key: "equity", label: "Equity", multiplier: -1 },
+    { key: "liabilities", label: "Liabilities", multiplier: -1 },
+    { key: "expenses", label: "Expenses", multiplier: -1 }
+  ];
+
+  const statementGroups = $derived.by(() => {
+    const stmts = Object.values(yearlyStatements);
+    if (stmts.length === 0) return [];
+    return statementGroupDefs
+      .map((def) => {
+        const set = new Set<string>();
+        for (const s of stmts) {
+          const rec = s[def.key] || {};
+          for (const acct of Object.keys(rec)) set.add(acct);
+        }
+        return { ...def, accounts: Array.from(set).sort() };
+      })
+      .filter((g) => g.accounts.length > 0);
+  });
+
+  const statementWaterfall = $derived.by(() => {
+    if (!currentStatement) return [];
+    const sumRec = (rec?: Record<string, number>) =>
+      Object.values(rec || {}).reduce((a, b) => a + (b || 0), 0);
+    const steps: Array<{ label: string; start: number; end: number; delta: number; kind: "total" | "pos" | "neg" }> = [];
+    let running = currentStatement.startingBalance || 0;
+    steps.push({ label: "Start", start: 0, end: running, delta: running, kind: "total" });
+    for (const def of statementGroupDefs) {
+      const raw = sumRec(currentStatement[def.key]);
+      const delta = raw * def.multiplier;
+      if (Math.abs(delta) < 0.01) continue;
+      const next = running + delta;
+      steps.push({
+        label: def.label,
+        start: running,
+        end: next,
+        delta,
+        kind: delta >= 0 ? "pos" : "neg"
+      });
+      running = next;
+    }
+    const endBal = currentStatement.endingBalance || running;
+    steps.push({ label: "End", start: 0, end: endBal, delta: endBal, kind: "total" });
+    return steps;
+  });
 
   const availableMonths = $derived(Object.keys(monthWiseExpenses).sort().reverse());
   const selectedMonthPostings = $derived(monthWiseExpenses[selectedMonth] || []);
@@ -773,39 +829,157 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <!-- Waterfall Bridge Graph -->
+      {#if statementWaterfall.length > 0}
+        {@const wfMin = Math.min(0, ...statementWaterfall.flatMap((s) => [s.start, s.end]))}
+        {@const wfMax = Math.max(1, ...statementWaterfall.flatMap((s) => [s.start, s.end]))}
+        {@const wfSpan = Math.max(1, wfMax - wfMin)}
+        {@const wfW = 760}
+        {@const wfH = 220}
+        {@const padT = 22}
+        {@const padB = 28}
+        {@const plotH = wfH - padT - padB}
+        {@const yAt = (v: number) => padT + ((wfMax - v) / wfSpan) * plotH}
+        {@const slotW = wfW / statementWaterfall.length}
         <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Income</h3>
-          <div class="divide-y divide-[var(--border)] text-sm tabular-nums">
-            {#each Object.entries(currentStatement.income || {}) as [acct, amt]}
-              <div class="py-2 flex justify-between gap-2">
-                <span class="truncate">{acct}</span>
-                <span class="font-medium text-[var(--gain)]">{formatMoney(Math.abs(amt))}</span>
-              </div>
-            {/each}
+          <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Net Worth Bridge ({selectedYear})
+          </div>
+          <div class="overflow-x-auto">
+            <svg viewBox="0 0 {wfW} {wfH}" class="w-full min-w-[560px] h-56 overflow-visible">
+              <line
+                x1="0"
+                x2={wfW}
+                y1={yAt(0)}
+                y2={yAt(0)}
+                stroke="var(--border)"
+                stroke-dasharray="3 3"
+              />
+              {#each statementWaterfall as step, idx}
+                {@const barW = Math.min(54, slotW * 0.56)}
+                {@const x = idx * slotW + (slotW - barW) / 2}
+                {@const y1 = yAt(Math.max(step.start, step.end))}
+                {@const y2 = yAt(Math.min(step.start, step.end))}
+                {@const fill =
+                  step.kind === "total"
+                    ? "var(--accent)"
+                    : step.kind === "pos"
+                      ? "var(--gain)"
+                      : "var(--loss)"}
+                {#if idx < statementWaterfall.length - 1}
+                  <line
+                    x1={x + barW}
+                    x2={(idx + 1) * slotW + (slotW - barW) / 2}
+                    y1={yAt(step.end)}
+                    y2={yAt(step.end)}
+                    stroke="var(--border)"
+                    stroke-dasharray="3 3"
+                  />
+                {/if}
+                <rect
+                  {x}
+                  y={y1}
+                  width={barW}
+                  height={Math.max(2, y2 - y1)}
+                  {fill}
+                  rx="4"
+                  opacity="0.9"
+                />
+                <text
+                  x={x + barW / 2}
+                  y={y1 - 6}
+                  text-anchor="middle"
+                  font-size="10"
+                  fill="var(--muted)"
+                  class="tabular-nums"
+                >
+                  {step.kind === "total"
+                    ? formatMoney(step.end)
+                    : `${step.delta >= 0 ? "+" : ""}${formatMoney(step.delta)}`}
+                </text>
+                <text
+                  x={x + barW / 2}
+                  y={wfH - 8}
+                  text-anchor="middle"
+                  font-size="11"
+                  fill="var(--muted)"
+                >
+                  {step.label}
+                </text>
+              {/each}
+            </svg>
           </div>
         </div>
+      {/if}
 
-        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-            Expenses &amp; Taxes
-          </h3>
-          <div class="divide-y divide-[var(--border)] text-sm tabular-nums">
-            {#each Object.entries(currentStatement.expenses || {}) as [acct, amt]}
-              <div class="py-2 flex justify-between gap-2">
-                <span class="truncate">{acct}</span>
-                <span class="font-medium text-[var(--loss)]">{formatMoney(Math.abs(amt))}</span>
-              </div>
-            {/each}
-            {#each Object.entries(currentStatement.tax || {}) as [acct, amt]}
-              <div class="py-2 flex justify-between gap-2">
-                <span class="truncate">{acct}</span>
-                <span class="font-medium text-[var(--warning)]">{formatMoney(Math.abs(amt))}</span>
-              </div>
-            {/each}
+      <!-- Detailed Account / Yearly Amounts Breakdown Table -->
+      {#if statementGroups.length > 0}
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+          <div class="px-5 py-3 border-b border-[var(--border)] text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Detailed Account Breakdown by Year
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
+                <tr>
+                  <th class="py-2.5 px-4 font-medium">Account</th>
+                  {#each statementYears as yr}
+                    <th class="py-2.5 px-4 text-right font-medium">{yr}</th>
+                  {/each}
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--border)] tabular-nums">
+                <tr class="bg-[var(--surface-elevated)]/30 font-semibold">
+                  <td class="py-2 px-4">Starting Balance</td>
+                  {#each statementYears as yr}
+                    <td class="py-2 px-4 text-right">
+                      {formatMoney(yearlyStatements[yr]?.startingBalance || 0)}
+                    </td>
+                  {/each}
+                </tr>
+                {#each statementGroups as grp}
+                  <tr class="bg-[var(--surface-elevated)]/60 font-semibold text-xs uppercase tracking-wider text-[var(--muted)]">
+                    <td class="py-2 px-4">{grp.label}</td>
+                    {#each statementYears as yr}
+                      {@const grpSum =
+                        Object.values(yearlyStatements[yr]?.[grp.key] || {}).reduce((a, b) => a + (b || 0), 0) *
+                        grp.multiplier}
+                      <td
+                        class="py-2 px-4 text-right {grpSum > 0
+                          ? 'text-[var(--gain)]'
+                          : grpSum < 0
+                            ? 'text-[var(--loss)]'
+                            : ''}"
+                      >
+                        {Math.abs(grpSum) > 0.01 ? formatMoney(grpSum) : "—"}
+                      </td>
+                    {/each}
+                  </tr>
+                  {#each grp.accounts as acct}
+                    <tr class="hover:bg-[var(--surface-elevated)]/40">
+                      <td class="py-1.5 px-4 pl-7 text-xs">{acct}</td>
+                      {#each statementYears as yr}
+                        {@const val = (yearlyStatements[yr]?.[grp.key]?.[acct] || 0) * grp.multiplier}
+                        <td class="py-1.5 px-4 text-right text-xs text-[var(--muted)]">
+                          {Math.abs(val) > 0.01 ? formatMoney(val) : ""}
+                        </td>
+                      {/each}
+                    </tr>
+                  {/each}
+                {/each}
+                <tr class="bg-[var(--surface-elevated)]/40 font-semibold">
+                  <td class="py-2 px-4">Ending Balance</td>
+                  {#each statementYears as yr}
+                    <td class="py-2 px-4 text-right">
+                      {formatMoney(yearlyStatements[yr]?.endingBalance || 0)}
+                    </td>
+                  {/each}
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
-      </div>
+      {/if}
     {/if}
   {:else if activeTab === "sankey"}
     <div class="space-y-5">
