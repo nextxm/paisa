@@ -6,9 +6,10 @@
     type FanBand,
     type ProjectionPoint
   } from "$lib/components/ProjectionChart.svelte";
-  import { apiGet, formatMoney } from "$lib/api";
+  import PlanningSubtools from "$lib/components/PlanningSubtools.svelte";
+  import { apiGet, formatMoney, runtime } from "$lib/api";
 
-  type PlanningTab = "projection" | "goals";
+  type PlanningTab = "projection" | "goals" | "whatif" | "drawdown" | "tax";
   type ProjectionMode = "simple" | "montecarlo";
   type ScenarioKey = "expected" | "conservative" | "optimistic";
 
@@ -347,6 +348,35 @@
     >
       Goals ({goals.length})
     </button>
+    <button
+      type="button"
+      class="pb-2.5 border-b-2 cursor-pointer {activeTab === 'whatif'
+        ? 'border-[var(--accent)] font-semibold text-[var(--text)]'
+        : 'border-transparent text-[var(--muted)]'}"
+      onclick={() => (activeTab = "whatif")}
+    >
+      What-If
+    </button>
+    <button
+      type="button"
+      class="pb-2.5 border-b-2 cursor-pointer {activeTab === 'drawdown'
+        ? 'border-[var(--accent)] font-semibold text-[var(--text)]'
+        : 'border-transparent text-[var(--muted)]'}"
+      onclick={() => (activeTab = "drawdown")}
+    >
+      Drawdown
+    </button>
+    {#if runtime.defaultCurrency === "INR"}
+      <button
+        type="button"
+        class="pb-2.5 border-b-2 cursor-pointer {activeTab === 'tax'
+          ? 'border-[var(--accent)] font-semibold text-[var(--text)]'
+          : 'border-transparent text-[var(--muted)]'}"
+        onclick={() => (activeTab = "tax")}
+      >
+        Tax
+      </button>
+    {/if}
   </div>
 
   {#if loading}
@@ -656,7 +686,7 @@
         </div>
       </div>
     {/if}
-  {:else}
+  {:else if activeTab === "goals"}
     <!-- Goals Tab -->
     {#if goals.length === 0}
       <div
@@ -692,5 +722,7 @@
         {/each}
       </div>
     {/if}
+  {:else}
+    <PlanningSubtools tool={activeTab} />
   {/if}
 </div>
