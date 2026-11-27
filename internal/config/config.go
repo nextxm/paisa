@@ -231,6 +231,7 @@ type Config struct {
 var config Config
 var configPath string
 var location *time.Location
+var deprecatedConfigKeys []string
 
 var defaultConfig = Config{
 	Readonly:              false,
@@ -355,6 +356,7 @@ func SaveConfig(content []byte) error {
 		return err
 	}
 
+	deprecatedConfigKeys = nil
 	return nil
 }
 
@@ -388,8 +390,34 @@ func normalizePriceProvider(provider string) string {
 	return provider
 }
 
-func normalizeConfig(value interface{}) {
+func stripDeprecatedKeys(root map[string]interface{}) []string {
+	var found []string
+	if _, ok := root["firefly"]; ok {
+		log.Warn("Ignoring removed configuration key: firefly")
+		delete(root, "firefly")
+		found = append(found, "firefly")
+	}
+	if labs, ok := root["labs"].(map[string]interface{}); ok {
+		if _, ok := labs["firefly_reconcile"]; ok {
+			log.Warn("Ignoring removed configuration key: labs.firefly_reconcile")
+			delete(labs, "firefly_reconcile")
+			found = append(found, "labs.firefly_reconcile")
+		}
+	}
+	return found
+}
+
+func GetDeprecatedConfigKeys() []string {
+	out := make([]string, len(deprecatedConfigKeys))
+	copy(out, deprecatedConfigKeys)
+	return out
+}
+
+func normalizeConfig(value interface{}) []string {
 	root, _ := value.(map[string]interface{})
+	if root == nil {
+		return nil
+	}
 	commodities, _ := root["commodities"].([]interface{})
 	for _, value := range commodities {
 		commodity, _ := value.(map[string]interface{})
@@ -398,6 +426,7 @@ func normalizeConfig(value interface{}) {
 			price["provider"] = normalizePriceProvider(provider)
 		}
 	}
+	return stripDeprecatedKeys(root)
 }
 
 func LoadConfig(content []byte, cp string) error {
@@ -407,7 +436,10 @@ func LoadConfig(content []byte, cp string) error {
 		return err
 	}
 
-	normalizeConfig(configJson)
+	foundDeprecated := normalizeConfig(configJson)
+	if cp != "" {
+		deprecatedConfigKeys = foundDeprecated
+	}
 
 	err = schema.Validate(configJson)
 	if err != nil {

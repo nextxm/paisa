@@ -142,6 +142,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 			"schema":            config.GetSchema(),
 			"last_price_update": lastPriceUpdate,
 			"is_journal_dirty":  isJournalDirty,
+			"deprecated_keys":   config.GetDeprecatedConfigKeys(),
 		})
 	})
 

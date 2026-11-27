@@ -7,11 +7,13 @@
   let {
     initialConfig,
     schema,
-    accounts = []
+    accounts = [],
+    deprecatedKeys = []
   }: {
     initialConfig: Record<string, unknown>;
     schema: JsonSchemaNode;
     accounts?: string[];
+    deprecatedKeys?: string[];
   } = $props();
 
   let activeSectionId = $state(DEFAULT_SECTION_ID);
@@ -242,6 +244,15 @@
         </div>
       </div>
 
+      {#if deprecatedKeys.length > 0 && !message}
+        <div class="px-5 py-2.5 bg-[var(--warning)]/15 text-xs text-[var(--warning)] border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-2">
+          <span>
+            Removed/deprecated settings in <code>paisa.yaml</code> were ignored on startup:
+            <strong class="font-mono">{deprecatedKeys.join(", ")}</strong>.
+            Save the configuration to clean up your file.
+          </span>
+        </div>
+      {/if}
       {#if message}
         <div class="px-5 py-2 bg-[var(--gain)]/10 text-xs text-[var(--gain)] border-b border-[var(--border)]">
           {message}

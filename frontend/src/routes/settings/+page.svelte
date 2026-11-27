@@ -22,6 +22,7 @@
   let configJson = $state<Record<string, unknown> | null>(null);
   let configSchema = $state<JsonSchemaNode | null>(null);
   let configAccounts = $state<string[]>([]);
+  let deprecatedKeys = $state<string[]>([]);
   let configError = $state<string | null>(null);
   let logs = $state<LogEntry[]>([]);
 
@@ -34,6 +35,7 @@
           config?: Record<string, unknown>;
           schema?: JsonSchemaNode;
           accounts?: string[];
+          deprecated_keys?: string[];
         }>("/api/config").catch((e) => {
           configError = e instanceof Error ? e.message : "Failed to load configuration";
           return null;
@@ -43,6 +45,7 @@
       configJson = cfgRes?.config || null;
       configSchema = cfgRes?.schema || null;
       configAccounts = cfgRes?.accounts || [];
+      deprecatedKeys = cfgRes?.deprecated_keys || [];
       logs = logRes.logs || [];
     } finally {
       loading = false;
@@ -80,7 +83,12 @@
     <div class="h-64 rounded-xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"></div>
   {:else if activeTab === "config"}
     {#if configJson && configSchema}
-      <ConfigPanel initialConfig={configJson} schema={configSchema} accounts={configAccounts} />
+      <ConfigPanel
+        initialConfig={configJson}
+        schema={configSchema}
+        accounts={configAccounts}
+        {deprecatedKeys}
+      />
     {:else}
       <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5">
         <p class="text-sm text-[var(--muted)]">
