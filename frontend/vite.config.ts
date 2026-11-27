@@ -4,6 +4,11 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [tailwindcss(), sveltekit()],
+  css: {
+    postcss: {
+      plugins: []
+    }
+  },
   server: {
     proxy: {
       "/api": {
