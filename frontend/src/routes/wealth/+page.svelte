@@ -84,6 +84,7 @@
 
   let activeTab = $state<WealthTab>("overview");
   let yearsWindow = $state<number>(0);
+  let showFxImpact = $state(true);
   let search = $state("");
   let asOfDate = $state(new Date().toISOString().slice(0, 10));
   let reportCurrency = $state("");
@@ -392,12 +393,12 @@
       <p class="text-xs text-[var(--muted)] mt-1">{error}</p>
     </div>
   {:else if activeTab === "overview"}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
       <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
         <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
           Net Worth
         </div>
-        <div class="text-2xl font-semibold tabular-nums mt-1">
+        <div class="text-xl font-semibold tabular-nums mt-1">
           {formatMoney(latestPoint?.balanceAmount || 0)}
         </div>
       </div>
@@ -406,7 +407,7 @@
           Total Gain
         </div>
         <div
-          class="text-2xl font-semibold tabular-nums mt-1 {(latestPoint?.gainAmount || 0) >= 0
+          class="text-xl font-semibold tabular-nums mt-1 {(latestPoint?.gainAmount || 0) >= 0
             ? 'text-[var(--gain)]'
             : 'text-[var(--loss)]'}"
         >
@@ -415,16 +416,44 @@
       </div>
       <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
         <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Inv. Return
+        </div>
+        <div
+          class="text-xl font-semibold tabular-nums mt-1 {(latestPoint?.investment_return || 0) >= 0
+            ? 'text-[var(--gain)]'
+            : 'text-[var(--loss)]'}"
+        >
+          {formatMoney(latestPoint?.investment_return ?? latestPoint?.gainAmount ?? 0)}
+        </div>
+      </div>
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
+        <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          FX Impact
+        </div>
+        <div
+          class="text-xl font-semibold tabular-nums mt-1 {(latestPoint?.fx_impact || 0) >= 0
+            ? 'text-[var(--warning)]'
+            : 'text-[var(--loss)]'}"
+        >
+          {formatMoney(latestPoint?.fx_impact || 0)}
+        </div>
+      </div>
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
+        <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
           Portfolio XIRR
         </div>
-        <div class="text-2xl font-semibold tabular-nums mt-1">{xirr.toFixed(1)}%</div>
+        <div class="text-xl font-semibold tabular-nums mt-1">{xirr.toFixed(1)}%</div>
       </div>
     </div>
 
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-      <div class="flex items-center justify-between text-xs text-[var(--muted)]">
+      <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted)]">
         <span class="font-semibold uppercase tracking-wider">Net Worth Timeline</span>
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center gap-4">
+          <label class="inline-flex items-center gap-1.5 cursor-pointer text-[var(--text)]">
+            <input type="checkbox" bind:checked={showFxImpact} />
+            Show FX Impact
+          </label>
           <span class="inline-flex items-center gap-1.5">
             <span class="w-3 h-0.5 bg-[var(--accent)] inline-block"></span>
             Net Worth
@@ -433,9 +462,19 @@
             <span class="w-3 h-0.5 bg-[var(--muted)] inline-block"></span>
             Invested
           </span>
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-3 h-0.5 bg-[var(--gain)] inline-block"></span>
+            Gain
+          </span>
+          {#if showFxImpact}
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-3 h-0.5 bg-[var(--warning)] inline-block"></span>
+              FX Impact
+            </span>
+          {/if}
         </div>
       </div>
-      <LineAreaChart data={windowedTimeline} />
+      <LineAreaChart data={windowedTimeline} {showFxImpact} />
     </div>
   {:else if activeTab === "assets"}
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">

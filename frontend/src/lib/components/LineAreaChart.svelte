@@ -7,9 +7,11 @@
     balanceAmount: number;
     netInvestmentAmount: number;
     gainAmount: number;
+    investment_return?: number;
+    fx_impact?: number;
   }
 
-  let { data }: { data: NetworthPoint[] } = $props();
+  let { data, showFxImpact = true }: { data: NetworthPoint[]; showFxImpact?: boolean } = $props();
 
   let container = $state<HTMLDivElement | null>(null);
   let width = $state(640);
@@ -32,12 +34,26 @@
   const plotWidth = $derived(Math.max(100, width - margin.left - margin.right));
   const plotHeight = height - margin.top - margin.bottom;
 
+  const hasFxData = $derived(showFxImpact && data.some((d) => Math.abs(d.fx_impact || 0) > 0.01));
+
   const bounds = $derived.by(() => {
     let min = 0;
     let max = 0;
     for (const d of data) {
-      min = Math.min(min, d.balanceAmount || 0, d.netInvestmentAmount || 0);
-      max = Math.max(max, d.balanceAmount || 0, d.netInvestmentAmount || 0);
+      min = Math.min(
+        min,
+        d.balanceAmount || 0,
+        d.netInvestmentAmount || 0,
+        d.gainAmount || 0,
+        hasFxData ? d.fx_impact || 0 : 0
+      );
+      max = Math.max(
+        max,
+        d.balanceAmount || 0,
+        d.netInvestmentAmount || 0,
+        d.gainAmount || 0,
+        hasFxData ? d.fx_impact || 0 : 0
+      );
     }
     if (max === min) max = min + 1000;
     return { min, max: max * 1.06 };
@@ -75,6 +91,18 @@
         (d, i) =>
           `${i === 0 ? "M" : "L"}${xPos(i).toFixed(1)},${yPos(d.netInvestmentAmount).toFixed(1)}`
       )
+      .join(" ")
+  );
+
+  const gainPath = $derived(
+    data
+      .map((d, i) => `${i === 0 ? "M" : "L"}${xPos(i).toFixed(1)},${yPos(d.gainAmount || 0).toFixed(1)}`)
+      .join(" ")
+  );
+
+  const fxPath = $derived(
+    data
+      .map((d, i) => `${i === 0 ? "M" : "L"}${xPos(i).toFixed(1)},${yPos(d.fx_impact || 0).toFixed(1)}`)
       .join(" ")
   );
 
@@ -140,6 +168,16 @@
           stroke-width="1.5"
           stroke-dasharray="4 4"
         />
+        <path d={gainPath} fill="none" stroke="var(--gain)" stroke-width="1.5" opacity="0.85" />
+        {#if hasFxData}
+          <path
+            d={fxPath}
+            fill="none"
+            stroke="var(--warning)"
+            stroke-width="1.5"
+            stroke-dasharray="2 2"
+          />
+        {/if}
         <path d={balancePath} fill="none" stroke="var(--accent)" stroke-width="2.25" />
 
         {#each data as d, i}
@@ -177,6 +215,14 @@
           <span class={pt.gainAmount >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"}>
             Gain: {formatMoney(pt.gainAmount)}
           </span>
+          {#if pt.investment_return !== undefined}
+            <span class={pt.investment_return >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"}>
+              Inv. Return: {formatMoney(pt.investment_return)}
+            </span>
+          {/if}
+          {#if showFxImpact && pt.fx_impact !== undefined}
+            <span class="text-[var(--warning)]">FX Impact: {formatMoney(pt.fx_impact)}</span>
+          {/if}
         </div>
       </div>
     {/if}
