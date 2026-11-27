@@ -1,12 +1,6 @@
-import { fetchConfig } from "$lib/config_client";
+import { redirect } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 
-export const load = (async () => {
-  const { config } = await fetchConfig();
-  config.goals = {
-    retirement: config.goals?.retirement || [],
-    savings: config.goals?.savings || [],
-    life: config.goals?.life || []
-  };
-  return { config };
+export const load = (() => {
+  throw redirect(301, "/planning/goals?tab=life");
 }) satisfies PageLoad;

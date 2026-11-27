@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from "$app/stores";
   import COLORS from "$lib/colors";
   import LegendCard from "$lib/components/LegendCard.svelte";
   import { renderNetworth } from "$lib/networth";
@@ -9,11 +10,13 @@
     type FinancialProfile,
     type Legend,
     type Networth,
-    type NetworthProjectionResponse
+    type NetworthProjectionResponse,
+    type SimulationResponse
   } from "$lib/utils";
   import { onDestroy, onMount } from "svelte";
   import dayjs from "dayjs";
   import { debounce } from "lodash";
+  import { renderFanChart } from "./fan_chart";
   import {
     buildProjectionRows,
     calibrateFromDna,
@@ -28,6 +31,12 @@
     type ProjectionScenarioTable
   } from "./projection";
 
+  type ProjectionMode = "simple" | "montecarlo";
+
+  let mode: ProjectionMode = $state(
+    $page.url.searchParams.get("mode") === "montecarlo" ? "montecarlo" : "simple"
+  );
+
   let svg: Element | undefined = $state();
   let destroy: () => void;
   let legends: Legend[] = $state([]);
@@ -35,7 +44,13 @@
   let baseData: NetworthProjectionResponse | null = $state(null);
   let dnaProfile: FinancialProfile | null = $state(null);
 
-  // Core 3 levers
+  // Monte Carlo state
+  let fanChartContainer: HTMLDivElement | undefined = $state();
+  let simData: SimulationResponse | null = $state(null);
+  let simLoading = $state(false);
+  let simError: string | null = $state(null);
+
+  // Core 3 levers (shared across Simple & Monte Carlo)
   let years = $state(15);
   let monthlyContribution = $state(0);
   let expectedCagr = $state(9);
@@ -46,12 +61,17 @@
   let cagrSpread = $state(3);
   let adjustForInflation = $state(true);
 
+  // Monte Carlo specific assumptions
+  let volatility = $state(18);
+  let contribGrowth = $state(5);
+  let iterations = $state(1000);
+
   let showAssumptions = $state(false);
   let showDnaDrawer = $state(false);
   let activeScenarioKey: ProjectionScenarioKey = $state("expected");
   let controlsInitialized = $state(false);
 
-  // Debounced calculation values
+  // Debounced calculation values (Simple mode)
   let calcYears = $state(15);
   let calcMonthlyContribution = $state(0);
   let calcExpectedCagr = $state(9);
@@ -75,11 +95,25 @@
     cagrSpread = calibrated.cagrSpread;
     inflationRate = calibrated.inflationRate;
 
+    if (dnaProfile.return_volatility > 0) {
+      volatility = Math.min(40, Math.max(0, Math.round(dnaProfile.return_volatility * 10) / 10));
+    }
+    if (dnaProfile.income_growth_rate > 0) {
+      contribGrowth = Math.min(
+        20,
+        Math.max(0, Math.round(dnaProfile.income_growth_rate * 10) / 10)
+      );
+    }
+
     calcMonthlyContribution = monthlyContribution;
     calcExpectedCagr = expectedCagr;
     calcCagrSpread = cagrSpread;
     calcInflationRate = inflationRate;
     updateCalculations.flush();
+
+    if (mode === "montecarlo") {
+      debouncedSimulate.flush();
+    }
   }
 
   function exportScenarioCSV(scenario: ProjectionScenarioTable) {
@@ -103,6 +137,36 @@
     calcAdjustForInflation = adjustForInflation;
   }, 100);
 
+  async function runSimulation() {
+    simLoading = true;
+    simError = null;
+    try {
+      simData = await ajax("/api/projection/simulate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          iterations: Math.max(100, parseVal(iterations, 1000)),
+          months_to_project: Math.max(1, parseVal(years, 15)) * 12,
+          monthly_contribution: parseVal(monthlyContribution, 0),
+          contribution_growth_rate: parseVal(contribGrowth, 5),
+          expected_return: parseVal(expectedCagr, 9),
+          return_volatility: parseVal(volatility, 18),
+          inflation_rate: parseVal(inflationRate, 6),
+          swr: parseVal(swr, 4)
+        })
+      });
+      if (simData?.profile) {
+        dnaProfile = simData.profile;
+      }
+    } catch (e) {
+      simError = e instanceof Error ? e.message : "Simulation failed";
+    } finally {
+      simLoading = false;
+    }
+  }
+
+  const debouncedSimulate = debounce(runSimulation, 500);
+
   $effect(() => {
     const _y = years;
     const _mc = monthlyContribution;
@@ -111,9 +175,28 @@
     const _i = inflationRate;
     const _sp = cagrSpread;
     const _adj = adjustForInflation;
+    const _v = volatility;
+    const _cg = contribGrowth;
+    const _it = iterations;
 
-    if (controlsInitialized) {
+    if (!controlsInitialized) return;
+
+    if (mode === "simple") {
       updateCalculations();
+    } else {
+      debouncedSimulate();
+    }
+  });
+
+  $effect(() => {
+    if (mode === "montecarlo" && controlsInitialized && !simData && !simLoading && !simError) {
+      void runSimulation();
+    }
+  });
+
+  $effect(() => {
+    if (mode === "montecarlo" && simData && fanChartContainer) {
+      renderFanChart(simData, fanChartContainer);
     }
   });
 
@@ -271,7 +354,7 @@
   );
 
   $effect(() => {
-    if (svg && points.length > 0) {
+    if (mode === "simple" && svg && points.length > 0) {
       if (destroy) {
         destroy();
       }
@@ -310,6 +393,15 @@
     baseData = projData;
     if (dnaData) {
       dnaProfile = dnaData.profile;
+      if (dnaProfile.return_volatility > 0) {
+        volatility = Math.min(40, Math.max(0, Math.round(dnaProfile.return_volatility * 10) / 10));
+      }
+      if (dnaProfile.income_growth_rate > 0) {
+        contribGrowth = Math.min(
+          20,
+          Math.max(0, Math.round(dnaProfile.income_growth_rate * 10) / 10)
+        );
+      }
     }
 
     if (baseData) {
@@ -352,6 +444,7 @@
 
   onDestroy(() => {
     updateCalculations.cancel();
+    debouncedSimulate.cancel();
     if (destroy) {
       destroy();
     }
@@ -360,7 +453,7 @@
 
 <section class="section tab-projection py-5">
   <div class="container is-fluid">
-    <!-- Compact Header with DNA Actions -->
+    <!-- Compact Header with Mode Toggle + DNA Actions -->
     <div
       class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap gap-3 mb-4"
     >
@@ -370,15 +463,46 @@
           <p class="is-size-7 has-text-grey">
             Baseline: <strong>{formatCurrency(projection.current_networth)}</strong> net worth ·
             <strong>{formatCurrency(projection.annual_expenses)}</strong>/yr expenses ·
-            {calcAdjustForInflation
-              ? "Shown in today's money (real)"
-              : "Shown in future money (nominal)"}
+            {#if mode === "montecarlo"}
+              Probabilistic Monte Carlo ({iterations.toLocaleString()} runs)
+            {:else}
+              {calcAdjustForInflation
+                ? "Shown in today's money (real)"
+                : "Shown in future money (nominal)"}
+            {/if}
           </p>
         {/if}
       </div>
 
-      {#if dnaProfile}
-        <div class="is-flex is-align-items-center gap-2">
+      <div class="is-flex is-align-items-center is-flex-wrap-wrap gap-2">
+        <div class="tabs is-toggle is-small mb-0">
+          <ul>
+            <li class={mode === "simple" ? "is-active" : ""}>
+              <a
+                href="#simple"
+                onclick={(e) => {
+                  e.preventDefault();
+                  mode = "simple";
+                }}
+              >
+                <span>Simple</span>
+              </a>
+            </li>
+            <li class={mode === "montecarlo" ? "is-active" : ""}>
+              <a
+                href="#montecarlo"
+                onclick={(e) => {
+                  e.preventDefault();
+                  mode = "montecarlo";
+                }}
+              >
+                <span>Monte Carlo</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        {#if dnaProfile}
           <button
             class="button is-small is-primary is-light"
             type="button"
@@ -399,8 +523,8 @@
               <i class="fa-solid {showDnaDrawer ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
             </span>
           </button>
-        </div>
-      {/if}
+        {/if}
+      </div>
     </div>
 
     <!-- Collapsible Financial DNA Drawer -->
@@ -410,8 +534,8 @@
           class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap gap-2 mb-3"
         >
           <p class="is-size-7 has-text-grey mb-0">
-            Inferred from your ledger history. Click <strong>Calibrate from Ledger</strong> to apply these
-            rates to your projection.
+            Inferred from your ledger history. Click <strong>Apply to Sliders</strong> to calibrate your
+            projection parameters.
           </p>
           <button
             class="button is-small is-primary"
@@ -479,56 +603,115 @@
     {/if}
 
     <!-- Outcome KPIs Strip -->
-    <div class="columns is-multiline mb-4">
-      <div class="column is-4">
-        <div class="box outcome-card">
-          <div class="outcome-label">Years to FIRE</div>
-          <div class="outcome-value">
-            {#if projection?.years_to_fire !== null && projection?.years_to_fire !== undefined}
-              {formatFloat(projection.years_to_fire)} years
-            {:else}
-              Not in {calcYears}y window
+    {#if mode === "simple"}
+      <div class="columns is-multiline mb-4">
+        <div class="column is-4">
+          <div class="box outcome-card">
+            <div class="outcome-label">Years to FIRE</div>
+            <div class="outcome-value">
+              {#if projection?.years_to_fire !== null && projection?.years_to_fire !== undefined}
+                {formatFloat(projection.years_to_fire)} years
+              {:else}
+                Not in {calcYears}y window
+              {/if}
+            </div>
+            <div class="outcome-sub">
+              {#if projection?.fire_date}
+                Estimated by {projection.fire_date.format("MMM YYYY")}
+              {:else}
+                Increase horizon or monthly savings
+              {/if}
+            </div>
+          </div>
+        </div>
+        <div class="column is-4">
+          <div class="box outcome-card">
+            <div class="outcome-label">FIRE Progress</div>
+            <div class="outcome-value">{formatFloat(projection?.fire_progress_percent || 0)}%</div>
+            <progress
+              class="progress is-small is-primary mt-2 mb-1"
+              value={projection?.fire_progress_percent || 0}
+              max="100"
+            ></progress>
+            <div class="outcome-sub">
+              {formatCurrency(projection?.current_networth || 0)} of
+              {formatCurrency(projection?.base_target_corpus || 0)} today's target
+            </div>
+          </div>
+        </div>
+        <div class="column is-4">
+          <div class="box outcome-card">
+            <div class="outcome-label">
+              Target Corpus
+              <span class="tag is-light is-small ml-1">
+                {calcAdjustForInflation ? "Real" : "Nominal"}
+              </span>
+            </div>
+            <div class="outcome-value">{formatCurrency(projection?.target_corpus || 0)}</div>
+            <div class="outcome-sub">
+              {formatFloat(calcSwr)}% SWR on {formatCurrency(projection?.annual_expenses || 0)}/yr
+            </div>
+          </div>
+        </div>
+      </div>
+    {:else}
+      <div class="columns is-multiline mb-4">
+        <div class="column is-4">
+          <div class="box outcome-card">
+            <div class="outcome-label">Years to FIRE (Median P50)</div>
+            <div class="outcome-value">
+              {#if simData?.simulation.fire_year_p50 && simData.simulation.fire_year_p50 > 0}
+                {simData.simulation.fire_year_p50} years
+              {:else}
+                Not in {years}y window
+              {/if}
+            </div>
+            <div class="outcome-sub">
+              {#if simData}
+                P25: {simData.simulation.fire_year_p25 > 0
+                  ? `${simData.simulation.fire_year_p25}y`
+                  : "—"} · P75: {simData.simulation.fire_year_p75 > 0
+                  ? `${simData.simulation.fire_year_p75}y`
+                  : "—"}
+              {:else}
+                Running simulation…
+              {/if}
+            </div>
+          </div>
+        </div>
+        <div class="column is-4">
+          <div class="box outcome-card">
+            <div class="outcome-label">FIRE Probability</div>
+            <div class="outcome-value">
+              {simData ? `${formatFloat(simData.simulation.fire_probability * 100)}%` : "—"}
+            </div>
+            {#if simData}
+              <progress
+                class="progress is-small mt-2 mb-1 {simData.simulation.fire_probability >= 0.7
+                  ? 'is-success'
+                  : simData.simulation.fire_probability >= 0.4
+                    ? 'is-warning'
+                    : 'is-danger'}"
+                value={simData.simulation.fire_probability * 100}
+                max="100"
+              ></progress>
             {/if}
+            <div class="outcome-sub">Likelihood of reaching FIRE within {years} years</div>
           </div>
-          <div class="outcome-sub">
-            {#if projection?.fire_date}
-              Estimated by {projection.fire_date.format("MMM YYYY")}
-            {:else}
-              Increase horizon or monthly savings
-            {/if}
+        </div>
+        <div class="column is-4">
+          <div class="box outcome-card">
+            <div class="outcome-label">Target Corpus</div>
+            <div class="outcome-value">
+              {simData ? formatCurrency(simData.simulation.target_corpus) : "—"}
+            </div>
+            <div class="outcome-sub">
+              {formatFloat(swr)}% SWR · {formatFloat(volatility)}% volatility
+            </div>
           </div>
         </div>
       </div>
-      <div class="column is-4">
-        <div class="box outcome-card">
-          <div class="outcome-label">FIRE Progress</div>
-          <div class="outcome-value">{formatFloat(projection?.fire_progress_percent || 0)}%</div>
-          <progress
-            class="progress is-small is-primary mt-2 mb-1"
-            value={projection?.fire_progress_percent || 0}
-            max="100"
-          ></progress>
-          <div class="outcome-sub">
-            {formatCurrency(projection?.current_networth || 0)} of
-            {formatCurrency(projection?.base_target_corpus || 0)} today's target
-          </div>
-        </div>
-      </div>
-      <div class="column is-4">
-        <div class="box outcome-card">
-          <div class="outcome-label">
-            Target Corpus
-            <span class="tag is-light is-small ml-1">
-              {calcAdjustForInflation ? "Real" : "Nominal"}
-            </span>
-          </div>
-          <div class="outcome-value">{formatCurrency(projection?.target_corpus || 0)}</div>
-          <div class="outcome-sub">
-            {formatFloat(calcSwr)}% SWR on {formatCurrency(projection?.annual_expenses || 0)}/yr
-          </div>
-        </div>
-      </div>
-    </div>
+    {/if}
 
     <!-- Main Workspace: 3 Core Levers + Chart -->
     <div class="columns">
@@ -623,9 +806,14 @@
               <span class="is-size-7 has-text-weight-semibold">
                 Assumptions
                 <span class="has-text-grey has-text-weight-normal ml-1">
-                  ({formatFloat(swr)}% SWR · {formatFloat(inflationRate)}% inf · ±{formatFloat(
-                    cagrSpread
-                  )}%)
+                  {#if mode === "simple"}
+                    ({formatFloat(swr)}% SWR · {formatFloat(inflationRate)}% inf · ±{formatFloat(
+                      cagrSpread
+                    )}%)
+                  {:else}
+                    ({formatFloat(swr)}% SWR · {formatFloat(volatility)}% vol · {iterations.toLocaleString()}
+                    runs)
+                  {/if}
                 </span>
               </span>
               <span class="icon is-small">
@@ -635,12 +823,14 @@
 
             {#if showAssumptions}
               <div class="mt-3">
-                <div class="field">
-                  <label class="checkbox is-size-7">
-                    <input type="checkbox" bind:checked={adjustForInflation} />
-                    <span class="ml-1">Adjust for inflation (show in today's money)</span>
-                  </label>
-                </div>
+                {#if mode === "simple"}
+                  <div class="field">
+                    <label class="checkbox is-size-7">
+                      <input type="checkbox" bind:checked={adjustForInflation} />
+                      <span class="ml-1">Adjust for inflation (show in today's money)</span>
+                    </label>
+                  </div>
+                {/if}
 
                 <div class="field">
                   <label class="label is-size-7" for="projection-swr"
@@ -694,32 +884,115 @@
                   </div>
                 </div>
 
-                <div class="field mb-0">
-                  <label class="label is-size-7" for="projection-spread"
-                    >Scenario Spread: ±{formatFloat(cagrSpread ?? 0)}%</label
-                  >
-                  <div class="control-row">
-                    <input
-                      id="projection-spread"
-                      class="slider-input"
-                      type="range"
-                      min="0.5"
-                      max="15"
-                      step="0.5"
-                      bind:value={cagrSpread}
-                    />
-                    <input
-                      id="projection-spread-input"
-                      class="input is-small number-input"
-                      type="number"
-                      min="0.5"
-                      max="15"
-                      step="0.5"
-                      bind:value={cagrSpread}
-                      aria-label="Scenario Spread"
-                    />
+                {#if mode === "simple"}
+                  <div class="field mb-0">
+                    <label class="label is-size-7" for="projection-spread"
+                      >Scenario Spread: ±{formatFloat(cagrSpread ?? 0)}%</label
+                    >
+                    <div class="control-row">
+                      <input
+                        id="projection-spread"
+                        class="slider-input"
+                        type="range"
+                        min="0.5"
+                        max="15"
+                        step="0.5"
+                        bind:value={cagrSpread}
+                      />
+                      <input
+                        id="projection-spread-input"
+                        class="input is-small number-input"
+                        type="number"
+                        min="0.5"
+                        max="15"
+                        step="0.5"
+                        bind:value={cagrSpread}
+                        aria-label="Scenario Spread"
+                      />
+                    </div>
                   </div>
-                </div>
+                {:else}
+                  <div class="field">
+                    <label class="label is-size-7" for="mc-volatility"
+                      >Volatility (Risk): {formatFloat(volatility)}%</label
+                    >
+                    <div class="control-row">
+                      <input
+                        id="mc-volatility"
+                        class="slider-input"
+                        type="range"
+                        min="0"
+                        max="40"
+                        step="0.5"
+                        bind:value={volatility}
+                      />
+                      <input
+                        id="mc-volatility-input"
+                        class="input is-small number-input"
+                        type="number"
+                        min="0"
+                        max="40"
+                        step="0.5"
+                        bind:value={volatility}
+                        aria-label="Volatility"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <label class="label is-size-7" for="mc-contrib-growth"
+                      >Contribution Growth: {formatFloat(contribGrowth)}%</label
+                    >
+                    <div class="control-row">
+                      <input
+                        id="mc-contrib-growth"
+                        class="slider-input"
+                        type="range"
+                        min="0"
+                        max="20"
+                        step="0.5"
+                        bind:value={contribGrowth}
+                      />
+                      <input
+                        id="mc-contrib-growth-input"
+                        class="input is-small number-input"
+                        type="number"
+                        min="0"
+                        max="20"
+                        step="0.5"
+                        bind:value={contribGrowth}
+                        aria-label="Contribution Growth"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="field mb-0">
+                    <label class="label is-size-7" for="mc-iterations"
+                      >Simulations: {iterations.toLocaleString()}</label
+                    >
+                    <div class="control-row">
+                      <input
+                        id="mc-iterations"
+                        class="slider-input"
+                        type="range"
+                        min="100"
+                        max="10000"
+                        step="100"
+                        bind:value={iterations}
+                      />
+                      <input
+                        id="mc-iterations-input"
+                        class="input is-small number-input"
+                        type="number"
+                        min="100"
+                        max="10000"
+                        step="100"
+                        bind:value={iterations}
+                        aria-label="Simulations"
+                      />
+                    </div>
+                  </div>
+                {/if}
               </div>
             {/if}
           </div>
@@ -728,14 +1001,33 @@
 
       <div class="column is-8">
         <div class="box overflow-x-auto">
-          <LegendCard {legends} clazz="mb-2 overflow-x-auto" />
-          <svg bind:this={svg} height={440} width="100%" />
+          {#if mode === "simple"}
+            <LegendCard {legends} clazz="mb-2 overflow-x-auto" />
+            <svg bind:this={svg} height={440} width="100%" />
+          {:else if simLoading}
+            <div class="has-text-centered py-6">
+              <span class="icon is-large">
+                <i class="fas fa-spinner fa-pulse fa-2x"></i>
+              </span>
+              <p class="mt-3 has-text-grey">Running {iterations.toLocaleString()} simulations…</p>
+            </div>
+          {:else if simError}
+            <div class="notification is-danger is-light">
+              <p>{simError}</p>
+            </div>
+          {:else}
+            <div
+              bind:this={fanChartContainer}
+              class="fan-chart-container"
+              style="position: relative;"
+            ></div>
+          {/if}
         </div>
       </div>
     </div>
 
-    <!-- Single Tabbed Year-by-Year Table -->
-    {#if projectionScenarioTables && activeScenario}
+    <!-- Bottom Section: Year-by-Year Table (Simple) or Goal Funding Probabilities (Monte Carlo) -->
+    {#if mode === "simple" && projectionScenarioTables && activeScenario}
       <div class="box mt-4">
         <div
           class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap gap-3 mb-3"
@@ -832,6 +1124,41 @@
               {/each}
             </tbody>
           </table>
+        </div>
+      </div>
+    {:else if mode === "montecarlo" && simData?.goals && simData.goals.length > 0 && !simLoading}
+      <div class="box mt-4">
+        <div
+          class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap gap-2 mb-3"
+        >
+          <h3 class="title is-5 mb-0">Life Goal Funding Probabilities</h3>
+          <a class="button is-small is-light" href="/planning/goals?tab=life">Edit Life Goals</a>
+        </div>
+        <div class="columns is-multiline">
+          {#each simData.goals as goal}
+            <div class="column is-4">
+              <div class="dna-card">
+                <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                  <strong>{goal.name}</strong>
+                  <span
+                    class="tag is-small {goal.probability >= 0.75
+                      ? 'is-success'
+                      : goal.probability >= 0.45
+                        ? 'is-warning'
+                        : 'is-danger'} is-light"
+                  >
+                    {Math.round(goal.probability * 100)}%
+                  </span>
+                </div>
+                <div class="dna-meta">
+                  Target: {formatCurrency(goal.target_amount)}
+                  {#if goal.target_date || goal.end_date}
+                    · {goal.target_date || goal.end_date}
+                  {/if}
+                </div>
+              </div>
+            </div>
+          {/each}
         </div>
       </div>
     {/if}

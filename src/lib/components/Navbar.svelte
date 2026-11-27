@@ -147,9 +147,10 @@
       href: "/planning",
       help: "planning",
       children: [
-        { label: "Goals", href: "/goals", help: "goals" },
         { label: "Projection", href: "/projection" },
-        { label: "Life Plan", href: "/life" }
+        { label: "Goals", href: "/goals", help: "goals" },
+        { label: "What-If Scenarios", href: "/life/whatif" },
+        { label: "Drawdown Strategy", href: "/life/drawdown" }
       ]
     },
     {
@@ -340,24 +341,10 @@
       href: "/planning",
       help: "planning",
       children: [
-        {
-          label: "Projections & Life Plan",
-          href: "",
-          children: [
-            { label: "Life Plan & DNA", href: "/life" },
-            { label: "Net Worth Projections", href: "/projection" },
-            { label: "What-If Scenarios", href: "/life/whatif" },
-            { label: "Drawdown Strategy", href: "/life/drawdown" }
-          ]
-        },
-        {
-          label: "Financial Goals",
-          href: "",
-          children: [
-            { label: "Retirement & Savings Goals", href: "/goals", help: "goals" },
-            { label: "Milestone Life Goals", href: "/life/goals" }
-          ]
-        },
+        { label: "Projection", href: "/projection" },
+        { label: "Goals", href: "/goals", help: "goals" },
+        { label: "What-If Scenarios", href: "/life/whatif" },
+        { label: "Drawdown Strategy", href: "/life/drawdown" },
         ...(USER_CONFIG.default_currency === "INR" ? [groupedTax] : [])
       ]
     },
