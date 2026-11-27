@@ -7,6 +7,7 @@
     income: number;
     expenses: number;
     investment: number;
+    liabilities?: number;
     balance: number;
   }
 
@@ -33,10 +34,28 @@
   const plotWidth = $derived(Math.max(100, width - margin.left - margin.right));
   const plotHeight = height - margin.top - margin.bottom;
 
+  const hasIncome = $derived(data.some((d) => Math.abs(d.income || 0) > 0.01));
+  const hasExpenses = $derived(data.some((d) => Math.abs(d.expenses || 0) > 0.01));
+  const hasInvestment = $derived(data.some((d) => Math.abs(d.investment || 0) > 0.01));
+  const hasLiabilities = $derived(data.some((d) => Math.abs(d.liabilities || 0) > 0.01));
+
+  const activeSeriesCount = $derived(
+    Math.max(
+      1,
+      (hasIncome ? 1 : 0) + (hasExpenses ? 1 : 0) + (hasInvestment ? 1 : 0) + (hasLiabilities ? 1 : 0)
+    )
+  );
+
   const maxVal = $derived.by(() => {
     let m = 0;
     for (const d of data) {
-      m = Math.max(m, Math.abs(d.income || 0), Math.abs(d.expenses || 0));
+      m = Math.max(
+        m,
+        Math.abs(d.income || 0),
+        Math.abs(d.expenses || 0),
+        Math.abs(d.investment || 0),
+        Math.abs(d.liabilities || 0)
+      );
     }
     return m > 0 ? m * 1.1 : 1000;
   });
@@ -48,7 +67,7 @@
   }
 
   const slotWidth = $derived(data.length > 0 ? plotWidth / data.length : plotWidth);
-  const barWidth = $derived(Math.max(4, Math.min(20, slotWidth * 0.34)));
+  const barWidth = $derived(Math.max(3, Math.min(16, (slotWidth * 0.72) / activeSeriesCount)));
 
   function formatAxis(val: number): string {
     if (val >= 10000000) return `${(val / 10000000).toFixed(1)}Cr`;
@@ -90,8 +109,14 @@
 
         {#each data as d, i}
           {@const cx = i * slotWidth + slotWidth / 2}
-          {@const inc = Math.max(0, d.income || 0)}
-          {@const exp = Math.max(0, d.expenses || 0)}
+          {@const seriesBars = [
+            ...(hasIncome ? [{ val: Math.max(0, d.income || 0), color: "var(--gain)" }] : []),
+            ...(hasExpenses ? [{ val: Math.max(0, d.expenses || 0), color: "var(--loss)" }] : []),
+            ...(hasInvestment ? [{ val: Math.max(0, d.investment || 0), color: "var(--accent)" }] : []),
+            ...(hasLiabilities ? [{ val: Math.max(0, d.liabilities || 0), color: "var(--warning)" }] : [])
+          ]}
+          {@const groupW = seriesBars.length * barWidth + Math.max(0, seriesBars.length - 1) * 2}
+          {@const startX = cx - groupW / 2}
           <g
             role="presentation"
             onmouseenter={() => (hoveredIndex = i)}
@@ -106,24 +131,17 @@
               opacity="0.5"
               rx="4"
             />
-            <rect
-              x={cx - barWidth - 1.5}
-              y={yPos(inc)}
-              width={barWidth}
-              height={Math.max(0, plotHeight - yPos(inc))}
-              fill="var(--gain)"
-              rx="3"
-              opacity="0.88"
-            />
-            <rect
-              x={cx + 1.5}
-              y={yPos(exp)}
-              width={barWidth}
-              height={Math.max(0, plotHeight - yPos(exp))}
-              fill="var(--loss)"
-              rx="3"
-              opacity="0.88"
-            />
+            {#each seriesBars as bar, bi}
+              <rect
+                x={startX + bi * (barWidth + 2)}
+                y={yPos(bar.val)}
+                width={barWidth}
+                height={Math.max(0, plotHeight - yPos(bar.val))}
+                fill={bar.color}
+                rx="2.5"
+                opacity="0.88"
+              />
+            {/each}
             {#if data.length <= 14 || i % Math.ceil(data.length / 10) === 0}
               <text
                 x={cx}
@@ -149,7 +167,10 @@
         <div class="flex flex-wrap items-center gap-4">
           <span class="text-[var(--gain)]">Income: {formatMoney(item.income)}</span>
           <span class="text-[var(--loss)]">Expenses: {formatMoney(item.expenses)}</span>
-          <span>Investments: {formatMoney(item.investment)}</span>
+          <span class="text-[var(--accent)]">Investments: {formatMoney(item.investment)}</span>
+          {#if item.liabilities}
+            <span class="text-[var(--warning)]">Liabilities: {formatMoney(item.liabilities)}</span>
+          {/if}
         </div>
       </div>
     {/if}

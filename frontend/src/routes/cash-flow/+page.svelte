@@ -3,7 +3,7 @@
   import { onMount } from "svelte";
   import BarTrendChart, { type MonthlyBarPoint } from "$lib/components/BarTrendChart.svelte";
   import SankeyChart from "$lib/components/SankeyChart.svelte";
-  import { apiGet, formatMoney, type Posting } from "$lib/api";
+  import { apiGet, formatMoney, runtime, type Posting } from "$lib/api";
 
   type StudioTab =
     | "cashflow"
@@ -139,7 +139,8 @@
         income: Math.abs(c.income || 0),
         expenses: Math.abs(c.expenses || 0),
         investment: Math.abs(c.investment || 0),
-        tax: Math.abs(c.tax || 0)
+        tax: Math.abs(c.tax || 0),
+        liabilities: Math.abs(c.liabilities || 0)
       }));
       monthWiseExpenses = expRes.month_wise?.expenses || {};
       monthWiseIncomes = expRes.month_wise?.incomes || {};
@@ -235,6 +236,7 @@
       existing.expenses += row.expenses;
       existing.investment += row.investment;
       existing.tax += row.tax;
+      existing.liabilities += row.liabilities;
       existing.balance = row.balance;
       byYear.set(y, existing);
     }
@@ -249,6 +251,7 @@
       income: c.income,
       expenses: c.expenses,
       investment: c.investment,
+      liabilities: c.liabilities,
       balance: c.balance
     }))
   );
@@ -282,22 +285,36 @@
   const totalNetSavings = $derived(totalIncome - totalExpenses);
 
   function aggregateByLevel(postings: Posting[], negate: boolean, level: 1 | 2 | "all") {
-    const map = new Map<string, number>();
+    const map = new Map<string, { account: string; commodity: string; quantity: number; amount: number }>();
     for (const p of postings) {
       const parts = p.account.split(":");
-      const key =
+      const account =
         level === "all"
           ? p.account
           : level === 1
             ? parts.slice(0, 2).join(":")
             : parts.slice(0, 3).join(":");
-      const val = negate ? -(p.amount || 0) : p.amount || 0;
-      map.set(key, (map.get(key) || 0) + val);
+      const commodity = p.commodity || runtime.defaultCurrency;
+      const mapKey = `${account}::${commodity}`;
+      const rawQty = p.quantity ?? p.amount ?? 0;
+      const qtyVal = negate ? -rawQty : rawQty;
+      const amtVal = negate ? -(p.amount || 0) : p.amount || 0;
+      const cur = map.get(mapKey) || { account, commodity, quantity: 0, amount: 0 };
+      cur.quantity += qtyVal;
+      cur.amount += amtVal;
+      map.set(mapKey, cur);
     }
-    return Array.from(map.entries())
-      .map(([account, amount]) => ({ account, amount }))
-      .filter((r) => Math.abs(r.amount) > 0.01)
+    return Array.from(map.values())
+      .filter((r) => Math.abs(r.quantity) > 0.005 || Math.abs(r.amount) > 0.01)
       .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+  }
+
+  function sumByCommodity(rows: Array<{ commodity: string; quantity: number }>) {
+    const map = new Map<string, number>();
+    for (const r of rows) {
+      map.set(r.commodity, (map.get(r.commodity) || 0) + r.quantity);
+    }
+    return Array.from(map.entries()).map(([commodity, amount]) => ({ commodity, amount }));
   }
 
   const monthlyBreakdown = $derived({
@@ -306,6 +323,22 @@
     investments: aggregateByLevel(monthWiseInvestments[selectedMonth] || [], false, breakdownLevel),
     taxes: aggregateByLevel(monthWiseTaxes[selectedMonth] || [], false, breakdownLevel),
     liabilities: aggregateByLevel(monthWiseLiabilities[selectedMonth] || [], true, breakdownLevel)
+  });
+
+  const monthlyNetByCurrency = $derived.by(() => {
+    const map = new Map<string, number>();
+    for (const r of monthlyBreakdown.incomes) {
+      map.set(r.commodity, (map.get(r.commodity) || 0) + r.quantity);
+    }
+    for (const r of monthlyBreakdown.expenses) {
+      map.set(r.commodity, (map.get(r.commodity) || 0) - r.quantity);
+    }
+    for (const r of monthlyBreakdown.taxes) {
+      map.set(r.commodity, (map.get(r.commodity) || 0) - r.quantity);
+    }
+    return Array.from(map.entries())
+      .map(([commodity, amount]) => ({ commodity, amount }))
+      .sort((a, b) => a.commodity.localeCompare(b.commodity));
   });
 
   const statementYears = $derived(Object.keys(yearlyStatements).sort().reverse());
@@ -544,9 +577,9 @@
     </div>
 
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-      <div class="flex items-center justify-between text-xs text-[var(--muted)]">
-        <span class="font-semibold uppercase tracking-wider">Income vs Expenses</span>
-        <div class="flex items-center gap-4">
+      <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted)]">
+        <span class="font-semibold uppercase tracking-wider">Cash Flow Trend</span>
+        <div class="flex flex-wrap items-center gap-4">
           <span class="inline-flex items-center gap-1.5">
             <span class="w-2.5 h-2.5 rounded-xs bg-[var(--gain)] inline-block"></span>
             Income
@@ -554,6 +587,14 @@
           <span class="inline-flex items-center gap-1.5">
             <span class="w-2.5 h-2.5 rounded-xs bg-[var(--loss)] inline-block"></span>
             Expenses
+          </span>
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-xs bg-[var(--accent)] inline-block"></span>
+            Investments
+          </span>
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-xs bg-[var(--warning)] inline-block"></span>
+            Liabilities
           </span>
         </div>
       </div>
@@ -640,6 +681,21 @@
         </div>
       </div>
 
+      {#if monthlyNetByCurrency.length > 0}
+        <div class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/60 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Monthly Net Flow (Income − Expenses − Taxes)
+          </span>
+          <div class="flex flex-wrap items-center gap-4 text-sm font-semibold tabular-nums">
+            {#each monthlyNetByCurrency as n}
+              <span class={n.amount >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"}>
+                {formatMoney(n.amount, n.commodity)}
+              </span>
+            {/each}
+          </div>
+        </div>
+      {/if}
+
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {#each [
           { title: "Income", rows: monthlyBreakdown.incomes, color: "text-[var(--gain)]" },
@@ -649,21 +705,25 @@
           { title: "Liabilities", rows: monthlyBreakdown.liabilities, color: "text-[var(--muted)]" }
         ] as sec}
           {#if sec.rows.length > 0}
-            {@const secTotal = sec.rows.reduce((s, r) => s + r.amount, 0)}
+            {@const secTotals = sumByCommodity(sec.rows)}
             <div class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/40 p-4 space-y-2.5">
-              <div class="flex items-center justify-between border-b border-[var(--border)] pb-2">
+              <div class="flex items-center justify-between gap-2 border-b border-[var(--border)] pb-2">
                 <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                   {sec.title}
                 </span>
-                <span class="text-sm font-semibold tabular-nums {sec.color}">
-                  {formatMoney(secTotal)}
-                </span>
+                <div class="text-right text-sm font-semibold tabular-nums {sec.color}">
+                  {#each secTotals as st}
+                    <div>{formatMoney(st.amount, st.commodity)}</div>
+                  {/each}
+                </div>
               </div>
               <div class="divide-y divide-[var(--border)]/60 text-xs tabular-nums">
                 {#each sec.rows as r}
                   <div class="py-1.5 flex justify-between gap-2">
                     <span class="truncate">{r.account}</span>
-                    <span class="font-medium shrink-0">{formatMoney(r.amount)}</span>
+                    <span class="font-medium shrink-0">
+                      {formatMoney(r.quantity, r.commodity)}
+                    </span>
                   </div>
                 {/each}
               </div>
