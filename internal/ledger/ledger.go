@@ -303,7 +303,7 @@ func (Beancount) ValidateFile(journalPath string) ([]LedgerFileError, string, er
 	var output, errBuf bytes.Buffer
 	err = utils.Exec(path, &output, &errBuf, journalPath)
 	if err == nil {
-		preview, err := runBeanQuery(journalPath, "text", "SELECT account, str(sum(position)) AS balance GROUP BY account ORDER BY account")
+		preview, err := runBeanQuery(journalPath, "text", "SELECT account, sum(position) AS balance GROUP BY account ORDER BY account")
 		return errors, utils.Dos2Unix(string(preview)), err
 	}
 

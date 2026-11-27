@@ -1,8 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import {
+    ChevronDown,
+    ChevronRight,
     FilePlus2,
     FileText,
+    Folder,
     PanelLeftClose,
     PanelLeftOpen,
     PanelRightClose,
@@ -33,6 +36,83 @@
 
   let leftCollapsed = $state(false);
   let rightCollapsed = $state(false);
+  let leftWidth = $state(240);
+  let rightWidth = $state(360);
+  let collapsedFolders = $state<Record<string, boolean>>({});
+  let layoutEl = $state<HTMLDivElement | null>(null);
+
+  interface TreeNode {
+    name: string;
+    path: string;
+    isFolder: boolean;
+    fileName?: string;
+    children: TreeNode[];
+  }
+
+  const fileTree = $derived.by((): TreeNode[] => {
+    const root: TreeNode[] = [];
+    for (const f of files) {
+      const parts = f.file_name.split(/[\\/]+/).filter(Boolean);
+      let curList = root;
+      let accPath = "";
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        accPath = accPath ? `${accPath}/${part}` : part;
+        const isLast = i === parts.length - 1;
+        if (isLast) {
+          curList.push({
+            name: part,
+            path: accPath,
+            isFolder: false,
+            fileName: f.file_name,
+            children: []
+          });
+        } else {
+          let folder = curList.find((n) => n.isFolder && n.name === part);
+          if (!folder) {
+            folder = { name: part, path: accPath, isFolder: true, children: [] };
+            curList.push(folder);
+          }
+          curList = folder.children;
+        }
+      }
+    }
+    const sortNodes = (nodes: TreeNode[]): TreeNode[] =>
+      nodes
+        .sort((a, b) => (a.isFolder === b.isFolder ? a.name.localeCompare(b.name) : a.isFolder ? -1 : 1))
+        .map((n) => (n.isFolder ? { ...n, children: sortNodes(n.children) } : n));
+    return sortNodes(root);
+  });
+
+  function startResizeLeft(e: MouseEvent) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = leftWidth;
+    const onMove = (ev: MouseEvent) => {
+      leftWidth = Math.max(150, Math.min(480, startW + (ev.clientX - startX)));
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
+  function startResizeRight(e: MouseEvent) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = rightWidth;
+    const onMove = (ev: MouseEvent) => {
+      rightWidth = Math.max(200, Math.min(640, startW - (ev.clientX - startX)));
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
 
   async function loadFiles(selectName?: string) {
     const res = await apiGet<{ files?: LedgerFile[] }>("/api/editor/files");
@@ -163,7 +243,7 @@
     No ledger files found.
   </div>
 {:else}
-  <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+  <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden flex flex-col lg:h-[calc(100vh-14.5rem)] lg:min-h-[600px]">
     <!-- Top Toolbar -->
     <div class="px-4 py-2.5 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2">
@@ -240,16 +320,58 @@
       </div>
     {/if}
 
-    <!-- 3-Part Editor Layout -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[540px]">
-      <!-- Left: File Browser -->
+    {#snippet treeNodes(nodes: TreeNode[], depth: number)}
+      {#each nodes as node}
+        {#if node.isFolder}
+          {@const isClosed = Boolean(collapsedFolders[node.path])}
+          <div>
+            <button
+              type="button"
+              onclick={() => (collapsedFolders[node.path] = !isClosed)}
+              style="padding-left: {depth * 12 + 6}px"
+              class="w-full flex items-center gap-1.5 py-1 pr-2 rounded-md text-left hover:bg-[var(--surface-elevated)] cursor-pointer text-[var(--muted)] font-medium"
+            >
+              {#if isClosed}
+                <ChevronRight class="w-3.5 h-3.5 shrink-0" />
+              {:else}
+                <ChevronDown class="w-3.5 h-3.5 shrink-0" />
+              {/if}
+              <Folder class="w-3.5 h-3.5 shrink-0" />
+              <span class="truncate">{node.name}</span>
+            </button>
+            {#if !isClosed}
+              {@render treeNodes(node.children, depth + 1)}
+            {/if}
+          </div>
+        {:else}
+          <button
+            type="button"
+            onclick={() => node.fileName && selectFile(node.fileName)}
+            style="padding-left: {depth * 12 + 10}px"
+            class="w-full flex items-center gap-1.5 py-1 pr-2 rounded-md text-left cursor-pointer truncate {selectedFileName === node.fileName
+              ? 'bg-[var(--accent)]/15 text-[var(--accent)] font-semibold'
+              : 'hover:bg-[var(--surface-elevated)]'}"
+          >
+            <FileText class="w-3.5 h-3.5 shrink-0" />
+            <span class="truncate">{node.name}</span>
+          </button>
+        {/if}
+      {/each}
+    {/snippet}
+
+    <!-- 3-Part Resizable Editor Layout -->
+    <div bind:this={layoutEl} class="flex-1 min-h-0 flex flex-col lg:flex-row">
+      <!-- Left: Hierarchical File Browser -->
       {#if !leftCollapsed}
-        <div class="lg:col-span-3 border-b lg:border-b-0 lg:border-r border-[var(--border)] bg-[var(--surface-elevated)]/30 p-3 space-y-3">
-          <div class="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+        <div
+          style="width: {leftWidth}px"
+          class="w-full lg:shrink-0 border-b lg:border-b-0 bg-[var(--surface-elevated)]/30 p-3 flex flex-col gap-3 min-h-0"
+        >
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)] shrink-0">
             Files ({files.length})
           </div>
           {#if !runtime.readonly}
-            <div class="flex gap-1.5">
+            <div class="flex gap-1.5 shrink-0">
               <input
                 type="text"
                 bind:value={newFileName}
@@ -266,44 +388,41 @@
               </button>
             </div>
           {/if}
-          <div class="space-y-0.5 max-h-[460px] overflow-y-auto text-xs">
-            {#each files as f}
-              <button
-                type="button"
-                onclick={() => selectFile(f.file_name)}
-                class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left cursor-pointer truncate {selectedFileName === f.file_name
-                  ? 'bg-[var(--accent)]/15 text-[var(--accent)] font-semibold'
-                  : 'hover:bg-[var(--surface-elevated)]'}"
-              >
-                <FileText class="w-3.5 h-3.5 shrink-0" />
-                <span class="truncate">{f.file_name}</span>
-              </button>
-            {/each}
+          <div class="space-y-0.5 max-h-[320px] lg:max-h-none lg:flex-1 lg:min-h-0 overflow-y-auto text-xs">
+            {@render treeNodes(fileTree, 0)}
           </div>
         </div>
+        <button
+          type="button"
+          aria-label="Resize file browser"
+          onmousedown={startResizeLeft}
+          class="hidden lg:block w-1.5 shrink-0 bg-[var(--border)]/60 hover:bg-[var(--accent)] cursor-col-resize transition-colors"
+        ></button>
       {/if}
 
       <!-- Middle: Editor -->
-      <div
-        class="{!leftCollapsed && !rightCollapsed
-          ? 'lg:col-span-5'
-          : !leftCollapsed || !rightCollapsed
-            ? 'lg:col-span-9'
-            : 'lg:col-span-12'} flex flex-col"
-      >
+      <div class="flex-1 min-w-0 min-h-[420px] lg:min-h-0 flex flex-col">
         <textarea
           bind:value={content}
           readonly={runtime.readonly}
-          rows="24"
           spellcheck="false"
-          class="w-full flex-1 p-4 bg-transparent font-mono text-xs leading-relaxed outline-none resize-none"
+          class="w-full flex-1 min-h-0 p-4 bg-transparent font-mono text-xs leading-relaxed outline-none resize-none"
         ></textarea>
       </div>
 
       <!-- Right: Ledger / Beancount Summary & Output -->
       {#if !rightCollapsed}
-        <div class="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-[var(--border)] bg-[var(--surface-elevated)]/30 p-3 space-y-2.5 flex flex-col">
-          <div class="flex items-center justify-between">
+        <button
+          type="button"
+          aria-label="Resize summary panel"
+          onmousedown={startResizeRight}
+          class="hidden lg:block w-1.5 shrink-0 bg-[var(--border)]/60 hover:bg-[var(--accent)] cursor-col-resize transition-colors"
+        ></button>
+        <div
+          style="width: {rightWidth}px"
+          class="w-full lg:shrink-0 border-t lg:border-t-0 bg-[var(--surface-elevated)]/30 p-3 space-y-2.5 flex flex-col min-h-0"
+        >
+          <div class="flex items-center justify-between shrink-0">
             <span class="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]">
               Ledger / Beancount Summary
             </span>
@@ -312,7 +431,7 @@
             {/if}
           </div>
           {#if validationErrors.length > 0}
-            <div class="space-y-1.5 text-xs">
+            <div class="space-y-1.5 text-xs shrink-0 max-h-40 overflow-y-auto">
               {#each validationErrors as ve}
                 <div class="p-2 rounded bg-[var(--loss)]/10 border border-[var(--loss)]/30 text-[var(--loss)]">
                   Line {ve.line_from ?? ve.line ?? "?"}: {ve.message}
@@ -321,7 +440,7 @@
             </div>
           {/if}
           {#if validationOutput}
-            <pre class="flex-1 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)] font-mono text-[11px] leading-relaxed overflow-auto max-h-[460px] whitespace-pre-wrap">{validationOutput}</pre>
+            <pre class="flex-1 min-h-0 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)] font-mono text-[11px] leading-relaxed overflow-auto max-h-[360px] lg:max-h-none whitespace-pre-wrap">{validationOutput}</pre>
           {:else}
             <div class="text-xs text-[var(--muted)] p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
               Click <strong>Validate</strong> or <strong>Save &amp; Sync</strong> to view ledger/beancount summary output.
