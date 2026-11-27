@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import BarTrendChart, { type MonthlyBarPoint } from "$lib/components/BarTrendChart.svelte";
   import SankeyChart from "$lib/components/SankeyChart.svelte";
+  import StackedBarChart, { type StackedBarColumn } from "$lib/components/StackedBarChart.svelte";
   import { apiGet, formatMoney, runtime, type Posting } from "$lib/api";
 
   type StudioTab =
@@ -268,6 +269,136 @@
       balance: c.balance
     }))
   );
+
+  const categoryPalette = [
+    "#3b82f6",
+    "#10b981",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#ec4899",
+    "#14b8a6",
+    "#6366f1",
+    "#94a3b8"
+  ];
+
+  const expenseStackedColumns = $derived.by((): StackedBarColumn[] => {
+    const months = Object.keys(monthWiseExpenses).sort();
+    if (months.length === 0) return [];
+
+    // Aggregate totals per category to pick top 8 categories consistently
+    const catTotals = new Map<string, number>();
+    const periodMap = new Map<string, Map<string, number>>();
+    for (const m of months) {
+      const pKey = expenseTrendGranularity === "yearly" ? m.slice(0, 4) : m;
+      if (!periodMap.has(pKey)) periodMap.set(pKey, new Map());
+      const bucket = periodMap.get(pKey)!;
+      for (const p of monthWiseExpenses[m] || []) {
+        const parts = p.account.split(":");
+        const cat = (groupDepth === 1 ? parts.slice(0, 2) : parts.slice(0, 3))
+          .join(":")
+          .replace(/^Expenses:/, "");
+        const amt = Math.max(0, p.amount || 0);
+        if (amt <= 0) continue;
+        catTotals.set(cat, (catTotals.get(cat) || 0) + amt);
+        bucket.set(cat, (bucket.get(cat) || 0) + amt);
+      }
+    }
+
+    const topCats = Array.from(catTotals.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([c]) => c);
+    const topSet = new Set(topCats);
+
+    const periodKeys = Array.from(periodMap.keys()).sort();
+    const slicedKeys =
+      expenseTrendGranularity === "monthly" && monthsWindow > 0
+        ? periodKeys.slice(-monthsWindow)
+        : periodKeys;
+
+    return slicedKeys.map((pk) => {
+      const bucket = periodMap.get(pk)!;
+      const segments: Array<{ name: string; amount: number; color: string }> = [];
+      let other = 0;
+      let total = 0;
+      for (const [cat, amt] of bucket.entries()) {
+        total += amt;
+        if (!topSet.has(cat)) other += amt;
+      }
+      topCats.forEach((cat, idx) => {
+        const amt = bucket.get(cat) || 0;
+        if (amt > 0) segments.push({ name: cat, amount: amt, color: categoryPalette[idx] });
+      });
+      if (other > 0) {
+        segments.push({ name: "Other", amount: other, color: categoryPalette[8] });
+      }
+      return {
+        label: expenseTrendGranularity === "yearly" ? pk : dayjs(`${pk}-01`).format("MMM YY"),
+        total,
+        segments
+      };
+    });
+  });
+
+  const momMonthlySeries = $derived.by(() => {
+    const months = Object.keys(monthWiseExpenses).sort().slice(-13);
+    const totals = months.map((m) => ({
+      month: m,
+      label: dayjs(`${m}-01`).format("MMM YY"),
+      total: (monthWiseExpenses[m] || []).reduce((s, p) => s + Math.max(0, p.amount || 0), 0)
+    }));
+    return totals.slice(1).map((cur, idx) => {
+      const prev = totals[idx].total;
+      const deltaPct = prev > 0 ? ((cur.total - prev) / prev) * 100 : 0;
+      return { ...cur, prev, deltaPct };
+    });
+  });
+
+  const momCategoryVariance = $derived.by(() => {
+    const prevMonth = dayjs(`${selectedMonth}-01`).subtract(1, "month").format("YYYY-MM");
+    const sumCats = (m: string) => {
+      const map = new Map<string, number>();
+      for (const p of monthWiseExpenses[m] || []) {
+        const cat = p.account.split(":").slice(0, 2).join(":").replace(/^Expenses:/, "");
+        map.set(cat, (map.get(cat) || 0) + Math.max(0, p.amount || 0));
+      }
+      return map;
+    };
+    const curMap = sumCats(selectedMonth);
+    const prevMap = sumCats(prevMonth);
+    const allCats = new Set([...curMap.keys(), ...prevMap.keys()]);
+    return Array.from(allCats)
+      .map((name) => {
+        const cur = curMap.get(name) || 0;
+        const prev = prevMap.get(name) || 0;
+        const diff = cur - prev;
+        const pct = prev > 0 ? (diff / prev) * 100 : null;
+        return { name, cur, prev, diff, pct };
+      })
+      .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
+      .slice(0, 10);
+  });
+
+  const yoyYearSeries = $derived.by(() => {
+    const byYear = new Map<string, number[]>();
+    for (const [m, postings] of Object.entries(monthWiseExpenses)) {
+      const yr = m.slice(0, 4);
+      const moIdx = Math.max(0, Math.min(11, Number(m.slice(5, 7)) - 1));
+      if (!byYear.has(yr)) byYear.set(yr, Array(12).fill(0));
+      const total = postings.reduce((s, p) => s + Math.max(0, p.amount || 0), 0);
+      byYear.get(yr)![moIdx] += total;
+    }
+    return Array.from(byYear.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .slice(0, 4)
+      .map(([year, months], idx) => ({
+        year,
+        months,
+        total: months.reduce((a, b) => a + b, 0),
+        color: categoryPalette[idx % categoryPalette.length]
+      }));
+  });
 
   const expenseTrendPoints = $derived<MonthlyBarPoint[]>(
     (expenseTrendGranularity === "yearly" ? yearlyFlows : windowedFlows).map((c) => ({
@@ -1261,7 +1392,7 @@
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-          Spending Trend ({expenseTrendGranularity === "yearly" ? "Yearly" : "Monthly"})
+          Spending by Category ({expenseTrendGranularity === "yearly" ? "Yearly" : "Monthly"} Stacked)
         </span>
         <div class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5 text-xs">
           <button
@@ -1284,7 +1415,7 @@
           </button>
         </div>
       </div>
-      <BarTrendChart data={expenseTrendPoints} />
+      <StackedBarChart columns={expenseStackedColumns} />
     </div>
 
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4">
@@ -1420,6 +1551,118 @@
             </div>
           </div>
         </div>
+
+        <!-- MoM % Delta Chart -->
+        {#if momMonthlySeries.length > 0}
+          {@const maxAbsPct = Math.max(10, ...momMonthlySeries.map((m) => Math.abs(m.deltaPct)))}
+          <div class="pt-3 space-y-2">
+            <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+              Month-over-Month Spending Change (%)
+            </div>
+            <div class="grid grid-cols-6 sm:grid-cols-12 gap-2 items-end h-28 pt-2">
+              {#each momMonthlySeries as m}
+                {@const barH = Math.max(4, Math.min(64, (Math.abs(m.deltaPct) / maxAbsPct) * 64))}
+                <div class="flex flex-col items-center justify-end gap-1 h-full" title="{m.label}: {m.deltaPct.toFixed(1)}%">
+                  <span class="text-[10px] tabular-nums {m.deltaPct <= 0 ? 'text-[var(--gain)]' : 'text-[var(--loss)]'}">
+                    {m.deltaPct >= 0 ? "+" : ""}{m.deltaPct.toFixed(0)}%
+                  </span>
+                  <div
+                    class="w-4 rounded-t {m.deltaPct <= 0 ? 'bg-[var(--gain)]/85' : 'bg-[var(--loss)]/85'}"
+                    style="height: {barH}px"
+                  ></div>
+                  <span class="text-[10px] text-[var(--muted)] truncate">{m.label.slice(0, 3)}</span>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+
+        <!-- YoY Multi-Year 12-Month Overlay Chart -->
+        {#if yoyYearSeries.length > 0}
+          {@const yoyMax = Math.max(1, ...yoyYearSeries.flatMap((y) => y.months))}
+          <div class="pt-4 border-t border-[var(--border)] space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                Year-over-Year Monthly Trajectory (Jan – Dec)
+              </span>
+              <div class="flex flex-wrap items-center gap-3 text-xs tabular-nums">
+                {#each yoyYearSeries as ys}
+                  <span class="inline-flex items-center gap-1.5">
+                    <span class="w-2.5 h-0.5 inline-block" style="background: {ys.color}"></span>
+                    <strong>{ys.year}</strong> ({formatMoney(ys.total)})
+                  </span>
+                {/each}
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <svg viewBox="0 0 680 180" class="w-full min-w-[480px] h-44 overflow-visible">
+                {#each yoyYearSeries as ys}
+                  {@const pts = ys.months
+                    .map((val, idx) => `${30 + (idx / 11) * 620},${150 - (val / yoyMax) * 130}`)
+                    .join(" ")}
+                  <polyline fill="none" stroke={ys.color} stroke-width="2" points={pts} />
+                  {#each ys.months as val, idx}
+                    <circle
+                      cx={30 + (idx / 11) * 620}
+                      cy={150 - (val / yoyMax) * 130}
+                      r="3"
+                      fill={ys.color}
+                    >
+                      <title>{ys.year} {dayjs().month(idx).format("MMM")}: {formatMoney(val)}</title>
+                    </circle>
+                  {/each}
+                {/each}
+                {#each Array.from({ length: 12 }, (_, i) => i) as idx}
+                  <text
+                    x={30 + (idx / 11) * 620}
+                    y="170"
+                    text-anchor="middle"
+                    font-size="10"
+                    fill="var(--muted)"
+                  >
+                    {dayjs().month(idx).format("MMM")}
+                  </text>
+                {/each}
+              </svg>
+            </div>
+          </div>
+        {/if}
+
+        <!-- MoM Category Variance Table -->
+        {#if momCategoryVariance.length > 0}
+          <div class="pt-4 border-t border-[var(--border)] space-y-2">
+            <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+              Top Category Variance vs Previous Month
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs text-left">
+                <thead class="uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)]">
+                  <tr>
+                    <th class="py-2 px-3 font-medium">Category</th>
+                    <th class="py-2 px-3 text-right font-medium">Prev Month</th>
+                    <th class="py-2 px-3 text-right font-medium">Selected</th>
+                    <th class="py-2 px-3 text-right font-medium">Change</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--border)] tabular-nums">
+                  {#each momCategoryVariance as row}
+                    <tr>
+                      <td class="py-1.5 px-3 font-medium">{row.name}</td>
+                      <td class="py-1.5 px-3 text-right text-[var(--muted)]">{formatMoney(row.prev)}</td>
+                      <td class="py-1.5 px-3 text-right font-semibold">{formatMoney(row.cur)}</td>
+                      <td class="py-1.5 px-3 text-right {row.diff <= 0 ? 'text-[var(--gain)]' : 'text-[var(--loss)]'}">
+                        {row.diff >= 0 ? "+" : ""}{formatMoney(row.diff)}
+                        {#if row.pct !== null}
+                          <span class="ml-1">({row.pct >= 0 ? "+" : ""}{row.pct.toFixed(0)}%)</span>
+                        {/if}
+                      </td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {/if}
       {/if}
 
       {#if dailyExpenses.length > 0 || dailyLoading}
