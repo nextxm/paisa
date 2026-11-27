@@ -1,29 +1,54 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Save, ShieldCheck, Trash2 } from "lucide-svelte";
+  import {
+    FilePlus2,
+    FileText,
+    PanelLeftClose,
+    PanelLeftOpen,
+    PanelRightClose,
+    PanelRightOpen,
+    Save,
+    ShieldCheck,
+    Trash2
+  } from "lucide-svelte";
   import { apiGet, authHeaders, runtime, triggerSync } from "$lib/api";
 
   interface LedgerFile {
     file_name: string;
+    name?: string;
     content: string;
   }
 
   let files = $state<LedgerFile[]>([]);
   let selectedFileName = $state("");
   let content = $state("");
+  let newFileName = $state("");
   let loading = $state(true);
   let saving = $state(false);
+  let validating = $state(false);
   let status = $state<string | null>(null);
   let error = $state<string | null>(null);
+  let validationOutput = $state("");
+  let validationErrors = $state<Array<{ line_from?: number; line?: number; message?: string }>>([]);
+
+  let leftCollapsed = $state(false);
+  let rightCollapsed = $state(false);
+
+  async function loadFiles(selectName?: string) {
+    const res = await apiGet<{ files?: LedgerFile[] }>("/api/editor/files");
+    files = (res.files || []).map((f) => ({
+      ...f,
+      file_name: f.file_name || f.name || ""
+    }));
+    const target = selectName || selectedFileName || files[0]?.file_name || "";
+    if (target) {
+      selectFile(target);
+    }
+  }
 
   onMount(async () => {
     try {
-      const res = await apiGet<{ files?: LedgerFile[] }>("/api/editor/files");
-      files = res.files || [];
-      if (files.length > 0) {
-        selectedFileName = files[0].file_name;
-        content = files[0].content || "";
-      }
+      await loadFiles();
     } catch (e) {
       error = e instanceof Error ? e.message : "Failed to load ledger files";
     } finally {
@@ -36,6 +61,38 @@
     const found = files.find((f) => f.file_name === name);
     content = found?.content || "";
     status = null;
+    error = null;
+    void validateFile();
+  }
+
+  async function validateFile() {
+    if (!selectedFileName) return;
+    validating = true;
+    try {
+      const res = await fetch("/api/editor/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ name: selectedFileName, content })
+      });
+      const data = (await res.json()) as {
+        errors?: Array<{ line_from?: number; line?: number; message?: string }>;
+        output?: string;
+      };
+      validationErrors = data.errors || [];
+      validationOutput = data.output || "";
+      if (validationErrors.length > 0) {
+        error = validationErrors
+          .map((e) => `Line ${e.line_from ?? e.line ?? "?"}: ${e.message ?? "Syntax error"}`)
+          .join(" · ");
+      } else {
+        error = null;
+        status = "Ledger syntax valid.";
+      }
+    } catch {
+      // ignore transient validation network failure
+    } finally {
+      validating = false;
+    }
   }
 
   async function saveFile() {
@@ -46,16 +103,22 @@
     try {
       const res = await fetch("/api/editor/save", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ file_name: selectedFileName, content })
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ name: selectedFileName, file_name: selectedFileName, content })
       });
-      const data = (await res.json()) as { saved?: boolean; message?: string };
+      const data = (await res.json()) as {
+        saved?: boolean;
+        message?: string;
+        errors?: Array<{ line_from?: number; line?: number; message?: string }>;
+      };
       if (!res.ok || data.saved === false) {
         error = data.message || "Failed to save ledger file";
+        if (data.errors) validationErrors = data.errors;
         return;
       }
       files = files.map((f) => (f.file_name === selectedFileName ? { ...f, content } : f));
       await triggerSync({ journal: true });
+      await validateFile();
       status = "Saved and synced.";
     } catch (e) {
       error = e instanceof Error ? e.message : "Failed to save ledger file";
@@ -64,20 +127,21 @@
     }
   }
 
-  async function validateFile() {
-    if (!selectedFileName) return;
-    status = null;
-    error = null;
-    const res = await fetch("/api/editor/validate", {
+  async function createFile() {
+    const clean = newFileName.trim();
+    if (!clean) return;
+    const res = await fetch("/api/editor/save", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ name: selectedFileName, content })
+      body: JSON.stringify({ name: clean, file_name: clean, content: "", operation: "create" })
     });
-    const data = (await res.json()) as { errors?: Array<{ line?: number; message?: string }>; output?: string };
-    if (data.errors && data.errors.length > 0) {
-      error = data.errors.map((e) => `Line ${e.line ?? "?"}: ${e.message ?? "Syntax error"}`).join(" · ");
+    const data = (await res.json()) as { saved?: boolean; message?: string };
+    if (data.saved) {
+      newFileName = "";
+      await loadFiles(clean);
+      status = `Created ${clean}`;
     } else {
-      status = "Ledger syntax valid.";
+      error = data.message || "Failed to create file";
     }
   }
 
@@ -93,39 +157,49 @@
 </script>
 
 {#if loading}
-  <div class="h-64 rounded-xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"></div>
+  <div class="h-80 rounded-xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"></div>
 {:else if files.length === 0}
   <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center text-sm text-[var(--muted)]">
     No ledger files found.
   </div>
 {:else}
   <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
-    <div class="px-4 py-3 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
+    <!-- Top Toolbar -->
+    <div class="px-4 py-2.5 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2">
-        <select
-          value={selectedFileName}
-          onchange={(e) => selectFile((e.currentTarget as HTMLSelectElement).value)}
-          aria-label="Select ledger file"
-          class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-elevated)] border border-[var(--border)] outline-none"
+        <button
+          type="button"
+          onclick={() => (leftCollapsed = !leftCollapsed)}
+          title="Toggle File Browser"
+          class="p-1.5 rounded-md border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
         >
-          {#each files as f}
-            <option value={f.file_name}>{f.file_name}</option>
-          {/each}
-        </select>
+          {#if leftCollapsed}
+            <PanelLeftOpen class="w-3.5 h-3.5" />
+          {:else}
+            <PanelLeftClose class="w-3.5 h-3.5" />
+          {/if}
+        </button>
+        <span class="text-xs font-semibold font-mono">{selectedFileName}</span>
         {#if status}
           <span class="text-xs text-[var(--gain)]">{status}</span>
         {/if}
+        {#if validationErrors.length > 0}
+          <span class="text-xs px-2 py-0.5 rounded bg-[var(--loss)]/15 text-[var(--loss)] font-medium">
+            {validationErrors.length} error(s)
+          </span>
+        {/if}
       </div>
 
-      {#if !runtime.readonly}
-        <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2">
+        {#if !runtime.readonly}
           <button
             type="button"
+            disabled={validating}
             class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-[var(--border)] hover:border-[var(--accent)] cursor-pointer"
             onclick={validateFile}
           >
             <ShieldCheck class="w-3.5 h-3.5" />
-            <span>Validate</span>
+            <span>{validating ? "Checking…" : "Validate"}</span>
           </button>
           <button
             type="button"
@@ -144,20 +218,117 @@
             <Save class="w-3.5 h-3.5" />
             <span>{saving ? "Saving…" : "Save & Sync"}</span>
           </button>
-        </div>
-      {/if}
+        {/if}
+        <button
+          type="button"
+          onclick={() => (rightCollapsed = !rightCollapsed)}
+          title="Toggle Ledger/Beancount Summary"
+          class="p-1.5 rounded-md border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
+        >
+          {#if rightCollapsed}
+            <PanelRightOpen class="w-3.5 h-3.5" />
+          {:else}
+            <PanelRightClose class="w-3.5 h-3.5" />
+          {/if}
+        </button>
+      </div>
     </div>
 
     {#if error}
-      <div class="px-4 py-2 bg-[var(--loss)]/10 text-xs text-[var(--loss)]">{error}</div>
+      <div class="px-4 py-2 bg-[var(--loss)]/10 text-xs text-[var(--loss)] border-b border-[var(--border)]">
+        {error}
+      </div>
     {/if}
 
-    <textarea
-      bind:value={content}
-      readonly={runtime.readonly}
-      rows="20"
-      spellcheck="false"
-      class="w-full p-4 bg-transparent font-mono text-xs leading-relaxed outline-none resize-y"
-    ></textarea>
+    <!-- 3-Part Editor Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[540px]">
+      <!-- Left: File Browser -->
+      {#if !leftCollapsed}
+        <div class="lg:col-span-3 border-b lg:border-b-0 lg:border-r border-[var(--border)] bg-[var(--surface-elevated)]/30 p-3 space-y-3">
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Files ({files.length})
+          </div>
+          {#if !runtime.readonly}
+            <div class="flex gap-1.5">
+              <input
+                type="text"
+                bind:value={newFileName}
+                placeholder="new.ledger"
+                class="flex-1 min-w-0 px-2 py-1 rounded text-xs bg-[var(--surface)] border border-[var(--border)] outline-none"
+              />
+              <button
+                type="button"
+                onclick={createFile}
+                title="Create file"
+                class="px-2 py-1 rounded bg-[var(--accent)] text-[var(--accent-fg)] text-xs cursor-pointer"
+              >
+                <FilePlus2 class="w-3.5 h-3.5" />
+              </button>
+            </div>
+          {/if}
+          <div class="space-y-0.5 max-h-[460px] overflow-y-auto text-xs">
+            {#each files as f}
+              <button
+                type="button"
+                onclick={() => selectFile(f.file_name)}
+                class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left cursor-pointer truncate {selectedFileName === f.file_name
+                  ? 'bg-[var(--accent)]/15 text-[var(--accent)] font-semibold'
+                  : 'hover:bg-[var(--surface-elevated)]'}"
+              >
+                <FileText class="w-3.5 h-3.5 shrink-0" />
+                <span class="truncate">{f.file_name}</span>
+              </button>
+            {/each}
+          </div>
+        </div>
+      {/if}
+
+      <!-- Middle: Editor -->
+      <div
+        class="{!leftCollapsed && !rightCollapsed
+          ? 'lg:col-span-5'
+          : !leftCollapsed || !rightCollapsed
+            ? 'lg:col-span-9'
+            : 'lg:col-span-12'} flex flex-col"
+      >
+        <textarea
+          bind:value={content}
+          readonly={runtime.readonly}
+          rows="24"
+          spellcheck="false"
+          class="w-full flex-1 p-4 bg-transparent font-mono text-xs leading-relaxed outline-none resize-none"
+        ></textarea>
+      </div>
+
+      <!-- Right: Ledger / Beancount Summary & Output -->
+      {#if !rightCollapsed}
+        <div class="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-[var(--border)] bg-[var(--surface-elevated)]/30 p-3 space-y-2.5 flex flex-col">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+              Ledger / Beancount Summary
+            </span>
+            {#if validating}
+              <span class="text-[11px] text-[var(--muted)]">Running…</span>
+            {/if}
+          </div>
+          {#if validationErrors.length > 0}
+            <div class="space-y-1.5 text-xs">
+              {#each validationErrors as ve}
+                <div class="p-2 rounded bg-[var(--loss)]/10 border border-[var(--loss)]/30 text-[var(--loss)]">
+                  Line {ve.line_from ?? ve.line ?? "?"}: {ve.message}
+                </div>
+              {/each}
+            </div>
+          {/if}
+          {#if validationOutput}
+            <pre class="flex-1 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)] font-mono text-[11px] leading-relaxed overflow-auto max-h-[460px] whitespace-pre-wrap">{validationOutput}</pre>
+          {:else}
+            <div class="text-xs text-[var(--muted)] p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+              Click <strong>Validate</strong> or <strong>Save &amp; Sync</strong> to view ledger/beancount summary output.
+            </div>
+          {/if}
+        </div>
+      {/if}
+    </div>
   </div>
 {/if}

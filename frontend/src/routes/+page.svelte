@@ -41,7 +41,7 @@
     networth: true,
     checking: true,
     investmentIncome: true,
-    cashFlow: false,
+    cashFlow: true,
     expenses: true,
     recentTransactions: true,
     budget: false,
@@ -349,6 +349,26 @@
                 Details →
               </a>
             </div>
+            {#if homeCashFlows.length > 0}
+              {@const latestCf = homeCashFlows[homeCashFlows.length - 1]}
+              {@const latestNet = latestCf.income - latestCf.expenses}
+              <div class="grid grid-cols-3 gap-3 text-xs tabular-nums pb-1">
+                <div>
+                  <div class="text-[var(--muted)]">Last Month In</div>
+                  <div class="font-semibold text-[var(--gain)] mt-0.5">{formatMoney(latestCf.income)}</div>
+                </div>
+                <div>
+                  <div class="text-[var(--muted)]">Last Month Out</div>
+                  <div class="font-semibold text-[var(--loss)] mt-0.5">{formatMoney(latestCf.expenses)}</div>
+                </div>
+                <div>
+                  <div class="text-[var(--muted)]">Net Flow</div>
+                  <div class="font-semibold {latestNet >= 0 ? 'text-[var(--gain)]' : 'text-[var(--loss)]'} mt-0.5">
+                    {formatMoney(latestNet)}
+                  </div>
+                </div>
+              </div>
+            {/if}
             <BarTrendChart data={homeCashFlows} />
           </section>
         {/if}

@@ -245,6 +245,10 @@
   const avgSavingsRate = $derived(
     avgIncome > 0 ? ((avgIncome - avgExpenses) / avgIncome) * 100 : 0
   );
+  const totalIncome = $derived(activeFlowRows.reduce((s, c) => s + c.income, 0));
+  const totalExpenses = $derived(activeFlowRows.reduce((s, c) => s + c.expenses, 0));
+  const totalInvestments = $derived(activeFlowRows.reduce((s, c) => s + c.investment, 0));
+  const totalNetSavings = $derived(totalIncome - totalExpenses);
 
   const statementYears = $derived(Object.keys(yearlyStatements).sort().reverse());
   const currentStatement = $derived(selectedYear ? yearlyStatements[selectedYear] : undefined);
@@ -438,6 +442,46 @@
           Avg Savings Rate
         </div>
         <div class="text-2xl font-semibold tabular-nums mt-1">{avgSavingsRate.toFixed(1)}%</div>
+      </div>
+    </div>
+
+    <!-- Period Cash Flow Summary -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
+        <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Total Income
+        </div>
+        <div class="text-lg font-semibold tabular-nums text-[var(--gain)] mt-1">
+          {formatMoney(totalIncome)}
+        </div>
+      </div>
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
+        <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Total Expenses
+        </div>
+        <div class="text-lg font-semibold tabular-nums text-[var(--loss)] mt-1">
+          {formatMoney(totalExpenses)}
+        </div>
+      </div>
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
+        <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Total Invested
+        </div>
+        <div class="text-lg font-semibold tabular-nums mt-1">
+          {formatMoney(totalInvestments)}
+        </div>
+      </div>
+      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
+        <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Net Cash Flow
+        </div>
+        <div
+          class="text-lg font-semibold tabular-nums mt-1 {totalNetSavings >= 0
+            ? 'text-[var(--gain)]'
+            : 'text-[var(--loss)]'}"
+        >
+          {formatMoney(totalNetSavings)}
+        </div>
       </div>
     </div>
 
