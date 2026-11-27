@@ -69,7 +69,8 @@
   interface CurrencyExposureItem {
     currency: string;
     amount: number;
-    percent: number;
+    percent?: number;
+    percentage?: number;
   }
 
   interface InvestmentIncomeHolding {
@@ -299,9 +300,16 @@
       allocationItems = Object.values(allocRes.aggregates || {})
         .filter((a) => (a.market_amount || 0) > 0)
         .sort((a, b) => (b.market_amount || 0) - (a.market_amount || 0));
-      allocationTimeline = allocRes.aggregates_timeline || [];
-      allocationTargets = allocRes.allocation_targets || [];
-      currencyExposure = fxExpRes.currency_exposure || [];
+      const rawTimeline = allocRes.aggregates_timeline as unknown;
+      allocationTimeline = Array.isArray(rawTimeline)
+        ? rawTimeline
+        : rawTimeline && typeof rawTimeline === "object"
+          ? Object.entries(rawTimeline as Record<string, Record<string, AllocationAggregate>>).map(
+              ([date, aggregates]) => ({ date, aggregates })
+            )
+          : [];
+      allocationTargets = Array.isArray(allocRes.allocation_targets) ? allocRes.allocation_targets : [];
+      currencyExposure = Array.isArray(fxExpRes.currency_exposure) ? fxExpRes.currency_exposure : [];
       investmentIncomeTotal = incRes.ttm_total || 0;
       investmentIncomeHoldings = incRes.holdings || [];
       investmentIncomeTimeline = incRes.timeline || [];
@@ -369,13 +377,14 @@
   });
 
   const allocationTimelineColumns = $derived.by((): StackedBarColumn[] => {
-    if (allocationTimeline.length === 0) return [];
+    if (!Array.isArray(allocationTimeline) || allocationTimeline.length === 0) return [];
     const topNames = allocationItems
       .slice(0, 8)
       .map((a) => a.name || a.account || "Asset");
     const topSet = new Set(topNames);
     return allocationTimeline.slice(-24).map((pt) => {
-      const vals = Object.values(pt.aggregates || {});
+      const source = pt.aggregates || (pt as unknown as Record<string, AllocationAggregate>);
+      const vals = Object.values(source || {});
       const byName = new Map<string, number>();
       let other = 0;
       let total = 0;
@@ -1097,11 +1106,16 @@
         {#if currencyExposure.length === 0}
           <p class="text-sm text-[var(--muted)]">Single currency portfolio.</p>
         {:else}
+          {@const fxTotal = currencyExposure.reduce((s, e) => s + (e.amount || 0), 0)}
           <div class="divide-y divide-[var(--border)] text-sm tabular-nums">
             {#each currencyExposure as c}
-              <div class="py-2 flex justify-between">
+              {@const fxPct = fxTotal > 0 ? ((c.amount || 0) / fxTotal) * 100 : (c.percent ?? c.percentage ?? 0)}
+              <div class="py-2 flex justify-between gap-2">
                 <span class="font-medium">{c.currency}</span>
-                <span>{c.percent.toFixed(1)}%</span>
+                <span>
+                  <strong class="mr-1.5">{formatMoney(c.amount || 0)}</strong>
+                  <span class="text-[var(--muted)]">({fxPct.toFixed(1)}%)</span>
+                </span>
               </div>
             {/each}
           </div>
