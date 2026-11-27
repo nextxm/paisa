@@ -53,17 +53,19 @@
   }
 
   .heading {
-    font-weight: 400 !important;
-    font-size: 1rem !important;
-    text-transform: capitalize !important;
-    letter-spacing: normal !important;
-    margin-bottom: 0 !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    opacity: 0.72;
+    margin-bottom: 0.2rem !important;
   }
 
   .title {
-    font-weight: 800 !important;
-    font-size: 1.75rem !important;
-    line-height: 2rem !important;
+    font-weight: 700 !important;
+    font-size: 1.65rem !important;
+    line-height: 1.9rem !important;
+    font-variant-numeric: tabular-nums;
     padding-left: 0 !important;
     padding-bottom: 0 !important;
     margin-bottom: 0 !important;

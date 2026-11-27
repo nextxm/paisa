@@ -44,7 +44,7 @@
   class="budget-card box px-2 pt-2 pb-2 my-3 has-background-white"
   data-tippy-content={_.isEmpty(accountBudget.expenses) ? null : tooltipContent}
 >
-  <div class="md:flex is-justify-content-space-between">
+  <div class="md:flex is-justify-content-space-between is-align-items-center">
     <div
       class="has-text-weight-bold has-text-grey ml-2 truncate custom-icon"
       title={accountBudget.account}
@@ -53,7 +53,7 @@
     </div>
     <div
       class="is-flex is-justify-content-flex-end mr-2 is-align-items-center"
-      style="min-width: fit-content"
+      style="min-width: fit-content; font-variant-numeric: tabular-nums;"
     >
       {#if !compact}
         <div class="mr-3">

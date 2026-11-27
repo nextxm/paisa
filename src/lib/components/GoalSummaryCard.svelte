@@ -70,7 +70,10 @@
     />
   </nav>
   <Progress small showPercent={false} progressPercent={completed} />
-  <div class="flex justify-between has-text-grey">
+  <div
+    class="flex justify-between has-text-grey is-size-7 mt-2"
+    style="font-variant-numeric: tabular-nums;"
+  >
     <div>{formatPercentage(completed / 100, 2)}</div>
     <div>{formatDate(goal.targetDate)}</div>
   </div>

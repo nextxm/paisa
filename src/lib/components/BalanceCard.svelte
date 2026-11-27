@@ -7,7 +7,7 @@
 </script>
 
 <div class="box p-3 has-background-white">
-  <div class="my-1 is-flex is-justify-content-space-between">
+  <div class="my-1 is-flex is-justify-content-space-between is-align-items-center">
     <div class="has-text-grey truncate custom-icon" title={assetBreakdown.group}>
       <span style={accountColorStyle(firstName(assetBreakdown.group))}
         >{iconText(assetBreakdown.group)}</span
@@ -16,7 +16,7 @@
         {restName(restName(assetBreakdown.group))}</a
       >
     </div>
-    <div class="has-text-weight-bold is-size-6">
+    <div class="has-text-weight-bold is-size-6" style="font-variant-numeric: tabular-nums;">
       <a
         class="secondary-link has-text-weight-bold"
         href="/accounts/{encodeURIComponent(assetBreakdown.group)}/transactions"
