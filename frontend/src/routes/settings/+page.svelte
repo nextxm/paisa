@@ -15,6 +15,7 @@
   let loading = $state(true);
   let configJson = $state<Record<string, unknown> | null>(null);
   let configDraft = $state("");
+  let configError = $state<string | null>(null);
   let configSaving = $state(false);
   let configMessage = $state<string | null>(null);
   let logs = $state<LogEntry[]>([]);
@@ -23,7 +24,10 @@
   onMount(async () => {
     try {
       const [cfg, logRes, ffRes] = await Promise.all([
-        getFullConfig().catch(() => null),
+        getFullConfig().catch((e) => {
+          configError = e instanceof Error ? e.message : "Failed to load configuration";
+          return null;
+        }),
         apiGet<{ logs?: LogEntry[] }>("/api/logs").catch(() => ({ logs: [] })),
         apiGet<{ items?: Array<Record<string, unknown>> }>("/api/firefly/reconcile").catch(() => ({
           items: []
@@ -113,7 +117,9 @@
           class="w-full p-4 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] font-mono text-xs outline-none focus:border-[var(--accent)]"
         ></textarea>
       {:else}
-        <p class="text-sm text-[var(--muted)]">Configuration unavailable.</p>
+        <p class="text-sm text-[var(--muted)]">
+          Configuration unavailable{configError ? `: ${configError}` : "."}
+        </p>
       {/if}
     </div>
 

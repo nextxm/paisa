@@ -141,7 +141,7 @@ export async function loadRuntimeConfig(): Promise<RuntimeState> {
   try {
     const res = await fetch("/connect/paisa.v1.PaisaService/GetConfig", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: { "Content-Type": "application/json", Accept: "application/json", ...authHeaders() },
       body: "{}"
     });
     if (res.ok) {
@@ -207,14 +207,21 @@ export async function apiGet<T>(path: string): Promise<T> {
 export async function getFullConfig(): Promise<Record<string, unknown>> {
   const res = await fetch("/connect/paisa.v1.PaisaService/GetConfig", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    headers: { "Content-Type": "application/json", Accept: "application/json", ...authHeaders() },
     body: "{}"
   });
-  if (!res.ok) {
+  if (res.ok) {
+    const data = (await res.json()) as { config?: Record<string, unknown> };
+    if (data.config) return data.config;
+  }
+  const fallback = await fetch("/api/config", {
+    headers: { Accept: "application/json", ...authHeaders() }
+  });
+  if (!fallback.ok) {
     throw new Error(`${res.status} ${res.statusText}`);
   }
-  const data = (await res.json()) as { config?: Record<string, unknown> };
-  return data.config || {};
+  const fbData = (await fallback.json()) as { config?: Record<string, unknown> };
+  return fbData.config || (fbData as Record<string, unknown>);
 }
 
 export async function updateConfig(
@@ -223,11 +230,12 @@ export async function updateConfig(
   try {
     const res = await fetch("/connect/paisa.v1.PaisaService/UpdateConfig", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: { "Content-Type": "application/json", Accept: "application/json", ...authHeaders() },
       body: JSON.stringify({ config })
     });
     if (!res.ok) {
-      return { success: false, error: `${res.status} ${res.statusText}` };
+      const errText = await res.text().catch(() => "");
+      return { success: false, error: errText || `${res.status} ${res.statusText}` };
     }
     const data = (await res.json()) as { success?: boolean };
     return { success: Boolean(data.success) };
