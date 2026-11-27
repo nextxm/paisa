@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import LineAreaChart, { type NetworthPoint } from "$lib/components/LineAreaChart.svelte";
-  import { apiGet, authHeaders, formatMoney, formatShortDate, type AssetBreakdown } from "$lib/api";
+  import { apiGet, appPath, authHeaders, formatMoney, formatShortDate, type AssetBreakdown } from "$lib/api";
 
   type WealthTab =
     | "overview"
@@ -91,7 +91,19 @@
   let availableCurrencies = $state<string[]>([]);
   let assetsRefreshing = $state(false);
   let hideZeroAssets = $state(true);
+  let filterInactive = $state(true);
   let flatAssets = $state(true);
+  type AssetSortField =
+    | "group"
+    | "investmentAmount"
+    | "withdrawalAmount"
+    | "balanceUnits"
+    | "marketAmount"
+    | "gainAmount"
+    | "xirr"
+    | "absoluteReturn";
+  let assetSortField = $state<AssetSortField>("marketAmount");
+  let assetSortAsc = $state(false);
   let targetsEditing = $state(false);
   let targetDraft = $state<Record<string, number>>({});
   let targetsSaving = $state(false);
@@ -251,25 +263,94 @@
     allocationItems.reduce((sum, a) => sum + (a.market_amount || 0), 0)
   );
 
-  const filteredAssets = $derived(
-    assetBreakdowns.filter(
+  function toggleAssetSort(field: AssetSortField) {
+    if (assetSortField === field) {
+      assetSortAsc = !assetSortAsc;
+    } else {
+      assetSortField = field;
+      assetSortAsc = field === "group";
+    }
+  }
+
+  const filteredAssets = $derived.by(() => {
+    const q = search.trim().toLowerCase();
+    const list = assetBreakdowns.filter(
       (a) =>
+        (!filterInactive || !a.inactive) &&
         (!hideZeroAssets || Math.abs(a.marketAmount || 0) > 0.01) &&
-        (flatAssets || a.group.split(":").length <= 2) &&
-        a.group.toLowerCase().includes(search.trim().toLowerCase())
-    )
-  );
+        (!q || a.group.toLowerCase().includes(q))
+    );
+    if (!flatAssets) {
+      return [...list].sort((a, b) => a.group.localeCompare(b.group));
+    }
+    return [...list].sort((a, b) => {
+      const av = assetSortField === "group" ? a.group : Number(a[assetSortField] || 0);
+      const bv = assetSortField === "group" ? b.group : Number(b[assetSortField] || 0);
+      const cmp =
+        typeof av === "string" && typeof bv === "string"
+          ? av.localeCompare(bv)
+          : (av as number) - (bv as number);
+      return assetSortAsc ? cmp : -cmp;
+    });
+  });
+
+  function formatOriginalText(a: AssetBreakdown): string {
+    if (a.originalBalances && a.originalBalances.length > 0) {
+      return a.originalBalances.map((ob) => formatMoney(ob.amount, ob.currency)).join(" · ");
+    }
+    return "";
+  }
 
   function exportAssetsCsv() {
+    const headers = [
+      "Account",
+      "Investment Amount",
+      "Withdrawal Amount",
+      "Balance Units",
+      "Original Value",
+      "Market Value",
+      "Change",
+      "XIRR",
+      "Absolute Return"
+    ];
     const lines = [
-      ["Account", "MarketValue"].join(","),
-      ...filteredAssets.map((a) => [`"${a.group.replace(/"/g, '""')}"`, (a.marketAmount || 0).toFixed(2)].join(","))
+      headers.join(","),
+      ...filteredAssets.map((a) =>
+        [
+          `"${a.group.replace(/"/g, '""')}"`,
+          (a.investmentAmount || 0).toFixed(2),
+          (a.withdrawalAmount || 0).toFixed(2),
+          (a.balanceUnits || 0).toFixed(4),
+          `"${formatOriginalText(a).replace(/"/g, '""')}"`,
+          (a.marketAmount || 0).toFixed(2),
+          (a.gainAmount || 0).toFixed(2),
+          (a.xirr || 0).toFixed(2),
+          ((a.absoluteReturn || 0) * 100).toFixed(2)
+        ].join(",")
+      )
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `paisa-assets-${asOfDate}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportAssetsExcel() {
+    const rowsHtml = filteredAssets
+      .map(
+        (a) =>
+          `<tr><td>${a.group}</td><td>${(a.investmentAmount || 0).toFixed(2)}</td><td>${(a.withdrawalAmount || 0).toFixed(2)}</td><td>${(a.balanceUnits || 0).toFixed(4)}</td><td>${formatOriginalText(a)}</td><td>${(a.marketAmount || 0).toFixed(2)}</td><td>${(a.gainAmount || 0).toFixed(2)}</td><td>${(a.xirr || 0).toFixed(2)}</td><td>${((a.absoluteReturn || 0) * 100).toFixed(2)}%</td></tr>`
+      )
+      .join("");
+    const html = `<table><thead><tr><th>Account</th><th>Investment Amount</th><th>Withdrawal Amount</th><th>Balance Units</th><th>Original Value</th><th>Market Value</th><th>Change</th><th>XIRR</th><th>Absolute Return</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
+    const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `paisa-assets-${asOfDate}.xls`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -341,19 +422,30 @@
           class="px-3 py-1.5 rounded-lg text-xs bg-[var(--surface)] border border-[var(--border)] outline-none focus:border-[var(--accent)]"
         />
         <label class="inline-flex items-center gap-1.5 text-xs text-[var(--muted)] cursor-pointer">
-          <input type="checkbox" bind:checked={hideZeroAssets} />
-          Hide zero
+          <input type="checkbox" bind:checked={flatAssets} />
+          Flat Accounts
         </label>
         <label class="inline-flex items-center gap-1.5 text-xs text-[var(--muted)] cursor-pointer">
-          <input type="checkbox" bind:checked={flatAssets} />
-          Flat
+          <input type="checkbox" bind:checked={filterInactive} />
+          Filter Inactive
+        </label>
+        <label class="inline-flex items-center gap-1.5 text-xs text-[var(--muted)] cursor-pointer">
+          <input type="checkbox" bind:checked={hideZeroAssets} />
+          Filter 0
         </label>
         <button
           type="button"
           onclick={exportAssetsCsv}
           class="px-2.5 py-1.5 rounded-lg text-xs bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--accent)] cursor-pointer"
         >
-          Export CSV
+          CSV
+        </button>
+        <button
+          type="button"
+          onclick={exportAssetsExcel}
+          class="px-2.5 py-1.5 rounded-lg text-xs bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--accent)] cursor-pointer"
+        >
+          Excel
         </button>
       </div>
     {/if}
@@ -478,26 +570,113 @@
     </div>
   {:else if activeTab === "assets"}
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
-      <table class="w-full text-sm text-left">
-        <thead
-          class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50"
-        >
-          <tr>
-            <th class="py-2.5 px-4 font-medium">Account</th>
-            <th class="py-2.5 px-4 text-right font-medium">Market Value</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-[var(--border)] tabular-nums">
-          {#each filteredAssets as asset}
-            <tr class="hover:bg-[var(--surface-elevated)]/50">
-              <td class="py-2.5 px-4 font-medium">{asset.group}</td>
-              <td class="py-2.5 px-4 text-right font-semibold">
-                {formatMoney(asset.marketAmount)}
-              </td>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead
+            class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50"
+          >
+            <tr>
+              <th class="py-2.5 px-4 font-medium">
+                <button type="button" class="cursor-pointer hover:text-[var(--text)]" onclick={() => toggleAssetSort("group")}>
+                  Account {assetSortField === "group" ? (assetSortAsc ? "▲" : "▼") : ""}
+                </button>
+              </th>
+              <th class="py-2.5 px-3 text-right font-medium">
+                <button type="button" class="cursor-pointer hover:text-[var(--text)]" onclick={() => toggleAssetSort("investmentAmount")}>
+                  Investment {assetSortField === "investmentAmount" ? (assetSortAsc ? "▲" : "▼") : ""}
+                </button>
+              </th>
+              <th class="py-2.5 px-3 text-right font-medium">
+                <button type="button" class="cursor-pointer hover:text-[var(--text)]" onclick={() => toggleAssetSort("withdrawalAmount")}>
+                  Withdrawal {assetSortField === "withdrawalAmount" ? (assetSortAsc ? "▲" : "▼") : ""}
+                </button>
+              </th>
+              <th class="py-2.5 px-3 text-right font-medium">
+                <button type="button" class="cursor-pointer hover:text-[var(--text)]" onclick={() => toggleAssetSort("balanceUnits")}>
+                  Balance Units {assetSortField === "balanceUnits" ? (assetSortAsc ? "▲" : "▼") : ""}
+                </button>
+              </th>
+              <th class="py-2.5 px-3 text-right font-medium">Original Value</th>
+              <th class="py-2.5 px-3 text-right font-medium">
+                <button type="button" class="cursor-pointer hover:text-[var(--text)]" onclick={() => toggleAssetSort("marketAmount")}>
+                  Market Value {assetSortField === "marketAmount" ? (assetSortAsc ? "▲" : "▼") : ""}
+                </button>
+              </th>
+              <th class="py-2.5 px-3 text-right font-medium">
+                <button type="button" class="cursor-pointer hover:text-[var(--text)]" onclick={() => toggleAssetSort("gainAmount")}>
+                  Change {assetSortField === "gainAmount" ? (assetSortAsc ? "▲" : "▼") : ""}
+                </button>
+              </th>
+              <th class="py-2.5 px-3 text-right font-medium">
+                <button type="button" class="cursor-pointer hover:text-[var(--text)]" onclick={() => toggleAssetSort("xirr")}>
+                  XIRR {assetSortField === "xirr" ? (assetSortAsc ? "▲" : "▼") : ""}
+                </button>
+              </th>
+              <th class="py-2.5 px-4 text-right font-medium">
+                <button type="button" class="cursor-pointer hover:text-[var(--text)]" onclick={() => toggleAssetSort("absoluteReturn")}>
+                  Abs. Return {assetSortField === "absoluteReturn" ? (assetSortAsc ? "▲" : "▼") : ""}
+                </button>
+              </th>
             </tr>
-          {/each}
-        </tbody>
-      </table>
+          </thead>
+          <tbody class="divide-y divide-[var(--border)] tabular-nums">
+            {#each filteredAssets as asset}
+              {@const depth = Math.max(0, asset.group.split(":").length - 2)}
+              <tr class="hover:bg-[var(--surface-elevated)]/50">
+                <td class="py-2.5 px-4 font-medium whitespace-nowrap">
+                  <a
+                    href={appPath(`/accounts/${encodeURIComponent(asset.group)}`)}
+                    class="hover:text-[var(--accent)] hover:underline"
+                    style={!flatAssets ? `padding-left: ${depth * 16}px` : ""}
+                  >
+                    {!flatAssets ? asset.group.split(":").pop() : asset.group}
+                  </a>
+                </td>
+                <td class="py-2.5 px-3 text-right text-xs text-[var(--muted)]">
+                  {asset.investmentAmount ? formatMoney(asset.investmentAmount, reportCurrency || undefined) : ""}
+                </td>
+                <td class="py-2.5 px-3 text-right text-xs text-[var(--muted)]">
+                  {asset.withdrawalAmount ? formatMoney(asset.withdrawalAmount, reportCurrency || undefined) : ""}
+                </td>
+                <td class="py-2.5 px-3 text-right text-xs">
+                  {asset.balanceUnits ? asset.balanceUnits.toLocaleString(undefined, { maximumFractionDigits: 4 }) : ""}
+                </td>
+                <td class="py-2.5 px-3 text-right text-xs font-medium whitespace-nowrap">
+                  {#if asset.originalBalances && asset.originalBalances.length > 0}
+                    {#each asset.originalBalances as ob}
+                      <div>{formatMoney(ob.amount, ob.currency)}</div>
+                    {/each}
+                  {/if}
+                </td>
+                <td class="py-2.5 px-3 text-right font-semibold">
+                  {asset.marketAmount ? formatMoney(asset.marketAmount, reportCurrency || undefined) : ""}
+                </td>
+                <td
+                  class="py-2.5 px-3 text-right text-xs {(asset.gainAmount || 0) >= 0
+                    ? 'text-[var(--gain)]'
+                    : 'text-[var(--loss)]'}"
+                >
+                  {asset.gainAmount ? formatMoney(asset.gainAmount, reportCurrency || undefined) : ""}
+                </td>
+                <td
+                  class="py-2.5 px-3 text-right text-xs {(asset.xirr || 0) >= 0
+                    ? 'text-[var(--gain)]'
+                    : 'text-[var(--loss)]'}"
+                >
+                  {asset.xirr ? `${asset.xirr.toFixed(2)}%` : ""}
+                </td>
+                <td
+                  class="py-2.5 px-4 text-right text-xs {(asset.absoluteReturn || 0) >= 0
+                    ? 'text-[var(--gain)]'
+                    : 'text-[var(--loss)]'}"
+                >
+                  {asset.absoluteReturn ? `${(asset.absoluteReturn * 100).toFixed(2)}%` : ""}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
     </div>
   {:else if activeTab === "investments"}
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">

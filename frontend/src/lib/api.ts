@@ -35,6 +35,13 @@ export interface Transaction {
 export interface AssetBreakdown {
   group: string;
   marketAmount: number;
+  investmentAmount?: number;
+  withdrawalAmount?: number;
+  balanceUnits?: number;
+  gainAmount?: number;
+  xirr?: number;
+  absoluteReturn?: number;
+  inactive?: boolean;
   originalBalances?: Array<{ amount: number; currency: string }>;
 }
 
