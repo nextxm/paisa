@@ -8,9 +8,10 @@ $family-sans-serif-icon:
   "fluent-emoji-high-contrast", "mdi";
 $family-monospace: "Roboto Mono Variable", monospace;
 
-$box-radius: 4px;
+$box-radius: 10px;
 $box-shadow: none;
 $box-padding: 1.25rem 0;
+$radius: 6px;
 
 $card-shadow: none;
 $danger-light: hsl(347, 90%, 96%);
@@ -687,7 +688,30 @@ svg text {
 }
 
 .box {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+}
+
+.level-item {
+  font-variant-numeric: tabular-nums;
+}
+
+.table {
+  font-variant-numeric: tabular-nums;
+
+  thead th {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: $grey;
+    border-bottom-width: 1px;
+  }
+
+  td,
+  th {
+    border-color: rgba(0, 0, 0, 0.06);
+  }
 }
 
 .node {
