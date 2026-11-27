@@ -1,7 +1,7 @@
 <script lang="ts">
   import dayjs from "dayjs";
   import { onMount } from "svelte";
-  import { AlertTriangle, ArrowUpRight, SlidersHorizontal, X } from "lucide-svelte";
+  import { AlertTriangle, ArrowUpRight, GripVertical, SlidersHorizontal, X } from "lucide-svelte";
   import TransactionDrawer from "$lib/components/TransactionDrawer.svelte";
   import BarTrendChart from "$lib/components/BarTrendChart.svelte";
   import {
@@ -49,7 +49,18 @@
     recurring: false
   };
 
+  const defaultLayout: { left: WidgetKey[]; right: WidgetKey[] } = {
+    left: ["networth", "checking", "investmentIncome", "cashFlow", "budget", "goals"],
+    right: ["expenses", "recurring", "recentTransactions"]
+  };
+
   let visibleWidgets = $state<Record<WidgetKey, boolean>>({ ...defaultVisible });
+  let widgetLayout = $state<{ left: WidgetKey[]; right: WidgetKey[] }>({
+    left: [...defaultLayout.left],
+    right: [...defaultLayout.right]
+  });
+  let draggingKey = $state<WidgetKey | null>(null);
+  let dragOverKey = $state<WidgetKey | null>(null);
   let showCustomize = $state(false);
   let dashboard = $state<DashboardResponse | null>(null);
   let healthIssues = $state(0);
@@ -85,9 +96,59 @@
       if (saved) {
         visibleWidgets = { ...defaultVisible, ...JSON.parse(saved) };
       }
+      const savedLayout = localStorage.getItem("paisa-v2-dashboard-layout");
+      if (savedLayout) {
+        const parsed = JSON.parse(savedLayout) as { left?: WidgetKey[]; right?: WidgetKey[] };
+        if (Array.isArray(parsed.left) && Array.isArray(parsed.right)) {
+          const allKnown = new Set<WidgetKey>([...defaultLayout.left, ...defaultLayout.right]);
+          const seen = new Set<WidgetKey>();
+          const clean = (arr: WidgetKey[]) =>
+            arr.filter((k) => {
+              if (!allKnown.has(k) || seen.has(k)) return false;
+              seen.add(k);
+              return true;
+            });
+          const left = clean(parsed.left);
+          const right = clean(parsed.right);
+          for (const k of allKnown) {
+            if (!seen.has(k)) left.push(k);
+          }
+          widgetLayout = { left, right };
+        }
+      }
     } catch {}
     await loadDashboard();
   });
+
+  function saveLayout(next: { left: WidgetKey[]; right: WidgetKey[] }) {
+    widgetLayout = next;
+    try {
+      localStorage.setItem("paisa-v2-dashboard-layout", JSON.stringify(next));
+    } catch {}
+  }
+
+  function moveWidget(source: WidgetKey, targetCol: "left" | "right", targetKey?: WidgetKey) {
+    const nextLeft = widgetLayout.left.filter((k) => k !== source);
+    const nextRight = widgetLayout.right.filter((k) => k !== source);
+    const dest = targetCol === "left" ? nextLeft : nextRight;
+    if (targetKey) {
+      const idx = dest.indexOf(targetKey);
+      if (idx >= 0) dest.splice(idx, 0, source);
+      else dest.push(source);
+    } else {
+      dest.push(source);
+    }
+    saveLayout({ left: nextLeft, right: nextRight });
+  }
+
+  function isWidgetVisible(key: WidgetKey): boolean {
+    if (!visibleWidgets[key]) return false;
+    if (key === "cashFlow") return homeCashFlows.length > 0;
+    if (key === "budget") return budgetAccounts.length > 0;
+    if (key === "goals") return goalSummaries.length > 0;
+    if (key === "recurring") return recurringItems.length > 0;
+    return true;
+  }
 
   function toggleWidget(key: WidgetKey) {
     visibleWidgets = { ...visibleWidgets, [key]: !visibleWidgets[key] };
@@ -229,12 +290,49 @@
       </div>
     </div>
   {:else}
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-      <!-- Left Column -->
-      <div class="lg:col-span-6 space-y-5">
-        {#if visibleWidgets.networth}
+    {#snippet widgetCard(key: WidgetKey, col: "left" | "right")}
+      <div
+        role="region"
+        aria-label={widgetLabels[key]}
+        draggable="true"
+        ondragstart={(e) => {
+          draggingKey = key;
+          e.dataTransfer?.setData("text/plain", key);
+        }}
+        ondragend={() => {
+          draggingKey = null;
+          dragOverKey = null;
+        }}
+        ondragover={(e) => {
+          e.preventDefault();
+          if (draggingKey && draggingKey !== key) dragOverKey = key;
+        }}
+        ondragleave={() => {
+          if (dragOverKey === key) dragOverKey = null;
+        }}
+        ondrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (draggingKey && draggingKey !== key) {
+            moveWidget(draggingKey, col, key);
+          }
+          draggingKey = null;
+          dragOverKey = null;
+        }}
+        class="relative group transition-all {draggingKey === key ? 'opacity-50' : ''} {dragOverKey === key
+          ? 'ring-2 ring-[var(--accent)] rounded-xl'
+          : ''}"
+      >
+        <div
+          class="absolute top-3.5 right-3.5 z-10 p-1 rounded text-[var(--muted)] opacity-40 group-hover:opacity-100 hover:bg-[var(--surface-elevated)] cursor-grab active:cursor-grabbing"
+          title="Drag to arrange widget"
+        >
+          <GripVertical class="w-3.5 h-3.5" />
+        </div>
+
+        {#if key === "networth"}
           <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Net Worth
               </span>
@@ -246,7 +344,6 @@
                 <ArrowUpRight class="w-3.5 h-3.5" />
               </a>
             </div>
-
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div class="sm:col-span-2">
                 <div class="text-xs text-[var(--muted)]">Total Net Worth</div>
@@ -270,11 +367,9 @@
               </div>
             </div>
           </section>
-        {/if}
-
-        {#if visibleWidgets.checking}
+        {:else if key === "checking"}
           <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Checking Balances
               </span>
@@ -286,7 +381,6 @@
                 <ArrowUpRight class="w-3.5 h-3.5" />
               </a>
             </div>
-
             {#if checkingAccounts.length === 0}
               <p class="text-sm text-[var(--muted)]">No checking accounts found.</p>
             {:else}
@@ -306,11 +400,9 @@
               </div>
             {/if}
           </section>
-        {/if}
-
-        {#if visibleWidgets.investmentIncome}
+        {:else if key === "investmentIncome"}
           <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Investment Income (TTM)
               </span>
@@ -337,11 +429,9 @@
               </div>
             </div>
           </section>
-        {/if}
-
-        {#if visibleWidgets.cashFlow && homeCashFlows.length > 0}
+        {:else if key === "cashFlow"}
           <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Cash Flow
               </span>
@@ -371,11 +461,9 @@
             {/if}
             <BarTrendChart data={homeCashFlows} />
           </section>
-        {/if}
-
-        {#if visibleWidgets.budget && budgetAccounts.length > 0}
+        {:else if key === "budget"}
           <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Budget ({dayjs(`${selectedMonth}-01`).format("MMM YYYY")})
               </span>
@@ -403,11 +491,9 @@
               {/each}
             </div>
           </section>
-        {/if}
-
-        {#if visibleWidgets.goals && goalSummaries.length > 0}
+        {:else if key === "goals"}
           <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Goals
               </span>
@@ -430,14 +516,9 @@
               {/each}
             </div>
           </section>
-        {/if}
-      </div>
-
-      <!-- Right Column -->
-      <div class="lg:col-span-6 space-y-5">
-        {#if visibleWidgets.expenses}
+        {:else if key === "expenses"}
           <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center justify-between gap-2 pr-7">
               <div>
                 <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                   Expenses ({dayjs(`${selectedMonth}-01`).format("MMM YYYY")})
@@ -462,7 +543,6 @@
                 {/each}
               </div>
             </div>
-
             {#if topCategories.length === 0}
               <p class="text-sm text-[var(--muted)]">No expenses recorded this month.</p>
             {:else}
@@ -486,11 +566,9 @@
               </div>
             {/if}
           </section>
-        {/if}
-
-        {#if visibleWidgets.recurring && recurringItems.length > 0}
+        {:else if key === "recurring"}
           <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Recurring
               </span>
@@ -509,11 +587,9 @@
               {/each}
             </div>
           </section>
-        {/if}
-
-        {#if visibleWidgets.recentTransactions}
+        {:else if key === "recentTransactions"}
           <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Recent Transactions
               </span>
@@ -525,7 +601,6 @@
                 <ArrowUpRight class="w-3.5 h-3.5" />
               </a>
             </div>
-
             {#if recentTransactions.length === 0}
               <p class="text-sm text-[var(--muted)]">No recent transactions.</p>
             {:else}
@@ -560,6 +635,40 @@
             {/if}
           </section>
         {/if}
+      </div>
+    {/snippet}
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div
+        role="list"
+        class="lg:col-span-6 space-y-5 min-h-[120px]"
+        ondragover={(e) => e.preventDefault()}
+        ondrop={(e) => {
+          e.preventDefault();
+          if (draggingKey) moveWidget(draggingKey, "left");
+          draggingKey = null;
+          dragOverKey = null;
+        }}
+      >
+        {#each widgetLayout.left.filter(isWidgetVisible) as key (key)}
+          {@render widgetCard(key, "left")}
+        {/each}
+      </div>
+
+      <div
+        role="list"
+        class="lg:col-span-6 space-y-5 min-h-[120px]"
+        ondragover={(e) => e.preventDefault()}
+        ondrop={(e) => {
+          e.preventDefault();
+          if (draggingKey) moveWidget(draggingKey, "right");
+          draggingKey = null;
+          dragOverKey = null;
+        }}
+      >
+        {#each widgetLayout.right.filter(isWidgetVisible) as key (key)}
+          {@render widgetCard(key, "right")}
+        {/each}
       </div>
     </div>
   {/if}
@@ -600,6 +709,17 @@
           onclick={() => applyPreset("all")}
         >
           Show All
+        </button>
+        <button
+          type="button"
+          class="px-2.5 py-1 rounded-md border border-[var(--border)] hover:bg-[var(--surface-elevated)] cursor-pointer"
+          onclick={() =>
+            saveLayout({
+              left: [...defaultLayout.left],
+              right: [...defaultLayout.right]
+            })}
+        >
+          Reset Order
         </button>
       </div>
       <div class="space-y-2 text-sm">
