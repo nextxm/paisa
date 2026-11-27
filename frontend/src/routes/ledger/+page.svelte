@@ -2,9 +2,10 @@
   import dayjs from "dayjs";
   import { onMount } from "svelte";
   import { CheckCircle2, Search } from "lucide-svelte";
-  import { apiGet, formatMoney, formatShortDate } from "$lib/api";
+  import LedgerEditorPanel from "$lib/components/LedgerEditorPanel.svelte";
+  import { apiGet, formatMoney, formatShortDate, type Posting } from "$lib/api";
 
-  type LedgerTab = "health" | "prices" | "logs";
+  type LedgerTab = "health" | "editor" | "postings" | "prices" | "settings" | "logs";
   type HealthFilter = "fix" | "review" | "dismissed" | "all";
 
   interface DoctorFinding {
@@ -55,7 +56,9 @@
     info_count: 0,
     dismissed_count: 0
   });
+  let postings = $state<Posting[]>([]);
   let prices = $state<PriceRow[]>([]);
+  let configJson = $state<Record<string, unknown> | null>(null);
   let logs = $state<LogEntry[]>([]);
 
   async function loadHealth() {
@@ -73,13 +76,24 @@
 
   onMount(async () => {
     try {
-      const [, priceRes, logRes] = await Promise.all([
+      const [, postingRes, priceRes, cfgRes, logRes] = await Promise.all([
         loadHealth(),
+        apiGet<{ postings?: Posting[] }>("/api/posting").catch(() => ({ postings: [] })),
         apiGet<{ prices?: Record<string, PriceRow[]> | PriceRow[] }>("/api/price").catch(() => ({
           prices: []
         })),
+        fetch("/connect/paisa.v1.PaisaService/GetConfig", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}"
+        })
+          .then((r) => (r.ok ? r.json() : { config: null }))
+          .catch(() => ({ config: null })),
         apiGet<{ logs?: LogEntry[] }>("/api/logs").catch(() => ({ logs: [] }))
       ]);
+
+      postings = postingRes.postings || [];
+      configJson = cfgRes.config || null;
 
       if (Array.isArray(priceRes.prices)) {
         prices = priceRes.prices;
@@ -138,6 +152,19 @@
     });
   });
 
+  const filteredPostings = $derived.by(() => {
+    const q = search.trim().toLowerCase();
+    const list = !q
+      ? postings
+      : postings.filter(
+          (p) =>
+            p.account?.toLowerCase().includes(q) ||
+            p.payee?.toLowerCase().includes(q) ||
+            p.narration?.toLowerCase().includes(q)
+        );
+    return list.slice(0, 200);
+  });
+
   const filteredPrices = $derived.by(() => {
     const q = search.trim().toLowerCase();
     if (!q) return prices.slice(0, 150);
@@ -157,7 +184,7 @@
     <div>
       <h1 class="text-xl font-semibold tracking-tight">Ledger &amp; Tools</h1>
       <p class="text-xs text-[var(--muted)] mt-0.5">
-        Data health diagnostics, market prices, and system logs
+        Data health diagnostics, journal editor, postings, prices, settings, and logs
       </p>
     </div>
 
@@ -173,34 +200,25 @@
   </div>
 
   <!-- Tabs -->
-  <div class="border-b border-[var(--border)] flex items-center gap-6 text-sm">
-    <button
-      type="button"
-      class="pb-2.5 border-b-2 cursor-pointer {activeTab === 'health'
-        ? 'border-[var(--accent)] font-semibold text-[var(--text)]'
-        : 'border-transparent text-[var(--muted)]'}"
-      onclick={() => (activeTab = "health")}
-    >
-      Data Health ({summary.fix_count + summary.review_count})
-    </button>
-    <button
-      type="button"
-      class="pb-2.5 border-b-2 cursor-pointer {activeTab === 'prices'
-        ? 'border-[var(--accent)] font-semibold text-[var(--text)]'
-        : 'border-transparent text-[var(--muted)]'}"
-      onclick={() => (activeTab = "prices")}
-    >
-      Market Prices ({prices.length})
-    </button>
-    <button
-      type="button"
-      class="pb-2.5 border-b-2 cursor-pointer {activeTab === 'logs'
-        ? 'border-[var(--accent)] font-semibold text-[var(--text)]'
-        : 'border-transparent text-[var(--muted)]'}"
-      onclick={() => (activeTab = "logs")}
-    >
-      System Logs ({logs.length})
-    </button>
+  <div class="border-b border-[var(--border)] flex items-center gap-6 text-sm overflow-x-auto">
+    {#each [
+      { id: "health", label: `Data Health (${summary.fix_count + summary.review_count})` },
+      { id: "editor", label: "Journal Editor" },
+      { id: "postings", label: `Postings (${postings.length})` },
+      { id: "prices", label: `Market Prices (${prices.length})` },
+      { id: "settings", label: "Settings" },
+      { id: "logs", label: `Logs (${logs.length})` }
+    ] as tab}
+      <button
+        type="button"
+        class="pb-2.5 border-b-2 whitespace-nowrap cursor-pointer {activeTab === tab.id
+          ? 'border-[var(--accent)] font-semibold text-[var(--text)]'
+          : 'border-transparent text-[var(--muted)]'}"
+        onclick={() => (activeTab = tab.id as LedgerTab)}
+      >
+        {tab.label}
+      </button>
+    {/each}
   </div>
 
   {#if loading}
@@ -275,6 +293,43 @@
         {/each}
       </div>
     {/if}
+  {:else if activeTab === "editor"}
+    <LedgerEditorPanel />
+  {:else if activeTab === "postings"}
+    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead
+            class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50"
+          >
+            <tr>
+              <th class="py-2.5 px-4 font-medium">Date</th>
+              <th class="py-2.5 px-4 font-medium">Account</th>
+              <th class="py-2.5 px-4 font-medium">Payee</th>
+              <th class="py-2.5 px-4 text-right font-medium">Amount</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[var(--border)] tabular-nums">
+            {#each filteredPostings as p}
+              <tr class="hover:bg-[var(--surface-elevated)]/50">
+                <td class="py-2 px-4 text-xs text-[var(--muted)] whitespace-nowrap">
+                  {formatShortDate(p.date)}
+                </td>
+                <td class="py-2 px-4 font-medium">{p.account}</td>
+                <td class="py-2 px-4 text-xs text-[var(--muted)]">{p.payee || p.narration || "—"}</td>
+                <td
+                  class="py-2 px-4 text-right font-semibold {p.amount < 0
+                    ? 'text-[var(--loss)]'
+                    : ''}"
+                >
+                  {formatMoney(p.amount, p.commodity)}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </div>
   {:else if activeTab === "prices"}
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
       {#if filteredPrices.length === 0}
@@ -308,6 +363,19 @@
             </tbody>
           </table>
         </div>
+      {/if}
+    </div>
+  {:else if activeTab === "settings"}
+    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+        Active Configuration (`paisa.yaml`)
+      </h3>
+      {#if configJson}
+        <pre
+          class="p-4 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] font-mono text-xs overflow-x-auto"
+        >{JSON.stringify(configJson, null, 2)}</pre>
+      {:else}
+        <p class="text-sm text-[var(--muted)]">Configuration unavailable.</p>
       {/if}
     </div>
   {:else}
