@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import Logo from "$lib/components/Logo.svelte";
-  import { login } from "$lib/utils";
+  import { appPath, login } from "$lib/utils";
   import _ from "lodash";
   let username = $state("");
   let password = $state("");
@@ -17,7 +17,7 @@
     const { success, error } = await login(username, password);
     invalid = !success;
     if (success) {
-      goto("/");
+      goto(appPath("/"));
     } else if (error) {
       invalidErrorMessage = error;
     }

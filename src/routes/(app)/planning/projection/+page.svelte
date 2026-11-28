@@ -5,6 +5,7 @@
   import { renderNetworth } from "$lib/networth";
   import {
     ajax,
+    appPath,
     formatCurrency,
     formatFloat,
     type FinancialProfile,
@@ -1132,7 +1133,7 @@
           class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap gap-2 mb-3"
         >
           <h3 class="title is-5 mb-0">Life Goal Funding Probabilities</h3>
-          <a class="button is-small is-light" href="/planning/goals?tab=life">Edit Life Goals</a>
+          <a class="button is-small is-light" href={appPath("/planning/goals?tab=life")}>Edit Life Goals</a>
         </div>
         <div class="columns is-multiline">
           {#each simData.goals as goal}

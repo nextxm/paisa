@@ -1,6 +1,9 @@
 import adapter from "@sveltejs/adapter-static";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 
+const base = process.env.PAISA_V1_BASE ?? "/v1";
+const outDir = base ? `web/static${base}` : "web/static";
+
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
   // Consult https://kit.svelte.dev/docs/integrations#preprocessors
@@ -13,10 +16,13 @@ const config = {
   },
 
   kit: {
+    paths: {
+      base
+    },
     adapter: adapter({
-      pages: "web/static",
-      assets: "web/static",
-      out: "web/static",
+      pages: outDir,
+      assets: outDir,
+      out: outDir,
       fallback: "index.html"
     })
   }

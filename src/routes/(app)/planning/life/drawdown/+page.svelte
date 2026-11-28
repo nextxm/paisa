@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import DrawdownStrategy from "$lib/components/DrawdownStrategy.svelte";
-  import { ajax, type DrawdownBucket, type DrawdownResponse } from "$lib/utils";
+  import { ajax, appPath, type DrawdownBucket, type DrawdownResponse } from "$lib/utils";
 
   let amount = $state(500000);
   let buckets = $state<DrawdownBucket[]>([
@@ -426,9 +426,9 @@
         <button class:is-loading={loading} class="button is-primary" onclick={runDrawdown}
           >Analyze</button
         >
-        <a class="button is-light" href="/planning/life/whatif">What-If Scenarios</a>
-        <a class="button is-light" href="/planning/life/goals">Manage Goals</a>
-        <a class="button is-light" href="/planning/life">Back to Life Plan</a>
+        <a class="button is-light" href={appPath("/planning/life/whatif")}>What-If Scenarios</a>
+        <a class="button is-light" href={appPath("/planning/life/goals")}>Manage Goals</a>
+        <a class="button is-light" href={appPath("/planning/life")}>Back to Life Plan</a>
       </div>
     </div>
 

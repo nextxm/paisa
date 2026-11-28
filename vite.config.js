@@ -92,7 +92,7 @@ const config = {
         theme_color: "#1e1e2e",
         background_color: "#1e1e2e",
         display: "standalone",
-        start_url: "/",
+        start_url: "/v1/",
         icons: [
           {
             src: "pwa-192x192.png",
