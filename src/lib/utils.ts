@@ -6,8 +6,23 @@ import { get } from "svelte/store";
 import { obscure } from "../persisted_store";
 import { error } from "@sveltejs/kit";
 import { goto } from "$app/navigation";
+import { base } from "$app/paths";
 import chroma from "chroma-js";
 import { iconGlyph } from "./icon";
+
+export function appPath(path: string): string {
+  if (!base || !path.startsWith("/") || path === base || path.startsWith(`${base}/`)) {
+    return path;
+  }
+  return `${base}${path}`;
+}
+
+export function stripBase(pathname: string): string {
+  if (base && (pathname === base || pathname.startsWith(`${base}/`))) {
+    return pathname.slice(base.length) || "/";
+  }
+  return pathname;
+}
 
 export interface AutoCompleteItem {
   label: string;
@@ -1359,7 +1374,7 @@ export async function ajax(
   if (!response.ok) {
     if (response.status == 401) {
       logout();
-      await goto("/login");
+      await goto(appPath("/login"));
       error(401, "Unauthorized");
     }
     let errorObj;
@@ -1747,9 +1762,9 @@ export function helpUrl(section: string) {
 }
 
 export function postingUrl(posting: Posting) {
-  return `/ledger/editor/${encodeURIComponent(posting.file_name)}#${
-    posting.transaction_begin_line
-  }`;
+  return appPath(
+    `/ledger/editor/${encodeURIComponent(posting.file_name)}#${posting.transaction_begin_line}`
+  );
 }
 
 import { getColorPreference, setColorPreference } from "./theme";

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { iconGlyph } from "$lib/icon";
-  import { formatCurrency, formatPercentage, type GoalSummary } from "$lib/utils";
+  import { appPath, formatCurrency, formatPercentage, type GoalSummary } from "$lib/utils";
   import _ from "lodash";
   import LevelItem from "$lib/components/LevelItem.svelte";
   import Progress from "$lib/components/Progress.svelte";
@@ -43,7 +43,7 @@
       {/if}
       <a
         class="secondary-link has-text-grey"
-        href="/planning/goals/{goal.type}/{encodeURIComponent(goal.name)}"
+        href={appPath(`/planning/goals/${goal.type}/${encodeURIComponent(goal.name)}`)}
       >
         <h4 class="is-size-4 has-text-grey">{goal.name}</h4>
       </a>

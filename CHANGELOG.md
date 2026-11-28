@@ -2,6 +2,8 @@
 
 ### Unreleased — Future changes
 
+- **Switch new UI to primary (`/`) and existing UI to `/v1` subpath** — Updated `frontend/svelte.config.js`, `svelte.config.js`, `web/web.go`, `internal/server/server.go`, Dockerfiles, and CI workflows to serve the new `frontend/` UI at `/` and the legacy `src/` UI under `/v1` with base-path-aware routing and asset serving.
+
 ### 0.96-beta (2026-11-22) — Future changes
 
 #### Features

@@ -23,6 +23,7 @@
   import { enrichTrantionSequence, sortTrantionSequence } from "$lib/transaction_sequence";
   import {
     ajax,
+    appPath,
     formatCurrency,
     formatFloat,
     type Budget,
@@ -245,12 +246,12 @@
               <p class="is-size-4">I want to get started</p>
               <ol class="ml-5 mt-2 mb-4">
                 <li>
-                  Go to <a href="/more/config">configuration</a> page and set your default currency and
-                  locale.
+                  Go to <a href={appPath("/more/config")}>configuration</a> page and set your default
+                  currency and locale.
                 </li>
                 <li>
-                  Go to <a href="/ledger/editor">editor</a> page and start adding transactions to your
-                  journal.
+                  Go to <a href={appPath("/ledger/editor")}>editor</a> page and start adding transactions
+                  to your journal.
                 </li>
               </ol>
               <p class="is-size-4">I want to view a Demo</p>
@@ -261,12 +262,13 @@
                   relevant config.
                 </li>
                 <li>
-                  Once you are done playing around, you can go to <a href="/ledger/editor">editor</a
+                  Once you are done playing around, you can go to <a
+                    href={appPath("/ledger/editor")}>editor</a
                   > page and select all the content and delete them.
                 </li>
                 <li>
-                  Go to <a href="/more/config">configuration</a> page and click the reset to defaults
-                  button.
+                  Go to <a href={appPath("/more/config")}>configuration</a> page and click the reset to
+                  defaults button.
                 </li>
               </ol>
 
@@ -301,8 +303,10 @@
                 <div class="tile is-child">
                   <div class="box dashboard-card">
                     <div class="dashboard-card-header">
-                      <a class="secondary-link has-text-grey" href="/assets/networth">Assets</a>
-                      <a class="dashboard-card-link" href="/assets/networth">View →</a>
+                      <a class="secondary-link has-text-grey" href={appPath("/assets/networth")}
+                        >Assets</a
+                      >
+                      <a class="dashboard-card-link" href={appPath("/assets/networth")}>View →</a>
                     </div>
                     {#if networth}
                       <nav class="level grid-2 mb-3">
@@ -339,10 +343,11 @@
                 <article class="tile is-child">
                   <div class="box dashboard-card">
                     <div class="dashboard-card-header">
-                      <a class="secondary-link has-text-grey" href="/assets/balance"
+                      <a class="secondary-link has-text-grey" href={appPath("/assets/balance")}
                         >Checking Balance</a
                       >
-                      <a class="dashboard-card-link" href="/assets/balance">View all →</a>
+                      <a class="dashboard-card-link" href={appPath("/assets/balance")}>View all →</a
+                      >
                     </div>
                     <div class="masonry-grid masonry-grid-400">
                       {#each checkingBalancesForWidget as assetBreakdown}
@@ -359,10 +364,12 @@
                 <article class="tile is-child">
                   <div class="box dashboard-card">
                     <div class="dashboard-card-header">
-                      <a class="secondary-link has-text-grey" href="/income/investment"
+                      <a class="secondary-link has-text-grey" href={appPath("/income/investment")}
                         >Investment Income</a
                       >
-                      <a class="dashboard-card-link" href="/income/investment">Details →</a>
+                      <a class="dashboard-card-link" href={appPath("/income/investment")}
+                        >Details →</a
+                      >
                     </div>
                     <nav class="level grid-2 mb-0">
                       <LevelItem
@@ -386,9 +393,12 @@
                 <article class="tile is-child min-w-0">
                   <div class="box dashboard-card pb-2">
                     <div class="dashboard-card-header">
-                      <a class="secondary-link has-text-grey" href="/cash_flow/monthly">Cash Flow</a
+                      <a class="secondary-link has-text-grey" href={appPath("/cash_flow/monthly")}
+                        >Cash Flow</a
                       >
-                      <a class="dashboard-card-link" href="/cash_flow/monthly">Details →</a>
+                      <a class="dashboard-card-link" href={appPath("/cash_flow/monthly")}
+                        >Details →</a
+                      >
                     </div>
                     <ZeroState item={cashFlows}>
                       <strong>Oops!</strong> You have not made any transactions in the last 3 months.
@@ -411,8 +421,10 @@
                 <div class="tile is-child">
                   <div class="box dashboard-card">
                     <div class="dashboard-card-header">
-                      <a class="secondary-link has-text-grey" href="/expense/budget">Budget</a>
-                      <a class="dashboard-card-link" href="/expense/budget">Manage →</a>
+                      <a class="secondary-link has-text-grey" href={appPath("/expense/budget")}
+                        >Budget</a
+                      >
+                      <a class="dashboard-card-link" href={appPath("/expense/budget")}>Manage →</a>
                     </div>
                     {#each budgetAccountsForWidget as accountBudget (accountBudget)}
                       <BudgetCard compact {accountBudget} />
@@ -426,8 +438,12 @@
                   <article class="tile is-child">
                     <div class="box dashboard-card">
                       <div class="dashboard-card-header">
-                        <a class="secondary-link has-text-grey" href="/planning/goals">Goals</a>
-                        <a class="dashboard-card-link" href="/planning/goals">View all →</a>
+                        <a class="secondary-link has-text-grey" href={appPath("/planning/goals")}
+                          >Goals</a
+                        >
+                        <a class="dashboard-card-link" href={appPath("/planning/goals")}
+                          >View all →</a
+                        >
                       </div>
                       {#each goalSummariesForWidget as goal}
                         <GoalSummaryCard {goal} small />
@@ -452,7 +468,9 @@
                       style="gap: 0.5rem; align-items: flex-end;"
                     >
                       <div>
-                        <a class="secondary-link has-text-grey" href="/expense/monthly">Expenses</a>
+                        <a class="secondary-link has-text-grey" href={appPath("/expense/monthly")}
+                          >Expenses</a
+                        >
                         <div
                           class="is-size-5 has-text-weight-bold mt-1"
                           style="color: {COLORS.expenses}; font-variant-numeric: tabular-nums;"
@@ -477,10 +495,12 @@
                 <article class="tile is-child">
                   <div class="box dashboard-card">
                     <div class="dashboard-card-header">
-                      <a class="secondary-link has-text-grey" href="/cash_flow/recurring"
+                      <a class="secondary-link has-text-grey" href={appPath("/cash_flow/recurring")}
                         >Recurring</a
                       >
-                      <a class="dashboard-card-link" href="/cash_flow/recurring">View all →</a>
+                      <a class="dashboard-card-link" href={appPath("/cash_flow/recurring")}
+                        >View all →</a
+                      >
                     </div>
                     <div
                       class="grid grid-rows-1 overflow-hidden"

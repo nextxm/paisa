@@ -20,6 +20,7 @@
   import { onMount } from "svelte";
   import {
     ajax,
+    appPath,
     type ColumnMapping,
     type ImportPreset,
     type ImportPreviewRow,
@@ -884,8 +885,8 @@
 
     if (saved) {
       toast.toast({
-        message: `Saved <b><a href="/ledger/editor/${encodeURIComponent(
-          destinationFile
+        message: `Saved <b><a href="${appPath(
+          `/ledger/editor/${encodeURIComponent(destinationFile)}`
         )}">${destinationFile}</a></b>. Syncing in background...`,
         type: "is-success",
         duration: 5000

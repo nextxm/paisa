@@ -8,7 +8,7 @@
     updateContent
   } from "$lib/editor";
   import { insertTab } from "@codemirror/commands";
-  import { ajax, buildDirectoryTree, type LedgerFile } from "$lib/utils";
+  import { ajax, appPath, buildDirectoryTree, type LedgerFile } from "$lib/utils";
   import { redo, undo } from "@codemirror/commands";
   import type { KeyBinding } from "@codemirror/view";
   import * as toast from "bulma-toast";
@@ -119,7 +119,7 @@
   });
 
   async function navigate(url: string) {
-    await goto(url, { noScroll: true });
+    await goto(appPath(url), { noScroll: true });
     if (cancelled) {
       cancelled = false;
       return false;
@@ -254,8 +254,8 @@
 
     if (saved) {
       toast.toast({
-        message: `Created <b><a href="/ledger/editor/${encodeURIComponent(
-          destinationFile
+        message: `Created <b><a href="${appPath(
+          `/ledger/editor/${encodeURIComponent(destinationFile)}`
         )}">${destinationFile}</a></b>`,
         type: "is-success",
         duration: 5000

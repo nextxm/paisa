@@ -23,10 +23,10 @@ jobs:
         brew install --force --overwrite sqlite3 create-dmg
         brew install --build-from-source --verbose ./ledger.rb
         cp "$(brew --prefix ledger)/bin/ledger" internal/binary/ledger
+        npm --prefix frontend install
+        PAISA_EMBED=1 npm --prefix frontend run build
         npm install
         npm run build
-        npm --prefix frontend install
-        PAISA_EMBED=1 PAISA_BASE=/v2 npm --prefix frontend run build
         go build
         cp paisa paisa-cli-macos-amd64
         cd desktop

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { sync, startPolling } from "$lib/sync";
-  import { isLoggedIn, logout } from "$lib/utils";
+  import { appPath, isLoggedIn, logout } from "$lib/utils";
   import { obscure } from "../../persisted_store";
   import { goto } from "$app/navigation";
   import { jobsList } from "$lib/stores/jobs";
@@ -36,7 +36,7 @@
 
   function doLogout() {
     logout();
-    goto("/login");
+    goto(appPath("/login"));
   }
 
   let showLogout = isLoggedIn();

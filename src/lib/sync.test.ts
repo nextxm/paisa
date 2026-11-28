@@ -2,8 +2,9 @@ import { mock, describe, expect, test, beforeEach, afterEach } from "bun:test";
 import type { Job } from "./utils";
 
 const ajaxMock = mock(async () => ({ job_id: "job-from-sync" }));
-mock.module("./utils", async () => ({ ajax: ajaxMock }));
-mock.module("$lib/utils", async () => ({ ajax: ajaxMock }));
+const stripBaseMock = (pathname: string) => pathname;
+mock.module("./utils", async () => ({ ajax: ajaxMock, stripBase: stripBaseMock }));
+mock.module("$lib/utils", async () => ({ ajax: ajaxMock, stripBase: stripBaseMock }));
 mock.module("$app/navigation", () => ({ goto: async () => {} }));
 
 const toastMock = mock((_arg: { message: string; type: string; duration?: number }) => {});

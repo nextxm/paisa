@@ -1,4 +1,5 @@
 import { goto } from "$app/navigation";
+import { appPath } from "./utils";
 import chroma from "chroma-js";
 import * as d3 from "d3";
 import { Delaunay } from "d3";
@@ -142,7 +143,7 @@ export function renderOverview(gains: Gain[]) {
   g.append("g").attr("class", "axis y dark link").call(d3.axisLeft(y));
 
   g.selectAll(".axis.y.dark.link .tick").on("click", (_event, label) => {
-    goto(`/assets/gain/Assets:${label}`);
+    goto(appPath(`/assets/gain/Assets:${label}`));
   });
 
   const textGroup = g

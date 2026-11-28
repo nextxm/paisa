@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import FileModal from "$lib/components/FileModal.svelte";
-  import { ajax } from "$lib/utils";
+  import { ajax, appPath } from "$lib/utils";
   import * as toast from "bulma-toast";
 
   let modalOpen = false;
@@ -19,14 +19,14 @@
 
     if (saved) {
       toast.toast({
-        message: `Created <b><a href="/more/sheets/${encodeURIComponent(
-          destinationFile
+        message: `Created <b><a href="${appPath(
+          `/more/sheets/${encodeURIComponent(destinationFile)}`
         )}">${destinationFile}</a></b>`,
         type: "is-success",
         duration: 5000
       });
 
-      await goto(`/more/sheets/${encodeURIComponent(destinationFile)}`);
+      await goto(appPath(`/more/sheets/${encodeURIComponent(destinationFile)}`));
     } else {
       toast.toast({
         message: `Failed to create ${destinationFile}. reason: ${message}`,

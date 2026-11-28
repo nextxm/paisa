@@ -26,10 +26,10 @@ jobs:
         choco install sqlite
         choco install wget
         choco install nsis
+        npm --prefix frontend install
+        $env:PAISA_EMBED="1"; Remove-Item Env:PAISA_BASE -ErrorAction SilentlyContinue; npm --prefix frontend run build
         npm install
         npm run build
-        npm --prefix frontend install
-        $env:PAISA_EMBED="1"; $env:PAISA_BASE="/v2"; npm --prefix frontend run build
         wget https://github.com/FullofQuarks/Windows-Ledger-Binaries/releases/download/v3.3.2/ledger.exe
         cp ledger.exe internal/binary/ledger
         pip install beancount pyinstaller

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { accountColorStyle } from "$lib/colors";
   import { iconText } from "$lib/icon";
-  import { restName, type AssetBreakdown, formatCurrency, firstName } from "$lib/utils";
+  import { appPath, restName, type AssetBreakdown, formatCurrency, firstName } from "$lib/utils";
 
   let { assetBreakdown }: { assetBreakdown: AssetBreakdown } = $props();
 </script>
@@ -12,14 +12,14 @@
       <span style={accountColorStyle(firstName(assetBreakdown.group))}
         >{iconText(assetBreakdown.group)}</span
       >
-      <a class="secondary-link" href="/assets/gain/{assetBreakdown.group}">
+      <a class="secondary-link" href={appPath(`/assets/gain/${assetBreakdown.group}`)}>
         {restName(restName(assetBreakdown.group))}</a
       >
     </div>
     <div class="has-text-weight-bold is-size-6" style="font-variant-numeric: tabular-nums;">
       <a
         class="secondary-link has-text-weight-bold"
-        href="/accounts/{encodeURIComponent(assetBreakdown.group)}/transactions"
+        href={appPath(`/accounts/${encodeURIComponent(assetBreakdown.group)}/transactions`)}
         title="View transactions for {assetBreakdown.group}"
       >
         {#if assetBreakdown.originalBalances && assetBreakdown.originalBalances.length > 0}

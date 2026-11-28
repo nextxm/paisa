@@ -11,7 +11,7 @@
     type SavedTransactionSearch,
     type TransactionFilters
   } from "$lib/transaction_filters";
-  import { ajax, isMobile, type LedgerFile, type Transaction as T } from "$lib/utils";
+  import { ajax, appPath, isMobile, type LedgerFile, type Transaction as T } from "$lib/utils";
   import _ from "lodash";
   import { onMount } from "svelte";
   import VirtualList from "svelte-tiny-virtual-list";
@@ -138,7 +138,7 @@
       const route = nextParams.toString()
         ? `/ledger/transaction?${nextParams.toString()}`
         : "/ledger/transaction";
-      goto(route, { replaceState: true, keepFocus: true, noScroll: true });
+      goto(appPath(route), { replaceState: true, keepFocus: true, noScroll: true });
     }
     savedSearches = loadSavedTransactionSearches();
     await loadTransactions();

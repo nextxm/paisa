@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ajax, isMobile, type AccountNote, type Transaction as T } from "$lib/utils";
+  import { ajax, appPath, isMobile, type AccountNote, type Transaction as T } from "$lib/utils";
   import _ from "lodash";
   import { onMount } from "svelte";
   import VirtualList from "svelte-tiny-virtual-list";
@@ -95,7 +95,7 @@
               </div>
               <div class="level-item">
                 <a
-                  href="/accounts/{encodeURIComponent(data.account)}"
+                  href={appPath(`/accounts/${encodeURIComponent(data.account)}`)}
                   class="button is-small is-light"
                 >
                   <span class="icon is-small"><i class="fas fa-sticky-note"></i></span>
@@ -103,7 +103,7 @@
                 </a>
               </div>
               <div class="level-item">
-                <a href="/ledger/transaction" class="button is-small is-light">
+                <a href={appPath("/ledger/transaction")} class="button is-small is-light">
                   <span class="icon is-small"><i class="fas fa-list"></i></span>
                   <span>All Transactions</span>
                 </a>

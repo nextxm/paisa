@@ -1,5 +1,5 @@
 import * as toast from "bulma-toast";
-import { ajax } from "./utils";
+import { ajax, stripBase } from "./utils";
 import { jobs } from "./stores/jobs";
 import type { Job } from "./utils";
 
@@ -192,7 +192,7 @@ export async function ensureJobsStream(): Promise<void> {
 export async function sync(request: Record<string, any>): Promise<string | null> {
   const payload: Record<string, any> = { ...request };
   if (!payload.active_snapshot && typeof window !== "undefined") {
-    const hint = currentSnapshotHint(window.location.pathname);
+    const hint = currentSnapshotHint(stripBase(window.location.pathname));
     if (hint) {
       payload.active_snapshot = hint;
     }

@@ -21,7 +21,15 @@
     sankeyRefDate
   } from "../../persisted_store";
   import _ from "lodash";
-  import { financialYear, forEachFinancialYear, helpUrl, isMobile, now } from "$lib/utils";
+  import {
+    appPath,
+    financialYear,
+    forEachFinancialYear,
+    helpUrl,
+    isMobile,
+    now,
+    stripBase
+  } from "$lib/utils";
   import { resolveNavbarSelectionTyped, resolveHref } from "$lib/navbar_selection";
   import { tick } from "svelte";
   import { get } from "svelte/store";
@@ -313,7 +321,7 @@
     }
   }
 
-  const normalizedPath = $derived($page.url.pathname?.replace(/(.+)\/$/, ""));
+  const normalizedPath = $derived(stripBase($page.url.pathname)?.replace(/(.+)\/$/, "") || "/");
 
   // isNavInert: only make the mobile drawer inert when it's closed
   const isNavInert = $derived(
@@ -363,7 +371,7 @@
     </button>
 
     <a
-      href="/"
+      href={appPath("/")}
       class:is-active={normalizedPath == "/"}
       class="navbar-item is-size-4 has-text-weight-medium"
     >
@@ -399,7 +407,7 @@
           {#if !link.hide}
             <a
               class="navbar-item"
-              href={link.href}
+              href={appPath(link.href)}
               data-sveltekit-preload-code={link.disablePreload ? "tap" : "hover"}
               data-sveltekit-preload-data="tap"
               class:is-active={normalizedPath == link.href}>{link.label}</a
@@ -428,7 +436,7 @@
                   {#if _.isEmpty(sublink.children)}
                     <a
                       class="navbar-item"
-                      {href}
+                      href={appPath(href)}
                       data-sveltekit-preload-code={sublink.disablePreload ? "tap" : "hover"}
                       data-sveltekit-preload-data="tap"
                       class:is-active={normalizedPath.startsWith(href)}
@@ -474,7 +482,7 @@
                             {#if !subsublink.hide}
                               {@const subsubHref = resolveHref(href, subsublink.href)}
                               <a
-                                href={subsubHref}
+                                href={appPath(subsubHref)}
                                 class="navbar-item"
                                 data-sveltekit-preload-code={subsublink.disablePreload
                                   ? "tap"

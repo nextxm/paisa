@@ -9,3 +9,7 @@ mock.module("$app/navigation", () => ({
   beforeNavigate: () => {},
   afterNavigate: () => {}
 }));
+
+mock.module("$app/paths", () => ({
+  base: ""
+}));

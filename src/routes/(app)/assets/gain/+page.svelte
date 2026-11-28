@@ -2,7 +2,14 @@
   import BoxLabel from "$lib/components/BoxLabel.svelte";
   import LegendCard from "$lib/components/LegendCard.svelte";
   import { buildLegends, renderOverview } from "$lib/gain";
-  import { ajax, formatCurrency, formatPercentage, type Gain, type Legend } from "$lib/utils";
+  import {
+    ajax,
+    appPath,
+    formatCurrency,
+    formatPercentage,
+    type Gain,
+    type Legend
+  } from "$lib/utils";
   import _ from "lodash";
   import { onMount } from "svelte";
 
@@ -55,7 +62,9 @@
           {#each _.sortBy(gains, (g) => g.account) as gain}
             <tr>
               <td>
-                <a href="/assets/gain/{encodeURIComponent(gain.account)}">{gain.account}</a>
+                <a href={appPath(`/assets/gain/${encodeURIComponent(gain.account)}`)}
+                  >{gain.account}</a
+                >
               </td>
               <td class="has-text-right">{formatCurrency(gain.price_appreciation)}</td>
               <td class="has-text-right">{formatCurrency(gain.income_received)}</td>

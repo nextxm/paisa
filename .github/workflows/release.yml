@@ -48,8 +48,8 @@ jobs:
 
       - name: Build
         run: |
+          npm --prefix frontend install
+          PAISA_EMBED=1 npm --prefix frontend run build
           npm install
           npm run build
-          npm --prefix frontend install
-          PAISA_EMBED=1 PAISA_BASE=/v2 npm --prefix frontend run build
           go build -v ./...

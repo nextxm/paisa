@@ -10,6 +10,7 @@
   import { iconify } from "$lib/icon";
   import {
     ajax,
+    appPath,
     formatCurrency,
     formatPercentage,
     type CreditCardBill,
@@ -46,7 +47,7 @@
   onMount(async () => {
     ({ creditCard, found } = await ajax("/api/credit_cards/:account", undefined, data));
     if (!found) {
-      return goto("/liabilities/credit_cards");
+      return goto(appPath("/liabilities/credit_cards"));
     }
 
     currentBill = lastBill(creditCard);

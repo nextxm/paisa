@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ajax, type AccountNote } from "$lib/utils";
+  import { ajax, appPath, type AccountNote } from "$lib/utils";
   import { onMount } from "svelte";
   import type { PageData } from "./$types";
   import * as toast from "bulma-toast";
@@ -73,7 +73,7 @@
             <div class="level-right">
               <div class="level-item">
                 <a
-                  href="/accounts/{encodeURIComponent(data.account)}/transactions"
+                  href={appPath(`/accounts/${encodeURIComponent(data.account)}/transactions`)}
                   class="button is-small is-light"
                 >
                   <span class="icon is-small"><i class="fas fa-list"></i></span>

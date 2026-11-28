@@ -2,6 +2,7 @@
   import { accountColorStyle } from "$lib/colors";
   import { iconText } from "$lib/icon";
   import {
+    appPath,
     firstName,
     formatCurrency,
     formatFloatUptoPrecision,
@@ -39,8 +40,9 @@
           title={p.account}
         >
           <span style={accountColorStyle(firstName(p.account))}>{iconText(p.account)}</span>
-          <a class="secondary-link" href="/accounts/{encodeURIComponent(p.account)}/transactions"
-            >{p.account}</a
+          <a
+            class="secondary-link"
+            href={appPath(`/accounts/${encodeURIComponent(p.account)}/transactions`)}>{p.account}</a
           >
         </div>
         {#if conv && !highlightAccount}
@@ -72,8 +74,9 @@
           title={p.account}
         >
           <span style={accountColorStyle(firstName(p.account))}>{iconText(p.account)}</span>
-          <a class="secondary-link" href="/accounts/{encodeURIComponent(p.account)}/transactions"
-            >{p.account}</a
+          <a
+            class="secondary-link"
+            href={appPath(`/accounts/${encodeURIComponent(p.account)}/transactions`)}>{p.account}</a
           >
         </div>
         <div

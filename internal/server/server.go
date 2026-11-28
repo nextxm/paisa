@@ -83,10 +83,35 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.FileFromFS("/static"+c.Request.URL.Path, http.FS(web.Static))
 	})
 
-	router.GET("/v2/_app/*filepath", func(c *gin.Context) {
-		if strings.HasPrefix(c.Request.URL.Path, "/v2/_app/immutable/") {
+	router.GET("/v1/_app/*filepath", func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, "/v1/_app/immutable/") {
 			c.Header("Cache-Control", "public, max-age=31536000, immutable")
 		}
+		c.FileFromFS("/static"+c.Request.URL.Path, http.FS(web.Static))
+	})
+
+	router.GET("/v1/manifest.webmanifest", func(c *gin.Context) {
+		c.FileFromFS("/static/v1/manifest.webmanifest", http.FS(web.Static))
+	})
+
+	router.GET("/v1/site.webmanifest", func(c *gin.Context) {
+		c.FileFromFS("/static/v1/site.webmanifest", http.FS(web.Static))
+	})
+
+	router.GET("/v1/sw.js", func(c *gin.Context) {
+		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.FileFromFS("/static/v1/sw.js", http.FS(web.Static))
+	})
+
+	router.GET("/v1/sw.js.map", func(c *gin.Context) {
+		c.FileFromFS("/static/v1/sw.js.map", http.FS(web.Static))
+	})
+
+	router.GET("/v1/workbox-:file", func(c *gin.Context) {
+		c.FileFromFS("/static"+c.Request.URL.Path, http.FS(web.Static))
+	})
+
+	router.GET("/v1/pwa-:name.png", func(c *gin.Context) {
 		c.FileFromFS("/static"+c.Request.URL.Path, http.FS(web.Static))
 	})
 
@@ -714,8 +739,8 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 
 	router.NoRoute(func(c *gin.Context) {
 		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
-		if web.IndexV2 != "" && (c.Request.URL.Path == "/v2" || strings.HasPrefix(c.Request.URL.Path, "/v2/")) {
-			c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(web.IndexV2))
+		if web.IndexV1 != "" && (c.Request.URL.Path == "/v1" || strings.HasPrefix(c.Request.URL.Path, "/v1/")) {
+			c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(web.IndexV1))
 			return
 		}
 		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(web.Index))

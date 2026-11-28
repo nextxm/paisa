@@ -1,12 +1,13 @@
 <script lang="ts">
   import { page } from "$app/stores";
+  import { stripBase } from "$lib/utils";
   import InvestmentTabs from "$lib/components/InvestmentTabs.svelte";
   import SectionTabs, { type SectionTab } from "$lib/components/SectionTabs.svelte";
   import type { Snippet } from "svelte";
 
   let { children }: { children: Snippet } = $props();
 
-  const pathname = $derived($page.url.pathname);
+  const pathname = $derived(stripBase($page.url.pathname));
   const isOverviewRoute = $derived(
     pathname.startsWith("/assets/networth") || pathname.startsWith("/assets/balance")
   );

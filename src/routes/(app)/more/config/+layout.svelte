@@ -2,7 +2,7 @@
   import { setContext } from "svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
-  import { ajax, configUpdated } from "$lib/utils";
+  import { ajax, appPath, configUpdated } from "$lib/utils";
   import { fetchConfig, updateConfig } from "$lib/config_client";
   import { onMount } from "svelte";
   import type { JSONSchema7 } from "json-schema";
@@ -150,7 +150,7 @@
     if (typeof window !== "undefined" && shouldCollapseConfigSidebarOnNavigate(window.innerWidth)) {
       isSidebarCollapsed = true;
     }
-    goto(`/more/config/${sectionId}`);
+    goto(appPath(`/more/config/${sectionId}`));
   }
 </script>
 

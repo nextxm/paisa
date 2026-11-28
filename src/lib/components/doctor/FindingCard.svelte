@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { DoctorFinding } from "$lib/doctor_v2";
-  import { formatCurrency } from "$lib/utils";
+  import { appPath, formatCurrency } from "$lib/utils";
 
   let {
     finding,
@@ -112,7 +112,7 @@
     >
       <div class="buttons are-small mb-0">
         {#if primaryAction}
-          <a class="button is-link is-rounded action-btn-primary" href={primaryAction.url}>
+          <a class="button is-link is-rounded action-btn-primary" href={appPath(primaryAction.url)}>
             <span>{primaryAction.label}</span>
             <i class="fas fa-arrow-right ml-1"></i>
           </a>
@@ -223,7 +223,10 @@
                   {/if}
                   <td>
                     {#if ev.target_url}
-                      <a href={ev.target_url} class="button is-small is-link is-light py-0">
+                      <a
+                        href={appPath(ev.target_url)}
+                        class="button is-small is-link is-light py-0"
+                      >
                         {ev.file_name ? `${ev.file_name} L${ev.line_number}` : "Open"}
                       </a>
                     {/if}

@@ -3,6 +3,7 @@
   import { focus, moveToLine, updateContent } from "$lib/editor";
   import {
     ajax,
+    appPath,
     buildDirectoryTree,
     formatFloatUptoPrecision,
     type LedgerFile,
@@ -63,7 +64,7 @@
   });
 
   async function navigate(url: string) {
-    await goto(url, { noScroll: true });
+    await goto(appPath(url), { noScroll: true });
     if (cancelled) {
       cancelled = false;
       return false;
@@ -185,8 +186,8 @@
 
     if (saved) {
       toast.toast({
-        message: `Created <b><a href="/more/sheets/${encodeURIComponent(
-          destinationFile
+        message: `Created <b><a href="${appPath(
+          `/more/sheets/${encodeURIComponent(destinationFile)}`
         )}">${destinationFile}</a></b>`,
         type: "is-success",
         duration: 5000

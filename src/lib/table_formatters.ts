@@ -1,5 +1,13 @@
 import { type CellComponent } from "tabulator-tables";
-import { formatCurrency, formatFloat, formatPercentage, isMobile, isZero, lastName } from "./utils";
+import {
+  appPath,
+  formatCurrency,
+  formatFloat,
+  formatPercentage,
+  isMobile,
+  isZero,
+  lastName
+} from "./utils";
 import type { OriginalCurrencyBalance } from "./utils";
 import { iconText } from "./icon";
 
@@ -14,7 +22,7 @@ export function indendedAssetAccountName(cell: CellComponent) {
   return `
 <span class="whitespace-nowrap" style="max-width: ${maxWidth}; overflow: hidden;">
   <span class="has-text-grey custom-icon">${iconText(account)}</span>
-  <a href="/assets/gain/${account}">${lastName(account)}</a>
+  <a href="${appPath(`/assets/gain/${account}`)}">${lastName(account)}</a>
   <span class="has-text-grey-light is-size-7">${children}</span>
 </span>
 `;
@@ -31,7 +39,7 @@ export function indendedLiabilityAccountName(cell: CellComponent) {
   return `
 <span class="whitespace-nowrap" style="max-width: ${maxWidth}; overflow: hidden;">
   <span class="has-text-grey custom-icon">${iconText(account)}</span>
-  <a href="/accounts/${encodeURIComponent(account)}/transactions">${lastName(account)}</a>
+  <a href="${appPath(`/accounts/${encodeURIComponent(account)}/transactions`)}">${lastName(account)}</a>
   <span class="has-text-grey-light is-size-7">${children}</span>
 </span>
 `;
@@ -43,7 +51,7 @@ export function accountName(cell: CellComponent) {
   return `
 <span class="whitespace-nowrap" style="max-width: ${maxWidth}; overflow: hidden;">
   <span class="has-text-grey custom-icon">${iconText(account)}</span>
-  <a href="/assets/gain/${account}">${account}</a>
+  <a href="${appPath(`/assets/gain/${account}`)}">${account}</a>
 </span>
 `;
 }
@@ -69,7 +77,7 @@ export function nonZeroCurrencyLink(cell: CellComponent) {
   const data = cell.getData();
   const account = data.group || data.account;
   if (!account) return formatCurrency(value);
-  return `<a href="/accounts/${encodeURIComponent(account)}/transactions">${formatCurrency(value)}</a>`;
+  return `<a href="${appPath(`/accounts/${encodeURIComponent(account)}/transactions`)}">${formatCurrency(value)}</a>`;
 }
 
 export function nonZeroFloatChange(cell: CellComponent) {

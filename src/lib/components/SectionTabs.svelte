@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from "$app/stores";
+  import { appPath, stripBase } from "$lib/utils";
 
   export interface SectionTab {
     label: string;
@@ -10,7 +11,7 @@
 
   let { tabs }: { tabs: SectionTab[] } = $props();
 
-  const pathname = $derived($page.url.pathname);
+  const pathname = $derived(stripBase($page.url.pathname));
 </script>
 
 <div class="section-tabs-bar">
@@ -18,7 +19,7 @@
     <nav class="section-tabs-nav" aria-label="Section navigation">
       {#each tabs as tab}
         {@const active = tab.match(pathname)}
-        <a href={tab.href} class="section-tab-link" class:is-active={active}>
+        <a href={appPath(tab.href)} class="section-tab-link" class:is-active={active}>
           {#if tab.icon}
             <span class="icon is-small"><i class="fa-solid {tab.icon}"></i></span>
           {/if}

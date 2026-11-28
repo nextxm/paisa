@@ -62,6 +62,7 @@ jstest:
 	unset PAISA_CONFIG && TZ=UTC bun test tests
 
 jsbuild:
+	PAISA_EMBED=1 npm --prefix frontend run build
 	npm run build
 
 test: sqlc-generate jsbuild jstest
@@ -78,6 +79,7 @@ deploy:
 	fly scale count 1 --region lax --yes
 
 install:
+	PAISA_EMBED=1 npm --prefix frontend run build
 	npm run build
 	go build $(LDFLAGS)
 	go install $(LDFLAGS)

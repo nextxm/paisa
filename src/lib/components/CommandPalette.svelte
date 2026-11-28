@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { ajax } from "$lib/utils";
+  import { ajax, appPath } from "$lib/utils";
   import { fetchConfig } from "$lib/config_client";
   import { tick } from "svelte";
   import _ from "lodash";
@@ -421,7 +421,7 @@
 
   function navigate(href: string) {
     closePalette();
-    goto(href);
+    goto(appPath(href));
   }
 
   function openQuickAdd() {

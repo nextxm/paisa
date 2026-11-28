@@ -1,6 +1,7 @@
 <script lang="ts">
   import { iconText } from "$lib/icon";
   import {
+    appPath,
     formatCurrency,
     formatPercentage,
     restName,
@@ -56,7 +57,7 @@
     <div>
       <a
         class="secondary-link has-text-grey"
-        href="/liabilities/credit_cards/{encodeURIComponent(creditCard.account)}"
+        href={appPath(`/liabilities/credit_cards/${encodeURIComponent(creditCard.account)}`)}
       >
         <span class="custom-icon">{iconText(creditCard.account)}</span>
         <span>{restName(restName(creditCard.account))}</span>

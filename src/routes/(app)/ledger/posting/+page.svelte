@@ -13,6 +13,7 @@
   } from "$lib/transaction_filters";
   import {
     ajax,
+    appPath,
     postingUrl,
     type Posting,
     type Transaction,
@@ -154,7 +155,8 @@
                     >
                     <a
                       class="secondary-link"
-                      href="/accounts/{encodeURIComponent(p.account)}/transactions">{p.account}</a
+                      href={appPath(`/accounts/${encodeURIComponent(p.account)}/transactions`)}
+                      >{p.account}</a
                     >
                   </div>
                 </div>

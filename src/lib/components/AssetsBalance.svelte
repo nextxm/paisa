@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type AssetBreakdown, buildTree, isMobile } from "$lib/utils";
+  import { appPath, type AssetBreakdown, buildTree, isMobile } from "$lib/utils";
   import Table from "./Table.svelte";
   import type { ColumnDefinition } from "tabulator-tables";
   import {
@@ -22,10 +22,10 @@
     const parts = account.split(":");
     const name = parts[parts.length - 1];
     if (mobile) {
-      return `<span class="truncate is-inline-block" style="max-width: 100%; vertical-align: bottom;" title="${account}"><a href="/accounts/${encodeURIComponent(account)}/transactions">${name}</a></span>`;
+      return `<span class="truncate is-inline-block" style="max-width: 100%; vertical-align: bottom;" title="${account}"><a href="${appPath(`/accounts/${encodeURIComponent(account)}/transactions`)}">${name}</a></span>`;
     }
     const padding = indent * 20;
-    return `<span style="padding-left: ${padding}px"><a href="/accounts/${encodeURIComponent(account)}/transactions">${name}</a></span>`;
+    return `<span style="padding-left: ${padding}px"><a href="${appPath(`/accounts/${encodeURIComponent(account)}/transactions`)}">${name}</a></span>`;
   }
 
   const columns: ColumnDefinition[] = $derived.by(() => {
@@ -44,9 +44,9 @@
           return accountName(account, cell.getData().indent, mobile);
         }
         if (mobile) {
-          return `<span class="truncate is-inline-block" style="max-width: 100%; vertical-align: bottom;" title="${account}"><a href="/accounts/${encodeURIComponent(account)}/transactions">${account}</a></span>`;
+          return `<span class="truncate is-inline-block" style="max-width: 100%; vertical-align: bottom;" title="${account}"><a href="${appPath(`/accounts/${encodeURIComponent(account)}/transactions`)}">${account}</a></span>`;
         }
-        return `<a href="/accounts/${encodeURIComponent(account)}/transactions">${account}</a>`;
+        return `<a href="${appPath(`/accounts/${encodeURIComponent(account)}/transactions`)}">${account}</a>`;
       },
       frozen: true
     };

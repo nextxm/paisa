@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type Transaction } from "$lib/utils";
+  import { appPath, type Transaction } from "$lib/utils";
   import TransactionCard from "./TransactionCard.svelte";
   import _ from "lodash";
 
@@ -20,9 +20,11 @@
       class="is-flex is-justify-content-space-between is-align-items-center mb-3"
       style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;"
     >
-      <a class="secondary-link has-text-grey" href="/ledger/transaction">Recent Transactions</a>
+      <a class="secondary-link has-text-grey" href={appPath("/ledger/transaction")}
+        >Recent Transactions</a
+      >
       <a
-        href="/ledger/transaction"
+        href={appPath("/ledger/transaction")}
         style="font-size: 0.72rem; font-weight: 500; text-transform: none; letter-spacing: normal; opacity: 0.75;"
         >All transactions →</a
       >

@@ -4,6 +4,7 @@
   import { filterCommodityBreakdowns, renderPortfolioBreakdown } from "$lib/portfolio";
   import {
     ajax,
+    appPath,
     type Posting,
     formatCurrency,
     formatFloat,
@@ -165,7 +166,7 @@
                     title="Balance"
                     color={COLORS.primary}
                     value={formatCurrency(overview.balanceAmount)}
-                    href="/accounts/{encodeURIComponent(data.name)}/transactions"
+                    href={appPath(`/accounts/${encodeURIComponent(data.name)}/transactions`)}
                   />
                   <LevelItem
                     narrow
@@ -258,7 +259,7 @@
                   <span class="mr-1 is-size-7 has-text-grey">Balance Units</span>
                   <span class="has-text-weight-bold">
                     <a
-                      href="/accounts/{encodeURIComponent(data.name)}/transactions"
+                      href={appPath(`/accounts/${encodeURIComponent(data.name)}/transactions`)}
                       class="has-text-grey-darker"
                     >
                       {formatFloatUptoPrecision(overview.balanceUnits, 4)}

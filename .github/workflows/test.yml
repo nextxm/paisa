@@ -28,10 +28,10 @@ jobs:
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
       - name: Build frontend assets (required by the Go embed directive)
         run: |
+          nix develop --command npm --prefix frontend install
+          PAISA_EMBED=1 nix develop --command npm --prefix frontend run build
           nix develop --command npm install
           nix develop --command npm run build
-          nix develop --command npm --prefix frontend install
-          PAISA_EMBED=1 PAISA_BASE=/v2 nix develop --command npm --prefix frontend run build
       - name: Run Go tests
         run: nix develop --command go test ./...
 
@@ -83,10 +83,10 @@ jobs:
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}
       - name: Install JS dependencies and build frontend
         run: |
+          nix develop --command npm --prefix frontend install
+          PAISA_EMBED=1 nix develop --command npm --prefix frontend run build
           nix develop --command npm install
           nix develop --command npm run build
-          nix develop --command npm --prefix frontend install
-          PAISA_EMBED=1 PAISA_BASE=/v2 nix develop --command npm --prefix frontend run build
       - name: Build paisa binary
         run: nix develop --command go build
       - name: Run regression tests
