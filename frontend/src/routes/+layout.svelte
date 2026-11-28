@@ -84,7 +84,7 @@
   }
 
   const navItems = [
-    { label: "Home", href: "/", icon: Home },
+    { label: "Dashboard", href: "/", icon: Home },
     { label: "Transactions", href: "/transactions", icon: ArrowLeftRight },
     { label: "Cash Flow", href: "/cash-flow", icon: TrendingUp },
     { label: "Wealth", href: "/wealth", icon: Landmark },
@@ -394,6 +394,7 @@
         <div class="flex items-center gap-1.5 min-w-0">
           <a
             href={appPath("/")}
+            title="Go to Dashboard"
             class="flex items-center gap-2 font-semibold text-base tracking-tight shrink-0"
           >
             <Logo size={22} animation={isSyncActive} />
@@ -414,6 +415,14 @@
             <span>v2 · {isSyncActive ? "Syncing" : "Synced"}</span>
           </a>
         </div>
+      {:else}
+        <a
+          href={appPath("/")}
+          title="Go to Dashboard"
+          class="flex items-center justify-center shrink-0"
+        >
+          <Logo size={20} animation={isSyncActive} />
+        </a>
       {/if}
       <button
         type="button"

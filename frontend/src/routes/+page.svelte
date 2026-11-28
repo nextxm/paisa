@@ -71,7 +71,9 @@
   let selectedTransaction = $state<Transaction | null>(null);
   let selectedMonth = $state(dayjs().format("YYYY-MM"));
 
-  const last3Months = [2, 1, 0].map((offset) => dayjs().subtract(offset, "month").format("YYYY-MM"));
+  const last3Months = [2, 1, 0].map((offset) =>
+    dayjs().subtract(offset, "month").format("YYYY-MM")
+  );
 
   async function loadDashboard() {
     loading = true;
@@ -188,7 +190,10 @@
   const networth = $derived(dashboard?.networth?.networth);
   const xirr = $derived(dashboard?.networth?.xirr ?? 0);
   const checkingAccounts = $derived(
-    Object.values(dashboard?.checkingBalances?.asset_breakdowns || {}).slice(0, 4) as AssetBreakdown[]
+    Object.values(dashboard?.checkingBalances?.asset_breakdowns || {}).slice(
+      0,
+      4
+    ) as AssetBreakdown[]
   );
   const ttmDividend = $derived(dashboard?.investmentIncome?.ttm_dividend || 0);
   const ttmInterest = $derived(dashboard?.investmentIncome?.ttm_interest || 0);
@@ -227,7 +232,7 @@
 <div class="space-y-6">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
-      <h1 class="text-xl font-semibold tracking-tight">Home</h1>
+      <h1 class="text-xl font-semibold tracking-tight">Dashboard</h1>
       <p class="text-xs text-[var(--muted)] mt-0.5">
         Financial snapshot as of {dayjs().format("DD MMM YYYY")}
       </p>
@@ -254,7 +259,10 @@
           in your ledger.
         </span>
       </div>
-      <a href={appPath("/ledger")} class="text-xs font-medium text-[var(--accent)] hover:underline shrink-0">
+      <a
+        href={appPath("/ledger")}
+        class="text-xs font-medium text-[var(--accent)] hover:underline shrink-0"
+      >
         Review →
       </a>
     </div>
@@ -276,7 +284,9 @@
       </p>
     </div>
   {:else if isEmpty}
-    <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center space-y-3">
+    <div
+      class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center space-y-3"
+    >
       <h2 class="text-base font-semibold">Welcome to Paisa</h2>
       <p class="text-sm text-[var(--muted)] max-w-md mx-auto">
         No transactions found yet. Add your first transaction or load the sample demo ledger.
@@ -321,9 +331,9 @@
           draggingKey = null;
           dragOverKey = null;
         }}
-        class="relative group transition-all {draggingKey === key ? 'opacity-50' : ''} {dragOverKey === key
-          ? 'ring-2 ring-[var(--accent)] rounded-xl'
-          : ''}"
+        class="relative group transition-all {draggingKey === key
+          ? 'opacity-50'
+          : ''} {dragOverKey === key ? 'ring-2 ring-[var(--accent)] rounded-xl' : ''}"
       >
         <div
           class="absolute top-3.5 right-3.5 z-10 p-1 rounded text-[var(--muted)] opacity-40 group-hover:opacity-100 hover:bg-[var(--surface-elevated)] cursor-grab active:cursor-grabbing"
@@ -333,7 +343,9 @@
         </div>
 
         {#if key === "networth"}
-          <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4">
+          <section
+            class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4"
+          >
             <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Net Worth
@@ -370,7 +382,9 @@
             </div>
           </section>
         {:else if key === "checking"}
-          <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+          <section
+            class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3"
+          >
             <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Checking Balances
@@ -409,7 +423,9 @@
             {/if}
           </section>
         {:else if key === "investmentIncome"}
-          <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+          <section
+            class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3"
+          >
             <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Investment Income (TTM)
@@ -438,12 +454,17 @@
             </div>
           </section>
         {:else if key === "cashFlow"}
-          <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+          <section
+            class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3"
+          >
             <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Cash Flow
               </span>
-              <a href={appPath("/cash-flow")} class="text-xs text-[var(--muted)] hover:text-[var(--text)]">
+              <a
+                href={appPath("/cash-flow")}
+                class="text-xs text-[var(--muted)] hover:text-[var(--text)]"
+              >
                 Details →
               </a>
             </div>
@@ -453,15 +474,23 @@
               <div class="grid grid-cols-3 gap-3 text-xs tabular-nums pb-1">
                 <div>
                   <div class="text-[var(--muted)]">Last Month In</div>
-                  <div class="font-semibold text-[var(--gain)] mt-0.5">{formatMoney(latestCf.income)}</div>
+                  <div class="font-semibold text-[var(--gain)] mt-0.5">
+                    {formatMoney(latestCf.income)}
+                  </div>
                 </div>
                 <div>
                   <div class="text-[var(--muted)]">Last Month Out</div>
-                  <div class="font-semibold text-[var(--loss)] mt-0.5">{formatMoney(latestCf.expenses)}</div>
+                  <div class="font-semibold text-[var(--loss)] mt-0.5">
+                    {formatMoney(latestCf.expenses)}
+                  </div>
                 </div>
                 <div>
                   <div class="text-[var(--muted)]">Net Flow</div>
-                  <div class="font-semibold {latestNet >= 0 ? 'text-[var(--gain)]' : 'text-[var(--loss)]'} mt-0.5">
+                  <div
+                    class="font-semibold {latestNet >= 0
+                      ? 'text-[var(--gain)]'
+                      : 'text-[var(--loss)]'} mt-0.5"
+                  >
                     {formatMoney(latestNet)}
                   </div>
                 </div>
@@ -470,12 +499,17 @@
             <BarTrendChart data={homeCashFlows} />
           </section>
         {:else if key === "budget"}
-          <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+          <section
+            class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3"
+          >
             <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Budget ({dayjs(`${selectedMonth}-01`).format("MMM YYYY")})
               </span>
-              <a href={appPath("/cash-flow")} class="text-xs text-[var(--muted)] hover:text-[var(--text)]">
+              <a
+                href={appPath("/cash-flow")}
+                class="text-xs text-[var(--muted)] hover:text-[var(--text)]"
+              >
                 Manage →
               </a>
             </div>
@@ -485,13 +519,19 @@
                 <div class="space-y-1 text-xs">
                   <div class="flex justify-between">
                     <span class="truncate">{b.account.replace(/^Expenses:/, "")}</span>
-                    <span class="tabular-nums {b.available >= 0 ? 'text-[var(--gain)]' : 'text-[var(--loss)]'}">
+                    <span
+                      class="tabular-nums {b.available >= 0
+                        ? 'text-[var(--gain)]'
+                        : 'text-[var(--loss)]'}"
+                    >
                       {formatMoney(b.available)}
                     </span>
                   </div>
                   <div class="h-1.5 rounded-full bg-[var(--surface-elevated)] overflow-hidden">
                     <div
-                      class="h-full rounded-full {b.available >= 0 ? 'bg-[var(--gain)]' : 'bg-[var(--loss)]'}"
+                      class="h-full rounded-full {b.available >= 0
+                        ? 'bg-[var(--gain)]'
+                        : 'bg-[var(--loss)]'}"
                       style="width: {pct}%"
                     ></div>
                   </div>
@@ -500,12 +540,17 @@
             </div>
           </section>
         {:else if key === "goals"}
-          <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+          <section
+            class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3"
+          >
             <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Goals
               </span>
-              <a href={appPath("/planning")} class="text-xs text-[var(--muted)] hover:text-[var(--text)]">
+              <a
+                href={appPath("/planning")}
+                class="text-xs text-[var(--muted)] hover:text-[var(--text)]"
+              >
                 View all →
               </a>
             </div>
@@ -525,7 +570,9 @@
             </div>
           </section>
         {:else if key === "expenses"}
-          <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4">
+          <section
+            class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-4"
+          >
             <div class="flex flex-wrap items-center justify-between gap-2 pr-7">
               <div>
                 <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
@@ -575,12 +622,17 @@
             {/if}
           </section>
         {:else if key === "recurring"}
-          <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+          <section
+            class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3"
+          >
             <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Recurring
               </span>
-              <a href={appPath("/cash-flow")} class="text-xs text-[var(--muted)] hover:text-[var(--text)]">
+              <a
+                href={appPath("/cash-flow")}
+                class="text-xs text-[var(--muted)] hover:text-[var(--text)]"
+              >
                 View all →
               </a>
             </div>
@@ -596,7 +648,9 @@
             </div>
           </section>
         {:else if key === "recentTransactions"}
-          <section class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
+          <section
+            class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3"
+          >
             <div class="flex items-center justify-between pr-7">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                 Recent Transactions
@@ -707,7 +761,7 @@
       class="relative z-10 w-full max-w-md rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-xl p-5 space-y-4"
     >
       <div class="flex items-center justify-between">
-        <h2 class="text-base font-semibold">Customize Home</h2>
+        <h2 class="text-base font-semibold">Customize Dashboard</h2>
         <button
           type="button"
           class="p-1 rounded-md text-[var(--muted)] hover:bg-[var(--surface-elevated)] cursor-pointer"
