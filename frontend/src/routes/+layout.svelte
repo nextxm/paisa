@@ -51,9 +51,34 @@
   let syncing = $state(false);
   let syncMenuOpen = $state(false);
   let jobsMenuOpen = $state(false);
-  let jobs = $state<Array<{ id: string; name?: string; status?: string; message?: string }>>([]);
+  interface BackgroundJob {
+    id: string;
+    name?: string;
+    status?: string;
+    message?: string;
+    error?: string;
+    items_completed?: number;
+    total_items?: number;
+    created_at?: string;
+    metadata?: {
+      journal?: boolean;
+      prices?: boolean;
+      force_prices?: boolean;
+      portfolios?: boolean;
+    };
+  }
+
+  let jobs = $state<BackgroundJob[]>([]);
   let hasToken = $state(false);
   let renderKey = $state(0);
+
+  interface PaletteCommand {
+    label: string;
+    href: string;
+    icon: typeof Home;
+    parent?: string;
+    keywords?: string;
+  }
 
   const navItems = [
     { label: "Home", href: "/", icon: Home },
@@ -66,13 +91,177 @@
     { label: "Settings", href: "/settings", icon: Settings }
   ];
 
+  const tabItems: PaletteCommand[] = [
+    { label: "Cash Flow", parent: "Cash Flow", href: "/cash-flow?tab=cashflow", icon: TrendingUp },
+    {
+      label: "Income Statement",
+      parent: "Cash Flow",
+      href: "/cash-flow?tab=statement",
+      icon: TrendingUp
+    },
+    {
+      label: "Money Flow",
+      parent: "Cash Flow",
+      href: "/cash-flow?tab=sankey",
+      icon: TrendingUp,
+      keywords: "sankey"
+    },
+    {
+      label: "Income Timeline",
+      parent: "Cash Flow",
+      href: "/cash-flow?tab=income",
+      icon: TrendingUp
+    },
+    {
+      label: "Expenses",
+      parent: "Cash Flow",
+      href: "/cash-flow?tab=expenses",
+      icon: TrendingUp,
+      keywords: "spending heatmap trends"
+    },
+    { label: "Budget", parent: "Cash Flow", href: "/cash-flow?tab=budget", icon: TrendingUp },
+    { label: "Recurring", parent: "Cash Flow", href: "/cash-flow?tab=recurring", icon: TrendingUp },
+    {
+      label: "Overview",
+      parent: "Wealth",
+      href: "/wealth?tab=overview",
+      icon: Landmark,
+      keywords: "net worth timeline"
+    },
+    { label: "Assets", parent: "Wealth", href: "/wealth?tab=assets", icon: Landmark },
+    {
+      label: "Investments",
+      parent: "Wealth",
+      href: "/wealth?tab=investments",
+      icon: Landmark,
+      keywords: "xirr holdings"
+    },
+    {
+      label: "Allocation",
+      parent: "Wealth",
+      href: "/wealth?tab=allocation",
+      icon: Landmark,
+      keywords: "rebalance target"
+    },
+    {
+      label: "Portfolio",
+      parent: "Wealth",
+      href: "/wealth?tab=portfolio",
+      icon: Landmark,
+      keywords: "securities fund industry"
+    },
+    {
+      label: "Inv. Income",
+      parent: "Wealth",
+      href: "/wealth?tab=income",
+      icon: Landmark,
+      keywords: "investment income dividends interest"
+    },
+    {
+      label: "Debt & Cards",
+      parent: "Wealth",
+      href: "/wealth?tab=liabilities",
+      icon: Landmark,
+      keywords: "liabilities credit cards loans"
+    },
+    {
+      label: "Projection",
+      parent: "Planning",
+      href: "/planning?tab=projection",
+      icon: Compass,
+      keywords: "fire monte carlo"
+    },
+    { label: "Goals", parent: "Planning", href: "/planning?tab=goals", icon: Compass },
+    {
+      label: "What-If",
+      parent: "Planning",
+      href: "/planning?tab=whatif",
+      icon: Compass,
+      keywords: "scenarios"
+    },
+    {
+      label: "Drawdown",
+      parent: "Planning",
+      href: "/planning?tab=drawdown",
+      icon: Compass,
+      keywords: "retirement withdrawal"
+    },
+    { label: "Tax", parent: "Planning", href: "/planning?tab=tax", icon: Compass },
+    {
+      label: "Import",
+      parent: "Ledger",
+      href: "/ledger?tab=import",
+      icon: BookOpen,
+      keywords: "csv"
+    },
+    {
+      label: "Journal Editor",
+      parent: "Ledger",
+      href: "/ledger?tab=editor",
+      icon: BookOpen,
+      keywords: "edit"
+    },
+    {
+      label: "Sheets",
+      parent: "Ledger",
+      href: "/ledger?tab=sheets",
+      icon: BookOpen,
+      keywords: "google"
+    },
+    {
+      label: "Data Health",
+      parent: "Ledger",
+      href: "/ledger?tab=health",
+      icon: BookOpen,
+      keywords: "doctor findings duplicates"
+    },
+    {
+      label: "Commodity Prices",
+      parent: "Market Data",
+      href: "/market-data?tab=prices",
+      icon: Coins,
+      keywords: "nav stock"
+    },
+    {
+      label: "FX Rates",
+      parent: "Market Data",
+      href: "/market-data?tab=fx",
+      icon: Coins,
+      keywords: "currency exchange"
+    },
+    {
+      label: "Configuration",
+      parent: "Settings",
+      href: "/settings?tab=config",
+      icon: Settings,
+      keywords: "config preferences"
+    },
+    { label: "Logs", parent: "Settings", href: "/settings?tab=logs", icon: Settings },
+    {
+      label: "About",
+      parent: "Settings",
+      href: "/settings?tab=about",
+      icon: Settings,
+      keywords: "version build"
+    }
+  ];
+
   const pathname = $derived($page.url.pathname);
   const buildInfo = __BUILD_INFO__;
-  const hasRunningJob = $derived(jobs.some((j) => j.status === "running" || j.status === "pending"));
+  const hasRunningJob = $derived(
+    jobs.some((j) => j.status === "running" || j.status === "pending")
+  );
   const isSyncActive = $derived(syncing || hasRunningJob);
   const filteredCommands = $derived(
     navItems.filter((item) => item.label.toLowerCase().includes(cmdQuery.trim().toLowerCase()))
   );
+  const filteredTabs = $derived.by(() => {
+    const q = cmdQuery.trim().toLowerCase();
+    if (!q) return tabItems;
+    return tabItems.filter((item) =>
+      `${item.parent ?? ""} ${item.label} ${item.keywords ?? ""}`.toLowerCase().includes(q)
+    );
+  });
   const filteredAccounts = $derived(
     cmdQuery.trim().length > 1
       ? runtime.accounts
@@ -92,20 +281,24 @@
     });
 
     let es: EventSource | null = null;
+    const handleJobMessage = (ev: MessageEvent) => {
+      try {
+        const parsed = JSON.parse(ev.data) as { jobs?: BackgroundJob[] } | BackgroundJob;
+        if (Array.isArray((parsed as { jobs?: BackgroundJob[] }).jobs)) {
+          jobs = (parsed as { jobs: BackgroundJob[] }).jobs;
+        } else if ((parsed as BackgroundJob).id) {
+          const job = parsed as BackgroundJob;
+          const idx = jobs.findIndex((j) => j.id === job.id);
+          const next = idx >= 0 ? jobs.map((j, i) => (i === idx ? job : j)) : [job, ...jobs];
+          next.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+          jobs = next.slice(0, 20);
+        }
+      } catch {}
+    };
     try {
       es = new EventSource("/api/jobs/stream");
-      es.onmessage = (ev) => {
-        try {
-          const parsed = JSON.parse(ev.data) as { jobs?: typeof jobs } | (typeof jobs)[number];
-          if (Array.isArray((parsed as { jobs?: typeof jobs }).jobs)) {
-            jobs = (parsed as { jobs: typeof jobs }).jobs;
-          } else if ((parsed as { id?: string }).id) {
-            const job = parsed as (typeof jobs)[number];
-            const idx = jobs.findIndex((j) => j.id === job.id);
-            jobs = idx >= 0 ? jobs.map((j, i) => (i === idx ? job : j)) : [job, ...jobs].slice(0, 20);
-          }
-        } catch {}
-      };
+      es.addEventListener("job", handleJobMessage);
+      es.onmessage = handleJobMessage;
     } catch {}
     return () => {
       es?.close();
@@ -151,6 +344,16 @@
     renderKey += 1;
   }
 
+  function jobLabel(job: BackgroundJob): string {
+    if (job.name) return job.name;
+    const parts: string[] = [];
+    if (job.metadata?.journal) parts.push("Journal");
+    if (job.metadata?.prices) parts.push("Prices");
+    if (job.metadata?.portfolios) parts.push("Portfolios");
+    if (parts.length > 0) return `Sync: ${parts.join(", ")}`;
+    return `Job ${job.id.slice(0, 8)}`;
+  }
+
   function isActive(href: string, current: string): boolean {
     const clean = base && current.startsWith(base) ? current.slice(base.length) || "/" : current;
     if (href === "/") return clean === "/";
@@ -170,13 +373,18 @@
     <div class="h-13 px-3 flex items-center justify-between gap-1 border-b border-[var(--border)]">
       {#if !sidebarCollapsed}
         <div class="flex items-center gap-1.5 min-w-0">
-          <a href={appPath("/")} class="flex items-center gap-2 font-semibold text-base tracking-tight shrink-0">
+          <a
+            href={appPath("/")}
+            class="flex items-center gap-2 font-semibold text-base tracking-tight shrink-0"
+          >
             <Logo size={22} animation={isSyncActive} />
             <span>Paisa</span>
           </a>
           <a
             href={appPath("/settings?tab=about")}
-            title="Paisa {buildInfo.version || 'v2'} ({isSyncActive ? 'Syncing…' : 'Synced'}) — View About"
+            title="Paisa {buildInfo.version || 'v2'} ({isSyncActive
+              ? 'Syncing…'
+              : 'Synced'}) — View About"
             class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-[var(--surface-elevated)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--muted)] hover:text-[var(--text)] transition-colors shrink-0"
           >
             <span
@@ -337,7 +545,9 @@
           >
             <Activity class="w-4 h-4" />
             {#if jobs.some((j) => j.status === "running" || j.status === "pending")}
-              <span class="w-2 h-2 rounded-full bg-[var(--accent)] absolute top-1.5 right-1.5 animate-pulse"></span>
+              <span
+                class="w-2 h-2 rounded-full bg-[var(--accent)] absolute top-1.5 right-1.5 animate-pulse"
+              ></span>
             {/if}
           </button>
           {#if jobsMenuOpen}
@@ -353,7 +563,10 @@
                     type="button"
                     class="text-[var(--accent)] hover:underline cursor-pointer"
                     onclick={async () => {
-                      await fetch("/api/jobs/clear", { method: "POST", headers: authHeaders() }).catch(() => {});
+                      await fetch("/api/jobs/clear", {
+                        method: "POST",
+                        headers: authHeaders()
+                      }).catch(() => {});
                       jobs = [];
                     }}
                   >
@@ -366,9 +579,29 @@
               {:else}
                 <div class="max-h-48 overflow-y-auto divide-y divide-[var(--border)]">
                   {#each jobs.slice(0, 8) as j}
-                    <div class="py-1.5 flex items-center justify-between gap-2">
-                      <span class="truncate font-medium">{j.name || j.id}</span>
-                      <span class="text-[var(--muted)] capitalize shrink-0">{j.status || "done"}</span>
+                    <div class="py-1.5 space-y-0.5">
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="truncate font-medium">{jobLabel(j)}</span>
+                        <span
+                          class="capitalize shrink-0 {j.status === 'failed'
+                            ? 'text-[var(--loss)]'
+                            : j.status === 'completed'
+                              ? 'text-[var(--gain)]'
+                              : j.status === 'running'
+                                ? 'text-[var(--warning)]'
+                                : 'text-[var(--muted)]'}"
+                        >
+                          {j.status || "done"}
+                          {#if j.status === "running" && j.total_items && j.total_items > 0}
+                            ({j.items_completed ?? 0}/{j.total_items})
+                          {/if}
+                        </span>
+                      </div>
+                      {#if j.error}
+                        <p class="text-[11px] text-[var(--loss)] truncate" title={j.error}>
+                          {j.error}
+                        </p>
+                      {/if}
                     </div>
                   {/each}
                 </div>
@@ -437,27 +670,78 @@
           bind:this={cmdInput}
           type="text"
           bind:value={cmdQuery}
-          placeholder="Jump to page…"
+          placeholder="Jump to page, tab, or account…"
           class="w-full bg-transparent text-sm outline-none placeholder:text-[var(--muted)]"
+          onkeydown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              const target =
+                (cmdQuery.trim() && filteredTabs.length > 0 && filteredCommands.length === 0
+                  ? filteredTabs[0].href
+                  : (filteredCommands[0]?.href ?? filteredTabs[0]?.href)) ??
+                (filteredAccounts[0]
+                  ? `/accounts/${encodeURIComponent(filteredAccounts[0])}`
+                  : null);
+              if (target) {
+                cmdOpen = false;
+                goto(appPath(target));
+              }
+            }
+          }}
         />
       </div>
-      <div class="p-1.5 max-h-64 overflow-y-auto">
-        {#each filteredCommands as item}
-          {@const Icon = item.icon}
-          <button
-            type="button"
-            class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-left hover:bg-[var(--surface-elevated)] cursor-pointer"
-            onclick={() => {
-              cmdOpen = false;
-              goto(appPath(item.href));
-            }}
+      <div class="p-1.5 max-h-80 overflow-y-auto">
+        {#if filteredCommands.length > 0}
+          <div
+            class="px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]"
           >
-            <Icon class="w-4 h-4 text-[var(--muted)]" />
-            <span>{item.label}</span>
-          </button>
-        {/each}
+            Pages
+          </div>
+          {#each filteredCommands as item}
+            {@const Icon = item.icon}
+            <button
+              type="button"
+              class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-left hover:bg-[var(--surface-elevated)] cursor-pointer"
+              onclick={() => {
+                cmdOpen = false;
+                goto(appPath(item.href));
+              }}
+            >
+              <Icon class="w-4 h-4 text-[var(--muted)]" />
+              <span>{item.label}</span>
+            </button>
+          {/each}
+        {/if}
+        {#if filteredTabs.length > 0}
+          <div
+            class="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]"
+          >
+            Tabs
+          </div>
+          {#each filteredTabs as item}
+            {@const Icon = item.icon}
+            <button
+              type="button"
+              class="w-full flex items-center justify-between gap-3 px-3 py-1.5 rounded-lg text-sm text-left hover:bg-[var(--surface-elevated)] cursor-pointer"
+              onclick={() => {
+                cmdOpen = false;
+                goto(appPath(item.href));
+              }}
+            >
+              <span class="flex items-center gap-3 min-w-0">
+                <Icon class="w-4 h-4 text-[var(--muted)] shrink-0" />
+                <span class="truncate">{item.label}</span>
+              </span>
+              {#if item.parent}
+                <span class="text-xs text-[var(--muted)] shrink-0">{item.parent}</span>
+              {/if}
+            </button>
+          {/each}
+        {/if}
         {#if filteredAccounts.length > 0}
-          <div class="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+          <div
+            class="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]"
+          >
             Accounts
           </div>
           {#each filteredAccounts as acc}

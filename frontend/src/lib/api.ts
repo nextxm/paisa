@@ -132,7 +132,7 @@ export function toggleObscure(): boolean {
   runtime.obscure = !runtime.obscure;
   try {
     localStorage.setItem("paisa-v2-obscure", String(runtime.obscure));
-  } catch { }
+  } catch {}
   return runtime.obscure;
 }
 
@@ -181,10 +181,10 @@ export async function logout(): Promise<void> {
       await fetch("/api/auth/logout", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...headers }
-      }).catch(() => { });
+      }).catch(() => {});
     }
     localStorage.removeItem("token");
-  } catch { }
+  } catch {}
   if (typeof window !== "undefined" && !window.location.pathname.endsWith("/login")) {
     window.location.href = appPath("/login");
   }
@@ -194,7 +194,11 @@ export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(path, {
     headers: { Accept: "application/json", ...authHeaders() }
   });
-  if (res.status === 401 && typeof window !== "undefined" && !window.location.pathname.endsWith("/login")) {
+  if (
+    res.status === 401 &&
+    typeof window !== "undefined" &&
+    !window.location.pathname.endsWith("/login")
+  ) {
     window.location.href = appPath("/login");
     throw new Error("Unauthorized");
   }
@@ -236,15 +240,41 @@ export async function updateConfig(
 }
 
 export async function triggerSync(
-  opts: { journal?: boolean; prices?: boolean; portfolios?: boolean } = { journal: true }
+  opts: {
+    journal?: boolean;
+    prices?: boolean;
+    force_prices?: boolean;
+    force_journal?: boolean;
+    portfolios?: boolean;
+  } = { journal: true }
 ): Promise<boolean> {
   try {
+    const payload = {
+      ...opts,
+      force_prices: opts.force_prices ?? Boolean(opts.prices)
+    };
     const res = await fetch("/api/sync", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(opts)
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(payload)
     });
-    return res.ok;
+    if (!res.ok) return false;
+    const data = (await res.json().catch(() => ({}))) as { job_id?: string };
+    if (!data.job_id) return true;
+
+    // /api/sync returns 202 Accepted with a job_id; wait until the job reaches a terminal state.
+    const deadline = Date.now() + 5 * 60 * 1000;
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 400));
+      const jobRes = await fetch(`/api/jobs/${encodeURIComponent(data.job_id)}`, {
+        headers: { Accept: "application/json", ...authHeaders() }
+      });
+      if (!jobRes.ok) return true;
+      const job = (await jobRes.json().catch(() => ({}))) as { status?: string };
+      if (job.status === "completed") return true;
+      if (job.status === "failed") return false;
+    }
+    return true;
   } catch {
     return false;
   }
@@ -283,6 +313,6 @@ export function toggleTheme(): "light" | "dark" {
   document.documentElement.style.colorScheme = next;
   try {
     localStorage.setItem("paisa-v2-theme", next);
-  } catch { }
+  } catch {}
   return next;
 }

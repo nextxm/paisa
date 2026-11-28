@@ -40,19 +40,20 @@
     let min = 0;
     let max = 0;
     for (const d of data) {
+      const exFx = (d.balanceAmount || 0) - (d.fx_impact || 0);
       min = Math.min(
         min,
         d.balanceAmount || 0,
         d.netInvestmentAmount || 0,
         d.gainAmount || 0,
-        hasFxData ? d.fx_impact || 0 : 0
+        hasFxData ? exFx : 0
       );
       max = Math.max(
         max,
         d.balanceAmount || 0,
         d.netInvestmentAmount || 0,
         d.gainAmount || 0,
-        hasFxData ? d.fx_impact || 0 : 0
+        hasFxData ? exFx : 0
       );
     }
     if (max === min) max = min + 1000;
@@ -75,7 +76,9 @@
 
   const balancePath = $derived(
     data
-      .map((d, i) => `${i === 0 ? "M" : "L"}${xPos(i).toFixed(1)},${yPos(d.balanceAmount).toFixed(1)}`)
+      .map(
+        (d, i) => `${i === 0 ? "M" : "L"}${xPos(i).toFixed(1)},${yPos(d.balanceAmount).toFixed(1)}`
+      )
       .join(" ")
   );
 
@@ -96,13 +99,19 @@
 
   const gainPath = $derived(
     data
-      .map((d, i) => `${i === 0 ? "M" : "L"}${xPos(i).toFixed(1)},${yPos(d.gainAmount || 0).toFixed(1)}`)
+      .map(
+        (d, i) =>
+          `${i === 0 ? "M" : "L"}${xPos(i).toFixed(1)},${yPos(d.gainAmount || 0).toFixed(1)}`
+      )
       .join(" ")
   );
 
   const fxPath = $derived(
     data
-      .map((d, i) => `${i === 0 ? "M" : "L"}${xPos(i).toFixed(1)},${yPos(d.fx_impact || 0).toFixed(1)}`)
+      .map(
+        (d, i) =>
+          `${i === 0 ? "M" : "L"}${xPos(i).toFixed(1)},${yPos((d.balanceAmount || 0) - (d.fx_impact || 0)).toFixed(1)}`
+      )
       .join(" ")
   );
 
@@ -140,14 +149,7 @@
       <g transform="translate({margin.left},{margin.top})">
         {#each ticks as tick}
           {@const y = yPos(tick)}
-          <line
-            x1="0"
-            x2={plotWidth}
-            y1={y}
-            y2={y}
-            stroke="var(--border)"
-            stroke-dasharray="3 3"
-          />
+          <line x1="0" x2={plotWidth} y1={y} y2={y} stroke="var(--border)" stroke-dasharray="3 3" />
           <text
             x="-8"
             y={y + 4}
@@ -221,7 +223,11 @@
             </span>
           {/if}
           {#if showFxImpact && pt.fx_impact !== undefined}
-            <span class="text-[var(--warning)]">FX Impact: {formatMoney(pt.fx_impact)}</span>
+            <span class="text-[var(--warning)]">
+              Ex-FX: {formatMoney((pt.balanceAmount || 0) - (pt.fx_impact || 0))} (FX: {formatMoney(
+                pt.fx_impact
+              )})
+            </span>
           {/if}
         </div>
       </div>

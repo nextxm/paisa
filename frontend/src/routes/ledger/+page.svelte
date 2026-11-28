@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from "$app/stores";
   import { onMount } from "svelte";
   import { CheckCircle2, Search } from "lucide-svelte";
   import LedgerEditorPanel from "$lib/components/LedgerEditorPanel.svelte";
@@ -27,6 +28,12 @@
   }
 
   let activeTab = $state<LedgerTab>("import");
+  $effect(() => {
+    const tab = $page.url.searchParams.get("tab");
+    if (tab === "health" || tab === "editor" || tab === "import" || tab === "sheets") {
+      activeTab = tab;
+    }
+  });
   let healthFilter = $state<HealthFilter>("fix");
   let search = $state("");
 
@@ -61,9 +68,10 @@
     try {
       const [, dupRes] = await Promise.all([
         loadHealth(),
-        apiGet<{ duplicates?: Array<Record<string, unknown>>; outliers?: Array<Record<string, unknown>> }>(
-          "/api/diagnosis/duplicates"
-        ).catch(() => ({ duplicates: [], outliers: [] }))
+        apiGet<{
+          duplicates?: Array<Record<string, unknown>>;
+          outliers?: Array<Record<string, unknown>>;
+        }>("/api/diagnosis/duplicates").catch(() => ({ duplicates: [], outliers: [] }))
       ]);
       duplicates = dupRes.duplicates || [];
       outliers = dupRes.outliers || [];
@@ -132,12 +140,7 @@
 
   <!-- Tabs -->
   <div class="border-b border-[var(--border)] flex items-center gap-6 text-sm overflow-x-auto">
-    {#each [
-      { id: "import", label: "Import" },
-      { id: "editor", label: "Journal Editor" },
-      { id: "sheets", label: "Sheets" },
-      { id: "health", label: `Data Health (${summary.fix_count + summary.review_count})` }
-    ] as tab}
+    {#each [{ id: "import", label: "Import" }, { id: "editor", label: "Journal Editor" }, { id: "sheets", label: "Sheets" }, { id: "health", label: `Data Health (${summary.fix_count + summary.review_count})` }] as tab}
       <button
         type="button"
         class="pb-2.5 border-b-2 whitespace-nowrap cursor-pointer {activeTab === tab.id
@@ -161,12 +164,7 @@
     </div>
   {:else if activeTab === "health"}
     <div class="flex flex-wrap items-center gap-2">
-      {#each [
-        { id: "fix", label: `Fix (${summary.fix_count})` },
-        { id: "review", label: `Review (${summary.review_count})` },
-        { id: "dismissed", label: `Dismissed (${summary.dismissed_count})` },
-        { id: "all", label: `All (${summary.total})` }
-      ] as f}
+      {#each [{ id: "fix", label: `Fix (${summary.fix_count})` }, { id: "review", label: `Review (${summary.review_count})` }, { id: "dismissed", label: `Dismissed (${summary.dismissed_count})` }, { id: "all", label: `All (${summary.total})` }] as f}
         <button
           type="button"
           class="px-3 py-1 rounded-full text-xs border cursor-pointer {healthFilter === f.id
@@ -232,13 +230,23 @@
           <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
             Potential Duplicates ({duplicates.length})
           </div>
-          <pre class="text-xs font-mono bg-[var(--surface-elevated)] p-2.5 rounded-lg overflow-x-auto max-h-40">{JSON.stringify(duplicates.slice(0, 10), null, 2)}</pre>
+          <pre
+            class="text-xs font-mono bg-[var(--surface-elevated)] p-2.5 rounded-lg overflow-x-auto max-h-40">{JSON.stringify(
+              duplicates.slice(0, 10),
+              null,
+              2
+            )}</pre>
         </div>
         <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 space-y-2">
           <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
             Outlier Transactions ({outliers.length})
           </div>
-          <pre class="text-xs font-mono bg-[var(--surface-elevated)] p-2.5 rounded-lg overflow-x-auto max-h-40">{JSON.stringify(outliers.slice(0, 10), null, 2)}</pre>
+          <pre
+            class="text-xs font-mono bg-[var(--surface-elevated)] p-2.5 rounded-lg overflow-x-auto max-h-40">{JSON.stringify(
+              outliers.slice(0, 10),
+              null,
+              2
+            )}</pre>
         </div>
       </div>
     {/if}

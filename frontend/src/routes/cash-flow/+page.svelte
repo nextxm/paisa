@@ -1,5 +1,6 @@
 <script lang="ts">
   import dayjs from "dayjs";
+  import { page } from "$app/stores";
   import { onMount } from "svelte";
   import BarTrendChart, { type MonthlyBarPoint } from "$lib/components/BarTrendChart.svelte";
   import SankeyChart from "$lib/components/SankeyChart.svelte";
@@ -70,6 +71,20 @@
   }
 
   let activeTab = $state<StudioTab>("cashflow");
+  $effect(() => {
+    const tab = $page.url.searchParams.get("tab");
+    if (
+      tab === "cashflow" ||
+      tab === "statement" ||
+      tab === "sankey" ||
+      tab === "income" ||
+      tab === "expenses" ||
+      tab === "budget" ||
+      tab === "recurring"
+    ) {
+      activeTab = tab;
+    }
+  });
   let cfGranularity = $state<CashFlowGranularity>("monthly");
   let expenseView = $state<ExpenseView>("breakdown");
   let sankeyPeriod = $state<SankeyPeriod>("month");
@@ -150,7 +165,11 @@
           }>;
           income_timeline?: Array<{ date: string; postings?: Posting[] }>;
           tax_timeline?: Array<{ date: string; postings?: Posting[] }>;
-        }>("/api/income").catch(() => ({ yearly_cards: [], income_timeline: [], tax_timeline: [] })),
+        }>("/api/income").catch(() => ({
+          yearly_cards: [],
+          income_timeline: [],
+          tax_timeline: []
+        })),
         apiGet<{ ttm_total?: number }>("/api/income/investment").catch(() => ({ ttm_total: 0 }))
       ]);
 
@@ -218,7 +237,9 @@
       const res = await apiGet<{
         daily?: Array<{ date: string; amount: number; category?: string }>;
         expenses?: Array<{ date: string; amount: number; category?: string }>;
-      }>(`/api/expense/daily?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&group_by=category`);
+      }>(
+        `/api/expense/daily?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&group_by=category`
+      );
       dailyExpenses = res.daily || res.expenses || [];
     } catch {
       dailyExpenses = [];
@@ -369,7 +390,11 @@
     const sumCats = (m: string) => {
       const map = new Map<string, number>();
       for (const p of monthWiseExpenses[m] || []) {
-        const cat = p.account.split(":").slice(0, 2).join(":").replace(/^Expenses:/, "");
+        const cat = p.account
+          .split(":")
+          .slice(0, 2)
+          .join(":")
+          .replace(/^Expenses:/, "");
         map.set(cat, (map.get(cat) || 0) + Math.max(0, p.amount || 0));
       }
       return map;
@@ -438,7 +463,10 @@
   const totalNetSavings = $derived(totalIncome - totalExpenses);
 
   function aggregateByLevel(postings: Posting[], negate: boolean, level: 1 | 2 | "all") {
-    const map = new Map<string, { account: string; commodity: string; quantity: number; amount: number }>();
+    const map = new Map<
+      string,
+      { account: string; commodity: string; quantity: number; amount: number }
+    >();
     for (const p of postings) {
       const parts = p.account.split(":");
       const account =
@@ -527,7 +555,14 @@
   const statementYears = $derived(Object.keys(yearlyStatements).sort().reverse());
   const currentStatement = $derived(selectedYear ? yearlyStatements[selectedYear] : undefined);
 
-  type StatementGroupKey = "income" | "tax" | "interest" | "pnl" | "equity" | "liabilities" | "expenses";
+  type StatementGroupKey =
+    | "income"
+    | "tax"
+    | "interest"
+    | "pnl"
+    | "equity"
+    | "liabilities"
+    | "expenses";
   const statementGroupDefs: Array<{ key: StatementGroupKey; label: string; multiplier: number }> = [
     { key: "income", label: "Income", multiplier: -1 },
     { key: "tax", label: "Tax", multiplier: -1 },
@@ -557,7 +592,13 @@
     if (!currentStatement) return [];
     const sumRec = (rec?: Record<string, number>) =>
       Object.values(rec || {}).reduce((a, b) => a + (b || 0), 0);
-    const steps: Array<{ label: string; start: number; end: number; delta: number; kind: "total" | "pos" | "neg" }> = [];
+    const steps: Array<{
+      label: string;
+      start: number;
+      end: number;
+      delta: number;
+      kind: "total" | "pos" | "neg";
+    }> = [];
     let running = currentStatement.startingBalance || 0;
     steps.push({ label: "Start", start: 0, end: running, delta: running, kind: "total" });
     for (const def of statementGroupDefs) {
@@ -883,7 +924,9 @@
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 class="text-sm font-semibold">
-            Monthly Breakdown ({selectedMonth ? dayjs(`${selectedMonth}-01`).format("MMMM YYYY") : "—"})
+            Monthly Breakdown ({selectedMonth
+              ? dayjs(`${selectedMonth}-01`).format("MMMM YYYY")
+              : "—"})
           </h3>
           <p class="text-xs text-[var(--muted)]">
             Income, Expenses, Investments, Taxes, and Liabilities for the selected month
@@ -900,7 +943,9 @@
               {/each}
             </select>
           {/if}
-          <div class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5">
+          <div
+            class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5"
+          >
             {#each [{ v: 1, l: "Level 1" }, { v: 2, l: "Level 2" }, { v: "all", l: "All" }] as opt}
               <button
                 type="button"
@@ -917,7 +962,9 @@
       </div>
 
       {#if monthlyNetByCurrency.length > 0}
-        <div class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/60 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div
+          class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/60 px-4 py-3 flex flex-wrap items-center justify-between gap-3"
+        >
           <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
             Monthly Net Flow (Income − Expenses − Taxes)
           </span>
@@ -932,17 +979,15 @@
       {/if}
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {#each [
-          { title: "Income", rows: monthlyBreakdown.incomes, color: "text-[var(--gain)]" },
-          { title: "Expenses", rows: monthlyBreakdown.expenses, color: "text-[var(--loss)]" },
-          { title: "Investments", rows: monthlyBreakdown.investments, color: "text-[var(--accent)]" },
-          { title: "Taxes", rows: monthlyBreakdown.taxes, color: "text-[var(--warning)]" },
-          { title: "Liabilities", rows: monthlyBreakdown.liabilities, color: "text-[var(--muted)]" }
-        ] as sec}
+        {#each [{ title: "Income", rows: monthlyBreakdown.incomes, color: "text-[var(--gain)]" }, { title: "Expenses", rows: monthlyBreakdown.expenses, color: "text-[var(--loss)]" }, { title: "Investments", rows: monthlyBreakdown.investments, color: "text-[var(--accent)]" }, { title: "Taxes", rows: monthlyBreakdown.taxes, color: "text-[var(--warning)]" }, { title: "Liabilities", rows: monthlyBreakdown.liabilities, color: "text-[var(--muted)]" }] as sec}
           {#if sec.rows.length > 0}
             {@const secTotals = sumByCommodity(sec.rows)}
-            <div class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/40 p-4 space-y-2.5">
-              <div class="flex items-center justify-between gap-2 border-b border-[var(--border)] pb-2">
+            <div
+              class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/40 p-4 space-y-2.5"
+            >
+              <div
+                class="flex items-center justify-between gap-2 border-b border-[var(--border)] pb-2"
+              >
                 <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                   {sec.title}
                 </span>
@@ -1094,12 +1139,16 @@
       <!-- Detailed Account / Yearly Amounts Breakdown Table -->
       {#if statementGroups.length > 0}
         <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
-          <div class="px-5 py-3 border-b border-[var(--border)] text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          <div
+            class="px-5 py-3 border-b border-[var(--border)] text-xs font-semibold uppercase tracking-wider text-[var(--muted)]"
+          >
             Detailed Account Breakdown by Year
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
-              <thead class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
+              <thead
+                class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50"
+              >
                 <tr>
                   <th class="py-2.5 px-4 font-medium">Account</th>
                   {#each statementYears as yr}
@@ -1117,12 +1166,16 @@
                   {/each}
                 </tr>
                 {#each statementGroups as grp}
-                  <tr class="bg-[var(--surface-elevated)]/60 font-semibold text-xs uppercase tracking-wider text-[var(--muted)]">
+                  <tr
+                    class="bg-[var(--surface-elevated)]/60 font-semibold text-xs uppercase tracking-wider text-[var(--muted)]"
+                  >
                     <td class="py-2 px-4">{grp.label}</td>
                     {#each statementYears as yr}
                       {@const grpSum =
-                        Object.values(yearlyStatements[yr]?.[grp.key] || {}).reduce((a, b) => a + (b || 0), 0) *
-                        grp.multiplier}
+                        Object.values(yearlyStatements[yr]?.[grp.key] || {}).reduce(
+                          (a, b) => a + (b || 0),
+                          0
+                        ) * grp.multiplier}
                       <td
                         class="py-2 px-4 text-right {grpSum > 0
                           ? 'text-[var(--gain)]'
@@ -1138,7 +1191,8 @@
                     <tr class="hover:bg-[var(--surface-elevated)]/40">
                       <td class="py-1.5 px-4 pl-7 text-xs">{acct}</td>
                       {#each statementYears as yr}
-                        {@const val = (yearlyStatements[yr]?.[grp.key]?.[acct] || 0) * grp.multiplier}
+                        {@const val =
+                          (yearlyStatements[yr]?.[grp.key]?.[acct] || 0) * grp.multiplier}
                         <td class="py-1.5 px-4 text-right text-xs text-[var(--muted)]">
                           {Math.abs(val) > 0.01 ? formatMoney(val) : ""}
                         </td>
@@ -1162,9 +1216,12 @@
     {/if}
   {:else if activeTab === "sankey"}
     <div class="space-y-5">
-      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div
+        class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 flex flex-wrap items-center justify-between gap-3 text-xs"
+      >
         <div class="flex items-center gap-3">
-          <span class="font-semibold uppercase tracking-wider text-[var(--muted)]">Flow Filter</span>
+          <span class="font-semibold uppercase tracking-wider text-[var(--muted)]">Flow Filter</span
+          >
           <label class="inline-flex items-center gap-1.5 cursor-pointer">
             <input type="checkbox" bind:checked={sankeyExpenseOnly} />
             Expenses only
@@ -1265,7 +1322,9 @@
       <!-- Chart 1: Monthly Income Timeline -->
       {#if monthlyIncomeBarPoints.length > 0}
         <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted)]">
+          <div
+            class="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted)]"
+          >
             <span class="font-semibold uppercase tracking-wider">Monthly Income Timeline</span>
             <div class="flex items-center gap-4">
               <span class="inline-flex items-center gap-1.5">
@@ -1284,7 +1343,10 @@
 
       <!-- Charts 2, 3, 4: Financial Year Income Timelines -->
       {#if yearlyIncomeCards.length > 0}
-        {@const maxGross = Math.max(1, ...yearlyIncomeCards.map((c) => Math.max(c.gross_income || 0, c.net_tax || 0)))}
+        {@const maxGross = Math.max(
+          1,
+          ...yearlyIncomeCards.map((c) => Math.max(c.gross_income || 0, c.net_tax || 0))
+        )}
         {@const maxNet = Math.max(1, ...yearlyIncomeCards.map((c) => c.net_income || 0))}
         {@const maxTax = Math.max(1, ...yearlyIncomeCards.map((c) => c.net_tax || 0))}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -1414,7 +1476,9 @@
         <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
           Spending by Category ({expenseTrendGranularity === "yearly" ? "Yearly" : "Monthly"} Stacked)
         </span>
-        <div class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5 text-xs">
+        <div
+          class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5 text-xs"
+        >
           <button
             type="button"
             class="px-2.5 py-1 rounded-md cursor-pointer {expenseTrendGranularity === 'monthly'
@@ -1582,15 +1646,25 @@
             <div class="grid grid-cols-6 sm:grid-cols-12 gap-2 items-end h-28 pt-2">
               {#each momMonthlySeries as m}
                 {@const barH = Math.max(4, Math.min(64, (Math.abs(m.deltaPct) / maxAbsPct) * 64))}
-                <div class="flex flex-col items-center justify-end gap-1 h-full" title="{m.label}: {m.deltaPct.toFixed(1)}%">
-                  <span class="text-[10px] tabular-nums {m.deltaPct <= 0 ? 'text-[var(--gain)]' : 'text-[var(--loss)]'}">
+                <div
+                  class="flex flex-col items-center justify-end gap-1 h-full"
+                  title="{m.label}: {m.deltaPct.toFixed(1)}%"
+                >
+                  <span
+                    class="text-[10px] tabular-nums {m.deltaPct <= 0
+                      ? 'text-[var(--gain)]'
+                      : 'text-[var(--loss)]'}"
+                  >
                     {m.deltaPct >= 0 ? "+" : ""}{m.deltaPct.toFixed(0)}%
                   </span>
                   <div
-                    class="w-4 rounded-t {m.deltaPct <= 0 ? 'bg-[var(--gain)]/85' : 'bg-[var(--loss)]/85'}"
+                    class="w-4 rounded-t {m.deltaPct <= 0
+                      ? 'bg-[var(--gain)]/85'
+                      : 'bg-[var(--loss)]/85'}"
                     style="height: {barH}px"
                   ></div>
-                  <span class="text-[10px] text-[var(--muted)] truncate">{m.label.slice(0, 3)}</span>
+                  <span class="text-[10px] text-[var(--muted)] truncate">{m.label.slice(0, 3)}</span
+                  >
                 </div>
               {/each}
             </div>
@@ -1628,7 +1702,8 @@
                       r="3"
                       fill={ys.color}
                     >
-                      <title>{ys.year} {dayjs().month(idx).format("MMM")}: {formatMoney(val)}</title>
+                      <title>{ys.year} {dayjs().month(idx).format("MMM")}: {formatMoney(val)}</title
+                      >
                     </circle>
                   {/each}
                 {/each}
@@ -1656,7 +1731,9 @@
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-xs text-left">
-                <thead class="uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)]">
+                <thead
+                  class="uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)]"
+                >
                   <tr>
                     <th class="py-2 px-3 font-medium">Category</th>
                     <th class="py-2 px-3 text-right font-medium">Prev Month</th>
@@ -1668,9 +1745,15 @@
                   {#each momCategoryVariance as row}
                     <tr>
                       <td class="py-1.5 px-3 font-medium">{row.name}</td>
-                      <td class="py-1.5 px-3 text-right text-[var(--muted)]">{formatMoney(row.prev)}</td>
+                      <td class="py-1.5 px-3 text-right text-[var(--muted)]"
+                        >{formatMoney(row.prev)}</td
+                      >
                       <td class="py-1.5 px-3 text-right font-semibold">{formatMoney(row.cur)}</td>
-                      <td class="py-1.5 px-3 text-right {row.diff <= 0 ? 'text-[var(--gain)]' : 'text-[var(--loss)]'}">
+                      <td
+                        class="py-1.5 px-3 text-right {row.diff <= 0
+                          ? 'text-[var(--gain)]'
+                          : 'text-[var(--loss)]'}"
+                      >
                         {row.diff >= 0 ? "+" : ""}{formatMoney(row.diff)}
                         {#if row.pct !== null}
                           <span class="ml-1">({row.pct >= 0 ? "+" : ""}{row.pct.toFixed(0)}%)</span>
@@ -1695,7 +1778,9 @@
           {:else}
             <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 text-xs tabular-nums">
               {#each dailyExpenses.slice(0, 18) as d}
-                <div class="p-2 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)]">
+                <div
+                  class="p-2 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)]"
+                >
                   <div class="text-[var(--muted)]">{dayjs(d.date).format("DD MMM")}</div>
                   <div class="font-semibold mt-0.5">{formatMoney(Math.abs(d.amount || 0))}</div>
                   {#if d.category}
@@ -1769,7 +1854,9 @@
         <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
           Recurring Bills &amp; Income ({recurringItems.length})
         </span>
-        <div class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface)] p-0.5 text-xs">
+        <div
+          class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface)] p-0.5 text-xs"
+        >
           <button
             type="button"
             class="px-2.5 py-1 rounded-md cursor-pointer {recurringView === 'calendar'
@@ -1792,7 +1879,9 @@
       </div>
 
       {#if recurringItems.length === 0}
-        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center text-sm text-[var(--muted)]">
+        <div
+          class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center text-sm text-[var(--muted)]"
+        >
           No recurring transactions configured.
         </div>
       {:else if recurringView === "calendar"}
@@ -1803,10 +1892,14 @@
                 if (!it.next_date) return false;
                 return dayjs(it.next_date).date() === day;
               })}
-              <div class="min-h-16 p-2 rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/40">
+              <div
+                class="min-h-16 p-2 rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/40"
+              >
                 <div class="font-semibold text-[var(--muted)] tabular-nums">{day}</div>
                 {#each itemsForDay as it}
-                  <div class="mt-1 px-1.5 py-0.5 rounded bg-[var(--accent)]/15 text-[var(--accent)] truncate text-[10px] font-medium">
+                  <div
+                    class="mt-1 px-1.5 py-0.5 rounded bg-[var(--accent)]/15 text-[var(--accent)] truncate text-[10px] font-medium"
+                  >
                     {it.name || it.payee || it.account || "Bill"}
                   </div>
                 {/each}

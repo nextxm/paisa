@@ -1,5 +1,6 @@
 <script lang="ts">
   import dayjs from "dayjs";
+  import { page } from "$app/stores";
   import { onMount } from "svelte";
   import { ChevronDown, ChevronRight, RefreshCw, Search } from "lucide-svelte";
   import LedgerToolsPanels from "$lib/components/LedgerToolsPanels.svelte";
@@ -22,6 +23,12 @@
   }
 
   let activeTab = $state<MarketTab>("prices");
+  $effect(() => {
+    const tab = $page.url.searchParams.get("tab");
+    if (tab === "prices" || tab === "fx") {
+      activeTab = tab;
+    }
+  });
   let search = $state("");
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -73,9 +80,7 @@
       expandedRows = {};
       loadingHistoryRows = {};
       loadedHistoryRows =
-        historyMode === "all"
-          ? Object.fromEntries(Object.keys(next).map((c) => [c, true]))
-          : {};
+        historyMode === "all" ? Object.fromEntries(Object.keys(next).map((c) => [c, true])) : {};
     } catch (e) {
       error = e instanceof Error ? e.message : "Failed to load commodity prices";
     } finally {
@@ -85,9 +90,9 @@
 
   async function loadFiltersAndProviders() {
     const [filtersRes, provRes] = await Promise.all([
-      apiGet<{ bases?: string[]; quotes?: string[]; sources?: string[] }>("/api/price/filters").catch(
-        () => ({ bases: [], quotes: [], sources: [] })
-      ),
+      apiGet<{ bases?: string[]; quotes?: string[]; sources?: string[] }>(
+        "/api/price/filters"
+      ).catch(() => ({ bases: [], quotes: [], sources: [] })),
       apiGet<{ providers?: Array<{ code?: string; label?: string; name?: string }> }>(
         "/api/price/providers"
       ).catch(() => ({ providers: [] }))
@@ -217,10 +222,7 @@
   </div>
 
   <div class="border-b border-[var(--border)] flex items-center gap-6 text-sm overflow-x-auto">
-    {#each [
-      { id: "prices", label: `Commodity Prices (${priceEntries.length})` },
-      { id: "fx", label: "FX Rates" }
-    ] as tab}
+    {#each [{ id: "prices", label: `Commodity Prices (${priceEntries.length})` }, { id: "fx", label: "FX Rates" }] as tab}
       <button
         type="button"
         class="pb-2.5 border-b-2 whitespace-nowrap cursor-pointer {activeTab === tab.id
@@ -238,7 +240,9 @@
   {:else}
     <div class="space-y-4">
       <!-- Filters & Actions -->
-      <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-3.5 flex flex-wrap items-center gap-2 text-xs">
+      <div
+        class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-3.5 flex flex-wrap items-center gap-2 text-xs"
+      >
         <select
           bind:value={filterBase}
           onchange={fetchPrices}
@@ -323,7 +327,10 @@
             <button
               type="button"
               onclick={async () => {
-                const res = await fetch("/api/price/delete", { method: "POST", headers: authHeaders() });
+                const res = await fetch("/api/price/delete", {
+                  method: "POST",
+                  headers: authHeaders()
+                });
                 if (res.ok) await Promise.all([loadFiltersAndProviders(), fetchPrices()]);
               }}
               class="px-2.5 py-1.5 rounded-lg border border-[var(--border)] text-[var(--loss)] hover:bg-[var(--loss)]/10 cursor-pointer"
@@ -338,7 +345,9 @@
         <div class="flex flex-wrap items-center gap-2 text-xs">
           <span class="text-[var(--muted)]">Providers ({providers.length}):</span>
           {#each providers as prov}
-            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--border)]">
+            <span
+              class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--border)]"
+            >
               <span>{prov.label || prov.name || prov.code || "Provider"}</span>
               {#if !runtime.readonly && prov.code}
                 <button
@@ -362,7 +371,9 @@
       {/if}
 
       {#if error}
-        <div class="rounded-xl border border-[var(--loss)]/30 bg-[var(--loss)]/10 p-4 text-xs text-[var(--loss)] flex items-center justify-between gap-2">
+        <div
+          class="rounded-xl border border-[var(--loss)]/30 bg-[var(--loss)]/10 p-4 text-xs text-[var(--loss)] flex items-center justify-between gap-2"
+        >
           <span>{error}</span>
           <button
             type="button"
@@ -378,7 +389,9 @@
       {/if}
 
       {#if loading}
-        <div class="h-64 rounded-xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"></div>
+        <div
+          class="h-64 rounded-xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"
+        ></div>
       {:else}
         <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
           {#if priceEntries.length === 0}
@@ -386,7 +399,9 @@
           {:else}
             <div class="overflow-x-auto">
               <table class="w-full text-xs text-left">
-                <thead class="uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50">
+                <thead
+                  class="uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50"
+                >
                   <tr>
                     <th class="py-2.5 px-3 w-8"></th>
                     <th class="py-2.5 px-3 font-medium">Commodity Name</th>
@@ -432,7 +447,8 @@
                         {latest?.date ? formatShortDate(latest.date) : "—"}
                       </td>
                       <td class="py-2 px-3 font-mono text-[var(--muted)]">{quoteCurr}</td>
-                      <td class="py-2 px-3 text-right font-semibold">{formatPriceNum(unitPrice)}</td>
+                      <td class="py-2 px-3 text-right font-semibold">{formatPriceNum(unitPrice)}</td
+                      >
                       {#each [d1, w1, w4, y1, y3, y5] as pct}
                         <td
                           class="py-2 px-3 text-right {pct === null
@@ -445,12 +461,16 @@
                         </td>
                       {/each}
                       <td class="py-2 px-3 text-[var(--muted)]">{latest?.commodity_type || "—"}</td>
-                      <td class="py-2 px-3 font-mono text-[var(--muted)]">{latest?.commodity_id || "—"}</td>
+                      <td class="py-2 px-3 font-mono text-[var(--muted)]"
+                        >{latest?.commodity_id || "—"}</td
+                      >
                     </tr>
                     {#if expandedRows[commodity]}
                       <tr>
                         <td colspan="13" class="p-0 bg-[var(--surface-elevated)]/30">
-                          <div class="max-h-72 overflow-y-auto divide-y divide-[var(--border)]/50 px-6 py-1">
+                          <div
+                            class="max-h-72 overflow-y-auto divide-y divide-[var(--border)]/50 px-6 py-1"
+                          >
                             {#each rows.slice(0, 200) as h}
                               <div class="py-1 flex items-center justify-between gap-4 text-[11px]">
                                 <span class="text-[var(--muted)] w-28">
@@ -459,8 +479,12 @@
                                 <span class="font-mono text-[var(--muted)] w-16">
                                   {h.quote_commodity || h.quote || ""}
                                 </span>
-                                <span class="text-[var(--muted)] flex-1 truncate">{h.source || ""}</span>
-                                <span class="font-semibold text-right">{formatPriceNum(h.value ?? h.price)}</span>
+                                <span class="text-[var(--muted)] flex-1 truncate"
+                                  >{h.source || ""}</span
+                                >
+                                <span class="font-semibold text-right"
+                                  >{formatPriceNum(h.value ?? h.price)}</span
+                                >
                               </div>
                             {/each}
                             {#if rows.length > 200}

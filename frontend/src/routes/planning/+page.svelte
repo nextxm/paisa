@@ -1,5 +1,6 @@
 <script lang="ts">
   import dayjs from "dayjs";
+  import { page } from "$app/stores";
   import { onMount } from "svelte";
   import { ChevronDown, ChevronUp, Dna, Sparkles } from "lucide-svelte";
   import ProjectionChart, {
@@ -74,6 +75,24 @@
   }
 
   let activeTab = $state<PlanningTab>("projection");
+  $effect(() => {
+    const tab = $page.url.searchParams.get("tab");
+    if (
+      tab === "projection" ||
+      tab === "goals" ||
+      tab === "whatif" ||
+      tab === "drawdown" ||
+      tab === "tax"
+    ) {
+      activeTab = tab;
+    }
+  });
+  $effect(() => {
+    const tab = $page.url.searchParams.get("tab");
+    if (tab === "projection" || tab === "goals" || tab === "whatif" || tab === "drawdown" || tab === "tax") {
+      activeTab = tab;
+    }
+  });
   let mode = $state<ProjectionMode>("simple");
   let activeScenario = $state<ScenarioKey>("expected");
 
@@ -82,7 +101,9 @@
   let dna = $state<FinancialProfile | null>(null);
   let base = $state<BaseProjectionResponse | null>(null);
   let goals = $state<GoalSummary[]>([]);
-  let projectedGoals = $state<Array<{ name?: string; fire_probability?: number; projected_date?: string }>>([]);
+  let projectedGoals = $state<
+    Array<{ name?: string; fire_probability?: number; projected_date?: string }>
+  >([]);
   let selectedGoalDetail = $state<{ name: string; data: Record<string, unknown> } | null>(null);
   let rawConfig = $state<Record<string, unknown> | null>(null);
   let lifeGoals = $state<LifeGoalConfig[]>([]);
@@ -116,7 +137,9 @@
           profile: null
         })),
         apiGet<{ goals?: GoalSummary[] }>("/api/goals").catch(() => ({ goals: [] })),
-        apiGet<{ goals?: typeof projectedGoals }>("/api/projection/goals").catch(() => ({ goals: [] })),
+        apiGet<{ goals?: typeof projectedGoals }>("/api/projection/goals").catch(() => ({
+          goals: []
+        })),
         getFullConfig().catch(() => null)
       ]);
 
@@ -705,20 +728,20 @@
         {:else}
           {#if mode === "simple"}
             <div class="grid grid-cols-3 gap-3 mb-4 text-xs">
-              {#each [
-                { key: "conservative", label: "Conservative", cagr: effectiveConservative, pts: conservativePoints, tone: "text-[var(--warning)]" },
-                { key: "expected", label: "Expected", cagr: effectiveExpected, pts: expectedPoints, tone: "text-[var(--accent)]" },
-                { key: "optimistic", label: "Optimistic", cagr: effectiveOptimistic, pts: optimisticPoints, tone: "text-[var(--gain)]" }
-              ] as sc}
+              {#each [{ key: "conservative", label: "Conservative", cagr: effectiveConservative, pts: conservativePoints, tone: "text-[var(--warning)]" }, { key: "expected", label: "Expected", cagr: effectiveExpected, pts: expectedPoints, tone: "text-[var(--accent)]" }, { key: "optimistic", label: "Optimistic", cagr: effectiveOptimistic, pts: optimisticPoints, tone: "text-[var(--gain)]" }] as sc}
                 {@const finalVal = sc.pts[sc.pts.length - 1]?.balance ?? 0}
-                <div class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/40 px-3 py-2">
+                <div
+                  class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/40 px-3 py-2"
+                >
                   <div class="flex items-center justify-between gap-1">
                     <span class="font-semibold {sc.tone}">{sc.label}</span>
                     <span class="font-mono text-[11px] text-[var(--muted)]">
                       {sc.cagr.toFixed(1)}% {adjustForInflation ? "Real " : ""}CAGR
                     </span>
                   </div>
-                  <div class="text-sm font-semibold tabular-nums mt-0.5">{formatMoney(finalVal)}</div>
+                  <div class="text-sm font-semibold tabular-nums mt-0.5">
+                    {formatMoney(finalVal)}
+                  </div>
                 </div>
               {/each}
             </div>
@@ -746,11 +769,7 @@
             <div
               class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5 text-xs"
             >
-              {#each [
-                { key: "expected", label: "Expected", cagr: effectiveExpected },
-                { key: "conservative", label: "Conservative", cagr: effectiveConservative },
-                { key: "optimistic", label: "Optimistic", cagr: effectiveOptimistic }
-              ] as s}
+              {#each [{ key: "expected", label: "Expected", cagr: effectiveExpected }, { key: "conservative", label: "Conservative", cagr: effectiveConservative }, { key: "optimistic", label: "Optimistic", cagr: effectiveOptimistic }] as s}
                 <button
                   type="button"
                   class="px-2.5 py-1 rounded-md cursor-pointer {activeScenario === s.key
@@ -762,7 +781,9 @@
                 </button>
               {/each}
             </div>
-            <span class="px-2 py-1 rounded-md bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--muted)]">
+            <span
+              class="px-2 py-1 rounded-md bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--muted)]"
+            >
               {(activeScenario === "expected"
                 ? effectiveExpected
                 : activeScenario === "conservative"
@@ -850,7 +871,9 @@
               <h3 class="text-base font-semibold">{g.name}</h3>
               <div class="flex items-center gap-1.5">
                 {#if pg?.fire_probability !== undefined}
-                  <span class="text-[11px] px-2 py-0.5 rounded-full bg-[var(--accent)]/15 text-[var(--accent)] font-medium tabular-nums">
+                  <span
+                    class="text-[11px] px-2 py-0.5 rounded-full bg-[var(--accent)]/15 text-[var(--accent)] font-medium tabular-nums"
+                  >
                     {(pg.fire_probability * 100).toFixed(0)}% prob
                   </span>
                 {/if}
@@ -876,7 +899,9 @@
         {/each}
       </div>
       {#if selectedGoalDetail}
-        <div class="mt-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-2">
+        <div
+          class="mt-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-2"
+        >
           <div class="flex items-center justify-between">
             <h4 class="text-sm font-semibold">Goal Detail: {selectedGoalDetail.name}</h4>
             <button
@@ -887,7 +912,12 @@
               Close
             </button>
           </div>
-          <pre class="text-xs font-mono bg-[var(--surface-elevated)] p-3 rounded-lg overflow-x-auto max-h-60">{JSON.stringify(selectedGoalDetail.data, null, 2)}</pre>
+          <pre
+            class="text-xs font-mono bg-[var(--surface-elevated)] p-3 rounded-lg overflow-x-auto max-h-60">{JSON.stringify(
+              selectedGoalDetail.data,
+              null,
+              2
+            )}</pre>
         </div>
       {/if}
     {/if}
@@ -943,7 +973,9 @@
                   />
                 </div>
                 <div class="sm:col-span-3">
-                  <label class="block text-[var(--muted)] mb-1" for={`lg-date-${idx}`}>Target Date</label>
+                  <label class="block text-[var(--muted)] mb-1" for={`lg-date-${idx}`}
+                    >Target Date</label
+                  >
                   <input
                     id={`lg-date-${idx}`}
                     type="date"
@@ -952,7 +984,9 @@
                   />
                 </div>
                 <div class="sm:col-span-2">
-                  <label class="block text-[var(--muted)] mb-1" for={`lg-amt-${idx}`}>Target Amount</label>
+                  <label class="block text-[var(--muted)] mb-1" for={`lg-amt-${idx}`}
+                    >Target Amount</label
+                  >
                   <input
                     id={`lg-amt-${idx}`}
                     type="number"
@@ -961,7 +995,9 @@
                   />
                 </div>
                 <div class="sm:col-span-2">
-                  <label class="block text-[var(--muted)] mb-1" for={`lg-sip-${idx}`}>Monthly Alloc</label>
+                  <label class="block text-[var(--muted)] mb-1" for={`lg-sip-${idx}`}
+                    >Monthly Alloc</label
+                  >
                   <input
                     id={`lg-sip-${idx}`}
                     type="number"
