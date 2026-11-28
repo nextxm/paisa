@@ -1,11 +1,12 @@
 <script lang="ts">
   import { page } from "$app/stores";
+  import { stripBase } from "$lib/utils";
   import SectionTabs, { type SectionTab } from "$lib/components/SectionTabs.svelte";
   import type { Snippet } from "svelte";
 
   let { children }: { children: Snippet } = $props();
 
-  const pathname = $derived($page.url.pathname);
+  const pathname = $derived(stripBase($page.url.pathname));
   const isTaxRoute = $derived(pathname.startsWith("/planning/tax"));
 
   const tabs: SectionTab[] = [
