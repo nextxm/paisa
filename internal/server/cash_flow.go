@@ -1,9 +1,9 @@
 package server
 
 import (
+	"strings"
 	"time"
 
-	"github.com/ananthakumaran/paisa/internal/accounting"
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/query"
 	"github.com/ananthakumaran/paisa/internal/utils"
@@ -33,60 +33,81 @@ func GetCashFlow(db *gorm.DB) gin.H {
 
 func GetCurrentCashFlow(db *gorm.DB) []CashFlow {
 	checkingAccounts := config.GetConfig().CheckingAccounts
-	balance := accounting.CostSum(query.Init(db).NotInactive().BeforeNMonths(3).AccountPrefix(checkingAccounts...).All())
+	var balance decimal.Decimal
+	if len(checkingAccounts) > 0 {
+		for _, s := range query.Init(db).NotInactive().BeforeNMonths(3).AccountPrefix(checkingAccounts...).GroupSum() {
+			balance = balance.Add(s.Amount)
+		}
+	}
 	return computeCashFlow(query.Init(db).NotInactive().LastNMonths(3), balance)
 }
 
+func isAccountPrefix(account, prefix string) bool {
+	return account == prefix || strings.HasPrefix(account, prefix+":")
+}
+
+func matchesAnyAccountPrefix(account string, prefixes []string) bool {
+	for _, prefix := range prefixes {
+		if isAccountPrefix(account, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 func computeCashFlow(q *query.Query, balance decimal.Decimal) []CashFlow {
-	var cashFlows []CashFlow
-
-	expenses := utils.GroupByMonth(q.Clone().Like("Expenses:%").NotAccountPrefix("Expenses:Tax").All())
-	incomes := utils.GroupByMonth(q.Clone().Like("Income:%").All())
-	liabilities := utils.GroupByMonth(q.Clone().Like("Liabilities:%").All())
-	investments := utils.GroupByMonth(q.Clone().Like("Assets:%").NotAccountPrefix(config.GetConfig().CheckingAccounts...).All())
-	taxes := utils.GroupByMonth(q.Clone().AccountPrefix("Expenses:Tax").All())
-	checkings := utils.GroupByMonth(q.Clone().AccountPrefix(config.GetConfig().CheckingAccounts...).All())
-	postings := q.Clone().All()
-
+	postings := q.All()
 	if len(postings) == 0 {
 		return []CashFlow{}
 	}
 
+	checkingAccounts := config.GetConfig().CheckingAccounts
+	type monthlySums struct {
+		income      decimal.Decimal
+		expenses    decimal.Decimal
+		liabilities decimal.Decimal
+		investment  decimal.Decimal
+		tax         decimal.Decimal
+		checking    decimal.Decimal
+	}
+	byMonth := make(map[string]*monthlySums)
+
+	for _, p := range postings {
+		key := p.Date.Format("2006-01")
+		ms := byMonth[key]
+		if ms == nil {
+			ms = &monthlySums{}
+			byMonth[key] = ms
+		}
+
+		switch {
+		case isAccountPrefix(p.Account, "Expenses:Tax"):
+			ms.tax = ms.tax.Add(p.Amount)
+		case strings.HasPrefix(p.Account, "Expenses:"):
+			ms.expenses = ms.expenses.Add(p.Amount)
+		case strings.HasPrefix(p.Account, "Income:"):
+			ms.income = ms.income.Add(p.Amount)
+		case strings.HasPrefix(p.Account, "Liabilities:"):
+			ms.liabilities = ms.liabilities.Add(p.Amount)
+		case len(checkingAccounts) > 0 && matchesAnyAccountPrefix(p.Account, checkingAccounts):
+			ms.checking = ms.checking.Add(p.Amount)
+		case strings.HasPrefix(p.Account, "Assets:"):
+			ms.investment = ms.investment.Add(p.Amount)
+		}
+	}
+
+	var cashFlows []CashFlow
 	end := utils.MaxTime(utils.EndOfToday(), postings[len(postings)-1].Date)
 	for start := utils.BeginningOfMonth(postings[0].Date); start.Before(end); start = start.AddDate(0, 1, 0) {
 		cashFlow := CashFlow{Date: start}
-
-		key := start.Format("2006-01")
-		ps, ok := expenses[key]
-		if ok {
-			cashFlow.Expenses = accounting.CostSum(ps)
+		if ms, ok := byMonth[start.Format("2006-01")]; ok {
+			cashFlow.Expenses = ms.expenses
+			cashFlow.Income = ms.income.Neg()
+			cashFlow.Liabilities = ms.liabilities.Neg()
+			cashFlow.Investment = ms.investment
+			cashFlow.Tax = ms.tax
+			cashFlow.Checking = ms.checking
 		}
-
-		ps, ok = incomes[key]
-		if ok {
-			cashFlow.Income = accounting.CostSum(ps).Neg()
-		}
-
-		ps, ok = liabilities[key]
-		if ok {
-			cashFlow.Liabilities = accounting.CostSum(ps).Neg()
-		}
-
-		ps, ok = investments[key]
-		if ok {
-			cashFlow.Investment = accounting.CostSum(ps)
-		}
-
-		ps, ok = taxes[key]
-		if ok {
-			cashFlow.Tax = accounting.CostSum(ps)
-		}
-
-		ps, ok = checkings[key]
-		if ok {
-			cashFlow.Checking = accounting.CostSum(ps)
-		}
-
 		balance = balance.Add(cashFlow.Checking)
 		cashFlow.Balance = balance
 
