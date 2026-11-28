@@ -38,7 +38,13 @@
 
   let rulesOpen = $state(false);
   let rules = $state<
-    Array<{ id: string; name?: string; match_payee?: string; target_account?: string; enabled?: boolean }>
+    Array<{
+      id: string;
+      name?: string;
+      match_payee?: string;
+      target_account?: string;
+      enabled?: boolean;
+    }>
   >([]);
   let newRuleName = $state("");
   let newRulePayee = $state("");
@@ -55,6 +61,14 @@
     try {
       const res = await apiGet<{ transactions?: Transaction[] }>("/api/transaction");
       transactions = res.transactions || [];
+      if (!fromDate && !toDate && transactions.length > 0) {
+        const newest = (transactions[0]?.date || "").slice(0, 10);
+        const oldestShown = (
+          transactions[Math.min(transactions.length, 250) - 1]?.date || ""
+        ).slice(0, 10);
+        if (oldestShown) fromDate = oldestShown;
+        if (newest) toDate = newest;
+      }
     } catch (e) {
       error = e instanceof Error ? e.message : "Failed to load transactions";
     } finally {
@@ -70,6 +84,16 @@
     void loadTransactions();
   });
 
+  const allAccounts = $derived.by(() => {
+    const set = new Set<string>(runtime.accounts || []);
+    for (const tx of transactions) {
+      for (const p of tx.postings || []) {
+        if (p.account) set.add(p.account);
+      }
+    }
+    return Array.from(set).sort();
+  });
+
   const allTags = $derived.by(() => {
     const set = new Set<string>();
     for (const tx of transactions) {
@@ -81,8 +105,9 @@
   const filtered = $derived.by(() => {
     const q = query.trim().toLowerCase();
     return transactions.filter((tx) => {
-      if (fromDate && tx.date < fromDate) return false;
-      if (toDate && tx.date > toDate) return false;
+      const txDate = (tx.date || "").slice(0, 10);
+      if (fromDate && txDate < fromDate) return false;
+      if (toDate && txDate > toDate) return false;
       if (accountFilter && !tx.postings.some((p) => p.account === accountFilter)) return false;
       if (tagFilter && !(tx.tags || []).includes(tagFilter)) return false;
       if (!q) return true;
@@ -204,11 +229,20 @@
     <div>
       <h1 class="text-xl font-semibold tracking-tight">Transactions &amp; Postings</h1>
       <p class="text-xs text-[var(--muted)] mt-0.5 tabular-nums">
-        {filtered.length.toLocaleString()} matching transactions
+        {#if viewMode === "postings"}
+          Showing {visiblePostings.length.toLocaleString()} postings across {filtered.length.toLocaleString()}
+          matching transactions
+        {:else if filtered.length > visible.length}
+          Showing {visible.length.toLocaleString()} of {filtered.length.toLocaleString()} matching transactions
+        {:else}
+          {filtered.length.toLocaleString()} matching transactions
+        {/if}
       </p>
     </div>
 
-    <div class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface)] p-0.5 text-xs">
+    <div
+      class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface)] p-0.5 text-xs"
+    >
       <button
         type="button"
         onclick={() => (viewMode = "transactions")}
@@ -246,7 +280,9 @@
         onclick={async () => {
           rulesOpen = !rulesOpen;
           if (rulesOpen && rules.length === 0) {
-            const r = await apiGet<{ rules?: typeof rules }>("/api/rules").catch(() => ({ rules: [] }));
+            const r = await apiGet<{ rules?: typeof rules }>("/api/rules").catch(() => ({
+              rules: []
+            }));
             rules = r.rules || [];
           }
         }}
@@ -258,7 +294,9 @@
         type="button"
         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--surface-elevated)] cursor-pointer"
         onclick={async () => {
-          const res = await apiGet<{ balancedPostings?: unknown[] }>("/api/transaction/balanced").catch(() => null);
+          const res = await apiGet<{ balancedPostings?: unknown[] }>(
+            "/api/transaction/balanced"
+          ).catch(() => null);
           if (!res) return;
           const blob = new Blob([JSON.stringify(res.balancedPostings || [], null, 2)], {
             type: "application/json"
@@ -414,7 +452,9 @@
   {/if}
 
   <!-- Filter Bar -->
-  <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-3 flex flex-wrap items-center gap-2.5">
+  <div
+    class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-3 flex flex-wrap items-center gap-2.5"
+  >
     <div class="relative flex-1 min-w-48">
       <Search class="w-4 h-4 text-[var(--muted)] absolute left-3 top-1/2 -translate-y-1/2" />
       <input
@@ -443,7 +483,7 @@
       class="px-2.5 py-1.5 rounded-lg text-xs bg-[var(--surface-elevated)] border border-[var(--border)] outline-none max-w-48"
     >
       <option value="">All accounts</option>
-      {#each runtime.accounts as acc}
+      {#each allAccounts as acc}
         <option value={acc}>{acc}</option>
       {/each}
     </select>
@@ -489,8 +529,14 @@
   {#if savedSearches.length > 0}
     <div class="flex flex-wrap items-center gap-1.5 text-xs">
       {#each savedSearches as s}
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--surface)] border border-[var(--border)]">
-          <button type="button" class="cursor-pointer hover:text-[var(--accent)]" onclick={() => applySavedSearch(s)}>
+        <span
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--surface)] border border-[var(--border)]"
+        >
+          <button
+            type="button"
+            class="cursor-pointer hover:text-[var(--accent)]"
+            onclick={() => applySavedSearch(s)}
+          >
             {s.name}
           </button>
           <button
@@ -527,7 +573,8 @@
               <th class="py-2.5 px-4 font-medium">Account</th>
               <th class="py-2.5 px-4 font-medium">Payee / Narration</th>
               <th class="py-2.5 px-4 text-right font-medium">Original / FX</th>
-              <th class="py-2.5 px-4 text-right font-medium">Default ({runtime.defaultCurrency})</th>
+              <th class="py-2.5 px-4 text-right font-medium">Default ({runtime.defaultCurrency})</th
+              >
             </tr>
           </thead>
           <tbody class="divide-y divide-[var(--border)] tabular-nums">
@@ -565,7 +612,8 @@
                   {/if}
                 </td>
                 <td
-                  class="py-2 px-4 text-right text-xs font-semibold whitespace-nowrap {(p.amount || 0) < 0
+                  class="py-2 px-4 text-right text-xs font-semibold whitespace-nowrap {(p.amount ||
+                    0) < 0
                     ? 'text-[var(--loss)]'
                     : 'text-[var(--gain)]'}"
                 >
@@ -589,7 +637,8 @@
               <th class="py-2.5 px-4 font-medium">Payee / Narration</th>
               <th class="py-2.5 px-4 font-medium">Postings (Debit / Credit)</th>
               <th class="py-2.5 px-4 text-right font-medium">Original / FX</th>
-              <th class="py-2.5 px-4 text-right font-medium">Default ({runtime.defaultCurrency})</th>
+              <th class="py-2.5 px-4 text-right font-medium">Default ({runtime.defaultCurrency})</th
+              >
             </tr>
           </thead>
           <tbody class="divide-y divide-[var(--border)] tabular-nums">
@@ -604,7 +653,9 @@
                 <td class="py-2.5 px-4 font-medium max-w-xs">
                   <div class="truncate">{tx.payee || "—"}</div>
                   {#if tx.narration}
-                    <div class="text-xs font-normal text-[var(--muted)] truncate">{tx.narration}</div>
+                    <div class="text-xs font-normal text-[var(--muted)] truncate">
+                      {tx.narration}
+                    </div>
                   {/if}
                 </td>
                 <td class="py-2.5 px-4 text-xs space-y-1">

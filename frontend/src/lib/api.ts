@@ -158,6 +158,25 @@ export async function loadRuntimeConfig(): Promise<RuntimeState> {
       runtime.readonly = Boolean(data.config?.readonly);
       runtime.accounts = data.accounts || [];
       runtime.loaded = true;
+    } else {
+      const fallback = await fetch("/api/config", {
+        headers: { Accept: "application/json", ...authHeaders() }
+      });
+      if (fallback.ok) {
+        const data = (await fallback.json()) as {
+          config?: { default_currency?: string; locale?: string; readonly?: boolean };
+          accounts?: string[];
+        };
+        if (data.config?.default_currency) {
+          runtime.defaultCurrency = data.config.default_currency;
+        }
+        if (data.config?.locale) {
+          runtime.locale = data.config.locale;
+        }
+        runtime.readonly = Boolean(data.config?.readonly);
+        runtime.accounts = data.accounts || [];
+        runtime.loaded = true;
+      }
     }
   } catch {
     // Keep defaults if backend config endpoint is unavailable
