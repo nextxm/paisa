@@ -638,3 +638,11 @@ func TestRegistry_ClearOldJobs(t *testing.T) {
 	_, ok := restarted.Get(id)
 	assert.False(t, ok, "Completed job older than 24 hours should be auto-cleared on startup")
 }
+
+func TestRegistry_UninitializedGormDBDoesNotPanic(t *testing.T) {
+	// desktop/main.go passes &app.db (zero-value gorm.DB{}) before OnStartup opens SQLite.
+	var uninitializedDB gorm.DB
+	r := worker.NewRegistry(&uninitializedDB)
+	require.NoError(t, r.RecoverInterrupted(context.Background()))
+	r.ClearTerminal()
+}

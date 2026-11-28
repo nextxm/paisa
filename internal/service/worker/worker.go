@@ -106,6 +106,10 @@ type Registry struct {
 	db          *gorm.DB
 }
 
+func isInitializedDB(db *gorm.DB) bool {
+	return db != nil && db.Config != nil
+}
+
 // NewRegistry creates and returns an initialised Registry.
 //
 // When db is provided, job state is persisted in SQLite and any previously
@@ -123,13 +127,18 @@ func NewRegistry(db ...*gorm.DB) *Registry {
 		db:          gormDB,
 	}
 	if gormDB != nil {
-		r.loadPersistedJobs()
+		if isInitializedDB(gormDB) {
+			r.loadPersistedJobs()
+		}
 		go r.periodicCleanup(24 * time.Hour)
 	}
 	return r
 }
 
 func (r *Registry) loadPersistedJobs() {
+	if !isInitializedDB(r.db) {
+		return
+	}
 	r.clearOldJobs(24 * time.Hour)
 
 	var rows []modeljob.Job
@@ -158,7 +167,7 @@ func (r *Registry) clearOldJobs(maxAge time.Duration) {
 	defer r.mu.Unlock()
 
 	cutoff := time.Now().Add(-maxAge)
-	if r.db != nil {
+	if isInitializedDB(r.db) {
 		if err := r.db.Where("(status = ? OR status = ?) AND created_at < ?", string(StatusCompleted), string(StatusFailed), cutoff).Delete(&modeljob.Job{}).Error; err != nil {
 			log.WithError(err).Warn("worker: failed to clear old terminal jobs from database")
 		}
@@ -180,7 +189,7 @@ func (r *Registry) RegisterRecoverable(jobType string, fn RecoverableJobFn) {
 
 // RecoverInterrupted re-queues persisted pending/running jobs.
 func (r *Registry) RecoverInterrupted(ctx context.Context) error {
-	if r.db == nil {
+	if !isInitializedDB(r.db) {
 		return nil
 	}
 
@@ -405,7 +414,7 @@ func (r *Registry) ClearTerminal() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.db != nil {
+	if isInitializedDB(r.db) {
 		if err := r.db.Where("status = ? OR status = ?", string(StatusCompleted), string(StatusFailed)).Delete(&modeljob.Job{}).Error; err != nil {
 			log.WithError(err).Warn("worker: failed to delete terminal jobs from database")
 			return err
@@ -444,7 +453,7 @@ func (r *Registry) Subscribe() (<-chan Job, func()) {
 }
 
 func (r *Registry) saveLocked(job *Job) error {
-	if r.db == nil {
+	if !isInitializedDB(r.db) {
 		return nil
 	}
 	if err := r.db.Save(toModelJob(*job)).Error; err != nil {
