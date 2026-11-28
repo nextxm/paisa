@@ -135,15 +135,18 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		isJournalDirty := isJournalDirty(requestDB)
 
 		telemetry.writeHeaders(c)
-		c.JSON(200, gin.H{
+		resp := gin.H{
 			"config":            config.GetConfig(),
 			"accounts":          accounting.AllAccounts(requestDB),
 			"now":               now,
 			"schema":            config.GetSchema(),
 			"last_price_update": lastPriceUpdate,
 			"is_journal_dirty":  isJournalDirty,
-			"deprecated_keys":   config.GetDeprecatedConfigKeys(),
-		})
+		}
+		if deprecatedKeys := config.GetDeprecatedConfigKeys(); len(deprecatedKeys) > 0 {
+			resp["deprecated_keys"] = deprecatedKeys
+		}
+		c.JSON(200, resp)
 	})
 
 	writeGroup.POST("/api/config", func(c *gin.Context) {
