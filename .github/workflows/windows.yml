@@ -61,7 +61,7 @@ jobs:
         cp paisa.exe paisa-cli-windows-amd64.exe
         $env:PATH += ";C:\Program Files (x86)\NSIS\Bin"
         cd desktop
-        go install github.com/wailsapp/wails/v2/cmd/wails@v2.6.0
+        go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.1
         wails build -tags webkit2_40 -nsis -webview2 embed
         cd ..
         cp .\desktop\build\bin\paisa-amd64-installer.exe paisa-app-windows-amd64.exe

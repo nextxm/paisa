@@ -32,7 +32,7 @@ jobs:
         nix-build ledger.nix
         cp ./result/bin/ledger internal/binary/ledger
         cd desktop
-        go install github.com/wailsapp/wails/v2/cmd/wails@v2.6.0
+        go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.1
         wails doctor
         wails build -tags webkit2_40
         cp build/bin/Paisa build/linux/usr/local/bin
