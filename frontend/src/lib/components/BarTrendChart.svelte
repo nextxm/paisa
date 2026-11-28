@@ -11,7 +11,10 @@
     balance: number;
   }
 
-  let { data }: { data: MonthlyBarPoint[] } = $props();
+  let {
+    data,
+    granularity = "monthly"
+  }: { data: MonthlyBarPoint[]; granularity?: "monthly" | "yearly" } = $props();
 
   let container = $state<HTMLDivElement | null>(null);
   let width = $state(640);
@@ -157,7 +160,9 @@
                 font-size="11"
                 fill="var(--muted)"
               >
-                {dayjs(d.date).format("MMM 'YY")}
+                {granularity === "yearly"
+                  ? dayjs(d.date).format("YYYY")
+                  : dayjs(d.date).format("MMM 'YY")}
               </text>
             {/if}
           </g>
@@ -170,7 +175,11 @@
       <div
         class="mt-2 px-3 py-2 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] flex flex-wrap items-center justify-between gap-4 text-xs tabular-nums"
       >
-        <span class="font-semibold">{dayjs(item.date).format("MMMM YYYY")}</span>
+        <span class="font-semibold">
+          {granularity === "yearly"
+            ? dayjs(item.date).format("YYYY")
+            : dayjs(item.date).format("MMMM YYYY")}
+        </span>
         <div class="flex flex-wrap items-center gap-4">
           <span class="text-[var(--gain)]">Income: {formatMoney(item.income)}</span>
           <span class="text-[var(--loss)]">Expenses: {formatMoney(item.expenses)}</span>

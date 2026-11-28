@@ -874,7 +874,7 @@
           </span>
         </div>
       </div>
-      <BarTrendChart data={chartPoints} />
+      <BarTrendChart data={chartPoints} granularity={cfGranularity} />
     </div>
 
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
@@ -1053,37 +1053,41 @@
         </div>
       </div>
 
-      <!-- Waterfall Bridge Graph -->
+      <!-- Waterfall Bridge Graph (Horizontal) -->
       {#if statementWaterfall.length > 0}
         {@const wfMin = Math.min(0, ...statementWaterfall.flatMap((s) => [s.start, s.end]))}
         {@const wfMax = Math.max(1, ...statementWaterfall.flatMap((s) => [s.start, s.end]))}
         {@const wfSpan = Math.max(1, wfMax - wfMin)}
         {@const wfW = 760}
-        {@const wfH = 220}
-        {@const padT = 22}
-        {@const padB = 28}
-        {@const plotH = wfH - padT - padB}
-        {@const yAt = (v: number) => padT + ((wfMax - v) / wfSpan) * plotH}
-        {@const slotW = wfW / statementWaterfall.length}
+        {@const rowH = 34}
+        {@const barH = 20}
+        {@const padT = 8}
+        {@const padB = 8}
+        {@const padL = 136}
+        {@const padR = 120}
+        {@const wfH = statementWaterfall.length * rowH + padT + padB}
+        {@const plotW = wfW - padL - padR}
+        {@const xAt = (v: number) => padL + ((v - wfMin) / wfSpan) * plotW}
         <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
           <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
             Net Worth Bridge ({selectedYear})
           </div>
           <div class="overflow-x-auto">
-            <svg viewBox="0 0 {wfW} {wfH}" class="w-full min-w-[560px] h-56 overflow-visible">
+            <svg viewBox="0 0 {wfW} {wfH}" class="w-full min-w-[520px] h-auto overflow-visible">
               <line
-                x1="0"
-                x2={wfW}
-                y1={yAt(0)}
-                y2={yAt(0)}
+                x1={xAt(0)}
+                x2={xAt(0)}
+                y1={padT}
+                y2={wfH - padB}
                 stroke="var(--border)"
                 stroke-dasharray="3 3"
               />
               {#each statementWaterfall as step, idx}
-                {@const barW = Math.min(54, slotW * 0.56)}
-                {@const x = idx * slotW + (slotW - barW) / 2}
-                {@const y1 = yAt(Math.max(step.start, step.end))}
-                {@const y2 = yAt(Math.min(step.start, step.end))}
+                {@const xStart = xAt(step.start)}
+                {@const xEnd = xAt(step.end)}
+                {@const x1 = Math.min(xStart, xEnd)}
+                {@const x2 = Math.max(xStart, xEnd)}
+                {@const y = padT + idx * rowH + (rowH - barH) / 2}
                 {@const fill =
                   step.kind === "total"
                     ? "var(--accent)"
@@ -1091,44 +1095,45 @@
                       ? "var(--gain)"
                       : "var(--loss)"}
                 {#if idx < statementWaterfall.length - 1}
+                  {@const nextY = padT + (idx + 1) * rowH + (rowH - barH) / 2}
                   <line
-                    x1={x + barW}
-                    x2={(idx + 1) * slotW + (slotW - barW) / 2}
-                    y1={yAt(step.end)}
-                    y2={yAt(step.end)}
+                    x1={xEnd}
+                    x2={xEnd}
+                    y1={y + barH}
+                    y2={nextY}
                     stroke="var(--border)"
                     stroke-dasharray="3 3"
                   />
                 {/if}
+                <text
+                  x={padL - 12}
+                  y={y + barH / 2 + 4}
+                  text-anchor="end"
+                  font-size="11"
+                  fill="var(--muted)"
+                >
+                  {step.label}
+                </text>
                 <rect
-                  {x}
-                  y={y1}
-                  width={barW}
-                  height={Math.max(2, y2 - y1)}
+                  x={x1}
+                  {y}
+                  width={Math.max(3, x2 - x1)}
+                  height={barH}
                   {fill}
                   rx="4"
                   opacity="0.9"
                 />
                 <text
-                  x={x + barW / 2}
-                  y={y1 - 6}
-                  text-anchor="middle"
-                  font-size="10"
+                  x={Math.max(x1 + 3, x2) + 8}
+                  y={y + barH / 2 + 3.5}
+                  text-anchor="start"
+                  font-size="10.5"
                   fill="var(--muted)"
                   class="tabular-nums"
                 >
                   {step.kind === "total"
                     ? formatMoney(step.end)
                     : `${step.delta >= 0 ? "+" : ""}${formatMoney(step.delta)}`}
-                </text>
-                <text
-                  x={x + barW / 2}
-                  y={wfH - 8}
-                  text-anchor="middle"
-                  font-size="11"
-                  fill="var(--muted)"
-                >
-                  {step.label}
                 </text>
               {/each}
             </svg>
