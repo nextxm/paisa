@@ -224,8 +224,7 @@
     }
     return Array.from(byCategory.entries())
       .map(([name, amount]) => ({ name, amount }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 4);
+      .sort((a, b) => b.amount - a.amount);
   });
 </script>
 
@@ -601,7 +600,7 @@
             {#if topCategories.length === 0}
               <p class="text-sm text-[var(--muted)]">No expenses recorded this month.</p>
             {:else}
-              <div class="space-y-2.5">
+              <div class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
                 {#each topCategories as cat}
                   {@const pct =
                     totalExpenses > 0 ? Math.min(100, (cat.amount / totalExpenses) * 100) : 0}
