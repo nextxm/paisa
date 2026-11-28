@@ -37,6 +37,7 @@
     toggleTheme,
     triggerSync
   } from "$lib/api";
+  import { buildCommandPaletteTargets, nextCommandIndex } from "$lib/command_palette";
   import { onMount, tick, type Snippet } from "svelte";
 
   let { children }: { children: Snippet } = $props();
@@ -44,7 +45,9 @@
   let sidebarCollapsed = $state(false);
   let cmdOpen = $state(false);
   let cmdQuery = $state("");
+  let cmdSelectedIndex = $state(0);
   let cmdInput = $state<HTMLInputElement | null>(null);
+  let cmdListEl = $state<HTMLDivElement | null>(null);
   let quickAddOpen = $state(false);
   let theme = $state<"light" | "dark">("light");
   let obscure = $state(false);
@@ -269,6 +272,21 @@
           .slice(0, 8)
       : []
   );
+  const cmdTargets = $derived(
+    buildCommandPaletteTargets(filteredCommands, filteredTabs, filteredAccounts)
+  );
+
+  $effect(() => {
+    cmdQuery;
+    cmdSelectedIndex = 0;
+  });
+
+  function scrollSelectedCommandIntoView() {
+    void tick().then(() => {
+      const el = cmdListEl?.querySelector<HTMLElement>(`[data-cmd-index="${cmdSelectedIndex}"]`);
+      el?.scrollIntoView({ block: "nearest" });
+    });
+  }
 
   onMount(() => {
     theme = getTheme();
@@ -308,6 +326,7 @@
   function openCommandPalette() {
     cmdOpen = true;
     cmdQuery = "";
+    cmdSelectedIndex = 0;
     void tick().then(() => cmdInput?.focus());
   }
 
@@ -673,15 +692,17 @@
           placeholder="Jump to page, tab, or account…"
           class="w-full bg-transparent text-sm outline-none placeholder:text-[var(--muted)]"
           onkeydown={(e) => {
-            if (e.key === "Enter") {
+            if (e.key === "ArrowDown") {
               e.preventDefault();
-              const target =
-                (cmdQuery.trim() && filteredTabs.length > 0 && filteredCommands.length === 0
-                  ? filteredTabs[0].href
-                  : (filteredCommands[0]?.href ?? filteredTabs[0]?.href)) ??
-                (filteredAccounts[0]
-                  ? `/accounts/${encodeURIComponent(filteredAccounts[0])}`
-                  : null);
+              cmdSelectedIndex = nextCommandIndex(cmdSelectedIndex, cmdTargets.length, 1);
+              scrollSelectedCommandIntoView();
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              cmdSelectedIndex = nextCommandIndex(cmdSelectedIndex, cmdTargets.length, -1);
+              scrollSelectedCommandIntoView();
+            } else if (e.key === "Enter") {
+              e.preventDefault();
+              const target = cmdTargets[cmdSelectedIndex] ?? cmdTargets[0];
               if (target) {
                 cmdOpen = false;
                 goto(appPath(target));
@@ -690,18 +711,28 @@
           }}
         />
       </div>
-      <div class="p-1.5 max-h-80 overflow-y-auto">
+      <div bind:this={cmdListEl} class="p-1.5 max-h-80 overflow-y-auto" role="listbox">
+        {#if cmdTargets.length === 0}
+          <div class="px-3 py-6 text-center text-xs text-[var(--muted)]">No matching results</div>
+        {/if}
         {#if filteredCommands.length > 0}
           <div
             class="px-3 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]"
           >
             Pages
           </div>
-          {#each filteredCommands as item}
+          {#each filteredCommands as item, idx}
             {@const Icon = item.icon}
+            {@const selected = cmdSelectedIndex === idx}
             <button
               type="button"
-              class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-left hover:bg-[var(--surface-elevated)] cursor-pointer"
+              role="option"
+              aria-selected={selected}
+              data-cmd-index={idx}
+              class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-left cursor-pointer {selected
+                ? 'bg-[var(--surface-elevated)]'
+                : 'hover:bg-[var(--surface-elevated)]'}"
+              onmouseenter={() => (cmdSelectedIndex = idx)}
               onclick={() => {
                 cmdOpen = false;
                 goto(appPath(item.href));
@@ -718,11 +749,19 @@
           >
             Tabs
           </div>
-          {#each filteredTabs as item}
+          {#each filteredTabs as item, i}
             {@const Icon = item.icon}
+            {@const idx = filteredCommands.length + i}
+            {@const selected = cmdSelectedIndex === idx}
             <button
               type="button"
-              class="w-full flex items-center justify-between gap-3 px-3 py-1.5 rounded-lg text-sm text-left hover:bg-[var(--surface-elevated)] cursor-pointer"
+              role="option"
+              aria-selected={selected}
+              data-cmd-index={idx}
+              class="w-full flex items-center justify-between gap-3 px-3 py-1.5 rounded-lg text-sm text-left cursor-pointer {selected
+                ? 'bg-[var(--surface-elevated)]'
+                : 'hover:bg-[var(--surface-elevated)]'}"
+              onmouseenter={() => (cmdSelectedIndex = idx)}
               onclick={() => {
                 cmdOpen = false;
                 goto(appPath(item.href));
@@ -744,10 +783,18 @@
           >
             Accounts
           </div>
-          {#each filteredAccounts as acc}
+          {#each filteredAccounts as acc, i}
+            {@const idx = filteredCommands.length + filteredTabs.length + i}
+            {@const selected = cmdSelectedIndex === idx}
             <button
               type="button"
-              class="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-xs text-left hover:bg-[var(--surface-elevated)] cursor-pointer truncate"
+              role="option"
+              aria-selected={selected}
+              data-cmd-index={idx}
+              class="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-xs text-left cursor-pointer truncate {selected
+                ? 'bg-[var(--surface-elevated)]'
+                : 'hover:bg-[var(--surface-elevated)]'}"
+              onmouseenter={() => (cmdSelectedIndex = idx)}
               onclick={() => {
                 cmdOpen = false;
                 goto(appPath(`/accounts/${encodeURIComponent(acc)}`));
