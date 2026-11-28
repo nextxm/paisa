@@ -4,6 +4,10 @@
     "Assets:Equity:AAPL",
     "Income:Salary:Acme"
   ],
+  "commodities": [
+    "AAPL",
+    "EUR"
+  ],
   "config": {
     "journal_path": "main.ledger",
     "add_journal_path": "",

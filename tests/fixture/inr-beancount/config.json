@@ -13,6 +13,14 @@
     "Income:Interest:Checking",
     "Income:Salary:Acme"
   ],
+  "commodities": [
+    "AAPL",
+    "ABNB",
+    "BTC",
+    "INR",
+    "NIFTY",
+    "USD"
+  ],
   "config": {
     "journal_path": "main.beancount",
     "add_journal_path": "",

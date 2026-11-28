@@ -11,6 +11,13 @@
     "Income:Interest:Checking",
     "Income:Salary:Acme"
   ],
+  "commodities": [
+    "AAPL",
+    "ABNB",
+    "INR",
+    "NIFTY",
+    "USD"
+  ],
   "config": {
     "journal_path": "main.ledger",
     "add_journal_path": "",

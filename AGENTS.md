@@ -10,7 +10,7 @@ Start with [.github/copilot-instructions.md](.github/copilot-instructions.md) fo
 - **Always run formatting and lint checks on all changed files before completing any task**:
   - **Go**: Always run `gofmt -w <file>` on touched `.go` files and verify with `gofmt -l .`.
   - **Frontend**: Always run `npx prettier --write <file>` on touched `src/**` files and verify with `npm run check`.
-- **Offer to commit changes at the completion of each task** after all verification checks pass.
+- **Automatically commit changes at the completion of each task** (without asking) after all verification checks pass.
 - Escalate to broader validation (`make lint`, `go test ./...`, regression tests) when the change spans multiple subsystems or the narrow check is insufficient.
 - If repo-wide lint or formatting fails because of pre-existing unrelated issues, report that clearly and still ensure touched files pass scoped checks.
 
