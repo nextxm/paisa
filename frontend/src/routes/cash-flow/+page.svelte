@@ -39,6 +39,7 @@
     liabilities?: Record<string, number>;
     expenses?: Record<string, number>;
     tax?: Record<string, number>;
+    reconciliation?: Record<string, number>;
   }
 
   interface SankeyLink {
@@ -681,13 +682,17 @@
     const endBal = currentStatement.endingBalance ?? running;
     const residual = endBal - running;
     if (Math.abs(residual) >= 1) {
+      const recBreakdown = Object.entries(currentStatement.reconciliation || {})
+        .map(([account, amount]) => ({ account, amount: amount || 0 }))
+        .filter((item) => Math.abs(item.amount) >= 0.01)
+        .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
       steps.push({
         label: "Other / FX",
         start: running,
         end: endBal,
         delta: residual,
         kind: residual >= 0 ? "pos" : "neg",
-        breakdown: [],
+        breakdown: recBreakdown,
         note: "Unattributed difference from FX conversion timing, market valuation gaps, or rounding."
       });
     }

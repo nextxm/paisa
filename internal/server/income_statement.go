@@ -26,6 +26,7 @@ type IncomeStatement struct {
 	Liabilities     map[string]decimal.Decimal `json:"liabilities"`
 	Tax             map[string]decimal.Decimal `json:"tax"`
 	Expenses        map[string]decimal.Decimal `json:"expenses"`
+	Reconciliation  map[string]decimal.Decimal `json:"reconciliation,omitempty"`
 }
 
 func GetIncomeStatement(db *gorm.DB) gin.H {
@@ -234,13 +235,79 @@ func computeStatement(db *gorm.DB, postings []posting.Posting) map[string]Income
 		}
 
 		// Strip zero-value entries (cosmetic clean-up).
-		sumBalance(incomeStatement.Income)
-		sumBalance(incomeStatement.Interest)
-		sumBalance(incomeStatement.Equity)
-		sumBalance(incomeStatement.Pnl)
+		incomeTotal := sumBalance(incomeStatement.Income)
+		interestTotal := sumBalance(incomeStatement.Interest)
+		equityTotal := sumBalance(incomeStatement.Equity)
+		pnlTotal := sumBalance(incomeStatement.Pnl)
 		sumBalance(incomeStatement.Liabilities)
-		sumBalance(incomeStatement.Tax)
-		sumBalance(incomeStatement.Expenses)
+		taxTotal := sumBalance(incomeStatement.Tax)
+		expensesTotal := sumBalance(incomeStatement.Expenses)
+
+		actualDelta := incomeStatement.EndingBalance.Sub(incomeStatement.StartingBalance)
+		explainedDelta := pnlTotal.
+			Sub(incomeTotal).
+			Sub(interestTotal).
+			Sub(equityTotal).
+			Sub(taxTotal).
+			Sub(expensesTotal)
+		residual := actualDelta.Sub(explainedDelta)
+		if residual.Abs().GreaterThanOrEqual(decimal.NewFromInt(1)) {
+			rec := make(map[string]decimal.Decimal)
+			addFXTiming := func(prefix string, cat categoryQuantities, postingsInFY []posting.Posting, matchFn func(posting.Posting) bool) {
+				txnAmounts := make(map[string]decimal.Decimal)
+				for _, p := range postingsInFY {
+					if p.Date.After(endOfWindow) || p.Commodity == config.DefaultCurrency() || !matchFn(p) {
+						continue
+					}
+					txnAmounts[p.Account] = txnAmounts[p.Account].Add(p.Amount)
+				}
+				for account, commodities := range cat {
+					nonDefEnd := decimal.Zero
+					hasNonDefault := false
+					for commodity, qty := range commodities {
+						if commodity != config.DefaultCurrency() {
+							hasNonDefault = true
+							nonDefEnd = nonDefEnd.Add(service.GetPrice(db, commodity, qty, end))
+						}
+					}
+					if !hasNonDefault {
+						continue
+					}
+					diff := nonDefEnd.Sub(txnAmounts[account])
+					if diff.Abs().GreaterThanOrEqual(decimal.NewFromInt(1)) {
+						rec[prefix+": "+account] = diff
+					}
+				}
+			}
+
+			addFXTiming("FX Timing", acc.Income, grouped[fy], func(p posting.Posting) bool {
+				return utils.FirstName(p.Account) == "Income" && !service.IsCapitalGains(p) && !strings.HasPrefix(p.Account, "Income:Interest")
+			})
+			addFXTiming("FX Timing", acc.Interest, grouped[fy], func(p posting.Posting) bool {
+				return strings.HasPrefix(p.Account, "Income:Interest")
+			})
+			addFXTiming("FX Timing", acc.Tax, grouped[fy], func(p posting.Posting) bool {
+				return strings.HasPrefix(p.Account, "Expenses:Tax")
+			})
+			addFXTiming("FX Timing", acc.Expenses, grouped[fy], func(p posting.Posting) bool {
+				return utils.FirstName(p.Account) == "Expenses" && !strings.HasPrefix(p.Account, "Expenses:Tax")
+			})
+			addFXTiming("FX Timing", acc.Equity, grouped[fy], func(p posting.Posting) bool {
+				return utils.FirstName(p.Account) == "Equity"
+			})
+
+			attributed := decimal.Zero
+			for _, v := range rec {
+				attributed = attributed.Add(v)
+			}
+			unattributed := residual.Sub(attributed)
+			if unattributed.Abs().GreaterThanOrEqual(decimal.NewFromInt(1)) {
+				rec["Unattributed / Rounding"] = unattributed
+			}
+			if len(rec) > 0 {
+				incomeStatement.Reconciliation = rec
+			}
+		}
 
 		statements[fy] = incomeStatement
 	}
