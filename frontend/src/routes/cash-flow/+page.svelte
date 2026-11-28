@@ -623,6 +623,16 @@
       .filter((g) => g.accounts.length > 0);
   });
 
+  let hoveredBridgeStep = $state<{
+    label: string;
+    start: number;
+    end: number;
+    delta: number;
+    kind: "total" | "pos" | "neg";
+    breakdown: Array<{ account: string; amount: number }>;
+    note?: string;
+  } | null>(null);
+
   const statementWaterfall = $derived.by(() => {
     if (!currentStatement) return [];
     const sumRec = (rec?: Record<string, number>) =>
@@ -633,23 +643,38 @@
       end: number;
       delta: number;
       kind: "total" | "pos" | "neg";
+      breakdown: Array<{ account: string; amount: number }>;
+      note?: string;
     }> = [];
     let running = currentStatement.startingBalance || 0;
-    steps.push({ label: "Start", start: 0, end: running, delta: running, kind: "total" });
+    steps.push({
+      label: "Start",
+      start: 0,
+      end: running,
+      delta: running,
+      kind: "total",
+      breakdown: []
+    });
     for (const def of statementGroupDefs) {
       // Liabilities are a balance-sheet account already included in startingBalance
       // and endingBalance, so they do not drive net worth change.
       if (def.key === "liabilities") continue;
-      const raw = sumRec(currentStatement[def.key]);
+      const rec = currentStatement[def.key] || {};
+      const raw = sumRec(rec);
       const delta = raw * def.multiplier;
       if (Math.abs(delta) < 0.01) continue;
+      const breakdown = Object.entries(rec)
+        .map(([account, val]) => ({ account, amount: (val || 0) * def.multiplier }))
+        .filter((item) => Math.abs(item.amount) >= 0.01)
+        .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
       const next = running + delta;
       steps.push({
         label: def.label,
         start: running,
         end: next,
         delta,
-        kind: delta >= 0 ? "pos" : "neg"
+        kind: delta >= 0 ? "pos" : "neg",
+        breakdown
       });
       running = next;
     }
@@ -661,10 +686,19 @@
         start: running,
         end: endBal,
         delta: residual,
-        kind: residual >= 0 ? "pos" : "neg"
+        kind: residual >= 0 ? "pos" : "neg",
+        breakdown: [],
+        note: "Unattributed difference from FX conversion timing, market valuation gaps, or rounding."
       });
     }
-    steps.push({ label: "End", start: 0, end: endBal, delta: endBal, kind: "total" });
+    steps.push({
+      label: "End",
+      start: 0,
+      end: endBal,
+      delta: endBal,
+      kind: "total",
+      breakdown: []
+    });
     return steps;
   });
 
@@ -1146,7 +1180,13 @@
             {/if}
           </div>
           <div class="overflow-x-auto">
-            <svg viewBox="0 0 {wfW} {wfH}" class="w-full min-w-[600px] h-56 overflow-visible">
+            <svg
+              viewBox="0 0 {wfW} {wfH}"
+              role="img"
+              aria-label="Net worth bridge"
+              class="w-full min-w-[600px] h-56 overflow-visible"
+              onmouseleave={() => (hoveredBridgeStep = null)}
+            >
               <!-- Top X-Axis Scale & Vertical Gridlines -->
               <line x1={padL} x2={wfW - padR} y1={padT} y2={padT} stroke="var(--border)" />
               {#each wfTicks as tick}
@@ -1213,6 +1253,7 @@
                 {@const x2 = Math.max(xStart, xEnd)}
                 {@const y = padT + idx * rowH + (rowH - barH) / 2}
                 {@const fill = step.kind === "pos" ? "var(--gain)" : "var(--loss)"}
+                {@const isHovered = hoveredBridgeStep?.label === step.label}
                 {#if idx < bridgeSteps.length - 1}
                   {@const nextY = padT + (idx + 1) * rowH + (rowH - barH) / 2}
                   <line
@@ -1224,37 +1265,87 @@
                     stroke-dasharray="3 3"
                   />
                 {/if}
-                <text
-                  x={padL - 12}
-                  y={y + barH / 2 + 4}
-                  text-anchor="end"
-                  font-size="11.5"
-                  fill="var(--muted)"
+                <g
+                  role="listitem"
+                  class="cursor-pointer"
+                  onmouseenter={() => (hoveredBridgeStep = step)}
                 >
-                  {step.label}
-                </text>
-                <rect
-                  x={x1}
-                  {y}
-                  width={Math.max(4, x2 - x1)}
-                  height={barH}
-                  {fill}
-                  rx="4"
-                  opacity="0.9"
-                />
-                <text
-                  x={Math.max(x1 + 4, x2) + 8}
-                  y={y + barH / 2 + 4}
-                  text-anchor="start"
-                  font-size="11"
-                  fill="var(--muted)"
-                  class="tabular-nums"
-                >
-                  {`${step.delta >= 0 ? "+" : ""}${formatMoney(step.delta)}`}
-                </text>
+                  <rect
+                    x="0"
+                    y={padT + idx * rowH}
+                    width={wfW}
+                    height={rowH}
+                    fill={isHovered ? "var(--surface-elevated)" : "transparent"}
+                    opacity={isHovered ? 0.55 : 0}
+                    rx="4"
+                  />
+                  <text
+                    x={padL - 12}
+                    y={y + barH / 2 + 4}
+                    text-anchor="end"
+                    font-size="11.5"
+                    fill={isHovered ? "var(--text)" : "var(--muted)"}
+                    font-weight={isHovered ? "600" : "400"}
+                  >
+                    {step.label}
+                  </text>
+                  <rect
+                    x={x1}
+                    {y}
+                    width={Math.max(4, x2 - x1)}
+                    height={barH}
+                    {fill}
+                    rx="4"
+                    opacity={isHovered ? 1 : 0.88}
+                  />
+                  <text
+                    x={Math.max(x1 + 4, x2) + 8}
+                    y={y + barH / 2 + 4}
+                    text-anchor="start"
+                    font-size="11"
+                    fill={isHovered ? "var(--text)" : "var(--muted)"}
+                    class="tabular-nums"
+                  >
+                    {`${step.delta >= 0 ? "+" : ""}${formatMoney(step.delta)}`}
+                  </text>
+                </g>
               {/each}
             </svg>
           </div>
+          {#if hoveredBridgeStep}
+            <div
+              class="rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] p-3 text-xs space-y-2"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-semibold">{hoveredBridgeStep.label}</span>
+                <span
+                  class="font-semibold tabular-nums {hoveredBridgeStep.delta >= 0
+                    ? 'text-[var(--gain)]'
+                    : 'text-[var(--loss)]'}"
+                >
+                  {hoveredBridgeStep.delta >= 0 ? "+" : ""}{formatMoney(hoveredBridgeStep.delta)}
+                </span>
+              </div>
+              {#if hoveredBridgeStep.breakdown.length > 0}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 tabular-nums">
+                  {#each hoveredBridgeStep.breakdown as item}
+                    <div class="flex items-center justify-between gap-2 min-w-0">
+                      <span class="font-mono text-[var(--muted)] truncate">{item.account}</span>
+                      <span
+                        class="shrink-0 font-medium {item.amount >= 0
+                          ? 'text-[var(--gain)]'
+                          : 'text-[var(--loss)]'}"
+                      >
+                        {item.amount >= 0 ? "+" : ""}{formatMoney(item.amount)}
+                      </span>
+                    </div>
+                  {/each}
+                </div>
+              {:else if hoveredBridgeStep.note}
+                <p class="text-[var(--muted)]">{hoveredBridgeStep.note}</p>
+              {/if}
+            </div>
+          {/if}
         </div>
       {/if}
 
