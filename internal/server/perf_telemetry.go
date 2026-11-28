@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"net/http"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -38,6 +39,13 @@ func (t *requestTelemetry) writeHeaders(c *gin.Context) {
 	c.Header(perfHeaderLatencyMS, strconv.FormatInt(time.Since(t.start).Milliseconds(), 10))
 	c.Header(perfHeaderSQLCount, strconv.FormatInt(t.sqlCount.Load(), 10))
 	c.Header(perfHeaderSQLTimeMS, strconv.FormatFloat(float64(t.sqlNanos.Load())/float64(time.Millisecond), 'f', 3, 64))
+}
+
+func respondJSONWithTelemetry(db *gorm.DB, c *gin.Context, fn func(requestDB *gorm.DB) any) {
+	requestDB, telemetry := beginRequestTelemetry(db)
+	result := fn(requestDB)
+	telemetry.writeHeaders(c)
+	c.JSON(http.StatusOK, result)
 }
 
 type telemetryLogger struct {

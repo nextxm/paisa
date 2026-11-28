@@ -297,14 +297,20 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.GET("/api/networth", func(c *gin.Context) {
+		requestDB, telemetry := beginRequestTelemetry(db)
 		reportCurrency := c.Query("report_currency")
 		if reportCurrency == "" {
-			if payload, ok := getNetworthSnapshotPayload(db); ok {
+			if payload, ok := getNetworthSnapshotPayload(requestDB); ok {
+				c.Header("X-Paisa-Perf-Report-Source", "snapshot")
+				telemetry.writeHeaders(c)
 				c.Data(http.StatusOK, "application/json; charset=utf-8", payload)
 				return
 			}
 		}
-		c.JSON(200, GetNetworth(db, reportCurrency))
+		c.Header("X-Paisa-Perf-Report-Source", "live")
+		result := GetNetworth(requestDB, reportCurrency)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
 	})
 	router.GET("/api/networth/projection", func(c *gin.Context) {
 		req, ok := parseNetworthProjectionRequest(c)
@@ -373,18 +379,28 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		if !ok {
 			return
 		}
-		c.JSON(200, assets.GetBalanceByModeAsOf(db, c.Query("report_currency"), c.Query("flat") == "true", asOfDate))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return assets.GetBalanceByModeAsOf(requestDB, c.Query("report_currency"), c.Query("flat") == "true", asOfDate)
+		})
 	})
 
 	router.GET("/api/investment", func(c *gin.Context) {
-		c.JSON(200, GetInvestment(db, c.Query("report_currency")))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetInvestment(requestDB, c.Query("report_currency"))
+		})
 	})
 	router.GET("/api/gain", func(c *gin.Context) {
-		if payload, ok := getGainSnapshotPayload(db); ok {
+		requestDB, telemetry := beginRequestTelemetry(db)
+		if payload, ok := getGainSnapshotPayload(requestDB); ok {
+			c.Header("X-Paisa-Perf-Report-Source", "snapshot")
+			telemetry.writeHeaders(c)
 			c.Data(http.StatusOK, "application/json; charset=utf-8", payload)
 			return
 		}
-		c.JSON(200, GetGain(db))
+		c.Header("X-Paisa-Perf-Report-Source", "live")
+		result := GetGain(requestDB)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
 	})
 	router.GET("/api/gain/:account", func(c *gin.Context) {
 		account := c.Param("account")
@@ -392,7 +408,9 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		if !ok {
 			return
 		}
-		c.JSON(200, GetAccountGain(db, account, asOfDate))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetAccountGain(requestDB, account, asOfDate)
+		})
 	})
 	router.GET("/api/account/:account/balance", func(c *gin.Context) {
 		account := c.Param("account")
@@ -400,14 +418,21 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		if !ok {
 			return
 		}
-		c.JSON(200, assets.GetAccountBalanceAsOf(db, account, c.Query("report_currency"), asOfDate))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return assets.GetAccountBalanceAsOf(requestDB, account, c.Query("report_currency"), asOfDate)
+		})
 	})
 	router.GET("/api/income", func(c *gin.Context) {
-		c.JSON(200, GetIncome(db, parseYearsParam(c.Query("years")), parseUntilYearParam(c.Query("until_year"))))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetIncome(requestDB, parseYearsParam(c.Query("years")), parseUntilYearParam(c.Query("until_year")))
+		})
 	})
 	router.GET("/api/income/investment", func(c *gin.Context) {
+		requestDB, telemetry := beginRequestTelemetry(db)
 		if c.Request.URL.RawQuery == "" {
-			if payload, ok := getInvestmentIncomeSnapshotPayload(db); ok {
+			if payload, ok := getInvestmentIncomeSnapshotPayload(requestDB); ok {
+				c.Header("X-Paisa-Perf-Report-Source", "snapshot")
+				telemetry.writeHeaders(c)
 				c.Data(200, "application/json; charset=utf-8", payload)
 				return
 			}
@@ -417,45 +442,68 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		if !ok {
 			return
 		}
-		c.JSON(200, GetInvestmentIncome(db, asOfDate))
+		c.Header("X-Paisa-Perf-Report-Source", "live")
+		result := GetInvestmentIncome(requestDB, asOfDate)
+		telemetry.writeHeaders(c)
+		c.JSON(200, result)
 	})
 	router.GET("/api/expense", func(c *gin.Context) {
-		c.JSON(200, GetExpense(db, parseYearsParam(c.Query("years")), parseUntilYearParam(c.Query("until_year")), c.Query("report_currency")))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetExpense(requestDB, parseYearsParam(c.Query("years")), parseUntilYearParam(c.Query("until_year")), c.Query("report_currency"))
+		})
 	})
 	router.GET("/api/expense/daily", func(c *gin.Context) {
 		from, to, ok := parseExpenseDailyRange(c)
 		if !ok {
 			return
 		}
-		c.JSON(http.StatusOK, GetDailyExpense(db, from, to, c.Query("group_by") == "category"))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetDailyExpense(requestDB, from, to, c.Query("group_by") == "category")
+		})
 	})
 
 	router.GET("/api/budget", func(c *gin.Context) {
-		c.JSON(200, GetBudget(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetBudget(requestDB)
+		})
 	})
 
 	router.GET("/api/cash_flow", func(c *gin.Context) {
-		c.JSON(200, GetCashFlow(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetCashFlow(requestDB)
+		})
 	})
 	router.GET("/api/income_statement", func(c *gin.Context) {
-		c.JSON(200, GetIncomeStatement(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetIncomeStatement(requestDB)
+		})
 	})
 	router.GET("/api/recurring", func(c *gin.Context) {
-		c.JSON(200, GetRecurringTransactions(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetRecurringTransactions(requestDB)
+		})
 	})
 	router.GET("/api/allocation", func(c *gin.Context) {
-		c.JSON(200, GetAllocation(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetAllocation(requestDB)
+		})
 	})
 	router.POST("/api/allocation/rebalance", RebalanceHandler(db))
 	writeGroup.POST("/api/allocation/targets", SaveAllocationTargetsHandler())
 	router.GET("/api/currency-exposure", func(c *gin.Context) {
-		c.JSON(200, GetCurrencyExposure(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetCurrencyExposure(requestDB)
+		})
 	})
 	router.GET("/api/portfolio_allocation", func(c *gin.Context) {
-		c.JSON(200, GetPortfolioAllocation(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetPortfolioAllocation(requestDB)
+		})
 	})
 	router.GET("/api/ledger", func(c *gin.Context) {
-		c.JSON(200, GetLedger(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetLedger(requestDB)
+		})
 	})
 	router.GET("/api/sankey", func(c *gin.Context) {
 		GetSankeyHandler(db, c)
@@ -497,7 +545,9 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.GET("/api/transaction/balanced", func(c *gin.Context) {
-		c.JSON(200, GetBalancedPostings(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetBalancedPostings(requestDB)
+		})
 	})
 	router.GET("/api/transaction", func(c *gin.Context) {
 		GetTransactionsHandler(db, c)
@@ -508,21 +558,31 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	writeGroup.POST("/api/parser/create-transaction", CreateParsedTransactionHandler(db))
 	writeGroup.POST("/api/transaction/add", AddTransactionHandler(db))
 	router.GET("/api/harvest", func(c *gin.Context) {
-		c.JSON(200, GetHarvest(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetHarvest(requestDB)
+		})
 	})
 
 	router.GET("/api/capital_gains", func(c *gin.Context) {
-		c.JSON(200, GetCapitalGains(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetCapitalGains(requestDB)
+		})
 	})
 
 	router.GET("/api/schedule_al", func(c *gin.Context) {
-		c.JSON(200, GetScheduleAL(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetScheduleAL(requestDB)
+		})
 	})
 	router.GET("/api/diagnosis", func(c *gin.Context) {
-		c.JSON(200, GetDiagnosis(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetDiagnosis(requestDB)
+		})
 	})
 	router.GET("/api/diagnosis/duplicates", func(c *gin.Context) {
-		c.JSON(200, GetDuplicatesAndOutliers(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetDuplicatesAndOutliers(requestDB)
+		})
 	})
 	writeGroup.POST("/api/diagnosis/duplicates/suppress", func(c *gin.Context) {
 		var req SuppressRequest
@@ -536,10 +596,14 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, gin.H{"success": true})
 	})
 	router.GET("/api/doctor/findings", func(c *gin.Context) {
-		c.JSON(200, GetUnifiedFindings(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetUnifiedFindings(requestDB)
+		})
 	})
 	router.GET("/api/doctor/dismissed", func(c *gin.Context) {
-		c.JSON(200, GetDismissedFindings(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return GetDismissedFindings(requestDB)
+		})
 	})
 	writeGroup.POST("/api/doctor/dismiss", func(c *gin.Context) {
 		var req DismissRequest
@@ -567,11 +631,15 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	router.GET("/api/backup/export", HandleExportBackup)
 
 	router.GET("/api/liabilities/interest", func(c *gin.Context) {
-		c.JSON(200, liabilities.GetInterest(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return liabilities.GetInterest(requestDB)
+		})
 	})
 
 	router.GET("/api/liabilities/balance", func(c *gin.Context) {
-		c.JSON(200, liabilities.GetBalance(db))
+		respondJSONWithTelemetry(db, c, func(requestDB *gorm.DB) any {
+			return liabilities.GetBalance(requestDB)
+		})
 	})
 
 	router.GET("/api/liabilities/repayment", func(c *gin.Context) {

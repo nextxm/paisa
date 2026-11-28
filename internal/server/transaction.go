@@ -48,9 +48,10 @@ func GetTransactions(db *gorm.DB) gin.H {
 //   - ?limit=<n>         – return at most n transactions (applied after building transactions)
 //   - ?offset=<n>        – skip the first n transactions (applied after building transactions)
 func GetTransactionsHandler(db *gorm.DB, c *gin.Context) {
+	requestDB, telemetry := beginRequestTelemetry(db)
 	filters := parseTransactionFilters(c)
 
-	q := query.Init(db).Desc()
+	q := query.Init(requestDB).Desc()
 	if filters.Account != "" {
 		q = q.AccountPrefix(filters.Account)
 	}
@@ -92,6 +93,7 @@ func GetTransactionsHandler(db *gorm.DB, c *gin.Context) {
 		}
 	}
 
+	telemetry.writeHeaders(c)
 	c.JSON(http.StatusOK, gin.H{"transactions": transactions})
 }
 
