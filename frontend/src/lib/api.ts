@@ -1,6 +1,23 @@
 import dayjs from "dayjs";
-
 import { base } from "$app/paths";
+import { writable } from "svelte/store";
+
+let activeLoadingRequests = 0;
+export const isDataLoading = writable(false);
+
+function beginDataLoad() {
+  activeLoadingRequests += 1;
+  if (activeLoadingRequests === 1) {
+    isDataLoading.set(true);
+  }
+}
+
+function endDataLoad() {
+  activeLoadingRequests = Math.max(0, activeLoadingRequests - 1);
+  if (activeLoadingRequests === 0) {
+    isDataLoading.set(false);
+  }
+}
 
 export function appPath(path: string): string {
   return `${base}${path}`;
@@ -210,37 +227,48 @@ export async function logout(): Promise<void> {
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(path, {
-    headers: { Accept: "application/json", ...authHeaders() }
-  });
-  if (
-    res.status === 401 &&
-    typeof window !== "undefined" &&
-    !window.location.pathname.endsWith("/login")
-  ) {
-    window.location.href = appPath("/login");
-    throw new Error("Unauthorized");
+  beginDataLoad();
+  try {
+    const res = await fetch(path, {
+      headers: { Accept: "application/json", ...authHeaders() }
+    });
+    if (
+      res.status === 401 &&
+      typeof window !== "undefined" &&
+      !window.location.pathname.endsWith("/login")
+    ) {
+      window.location.href = appPath("/login");
+      throw new Error("Unauthorized");
+    }
+    if (!res.ok) {
+      throw new Error(`${res.status} ${res.statusText}`);
+    }
+    return (await res.json()) as T;
+  } finally {
+    endDataLoad();
   }
-  if (!res.ok) {
-    throw new Error(`${res.status} ${res.statusText}`);
-  }
-  return (await res.json()) as T;
 }
 
 export async function getFullConfig(): Promise<Record<string, unknown>> {
-  const res = await fetch("/api/config", {
-    headers: { Accept: "application/json", ...authHeaders() }
-  });
-  if (!res.ok) {
-    throw new Error(`${res.status} ${res.statusText}`);
+  beginDataLoad();
+  try {
+    const res = await fetch("/api/config", {
+      headers: { Accept: "application/json", ...authHeaders() }
+    });
+    if (!res.ok) {
+      throw new Error(`${res.status} ${res.statusText}`);
+    }
+    const data = (await res.json()) as { config?: Record<string, unknown> };
+    return data.config || (data as Record<string, unknown>);
+  } finally {
+    endDataLoad();
   }
-  const data = (await res.json()) as { config?: Record<string, unknown> };
-  return data.config || (data as Record<string, unknown>);
 }
 
 export async function updateConfig(
   config: Record<string, unknown>
 ): Promise<{ success: boolean; error?: string }> {
+  beginDataLoad();
   try {
     const res = await fetch("/api/config", {
       method: "POST",
@@ -255,6 +283,8 @@ export async function updateConfig(
     return { success: Boolean(data.success) };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Save failed" };
+  } finally {
+    endDataLoad();
   }
 }
 

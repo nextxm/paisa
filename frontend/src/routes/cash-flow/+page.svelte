@@ -637,6 +637,9 @@
     let running = currentStatement.startingBalance || 0;
     steps.push({ label: "Start", start: 0, end: running, delta: running, kind: "total" });
     for (const def of statementGroupDefs) {
+      // Liabilities are a balance-sheet account already included in startingBalance
+      // and endingBalance, so they do not drive net worth change.
+      if (def.key === "liabilities") continue;
       const raw = sumRec(currentStatement[def.key]);
       const delta = raw * def.multiplier;
       if (Math.abs(delta) < 0.01) continue;

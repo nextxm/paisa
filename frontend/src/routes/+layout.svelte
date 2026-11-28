@@ -30,6 +30,7 @@
     appPath,
     authHeaders,
     getTheme,
+    isDataLoading,
     loadRuntimeConfig,
     logout,
     runtime,
@@ -74,6 +75,17 @@
   let jobs = $state<BackgroundJob[]>([]);
   let hasToken = $state(false);
   let renderKey = $state(0);
+  let showLoadingSpinner = $state(false);
+
+  $effect(() => {
+    if ($isDataLoading) {
+      const timer = setTimeout(() => {
+        showLoadingSpinner = true;
+      }, 120);
+      return () => clearTimeout(timer);
+    }
+    showLoadingSpinner = false;
+  });
 
   interface PaletteCommand {
     label: string;
@@ -652,11 +664,29 @@
       </div>
     </header>
 
-    <main class="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6">
+    <main
+      class="relative flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 transition-opacity duration-150 {showLoadingSpinner
+        ? 'opacity-55 pointer-events-none'
+        : ''}"
+    >
       {#key renderKey}
         {@render children()}
       {/key}
     </main>
+
+    {#if showLoadingSpinner}
+      <div
+        class="fixed inset-0 z-40 pointer-events-none flex items-center justify-center"
+        aria-live="polite"
+        aria-label="Loading data"
+      >
+        <div
+          class="rounded-2xl bg-[var(--surface)]/90 border border-[var(--border)] shadow-lg p-4 backdrop-blur-xs"
+        >
+          <Logo size={56} animation />
+        </div>
+      </div>
+    {/if}
   </div>
 </div>
 
