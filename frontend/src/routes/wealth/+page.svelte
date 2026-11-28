@@ -2,7 +2,8 @@
   import dayjs from "dayjs";
   import { page } from "$app/stores";
   import { onMount } from "svelte";
-  import LineAreaChart, { type NetworthPoint } from "$lib/components/LineAreaChart.svelte";
+  import LineAreaChart from "$lib/components/LineAreaChart.svelte";
+  import type { NetworthPoint } from "$lib/networth_chart";
   import StackedBarChart, { type StackedBarColumn } from "$lib/components/StackedBarChart.svelte";
   import {
     apiGet,
@@ -908,16 +909,24 @@
           </span>
           <span class="inline-flex items-center gap-1.5">
             <span class="w-3 h-0.5 bg-[var(--muted)] inline-block"></span>
-            Invested
+            Net Investment
           </span>
           <span class="inline-flex items-center gap-1.5">
-            <span class="w-3 h-0.5 bg-[var(--gain)] inline-block"></span>
+            <span class="w-2.5 h-2.5 rounded-xs bg-[var(--gain)]/40 inline-block"></span>
             Gain
+          </span>
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-xs bg-[var(--loss)]/40 inline-block"></span>
+            Loss
           </span>
           {#if showFxImpact}
             <span class="inline-flex items-center gap-1.5">
-              <span class="w-3 h-0.5 bg-[var(--warning)] inline-block"></span>
-              Net Worth (ex-FX)
+              <span class="w-2.5 h-2.5 rounded-xs bg-[var(--accent)]/30 inline-block"></span>
+              Investment Return
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-xs bg-[var(--warning)]/40 inline-block"></span>
+              FX Impact
             </span>
           {/if}
         </div>

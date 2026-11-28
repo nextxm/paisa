@@ -11,6 +11,7 @@ declare module "bun:test" {
 
   interface Matchers<T> {
     toBe(expected: unknown): void;
+    toBeCloseTo(expected: number, numDigits?: number): void;
     toEqual(expected: unknown): void;
     toContain(expected: unknown): void;
     toBeGreaterThan(expected: number): void;
