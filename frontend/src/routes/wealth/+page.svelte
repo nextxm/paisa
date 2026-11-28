@@ -261,35 +261,54 @@
   }
 
   onMount(async () => {
-    try {
-      const [
-        nwRes,
-        balRes,
-        currRes,
-        gainRes,
-        liabRes,
-        allocRes,
-        fxExpRes,
-        incRes,
-        ccRes,
-        portRes,
-        intRes,
-        repRes,
-        invRes
-      ] = await Promise.all([
+    const loadOverview = async () => {
+      const [nwRes, currRes] = await Promise.all([
         apiGet<{ xirr?: number; networthTimeline?: NetworthPoint[] }>("/api/networth"),
+        apiGet<{ currencies?: string[] }>("/api/price/currencies").catch(() => ({
+          currencies: [] as string[]
+        }))
+      ]);
+      timeline = nwRes.networthTimeline || [];
+      xirr = nwRes.xirr || 0;
+      availableCurrencies = currRes.currencies || [];
+    };
+
+    const loadAssets = async () => {
+      const [balRes, ccRes] = await Promise.all([
         apiGet<{ asset_breakdowns?: Record<string, AssetBreakdown> }>("/api/assets/balance").catch(
           () => ({ asset_breakdowns: {} as Record<string, AssetBreakdown> })
         ),
-        apiGet<{ currencies?: string[] }>("/api/price/currencies").catch(() => ({
-          currencies: [] as string[]
-        })),
+        apiGet<{ creditCards?: CreditCardSummary[] }>("/api/credit_cards").catch(() => ({
+          creditCards: [] as CreditCardSummary[]
+        }))
+      ]);
+      assetBreakdowns = Object.values(balRes.asset_breakdowns || {}).sort(
+        (a, b) => (b.marketAmount || 0) - (a.marketAmount || 0)
+      );
+      creditCards = ccRes.creditCards || [];
+    };
+
+    const loadInvestments = async () => {
+      const [gainRes, invRes] = await Promise.all([
         apiGet<{ gain_breakdown?: GainRow[] }>("/api/gain").catch(() => ({
           gain_breakdown: [] as GainRow[]
         })),
-        apiGet<{ liability_breakdowns?: LiabilityRow[] | Record<string, LiabilityRow> }>(
-          "/api/liabilities/balance"
-        ).catch(() => ({ liability_breakdowns: [] as LiabilityRow[] })),
+        apiGet<{ assets?: Posting[]; yearly_cards?: typeof investmentYearly }>(
+          "/api/investment"
+        ).catch(() => ({
+          assets: [] as Posting[],
+          yearly_cards: [] as typeof investmentYearly
+        }))
+      ]);
+      gains = (gainRes.gain_breakdown || []).sort(
+        (a, b) => (b.marketAmount || 0) - (a.marketAmount || 0)
+      );
+      investmentPostings = invRes.assets || [];
+      investmentYearly = invRes.yearly_cards || [];
+    };
+
+    const loadAllocation = async () => {
+      const [allocRes, fxExpRes] = await Promise.all([
         apiGet<{
           aggregates?: Record<string, AllocationAggregate>;
           aggregates_timeline?: Array<{
@@ -307,62 +326,8 @@
         })),
         apiGet<{ currency_exposure?: CurrencyExposureItem[] }>("/api/currency-exposure").catch(
           () => ({ currency_exposure: [] as CurrencyExposureItem[] })
-        ),
-        apiGet<{
-          ttm_total?: number;
-          holdings?: InvestmentIncomeHolding[];
-          timeline?: InvestmentIncomeTimelinePoint[];
-          income_by_type?: Record<string, InvestmentIncomeHolding[]>;
-        }>("/api/income/investment").catch(() => ({
-          ttm_total: 0,
-          holdings: [] as InvestmentIncomeHolding[],
-          timeline: [] as InvestmentIncomeTimelinePoint[],
-          income_by_type: {} as Record<string, InvestmentIncomeHolding[]>
-        })),
-        apiGet<{ creditCards?: CreditCardSummary[] }>("/api/credit_cards").catch(() => ({
-          creditCards: [] as CreditCardSummary[]
-        })),
-        apiGet<{
-          commodities?: string[];
-          name_and_security_type?: PortfolioAggregate[];
-          security_type?: PortfolioAggregate[];
-          rating?: PortfolioAggregate[];
-          industry?: PortfolioAggregate[];
-        }>("/api/portfolio_allocation").catch(() => ({
-          commodities: [] as string[],
-          name_and_security_type: [] as PortfolioAggregate[],
-          security_type: [] as PortfolioAggregate[],
-          rating: [] as PortfolioAggregate[],
-          industry: [] as PortfolioAggregate[]
-        })),
-        apiGet<{
-          interest_timeline_breakdown?: Record<string, InterestAccount> | InterestAccount[];
-        }>("/api/liabilities/interest").catch(() => ({
-          interest_timeline_breakdown: [] as InterestAccount[]
-        })),
-        apiGet<{ repayments?: RepaymentRow[] }>("/api/liabilities/repayment").catch(() => ({
-          repayments: [] as RepaymentRow[]
-        })),
-        apiGet<{ assets?: Posting[]; yearly_cards?: typeof investmentYearly }>(
-          "/api/investment"
-        ).catch(() => ({
-          assets: [] as Posting[],
-          yearly_cards: [] as typeof investmentYearly
-        }))
+        )
       ]);
-
-      timeline = nwRes.networthTimeline || [];
-      xirr = nwRes.xirr || 0;
-      availableCurrencies = currRes.currencies || [];
-      assetBreakdowns = Object.values(balRes.asset_breakdowns || {}).sort(
-        (a, b) => (b.marketAmount || 0) - (a.marketAmount || 0)
-      );
-      gains = (gainRes.gain_breakdown || []).sort(
-        (a, b) => (b.marketAmount || 0) - (a.marketAmount || 0)
-      );
-      liabilities = Array.isArray(liabRes.liability_breakdowns)
-        ? liabRes.liability_breakdowns
-        : Object.values(liabRes.liability_breakdowns || {});
       allocationItems = Object.values(allocRes.aggregates || {})
         .filter((a) => (a.market_amount || 0) > 0)
         .sort((a, b) => (b.market_amount || 0) - (a.market_amount || 0));
@@ -380,6 +345,42 @@
       currencyExposure = Array.isArray(fxExpRes.currency_exposure)
         ? fxExpRes.currency_exposure
         : [];
+    };
+
+    const loadPortfolio = async () => {
+      const portRes = await apiGet<{
+        commodities?: string[];
+        name_and_security_type?: PortfolioAggregate[];
+        security_type?: PortfolioAggregate[];
+        rating?: PortfolioAggregate[];
+        industry?: PortfolioAggregate[];
+      }>("/api/portfolio_allocation").catch(() => ({
+        commodities: [] as string[],
+        name_and_security_type: [] as PortfolioAggregate[],
+        security_type: [] as PortfolioAggregate[],
+        rating: [] as PortfolioAggregate[],
+        industry: [] as PortfolioAggregate[]
+      }));
+      portfolioCommodities = portRes.commodities || [];
+      selectedPortfolioCommodities = [...portfolioCommodities];
+      portfolioNameAndType = portRes.name_and_security_type || [];
+      portfolioSecurityType = portRes.security_type || [];
+      portfolioRating = portRes.rating || [];
+      portfolioIndustry = portRes.industry || [];
+    };
+
+    const loadIncome = async () => {
+      const incRes = await apiGet<{
+        ttm_total?: number;
+        holdings?: InvestmentIncomeHolding[];
+        timeline?: InvestmentIncomeTimelinePoint[];
+        income_by_type?: Record<string, InvestmentIncomeHolding[]>;
+      }>("/api/income/investment").catch(() => ({
+        ttm_total: 0,
+        holdings: [] as InvestmentIncomeHolding[],
+        timeline: [] as InvestmentIncomeTimelinePoint[],
+        income_by_type: {} as Record<string, InvestmentIncomeHolding[]>
+      }));
       investmentIncomeTotal = incRes.ttm_total || 0;
       investmentIncomeHoldings = incRes.holdings || [];
       investmentIncomeTimeline = incRes.timeline || [];
@@ -387,24 +388,61 @@
       dividendTTM = (byType.Dividend || []).reduce((s, h) => s + (h.ttm_income || 0), 0);
       interestTTM = (byType.Interest || []).reduce((s, h) => s + (h.ttm_income || 0), 0);
       distributionTTM = (byType.Distribution || []).reduce((s, h) => s + (h.ttm_income || 0), 0);
-      creditCards = ccRes.creditCards || [];
-      portfolioCommodities = portRes.commodities || [];
-      selectedPortfolioCommodities = [...portfolioCommodities];
-      portfolioNameAndType = portRes.name_and_security_type || [];
-      portfolioSecurityType = portRes.security_type || [];
-      portfolioRating = portRes.rating || [];
-      portfolioIndustry = portRes.industry || [];
+    };
+
+    const loadLiabilities = async () => {
+      const [liabRes, intRes, repRes] = await Promise.all([
+        apiGet<{ liability_breakdowns?: LiabilityRow[] | Record<string, LiabilityRow> }>(
+          "/api/liabilities/balance"
+        ).catch(() => ({ liability_breakdowns: [] as LiabilityRow[] })),
+        apiGet<{
+          interest_timeline_breakdown?: Record<string, InterestAccount> | InterestAccount[];
+        }>("/api/liabilities/interest").catch(() => ({
+          interest_timeline_breakdown: [] as InterestAccount[]
+        })),
+        apiGet<{ repayments?: RepaymentRow[] }>("/api/liabilities/repayment").catch(() => ({
+          repayments: [] as RepaymentRow[]
+        }))
+      ]);
+      liabilities = Array.isArray(liabRes.liability_breakdowns)
+        ? liabRes.liability_breakdowns
+        : Object.values(liabRes.liability_breakdowns || {});
       interestAccounts = Array.isArray(intRes.interest_timeline_breakdown)
         ? intRes.interest_timeline_breakdown
         : Object.values(intRes.interest_timeline_breakdown || {});
       repayments = repRes.repayments || [];
-      investmentPostings = invRes.assets || [];
-      investmentYearly = invRes.yearly_cards || [];
+    };
+
+    const loaders: Record<WealthTab, () => Promise<void>> = {
+      overview: loadOverview,
+      assets: loadAssets,
+      investments: loadInvestments,
+      allocation: loadAllocation,
+      portfolio: loadPortfolio,
+      income: loadIncome,
+      liabilities: loadLiabilities
+    };
+
+    const initialTab = activeTab;
+    try {
+      await loaders[initialTab]();
     } catch (e) {
       error = e instanceof Error ? e.message : "Failed to load wealth data";
     } finally {
       loading = false;
     }
+
+    // Prefetch remaining tabs in the background after initial render.
+    const allTabs: WealthTab[] = [
+      "overview",
+      "assets",
+      "investments",
+      "allocation",
+      "portfolio",
+      "income",
+      "liabilities"
+    ];
+    void Promise.allSettled(allTabs.filter((t) => t !== initialTab).map((t) => loaders[t]()));
   });
 
   const latestPoint = $derived(timeline.length > 0 ? timeline[timeline.length - 1] : null);

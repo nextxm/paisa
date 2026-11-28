@@ -165,28 +165,72 @@
   let ttmInvestmentIncome = $state(0);
 
   onMount(async () => {
-    try {
-      const [cfRes, expRes, stmtRes, budgetRes, recRes, incRes, invIncRes] = await Promise.all([
-        apiGet<{ cash_flows?: CashFlowRow[] }>("/api/cash_flow"),
-        apiGet<{
-          month_wise?: {
-            incomes?: Record<string, Posting[]>;
-            expenses?: Record<string, Posting[]>;
-            investments?: Record<string, Posting[]>;
-            taxes?: Record<string, Posting[]>;
-            liabilities?: Record<string, Posting[]>;
-          };
-        }>("/api/expense"),
-        apiGet<{ yearly?: Record<string, IncomeStatement> }>("/api/income_statement").catch(() => ({
-          yearly: {}
-        })),
-        apiGet<{
-          budgetsByMonth?: Record<string, BudgetMonth>;
-          availableForBudgeting?: number;
-        }>("/api/budget").catch(() => ({ budgetsByMonth: {}, availableForBudgeting: 0 })),
-        apiGet<{ transaction_sequences?: RecurringItem[] }>("/api/recurring").catch(() => ({
-          transaction_sequences: []
-        })),
+    const loadCashflow = async () => {
+      const cfRes = await apiGet<{ cash_flows?: CashFlowRow[] }>("/api/cash_flow");
+      cashFlows = (cfRes.cash_flows || []).map((c) => ({
+        ...c,
+        income: Math.abs(c.income || 0),
+        expenses: Math.abs(c.expenses || 0),
+        investment: Math.abs(c.investment || 0),
+        tax: Math.abs(c.tax || 0),
+        liabilities: Math.abs(c.liabilities || 0)
+      }));
+    };
+
+    const loadExpenses = async () => {
+      const expRes = await apiGet<{
+        month_wise?: {
+          incomes?: Record<string, Posting[]>;
+          expenses?: Record<string, Posting[]>;
+          investments?: Record<string, Posting[]>;
+          taxes?: Record<string, Posting[]>;
+          liabilities?: Record<string, Posting[]>;
+        };
+      }>("/api/expense");
+      monthWiseExpenses = expRes.month_wise?.expenses || {};
+      monthWiseIncomes = expRes.month_wise?.incomes || {};
+      monthWiseInvestments = expRes.month_wise?.investments || {};
+      monthWiseTaxes = expRes.month_wise?.taxes || {};
+      monthWiseLiabilities = expRes.month_wise?.liabilities || {};
+
+      const availableMonths = Object.keys(monthWiseExpenses).sort();
+      if (availableMonths.length > 0 && !monthWiseExpenses[selectedMonth]) {
+        selectedMonth = availableMonths[availableMonths.length - 1];
+      }
+      if (!sankeyCustomRange) {
+        setSankeyRangeForPeriod(sankeyPeriod);
+      }
+    };
+
+    const loadStatement = async () => {
+      const stmtRes = await apiGet<{ yearly?: Record<string, IncomeStatement> }>(
+        "/api/income_statement"
+      ).catch(() => ({ yearly: {} }));
+      yearlyStatements = stmtRes.yearly || {};
+      const stmtYears = Object.keys(yearlyStatements).sort().reverse();
+      if (stmtYears.length > 0) {
+        selectedYear = stmtYears[0];
+      }
+    };
+
+    const loadBudget = async () => {
+      const budgetRes = await apiGet<{
+        budgetsByMonth?: Record<string, BudgetMonth>;
+        availableForBudgeting?: number;
+      }>("/api/budget").catch(() => ({ budgetsByMonth: {}, availableForBudgeting: 0 }));
+      budgetsByMonth = budgetRes.budgetsByMonth || {};
+      availableForBudgeting = budgetRes.availableForBudgeting || 0;
+    };
+
+    const loadRecurring = async () => {
+      const recRes = await apiGet<{ transaction_sequences?: RecurringItem[] }>(
+        "/api/recurring"
+      ).catch(() => ({ transaction_sequences: [] }));
+      recurringItems = recRes.transaction_sequences || [];
+    };
+
+    const loadIncome = async () => {
+      const [incRes, invIncRes] = await Promise.all([
         apiGet<{
           yearly_cards?: Array<{
             year?: string;
@@ -205,46 +249,47 @@
         })),
         apiGet<{ ttm_total?: number }>("/api/income/investment").catch(() => ({ ttm_total: 0 }))
       ]);
-
-      cashFlows = (cfRes.cash_flows || []).map((c) => ({
-        ...c,
-        income: Math.abs(c.income || 0),
-        expenses: Math.abs(c.expenses || 0),
-        investment: Math.abs(c.investment || 0),
-        tax: Math.abs(c.tax || 0),
-        liabilities: Math.abs(c.liabilities || 0)
-      }));
-      monthWiseExpenses = expRes.month_wise?.expenses || {};
-      monthWiseIncomes = expRes.month_wise?.incomes || {};
-      monthWiseInvestments = expRes.month_wise?.investments || {};
-      monthWiseTaxes = expRes.month_wise?.taxes || {};
-      monthWiseLiabilities = expRes.month_wise?.liabilities || {};
-      yearlyStatements = stmtRes.yearly || {};
-      budgetsByMonth = budgetRes.budgetsByMonth || {};
-      availableForBudgeting = budgetRes.availableForBudgeting || 0;
-      recurringItems = recRes.transaction_sequences || [];
       yearlyIncomeCards = incRes.yearly_cards || [];
       incomeTimeline = incRes.income_timeline || [];
       taxTimeline = incRes.tax_timeline || [];
       ttmInvestmentIncome = invIncRes.ttm_total || 0;
+    };
 
-      const availableMonths = Object.keys(monthWiseExpenses).sort();
-      if (availableMonths.length > 0 && !monthWiseExpenses[selectedMonth]) {
-        selectedMonth = availableMonths[availableMonths.length - 1];
+    const loaders: Record<StudioTab, () => Promise<void>> = {
+      cashflow: loadCashflow,
+      expenses: loadExpenses,
+      statement: loadStatement,
+      budget: loadBudget,
+      recurring: loadRecurring,
+      income: loadIncome,
+      sankey: async () => {
+        if (!sankeyCustomRange) {
+          setSankeyRangeForPeriod(sankeyPeriod);
+        }
       }
-      if (!sankeyCustomRange) {
-        setSankeyRangeForPeriod(sankeyPeriod);
-      }
+    };
 
-      const stmtYears = Object.keys(yearlyStatements).sort().reverse();
-      if (stmtYears.length > 0) {
-        selectedYear = stmtYears[0];
-      }
+    const initialTab = activeTab;
+    try {
+      await loaders[initialTab]();
     } catch (e) {
       error = e instanceof Error ? e.message : "Failed to load cash flow data";
     } finally {
       loading = false;
     }
+
+    // Prefetch remaining tabs in the background after initial render.
+    const backgroundTabs: StudioTab[] = [
+      "cashflow",
+      "expenses",
+      "statement",
+      "budget",
+      "recurring",
+      "income"
+    ];
+    void Promise.allSettled(
+      backgroundTabs.filter((t) => t !== initialTab).map((t) => loaders[t]())
+    );
   });
 
   async function loadSankey() {

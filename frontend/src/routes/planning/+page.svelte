@@ -89,7 +89,13 @@
   });
   $effect(() => {
     const tab = $page.url.searchParams.get("tab");
-    if (tab === "projection" || tab === "goals" || tab === "whatif" || tab === "drawdown" || tab === "tax") {
+    if (
+      tab === "projection" ||
+      tab === "goals" ||
+      tab === "whatif" ||
+      tab === "drawdown" ||
+      tab === "tax"
+    ) {
       activeTab = tab;
     }
   });
@@ -130,21 +136,32 @@
   let simLoading = $state(false);
 
   onMount(async () => {
-    try {
-      const [projRes, dnaRes, goalsRes, projGoalsRes, cfg] = await Promise.all([
-        apiGet<BaseProjectionResponse>("/api/networth/projection"),
-        apiGet<{ profile: FinancialProfile }>("/api/projection/dna").catch(() => ({
-          profile: null
-        })),
+    const loadProjection = async () => {
+      const projRes = await apiGet<BaseProjectionResponse>("/api/networth/projection");
+      base = projRes;
+      monthlyContribution = Math.round(projRes.monthly_contribution || 0);
+      expectedCagr = projRes.expected_cagr || 10;
+      swr = projRes.swr || 4;
+    };
+
+    const loadDna = async () => {
+      const dnaRes = await apiGet<{ profile: FinancialProfile }>("/api/projection/dna").catch(
+        () => ({ profile: null })
+      );
+      dna = dnaRes.profile;
+      if (dna?.return_volatility) {
+        volatility = Math.min(40, Math.max(5, Math.round(dna.return_volatility * 10) / 10));
+      }
+    };
+
+    const loadGoals = async () => {
+      const [goalsRes, projGoalsRes, cfg] = await Promise.all([
         apiGet<{ goals?: GoalSummary[] }>("/api/goals").catch(() => ({ goals: [] })),
         apiGet<{ goals?: typeof projectedGoals }>("/api/projection/goals").catch(() => ({
           goals: []
         })),
         getFullConfig().catch(() => null)
       ]);
-
-      base = projRes;
-      dna = dnaRes.profile;
       goals = goalsRes.goals || [];
       projectedGoals = projGoalsRes.goals || [];
       if (cfg) {
@@ -152,18 +169,29 @@
         const g = (cfg.goals as Record<string, unknown> | undefined) || {};
         lifeGoals = Array.isArray(g.life) ? (g.life as LifeGoalConfig[]) : [];
       }
+    };
 
-      monthlyContribution = Math.round(projRes.monthly_contribution || 0);
-      expectedCagr = projRes.expected_cagr || 10;
-      swr = projRes.swr || 4;
-      if (dna?.return_volatility) {
-        volatility = Math.min(40, Math.max(5, Math.round(dna.return_volatility * 10) / 10));
+    const initialTab = activeTab;
+    try {
+      if (initialTab === "goals") {
+        await loadGoals();
+      } else {
+        await loadProjection();
       }
     } catch (e) {
       error = e instanceof Error ? e.message : "Failed to load planning data";
     } finally {
       loading = false;
     }
+
+    // Prefetch remaining planning data in the background after initial render.
+    const backgroundLoads: Array<Promise<void>> = [loadDna()];
+    if (initialTab === "goals") {
+      backgroundLoads.push(loadProjection());
+    } else {
+      backgroundLoads.push(loadGoals());
+    }
+    void Promise.allSettled(backgroundLoads);
   });
 
   function calibrateFromDna() {
