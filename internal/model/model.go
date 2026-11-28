@@ -12,6 +12,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/cii"
 	"github.com/ananthakumaran/paisa/internal/model/commodity"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
+	"github.com/ananthakumaran/paisa/internal/model/monthly_account_balance"
 	"github.com/ananthakumaran/paisa/internal/model/portfolio"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/price"
@@ -151,7 +152,10 @@ func SyncJournal(db *gorm.DB, forceJournal bool) (SyncResult, error) {
 				return deltaErr
 			}
 		}
-		return account_balance.RefreshFromPostings(tx, postings)
+		if err := account_balance.RefreshFromPostings(tx, postings); err != nil {
+			return err
+		}
+		return monthly_account_balance.RefreshFromPostings(tx, postings)
 	})
 	if err != nil {
 		log.WithFields(log.Fields{"stage": "journal.db_write", "error": err}).Error("Journal database write failed")

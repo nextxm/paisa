@@ -18,6 +18,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/investment_income_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/job"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
+	"github.com/ananthakumaran/paisa/internal/model/monthly_account_balance"
 	mutualfundModel "github.com/ananthakumaran/paisa/internal/model/mutualfund/scheme"
 	npsModel "github.com/ananthakumaran/paisa/internal/model/nps/scheme"
 	"github.com/ananthakumaran/paisa/internal/model/portfolio"
@@ -64,6 +65,7 @@ var steps = []step{
 	{Version: 18, Apply: v18AddFindingDismissals},
 	{Version: 19, Apply: v19AddImportRules},
 	{Version: 20, Apply: v20AddCacheHashKeyUniqueIndex},
+	{Version: 21, Apply: v21AddMonthlyAccountBalances},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -348,6 +350,15 @@ func v20AddCacheHashKeyUniqueIndex(db *gorm.DB) error {
 	}
 	if err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_caches_hash_key ON caches(hash_key)`).Error; err != nil {
 		return fmt.Errorf("v20: create idx_caches_hash_key failed: %w", err)
+	}
+	return nil
+}
+
+// v21AddMonthlyAccountBalances creates the monthly_account_balances materialized
+// summary table refreshed on every journal sync.
+func v21AddMonthlyAccountBalances(db *gorm.DB) error {
+	if err := db.AutoMigrate(&monthly_account_balance.MonthlyAccountBalance{}); err != nil {
+		return fmt.Errorf("v21: AutoMigrate monthly_account_balances failed: %w", err)
 	}
 	return nil
 }
