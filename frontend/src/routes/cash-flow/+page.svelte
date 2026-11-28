@@ -653,7 +653,17 @@
       });
       running = next;
     }
-    const endBal = currentStatement.endingBalance || running;
+    const endBal = currentStatement.endingBalance ?? running;
+    const residual = endBal - running;
+    if (Math.abs(residual) >= 1) {
+      steps.push({
+        label: "Other / FX",
+        start: running,
+        end: endBal,
+        delta: residual,
+        kind: residual >= 0 ? "pos" : "neg"
+      });
+    }
     steps.push({ label: "End", start: 0, end: endBal, delta: endBal, kind: "total" });
     return steps;
   });

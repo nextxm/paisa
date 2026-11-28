@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/query"
 	"github.com/ananthakumaran/paisa/internal/service"
@@ -152,7 +153,11 @@ func computeStatement(db *gorm.DB, postings []posting.Posting) map[string]Income
 		incomeStatement.Tax = make(map[string]decimal.Decimal)
 		incomeStatement.Expenses = make(map[string]decimal.Decimal)
 
+		endOfWindow := utils.EndOfDay(end)
 		for _, p := range grouped[fy] {
+			if p.Date.After(endOfWindow) {
+				continue
+			}
 			category := utils.FirstName(p.Account)
 
 			switch category {
@@ -188,7 +193,7 @@ func computeStatement(db *gorm.DB, postings []posting.Posting) map[string]Income
 				if r.quantity == nil {
 					r.quantity = make(map[string]decimal.Decimal)
 				}
-				if !utils.IsCurrency(p.Commodity) {
+				if p.Commodity != config.DefaultCurrency() {
 					r.amount = r.amount.Add(p.Amount)
 					r.quantity[p.Commodity] = r.quantity[p.Commodity].Add(p.Quantity)
 				}
