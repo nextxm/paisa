@@ -103,7 +103,14 @@
   let availableForBudgeting = $state(0);
   let recurringItems = $state<RecurringItem[]>([]);
   let yearlyIncomeCards = $state<
-    Array<{ year?: string; net_income?: number; net_tax?: number; gross_income?: number }>
+    Array<{
+      year?: string;
+      start_date?: string;
+      end_date?: string;
+      net_income?: number;
+      net_tax?: number;
+      gross_income?: number;
+    }>
   >([]);
   let incomeTimeline = $state<Array<{ date: string; postings?: Posting[] }>>([]);
   let taxTimeline = $state<Array<{ date: string; postings?: Posting[] }>>([]);
@@ -135,6 +142,8 @@
         apiGet<{
           yearly_cards?: Array<{
             year?: string;
+            start_date?: string;
+            end_date?: string;
             net_income?: number;
             net_tax?: number;
             gross_income?: number;
@@ -1372,8 +1381,19 @@
             </thead>
             <tbody class="divide-y divide-[var(--border)] tabular-nums">
               {#each yearlyIncomeCards as yc}
+                {@const startY = yc.start_date ? dayjs(yc.start_date).year() : null}
+                {@const endY = yc.end_date ? dayjs(yc.end_date).year() : null}
+                {@const fyLabel =
+                  yc.year ||
+                  (startY !== null && endY !== null
+                    ? startY === endY
+                      ? String(startY)
+                      : `FY ${startY}-${String(endY).slice(-2)}`
+                    : startY !== null
+                      ? String(startY)
+                      : "—")}
                 <tr class="hover:bg-[var(--surface-elevated)]/50">
-                  <td class="py-2.5 px-4 font-medium">{yc.year || "—"}</td>
+                  <td class="py-2.5 px-4 font-medium">{fyLabel}</td>
                   <td class="py-2.5 px-4 text-right">{formatMoney(yc.gross_income || 0)}</td>
                   <td class="py-2.5 px-4 text-right text-[var(--loss)]">
                     {formatMoney(yc.net_tax || 0)}

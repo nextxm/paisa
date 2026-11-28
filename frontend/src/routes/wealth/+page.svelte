@@ -1,4 +1,5 @@
 <script lang="ts">
+  import dayjs from "dayjs";
   import { onMount } from "svelte";
   import LineAreaChart, { type NetworthPoint } from "$lib/components/LineAreaChart.svelte";
   import StackedBarChart, { type StackedBarColumn } from "$lib/components/StackedBarChart.svelte";
@@ -31,6 +32,7 @@
     repaid_amount?: number;
     interest_amount?: number;
     balance_amount?: number;
+    originalBalances?: Array<{ currency: string; amount: number }>;
   }
 
   interface PortfolioAggregate {
@@ -39,7 +41,12 @@
     sub_group: string;
     amount: number;
     percentage: number;
-    breakdowns?: Array<{ commodity?: string; amount?: number }>;
+    breakdowns?: Array<{
+      commodity_name?: string;
+      commodity?: string;
+      amount?: number;
+      percentage?: number;
+    }>;
   }
 
   interface InterestAccount {
@@ -56,6 +63,8 @@
   interface RepaymentRow {
     date: string;
     account?: string;
+    commodity?: string;
+    original_amount?: number;
     amount?: number;
     repaid_amount?: number;
   }
@@ -74,6 +83,7 @@
   }
 
   interface InvestmentIncomeHolding {
+    holding?: string;
     name?: string;
     account?: string;
     type?: string;
@@ -85,6 +95,15 @@
     yearly_income?: Record<string, number>;
   }
 
+  interface InvestmentIncomeTimelinePoint {
+    date: string;
+    dividend?: number;
+    interest?: number;
+    distribution?: number;
+    total?: number;
+    amount?: number;
+  }
+
   interface AllocationTargetSummary {
     name: string;
     target: number;
@@ -94,12 +113,15 @@
   }
 
   interface CreditCardSummary {
-    name: string;
+    name?: string;
     account: string;
+    currency?: string;
     balance?: number;
+    creditLimit?: number;
     limit?: number;
     unbilled?: number;
     due_date?: string;
+    originalBalances?: Array<{ currency: string; amount: number }>;
   }
 
   let activeTab = $state<WealthTab>("overview");
@@ -177,7 +199,7 @@
   let interestTTM = $state(0);
   let distributionTTM = $state(0);
   let investmentIncomeHoldings = $state<InvestmentIncomeHolding[]>([]);
-  let investmentIncomeTimeline = $state<Array<{ date: string; amount: number }>>([]);
+  let investmentIncomeTimeline = $state<InvestmentIncomeTimelinePoint[]>([]);
   let creditCards = $state<CreditCardSummary[]>([]);
   let portfolioCommodities = $state<string[]>([]);
   let selectedPortfolioCommodities = $state<string[]>([]);
@@ -233,9 +255,9 @@
         apiGet<{ gain_breakdown?: GainRow[] }>("/api/gain").catch(() => ({
           gain_breakdown: [] as GainRow[]
         })),
-        apiGet<{ liability_breakdowns?: LiabilityRow[] }>("/api/liabilities/balance").catch(
-          () => ({ liability_breakdowns: [] as LiabilityRow[] })
-        ),
+        apiGet<{ liability_breakdowns?: LiabilityRow[] | Record<string, LiabilityRow> }>(
+          "/api/liabilities/balance"
+        ).catch(() => ({ liability_breakdowns: [] as LiabilityRow[] })),
         apiGet<{
           aggregates?: Record<string, AllocationAggregate>;
           aggregates_timeline?: Array<{ date?: string; aggregates?: Record<string, AllocationAggregate> }>;
@@ -251,12 +273,12 @@
         apiGet<{
           ttm_total?: number;
           holdings?: InvestmentIncomeHolding[];
-          timeline?: Array<{ date: string; amount: number }>;
+          timeline?: InvestmentIncomeTimelinePoint[];
           income_by_type?: Record<string, InvestmentIncomeHolding[]>;
         }>("/api/income/investment").catch(() => ({
           ttm_total: 0,
           holdings: [] as InvestmentIncomeHolding[],
-          timeline: [] as Array<{ date: string; amount: number }>,
+          timeline: [] as InvestmentIncomeTimelinePoint[],
           income_by_type: {} as Record<string, InvestmentIncomeHolding[]>
         })),
         apiGet<{ creditCards?: CreditCardSummary[] }>("/api/credit_cards").catch(() => ({
@@ -296,7 +318,9 @@
       gains = (gainRes.gain_breakdown || []).sort(
         (a, b) => (b.marketAmount || 0) - (a.marketAmount || 0)
       );
-      liabilities = liabRes.liability_breakdowns || [];
+      liabilities = Array.isArray(liabRes.liability_breakdowns)
+        ? liabRes.liability_breakdowns
+        : Object.values(liabRes.liability_breakdowns || {});
       allocationItems = Object.values(allocRes.aggregates || {})
         .filter((a) => (a.market_amount || 0) > 0)
         .sort((a, b) => (b.market_amount || 0) - (a.market_amount || 0));
@@ -337,15 +361,158 @@
     }
   });
 
-  const windowedTimeline = $derived(
-    yearsWindow > 0 ? timeline.slice(-(yearsWindow * 12)) : timeline
-  );
   const latestPoint = $derived(timeline.length > 0 ? timeline[timeline.length - 1] : null);
+  const windowedTimeline = $derived.by(() => {
+    if (yearsWindow <= 0 || !latestPoint?.date) return timeline;
+    const cutoff = dayjs(latestPoint.date).subtract(yearsWindow, "year");
+    return timeline.filter((pt) => !dayjs(pt.date).isBefore(cutoff, "day"));
+  });
   const totalAllocation = $derived(
     allocationItems.reduce((sum, a) => sum + (a.market_amount || 0), 0)
   );
 
   const invPalette = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#14b8a6", "#6366f1"];
+
+  let invIncomeGranularity = $state<"monthly" | "yearly">("monthly");
+
+  const aggregatedInvestmentIncome = $derived.by(() => {
+    if (investmentIncomeTimeline.length === 0) return [];
+    const byKey = new Map<
+      string,
+      { key: string; label: string; dividend: number; interest: number; distribution: number; total: number }
+    >();
+    for (const pt of investmentIncomeTimeline) {
+      const d = dayjs(pt.date);
+      const isMonthly = invIncomeGranularity === "monthly";
+      const key = d.isValid()
+        ? isMonthly
+          ? d.format("YYYY-MM")
+          : d.format("YYYY")
+        : String(pt.date || "").slice(0, isMonthly ? 7 : 4);
+      if (!key) continue;
+      const label = d.isValid() ? (isMonthly ? d.format("MMM 'YY") : d.format("YYYY")) : key;
+      const div = pt.dividend || 0;
+      const intr = pt.interest || 0;
+      const dist = pt.distribution || 0;
+      const tot = div + intr + dist > 0 ? div + intr + dist : (pt.total ?? pt.amount ?? 0);
+
+      const cur = byKey.get(key) || {
+        key,
+        label,
+        dividend: 0,
+        interest: 0,
+        distribution: 0,
+        total: 0
+      };
+      cur.dividend += div;
+      cur.interest += intr;
+      cur.distribution += dist;
+      cur.total += tot;
+      byKey.set(key, cur);
+    }
+    return Array.from(byKey.values()).sort((a, b) => a.key.localeCompare(b.key));
+  });
+
+  const investmentIncomeColumns = $derived.by((): StackedBarColumn[] => {
+    const slice =
+      invIncomeGranularity === "monthly"
+        ? aggregatedInvestmentIncome.slice(-24)
+        : aggregatedInvestmentIncome;
+    return slice.map((pt) => {
+      const segments =
+        pt.dividend + pt.interest + pt.distribution > 0
+          ? [
+              { name: "Dividend", amount: pt.dividend, color: "#3b82f6" },
+              { name: "Interest", amount: pt.interest, color: "#10b981" },
+              { name: "Distribution", amount: pt.distribution, color: "#f59e0b" }
+            ].filter((s) => s.amount > 0)
+          : pt.total > 0
+            ? [{ name: "Income", amount: pt.total, color: "#10b981" }]
+            : [];
+      return {
+        label: pt.label,
+        total: pt.total,
+        segments
+      };
+    });
+  });
+
+  function holdingSparklinePoints(yearlyIncome?: Record<string, number>): string {
+    const entries = Object.entries(yearlyIncome || {}).sort(([a], [b]) => a.localeCompare(b));
+    if (entries.length < 2) return "";
+    const vals = entries.map(([, v]) => v || 0);
+    const maxV = Math.max(1, ...vals);
+    const minV = Math.min(0, ...vals);
+    const span = Math.max(1, maxV - minV);
+    return vals
+      .map((v, i) => {
+        const x = (i / (vals.length - 1)) * 96 + 2;
+        const y = 22 - ((v - minV) / span) * 18;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(" ");
+  }
+
+  let portfolioSearch = $state("");
+  let portfolioGroupTab = $state<"all" | "security_type" | "rating" | "industry" | "security">("all");
+
+  function filterPortfolioItems(items: PortfolioAggregate[]) {
+    const q = portfolioSearch.trim().toLowerCase();
+    const mapped = items
+      .map((item) => {
+        const rawBreakdowns = item.breakdowns || [];
+        const filteredBreakdowns =
+          rawBreakdowns.length > 0
+            ? rawBreakdowns.filter((b) => {
+                const name = b.commodity_name || b.commodity;
+                return !name || selectedPortfolioCommodities.includes(name);
+              })
+            : [];
+        const amount =
+          rawBreakdowns.length > 0
+            ? filteredBreakdowns.reduce((s, b) => s + (b.amount || 0), 0)
+            : item.amount || 0;
+        return {
+          ...item,
+          amount,
+          filteredBreakdowns
+        };
+      })
+      .filter((item) => item.amount > 0);
+
+    const total = mapped.reduce((s, item) => s + item.amount, 0);
+    return mapped
+      .map((item) => ({
+        ...item,
+        percentage: total > 0 ? (item.amount / total) * 100 : 0,
+        fundShares: item.filteredBreakdowns
+          .map((b) => {
+            const fund = b.commodity_name || b.commodity || "Other";
+            const amt = b.amount || 0;
+            return {
+              fund,
+              amount: amt,
+              sharePct: item.amount > 0 ? (amt / item.amount) * 100 : 0
+            };
+          })
+          .filter((f) => f.amount > 0)
+          .sort((a, b) => b.amount - a.amount)
+      }))
+      .filter((item) => {
+        if (!q) return true;
+        return (
+          (item.group || "").toLowerCase().includes(q) ||
+          (item.sub_group || "").toLowerCase().includes(q) ||
+          item.fundShares.some((f) => f.fund.toLowerCase().includes(q))
+        );
+      })
+      .sort((a, b) => b.amount - a.amount);
+  }
+
+  function fundColor(fund: string): string {
+    const idx = portfolioCommodities.indexOf(fund);
+    return invPalette[(idx >= 0 ? idx : 0) % invPalette.length];
+  }
   const monthlyInvestmentColumns = $derived.by((): StackedBarColumn[] => {
     if (investmentPostings.length === 0) return [];
     const byMonth = new Map<string, Map<string, number>>();
@@ -1244,71 +1411,142 @@
         No underlying portfolio breakdown metadata available.
       </div>
     {:else}
+      {@const portfolioGroups = [
+        { id: "security_type", title: "Security Type", items: filterPortfolioItems(portfolioSecurityType) },
+        { id: "rating", title: "Credit Rating", items: filterPortfolioItems(portfolioRating) },
+        { id: "industry", title: "Industry", items: filterPortfolioItems(portfolioIndustry) },
+        { id: "security", title: "Security / Holding", items: filterPortfolioItems(portfolioNameAndType) }
+      ].filter((g) => portfolioGroupTab === "all" || portfolioGroupTab === g.id)}
       <div class="space-y-5">
-        {#if portfolioCommodities.length > 0}
-          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 flex flex-wrap items-center gap-3 text-xs">
-            <span class="font-semibold uppercase tracking-wider text-[var(--muted)]">Holdings Filter:</span>
-            {#each portfolioCommodities as comm}
-              <label class="inline-flex items-center gap-1.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={selectedPortfolioCommodities.includes(comm)}
-                  onchange={() => {
-                    selectedPortfolioCommodities = selectedPortfolioCommodities.includes(comm)
-                      ? selectedPortfolioCommodities.filter((c) => c !== comm)
-                      : [...selectedPortfolioCommodities, comm];
-                  }}
-                />
-                <span>{comm}</span>
-              </label>
-            {/each}
-          </div>
-        {/if}
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {#each [
-            { title: "By Security Type", items: portfolioSecurityType },
-            { title: "By Credit Rating", items: portfolioRating },
-            { title: "By Industry", items: portfolioIndustry },
-            { title: "By Holding & Security Type", items: portfolioNameAndType }
-          ] as group}
-            <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-              <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-                {group.title}
-              </h3>
-              {#if group.items.length === 0}
-                <p class="text-xs text-[var(--muted)]">No data.</p>
-              {:else}
-                <div class="space-y-2.5">
-                  {#each group.items.slice(0, 12) as item}
-                    {@const filteredAmt = item.breakdowns?.length
-                      ? item.breakdowns
-                          .filter((b) => !b.commodity || selectedPortfolioCommodities.includes(b.commodity))
-                          .reduce((s, b) => s + (b.amount || 0), 0)
-                      : item.amount || 0}
-                    {#if filteredAmt > 0}
-                      <div class="space-y-1 text-xs">
-                        <div class="flex justify-between gap-2">
-                          <span class="font-medium truncate">{item.group || item.sub_group || "Other"}</span>
-                          <span class="tabular-nums whitespace-nowrap">
-                            <strong>{formatMoney(filteredAmt)}</strong>
-                            <span class="text-[var(--muted)] ml-1">({(item.percentage || 0).toFixed(1)}%)</span>
-                          </span>
-                        </div>
-                        <div class="h-1.5 rounded-full bg-[var(--surface-elevated)] overflow-hidden">
-                          <div
-                            class="h-full rounded-full bg-[var(--accent)]"
-                            style="width: {Math.min(100, item.percentage || 0)}%"
-                          ></div>
-                        </div>
-                      </div>
-                    {/if}
-                  {/each}
-                </div>
-              {/if}
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+          {#if portfolioCommodities.length > 0}
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="font-semibold uppercase tracking-wider text-[var(--muted)]">Funds:</span>
+              {#each portfolioCommodities as comm}
+                <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedPortfolioCommodities.includes(comm)}
+                    onchange={() => {
+                      selectedPortfolioCommodities = selectedPortfolioCommodities.includes(comm)
+                        ? selectedPortfolioCommodities.filter((c) => c !== comm)
+                        : [...selectedPortfolioCommodities, comm];
+                    }}
+                  />
+                  <span
+                    class="w-2.5 h-2.5 rounded-full inline-block"
+                    style="background: {fundColor(comm)}"
+                  ></span>
+                  <span>{comm}</span>
+                </label>
+              {/each}
             </div>
-          {/each}
+          {/if}
+
+          <div class="flex flex-wrap items-center gap-2 ml-auto">
+            <div class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5">
+              {#each [
+                { id: "all", label: "All" },
+                { id: "security_type", label: "Type" },
+                { id: "rating", label: "Rating" },
+                { id: "industry", label: "Industry" },
+                { id: "security", label: "Security" }
+              ] as pt}
+                <button
+                  type="button"
+                  onclick={() => (portfolioGroupTab = pt.id as typeof portfolioGroupTab)}
+                  class="px-2.5 py-1 rounded-md cursor-pointer {portfolioGroupTab === pt.id
+                    ? 'bg-[var(--surface)] font-semibold'
+                    : 'text-[var(--muted)]'}"
+                >
+                  {pt.label}
+                </button>
+              {/each}
+            </div>
+            <input
+              type="search"
+              bind:value={portfolioSearch}
+              placeholder="Filter security, industry, or fund…"
+              class="px-2.5 py-1 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] outline-none w-52"
+            />
+          </div>
         </div>
+
+        {#each portfolioGroups as group (group.id)}
+          <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+            <div class="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                {group.title} ({group.items.length})
+              </h3>
+            </div>
+            {#if group.items.length === 0}
+              <div class="p-6 text-center text-xs text-[var(--muted)]">No matching data.</div>
+            {:else}
+              <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
+                <table class="w-full text-xs text-left">
+                  <thead class="uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/60 sticky top-0">
+                    <tr>
+                      <th class="py-2 px-4 font-medium">{group.title}</th>
+                      {#if group.id === "security"}
+                        <th class="py-2 px-3 font-medium">Type</th>
+                      {/if}
+                      <th class="py-2 px-3 text-right font-medium">Amount</th>
+                      <th class="py-2 px-3 text-right font-medium">Portfolio %</th>
+                      <th class="py-2 px-3 font-medium w-44">Stacked Share</th>
+                      <th class="py-2 px-4 font-medium">Fund Share Breakdown</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-[var(--border)] tabular-nums">
+                    {#each group.items as item}
+                      <tr class="hover:bg-[var(--surface-elevated)]/40">
+                        <td class="py-2 px-4 font-medium">
+                          {item.group || item.sub_group || "Other"}
+                        </td>
+                        {#if group.id === "security"}
+                          <td class="py-2 px-3 text-[var(--muted)]">{item.sub_group || "—"}</td>
+                        {/if}
+                        <td class="py-2 px-3 text-right font-semibold whitespace-nowrap">
+                          {formatMoney(item.amount)}
+                        </td>
+                        <td class="py-2 px-3 text-right whitespace-nowrap">
+                          {item.percentage.toFixed(2)}%
+                        </td>
+                        <td class="py-2 px-3">
+                          <div class="h-2.5 rounded-full bg-[var(--surface-elevated)] overflow-hidden flex">
+                            {#each item.fundShares as fs}
+                              <div
+                                class="h-full"
+                                style="width: {(fs.sharePct * item.percentage) / 100}%; background: {fundColor(fs.fund)}"
+                                title="{fs.fund}: {formatMoney(fs.amount)} ({fs.sharePct.toFixed(1)}% of this row)"
+                              ></div>
+                            {/each}
+                          </div>
+                        </td>
+                        <td class="py-2 px-4">
+                          <div class="flex flex-wrap gap-1.5">
+                            {#each item.fundShares as fs}
+                              <span
+                                class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--surface-elevated)] border border-[var(--border)] text-[11px]"
+                                title="{fs.fund}: {formatMoney(fs.amount)}"
+                              >
+                                <span
+                                  class="w-2 h-2 rounded-full shrink-0"
+                                  style="background: {fundColor(fs.fund)}"
+                                ></span>
+                                <span class="font-medium">{fs.fund}</span>
+                                <span class="text-[var(--muted)]">{fs.sharePct.toFixed(1)}%</span>
+                              </span>
+                            {/each}
+                          </div>
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {/if}
+          </div>
+        {/each}
       </div>
     {/if}
   {:else if activeTab === "income"}
@@ -1348,20 +1586,41 @@
         </div>
       </div>
 
-      {#if investmentIncomeTimeline.length > 0}
-        {@const maxInc = Math.max(1, ...investmentIncomeTimeline.map((t) => t.amount || 0))}
+      {#if investmentIncomeColumns.length > 0}
         <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-          <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-            Monthly Investment Income Timeline
-          </div>
-          <div class="h-36 flex items-end gap-1.5 pt-2">
-            {#each investmentIncomeTimeline.slice(-24) as pt}
-              {@const h = Math.max(2, ((pt.amount || 0) / maxInc) * 110)}
-              <div class="flex-1 flex flex-col items-center gap-1 min-w-0" title="{pt.date}: {formatMoney(pt.amount || 0)}">
-                <div class="w-full rounded-t bg-[var(--gain)]/85" style="height: {h}px"></div>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+              {invIncomeGranularity === "monthly" ? "Monthly" : "Yearly"} Investment Income Timeline
+            </span>
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="flex items-center gap-3 text-[11px] text-[var(--muted)]">
+                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-[#3b82f6]"></span>Dividend</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-[#10b981]"></span>Interest</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-[#f59e0b]"></span>Distribution</span>
               </div>
-            {/each}
+              <div class="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] p-0.5 text-xs">
+                <button
+                  type="button"
+                  onclick={() => (invIncomeGranularity = "monthly")}
+                  class="px-2.5 py-1 rounded-md cursor-pointer {invIncomeGranularity === 'monthly'
+                    ? 'bg-[var(--surface)] font-semibold'
+                    : 'text-[var(--muted)]'}"
+                >
+                  Monthly
+                </button>
+                <button
+                  type="button"
+                  onclick={() => (invIncomeGranularity = "yearly")}
+                  class="px-2.5 py-1 rounded-md cursor-pointer {invIncomeGranularity === 'yearly'
+                    ? 'bg-[var(--surface)] font-semibold'
+                    : 'text-[var(--muted)]'}"
+                >
+                  Yearly
+                </button>
+              </div>
+            </div>
           </div>
+          <StackedBarChart columns={investmentIncomeColumns} />
         </div>
       {/if}
 
@@ -1382,21 +1641,32 @@
                   <th class="py-2.5 px-3 text-right font-medium">Total Income</th>
                   <th class="py-2.5 px-3 text-right font-medium">TTM Income</th>
                   <th class="py-2.5 px-3 text-right font-medium">Balance</th>
-                  <th class="py-2.5 px-4 text-right font-medium">TTM Yield</th>
+                  <th class="py-2.5 px-3 text-right font-medium">TTM Yield</th>
+                  <th class="py-2.5 px-4 text-right font-medium">Yearly Trend</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-[var(--border)] tabular-nums">
                 {#each investmentIncomeHoldings as h}
+                  {@const spark = holdingSparklinePoints(h.yearly_income)}
                   <tr class="hover:bg-[var(--surface-elevated)]/50">
-                    <td class="py-2.5 px-4 font-medium">{h.account || h.name || "—"}</td>
+                    <td class="py-2.5 px-4 font-medium">{h.holding || h.account || h.name || "—"}</td>
                     <td class="py-2.5 px-3 text-xs text-[var(--muted)]">{h.type || "—"}</td>
                     <td class="py-2.5 px-3 text-right">{formatMoney(h.total_income ?? h.ttm_income ?? 0)}</td>
                     <td class="py-2.5 px-3 text-right font-semibold text-[var(--gain)]">
                       {formatMoney(h.ttm_income || 0)}
                     </td>
                     <td class="py-2.5 px-3 text-right">{formatMoney(h.current_balance || 0)}</td>
-                    <td class="py-2.5 px-4 text-right text-xs text-[var(--muted)]">
+                    <td class="py-2.5 px-3 text-right text-xs text-[var(--muted)]">
                       {(h.ttm_yield ?? h.yield) ? `${((h.ttm_yield ?? h.yield ?? 0) * 100).toFixed(2)}%` : "—"}
+                    </td>
+                    <td class="py-2.5 px-4 text-right">
+                      {#if spark}
+                        <svg viewBox="0 0 100 26" class="w-24 h-6 inline-block text-[var(--gain)]">
+                          <polyline fill="none" stroke="currentColor" stroke-width="1.75" points={spark} />
+                        </svg>
+                      {:else}
+                        <span class="text-xs text-[var(--muted)]">—</span>
+                      {/if}
                     </td>
                   </tr>
                 {/each}
@@ -1405,6 +1675,40 @@
           </div>
         {/if}
       </div>
+
+      {#if aggregatedInvestmentIncome.length > 0}
+        <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
+          <div class="px-4 py-3 border-b border-[var(--border)] text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Investment Income Timeline ({aggregatedInvestmentIncome.length} {invIncomeGranularity === "monthly" ? "months" : "years"})
+          </div>
+          <div class="overflow-x-auto max-h-80 overflow-y-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="text-xs uppercase tracking-wider text-[var(--muted)] border-b border-[var(--border)] bg-[var(--surface-elevated)]/50 sticky top-0">
+                <tr>
+                  <th class="py-2 px-4 font-medium">{invIncomeGranularity === "monthly" ? "Month" : "Year"}</th>
+                  <th class="py-2 px-3 text-right font-medium">Dividend</th>
+                  <th class="py-2 px-3 text-right font-medium">Interest</th>
+                  <th class="py-2 px-3 text-right font-medium">Distribution</th>
+                  <th class="py-2 px-4 text-right font-medium">Total</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--border)] tabular-nums">
+                {#each [...aggregatedInvestmentIncome].reverse() as pt}
+                  <tr class="hover:bg-[var(--surface-elevated)]/50">
+                    <td class="py-2 px-4 font-medium">{pt.label}</td>
+                    <td class="py-2 px-3 text-right">{formatMoney(pt.dividend)}</td>
+                    <td class="py-2 px-3 text-right">{formatMoney(pt.interest)}</td>
+                    <td class="py-2 px-3 text-right">{formatMoney(pt.distribution)}</td>
+                    <td class="py-2 px-4 text-right font-semibold text-[var(--gain)]">
+                      {formatMoney(pt.total)}
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {/if}
     </div>
   {:else}
     <div class="space-y-5">
@@ -1429,7 +1733,13 @@
               </div>
               <div class="flex justify-between text-xs tabular-nums">
                 <span class="text-[var(--muted)]">Balance</span>
-                <span class="font-semibold text-[var(--loss)]">{formatMoney(cc.balance || 0)}</span>
+                <span class="font-semibold text-[var(--loss)]">
+                  {#if cc.originalBalances && cc.originalBalances.length > 0}
+                    {cc.originalBalances.map((ob) => formatMoney(ob.amount, ob.currency)).join(" · ")}
+                  {:else}
+                    {formatMoney(cc.balance || 0, cc.currency || undefined)}
+                  {/if}
+                </span>
               </div>
             </button>
           {/each}
@@ -1469,6 +1779,7 @@
                   <th class="py-2.5 px-4 text-right font-medium">Drawn</th>
                   <th class="py-2.5 px-4 text-right font-medium">Repaid</th>
                   <th class="py-2.5 px-4 text-right font-medium">Interest</th>
+                  <th class="py-2.5 px-4 text-right font-medium">Original Balance</th>
                   <th class="py-2.5 px-4 text-right font-medium">Balance</th>
                 </tr>
               </thead>
@@ -1482,6 +1793,15 @@
                     </td>
                     <td class="py-2.5 px-4 text-right text-[var(--muted)]">
                       {formatMoney(l.interest_amount || 0)}
+                    </td>
+                    <td class="py-2.5 px-4 text-right text-xs text-[var(--muted)]">
+                      {#if l.originalBalances && l.originalBalances.length > 0}
+                        {#each l.originalBalances as ob}
+                          <div>{formatMoney(ob.amount, ob.currency)}</div>
+                        {/each}
+                      {:else}
+                        —
+                      {/if}
                     </td>
                     <td class="py-2.5 px-4 text-right font-semibold text-[var(--loss)]">
                       {formatMoney(l.balance_amount || 0)}
@@ -1524,7 +1844,10 @@
                       {formatShortDate(rep.date)} {rep.account ? `· ${rep.account}` : ""}
                     </span>
                     <span class="font-medium text-[var(--gain)]">
-                      {formatMoney(rep.repaid_amount ?? rep.amount ?? 0)}
+                      {formatMoney(
+                        rep.repaid_amount ?? rep.original_amount ?? rep.amount ?? 0,
+                        rep.commodity || undefined
+                      )}
                     </span>
                   </div>
                 {/each}
