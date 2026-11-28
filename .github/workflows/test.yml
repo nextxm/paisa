@@ -61,7 +61,9 @@ jobs:
           nix develop --command make lint
           nix develop --command npm --prefix frontend run check
       - name: JS unit tests
-        run: nix develop --command bun test --preload ./src/happydom.ts src
+        run: |
+          nix develop --command bun test --preload ./src/happydom.ts src
+          nix develop --command bun test --cwd frontend --preload ./src/happydom.ts src
 
   # ---------------------------------------------------------------------------
   # Job 3: Regression suite
