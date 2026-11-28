@@ -63,7 +63,8 @@ func FilterByGlob(postings []posting.Posting, accounts []string) []posting.Posti
 			}
 			match, err := filepath.Match(accountGlob, account)
 			if err != nil {
-				log.Fatal("Invalid account glob used for filtering", accountGlob, err)
+				log.WithError(err).WithField("glob", accountGlob).Warn("Invalid account glob used for filtering")
+				match = false
 			}
 
 			if negative {
@@ -151,10 +152,12 @@ type Point struct {
 }
 
 func RunningBalance(db *gorm.DB, postings []posting.Posting) []Point {
-	SortAsc(postings)
+	sorted := make([]posting.Posting, len(postings))
+	copy(sorted, postings)
+	SortAsc(sorted)
 	var series []Point
 
-	if len(postings) == 0 {
+	if len(sorted) == 0 {
 		return series
 	}
 
@@ -162,9 +165,9 @@ func RunningBalance(db *gorm.DB, postings []posting.Posting) []Point {
 	accumulator := make(map[string]decimal.Decimal)
 
 	end := utils.EndOfToday()
-	for start := postings[0].Date; start.Before(end); start = start.AddDate(0, 0, 1) {
-		for len(postings) > 0 && (postings[0].Date.Before(start) || postings[0].Date.Equal(start)) {
-			p, postings = postings[0], postings[1:]
+	for start := sorted[0].Date; start.Before(end); start = start.AddDate(0, 0, 1) {
+		for len(sorted) > 0 && (sorted[0].Date.Before(start) || sorted[0].Date.Equal(start)) {
+			p, sorted = sorted[0], sorted[1:]
 			accumulator[p.Commodity] = accumulator[p.Commodity].Add(p.Quantity)
 		}
 

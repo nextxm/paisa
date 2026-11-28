@@ -45,31 +45,11 @@ func GetIncomeStatement(db *gorm.DB) gin.H {
 // For non-currency postings: units are accumulated and priced at `date`.
 // Liability accounts have negative amounts/quantities in ledger double-entry,
 // so their contribution is naturally a negative number that reduces net worth.
-func networthAt(db *gorm.DB, allPostings []posting.Posting, date time.Time) decimal.Decimal {
-	// Clamp to today so future dates don't project beyond available prices.
+func valueBalanceSheetQuantities(db *gorm.DB, quantities map[string]map[string]decimal.Decimal, date time.Time) decimal.Decimal {
 	today := utils.EndOfToday()
 	if date.After(today) {
 		date = today
 	}
-	endOfDay := utils.EndOfDay(date)
-
-	// account → commodity → net quantity
-	quantities := make(map[string]map[string]decimal.Decimal)
-
-	for _, p := range allPostings {
-		if p.Date.After(endOfDay) {
-			continue
-		}
-		category := utils.FirstName(p.Account)
-		if category != "Assets" && category != "Liabilities" {
-			continue
-		}
-		if quantities[p.Account] == nil {
-			quantities[p.Account] = make(map[string]decimal.Decimal)
-		}
-		quantities[p.Account][p.Commodity] = quantities[p.Account][p.Commodity].Add(p.Quantity)
-	}
-
 	total := decimal.Zero
 	for _, commodities := range quantities {
 		for commodity, qty := range commodities {
@@ -83,6 +63,29 @@ func networthAt(db *gorm.DB, allPostings []posting.Posting, date time.Time) deci
 		}
 	}
 	return total
+}
+
+func advanceBalanceSheet(
+	quantities map[string]map[string]decimal.Decimal,
+	sortedPostings []posting.Posting,
+	idx int,
+	upTo time.Time,
+) int {
+	today := utils.EndOfToday()
+	if upTo.After(today) {
+		upTo = today
+	}
+	endOfDay := utils.EndOfDay(upTo)
+
+	for idx < len(sortedPostings) && !sortedPostings[idx].Date.After(endOfDay) {
+		p := sortedPostings[idx]
+		idx++
+		if quantities[p.Account] == nil {
+			quantities[p.Account] = make(map[string]decimal.Decimal)
+		}
+		quantities[p.Account][p.Commodity] = quantities[p.Account][p.Commodity].Add(p.Quantity)
+	}
+	return idx
 }
 
 func computeStatement(db *gorm.DB, postings []posting.Posting) map[string]IncomeStatement {
@@ -107,6 +110,22 @@ func computeStatement(db *gorm.DB, postings []posting.Posting) map[string]Income
 	// endingBalance and the Pnl snapshot match the Networth page.
 	today := utils.EndOfToday()
 
+	// Pre-filter and sort Assets/Liabilities postings once so startingBalance
+	// and endingBalance are computed in a single chronological pass (O(N log N))
+	// rather than re-scanning all postings twice per FY.
+	bsPostings := make([]posting.Posting, 0, len(postings))
+	for _, p := range postings {
+		category := utils.FirstName(p.Account)
+		if category == "Assets" || category == "Liabilities" {
+			bsPostings = append(bsPostings, p)
+		}
+	}
+	sort.Slice(bsPostings, func(i, j int) bool {
+		return bsPostings[i].Date.Before(bsPostings[j].Date)
+	})
+	bsQuantities := make(map[string]map[string]decimal.Decimal)
+	bsIdx := 0
+
 	for _, fy := range fys {
 		incomeStatement := IncomeStatement{}
 		start, end := utils.ParseFY(fy)
@@ -119,8 +138,12 @@ func computeStatement(db *gorm.DB, postings []posting.Posting) map[string]Income
 		// balance sheet rather than being derived from income flows.  This makes
 		// them immune to categorisation choices and sign-convention bugs, and
 		// guarantees they match the Networth page.
-		incomeStatement.StartingBalance = networthAt(db, postings, start.Add(-1))
-		incomeStatement.EndingBalance = networthAt(db, postings, end)
+		startDate := start.Add(-1)
+		bsIdx = advanceBalanceSheet(bsQuantities, bsPostings, bsIdx, startDate)
+		incomeStatement.StartingBalance = valueBalanceSheetQuantities(db, bsQuantities, startDate)
+
+		bsIdx = advanceBalanceSheet(bsQuantities, bsPostings, bsIdx, end)
+		incomeStatement.EndingBalance = valueBalanceSheetQuantities(db, bsQuantities, end)
 
 		type categoryQuantities map[string]map[string]decimal.Decimal
 		acc := struct {
