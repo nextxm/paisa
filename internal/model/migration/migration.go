@@ -63,6 +63,7 @@ var steps = []step{
 	{Version: 17, Apply: v17AddDuplicateSuppressions},
 	{Version: 18, Apply: v18AddFindingDismissals},
 	{Version: 19, Apply: v19AddImportRules},
+	{Version: 20, Apply: v20AddCacheHashKeyUniqueIndex},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -332,6 +333,21 @@ func v18AddFindingDismissals(db *gorm.DB) error {
 func v19AddImportRules(db *gorm.DB) error {
 	if err := db.AutoMigrate(&import_rule.Rule{}); err != nil {
 		return fmt.Errorf("v19: AutoMigrate import_rules failed: %w", err)
+	}
+	return nil
+}
+
+// v20AddCacheHashKeyUniqueIndex deduplicates existing cache rows by hash_key
+// and adds a unique index so cache upserts overwrite expired entries in place.
+func v20AddCacheHashKeyUniqueIndex(db *gorm.DB) error {
+	if !db.Migrator().HasTable(&cache.Cache{}) {
+		return db.AutoMigrate(&cache.Cache{})
+	}
+	if err := db.Exec(`DELETE FROM caches WHERE id NOT IN (SELECT MAX(id) FROM caches GROUP BY hash_key)`).Error; err != nil {
+		return fmt.Errorf("v20: deduplicate caches failed: %w", err)
+	}
+	if err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_caches_hash_key ON caches(hash_key)`).Error; err != nil {
+		return fmt.Errorf("v20: create idx_caches_hash_key failed: %w", err)
 	}
 	return nil
 }

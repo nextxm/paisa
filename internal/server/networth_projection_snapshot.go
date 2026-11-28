@@ -55,6 +55,28 @@ func getProjectionBaseInputs(db *gorm.DB) projectionBaseInputs {
 
 	// Helper to recalculate, persist and return
 	recalculateAndSave := func() projectionBaseInputs {
+		if mu := snapshotLock(snapshotKindProjection); mu != nil {
+			mu.Lock()
+			defer mu.Unlock()
+
+			// Re-check after acquiring lock in case a concurrent request already refreshed it.
+			if !isSnapshotDirty(db, snapshotKindProjection) {
+				if latest, latestErr := projection_snapshot.Get(db); latestErr == nil &&
+					latest.SchemaVersion == projection_snapshot.SchemaVersion &&
+					latest.JournalHash == currentJournalHash &&
+					latest.LastPriceSync == currentLastPriceSync {
+					return projectionBaseInputs{
+						CurrentNetworth: latest.CurrentNetworth,
+						historicalProjectionInputs: historicalProjectionInputs{
+							MonthlyContribution: latest.MonthlyContribution,
+							SavingsRate:         latest.SavingsRate,
+							AnnualExpenses:      latest.AnnualExpenses,
+						},
+					}
+				}
+			}
+		}
+
 		inputs := computeProjectionBaseInputs(db)
 		err := db.Transaction(func(tx *gorm.DB) error {
 			return projection_snapshot.Replace(

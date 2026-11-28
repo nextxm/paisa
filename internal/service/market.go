@@ -230,10 +230,13 @@ func ClearPriceCache() {
 }
 
 func WarmCache(db *gorm.DB) {
-	go func() {
-		ensurePriceCacheLoaded(db)
-		ensureRateCacheLoaded(db)
-	}()
+	go WarmCacheSync(db)
+}
+
+// WarmCacheSync synchronously populates the in-memory price and FX-rate caches.
+func WarmCacheSync(db *gorm.DB) {
+	ensurePriceCacheLoaded(db)
+	ensureRateCacheLoaded(db)
 }
 
 func GetUnitPrice(db *gorm.DB, commodity string, date time.Time) price.Price {

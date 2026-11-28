@@ -2,6 +2,7 @@ package server
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
 	log "github.com/sirupsen/logrus"
@@ -9,6 +10,19 @@ import (
 )
 
 type snapshotKind string
+
+var snapshotRefreshLocks = map[snapshotKind]*sync.Mutex{
+	snapshotKindDashboard:        {},
+	snapshotKindProjection:       {},
+	snapshotKindInvestmentIncome: {},
+}
+
+func snapshotLock(kind snapshotKind) *sync.Mutex {
+	if mu, ok := snapshotRefreshLocks[kind]; ok {
+		return mu
+	}
+	return nil
+}
 
 const (
 	snapshotKindDashboard        snapshotKind = "dashboard"
@@ -79,12 +93,14 @@ func markAllSnapshotsDirty(db *gorm.DB) error {
 		snapshotKindProjection,
 		snapshotKindInvestmentIncome,
 	}
-	for _, kind := range kinds {
-		if err := setSnapshotDirty(db, kind, true); err != nil {
-			return err
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, kind := range kinds {
+			if err := setSnapshotDirty(tx, kind, true); err != nil {
+				return err
+			}
 		}
-	}
-	return nil
+		return nil
+	})
 }
 
 func refreshSnapshotByKind(db *gorm.DB, kind snapshotKind) error {
@@ -106,6 +122,13 @@ func refreshSnapshotByKind(db *gorm.DB, kind snapshotKind) error {
 }
 
 func ensureSnapshotFresh(db *gorm.DB, kind snapshotKind) error {
+	if !isSnapshotDirty(db, kind) {
+		return nil
+	}
+	if mu := snapshotLock(kind); mu != nil {
+		mu.Lock()
+		defer mu.Unlock()
+	}
 	if !isSnapshotDirty(db, kind) {
 		return nil
 	}

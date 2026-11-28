@@ -21,27 +21,53 @@ type index struct {
 }
 
 type tfidfCache struct {
-	sync.Once
+	mu     sync.RWMutex
+	loadMu sync.Mutex
+	loaded bool
 	vector map[string]map[string]float64
 	index  index
 }
 
 var cache tfidfCache
 
-func loadVectorCache(db *gorm.DB) {
+func ensureVectorCacheLoaded(db *gorm.DB) {
+	cache.mu.RLock()
+	loaded := cache.loaded
+	cache.mu.RUnlock()
+	if loaded {
+		return
+	}
+
+	cache.loadMu.Lock()
+	defer cache.loadMu.Unlock()
+
+	cache.mu.RLock()
+	loaded = cache.loaded
+	cache.mu.RUnlock()
+	if loaded {
+		return
+	}
+
 	postings := query.Init(db).All()
 	idx := buldIndex(postings)
-
-	cache.index = idx
-	cache.vector = make(map[string]map[string]float64)
-
+	vector := make(map[string]map[string]float64, len(idx.Docs))
 	for account := range idx.Docs {
-		cache.vector[account] = tfidf(account, idx)
+		vector[account] = tfidf(account, idx)
 	}
+
+	cache.mu.Lock()
+	cache.index = idx
+	cache.vector = vector
+	cache.loaded = true
+	cache.mu.Unlock()
 }
 
 func ClearCache() {
-	cache = tfidfCache{}
+	cache.mu.Lock()
+	cache.loaded = false
+	cache.vector = nil
+	cache.index = index{}
+	cache.mu.Unlock()
 }
 
 func buldIndex(postings []posting.Posting) index {
@@ -85,8 +111,8 @@ func tokenize(s string) []string {
 }
 
 func GetTfIdf(db *gorm.DB) gin.H {
-	cache.Do(func() {
-		loadVectorCache(db)
-	})
+	ensureVectorCacheLoaded(db)
+	cache.mu.RLock()
+	defer cache.mu.RUnlock()
 	return gin.H{"tf_idf": cache.vector, "index": cache.index}
 }

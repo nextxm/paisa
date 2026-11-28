@@ -24,29 +24,57 @@ type Transaction struct {
 }
 
 type transactionCache struct {
-	sync.Once
+	mu           sync.RWMutex
+	loadMu       sync.Mutex
+	loaded       bool
 	transactions map[string]Transaction
 }
 
 var tcache transactionCache
 
-func loadTransactionCache(db *gorm.DB) {
-	postings := query.Init(db).All()
-	tcache.transactions = make(map[string]Transaction)
-
-	for _, t := range Build(postings) {
-		tcache.transactions[t.ID] = t
+func ensureTransactionCacheLoaded(db *gorm.DB) {
+	tcache.mu.RLock()
+	loaded := tcache.loaded
+	tcache.mu.RUnlock()
+	if loaded {
+		return
 	}
+
+	tcache.loadMu.Lock()
+	defer tcache.loadMu.Unlock()
+
+	tcache.mu.RLock()
+	loaded = tcache.loaded
+	tcache.mu.RUnlock()
+	if loaded {
+		return
+	}
+
+	postings := query.Init(db).All()
+	txs := make(map[string]Transaction)
+	for _, t := range Build(postings) {
+		txs[t.ID] = t
+	}
+
+	tcache.mu.Lock()
+	tcache.transactions = txs
+	tcache.loaded = true
+	tcache.mu.Unlock()
 }
 
 func GetById(db *gorm.DB, id string) (Transaction, bool) {
-	tcache.Do(func() { loadTransactionCache(db) })
+	ensureTransactionCacheLoaded(db)
+	tcache.mu.RLock()
+	defer tcache.mu.RUnlock()
 	t, found := tcache.transactions[id]
 	return t, found
 }
 
 func ClearCache() {
-	tcache = transactionCache{}
+	tcache.mu.Lock()
+	tcache.loaded = false
+	tcache.transactions = nil
+	tcache.mu.Unlock()
 }
 
 func Build(postings []posting.Posting) []Transaction {

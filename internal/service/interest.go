@@ -13,32 +13,87 @@ import (
 )
 
 type interestCache struct {
-	sync.Once
+	mu       sync.RWMutex
+	loadMu   sync.Mutex
+	loaded   bool
 	postings map[int64][]posting.Posting
 }
 
 var icache interestCache
 
-func loadInterestCache(db *gorm.DB) {
+func ensureInterestCacheLoaded(db *gorm.DB) {
+	icache.mu.RLock()
+	loaded := icache.loaded
+	icache.mu.RUnlock()
+	if loaded {
+		return
+	}
+
+	icache.loadMu.Lock()
+	defer icache.loadMu.Unlock()
+
+	icache.mu.RLock()
+	loaded = icache.loaded
+	icache.mu.RUnlock()
+	if loaded {
+		return
+	}
+
 	postings := query.Init(db).Like("Income:Interest:%").All()
-	icache.postings = lo.GroupBy(postings, func(p posting.Posting) int64 { return p.Date.Unix() })
+	grouped := lo.GroupBy(postings, func(p posting.Posting) int64 { return p.Date.Unix() })
+
+	icache.mu.Lock()
+	icache.postings = grouped
+	icache.loaded = true
+	icache.mu.Unlock()
 }
 
 type interestRepaymentCache struct {
-	sync.Once
+	mu       sync.RWMutex
+	loadMu   sync.Mutex
+	loaded   bool
 	postings map[int64][]posting.Posting
 }
 
 var irepaymentCache interestRepaymentCache
 
-func loadInterestRepaymentCache(db *gorm.DB) {
+func ensureInterestRepaymentCacheLoaded(db *gorm.DB) {
+	irepaymentCache.mu.RLock()
+	loaded := irepaymentCache.loaded
+	irepaymentCache.mu.RUnlock()
+	if loaded {
+		return
+	}
+
+	irepaymentCache.loadMu.Lock()
+	defer irepaymentCache.loadMu.Unlock()
+
+	irepaymentCache.mu.RLock()
+	loaded = irepaymentCache.loaded
+	irepaymentCache.mu.RUnlock()
+	if loaded {
+		return
+	}
+
 	postings := query.Init(db).Like("Expenses:Interest:%").All()
-	irepaymentCache.postings = lo.GroupBy(postings, func(p posting.Posting) int64 { return p.Date.Unix() })
+	grouped := lo.GroupBy(postings, func(p posting.Posting) int64 { return p.Date.Unix() })
+
+	irepaymentCache.mu.Lock()
+	irepaymentCache.postings = grouped
+	irepaymentCache.loaded = true
+	irepaymentCache.mu.Unlock()
 }
 
 func ClearInterestCache() {
-	icache = interestCache{}
-	irepaymentCache = interestRepaymentCache{}
+	icache.mu.Lock()
+	icache.loaded = false
+	icache.postings = nil
+	icache.mu.Unlock()
+
+	irepaymentCache.mu.Lock()
+	irepaymentCache.loaded = false
+	irepaymentCache.postings = nil
+	irepaymentCache.mu.Unlock()
 }
 
 func CapitalGainsSourceAccount(account string) string {
@@ -136,8 +191,6 @@ func IsContraPostingRefund(db *gorm.DB, p posting.Posting) bool {
 }
 
 func IsInterestRepayment(db *gorm.DB, p posting.Posting) bool {
-	irepaymentCache.Do(func() { loadInterestRepaymentCache(db) })
-
 	if !utils.IsCurrency(p.Commodity) {
 		return false
 	}
@@ -146,8 +199,12 @@ func IsInterestRepayment(db *gorm.DB, p posting.Posting) bool {
 		return true
 	}
 
-	for _, ip := range irepaymentCache.postings[p.Date.Unix()] {
+	ensureInterestRepaymentCacheLoaded(db)
+	irepaymentCache.mu.RLock()
+	candidates := irepaymentCache.postings[p.Date.Unix()]
+	irepaymentCache.mu.RUnlock()
 
+	for _, ip := range candidates {
 		if ip.Date.Equal(p.Date) &&
 			ip.Amount.Neg().Equal(p.Amount) &&
 			ip.Payee == p.Payee {
@@ -159,14 +216,16 @@ func IsInterestRepayment(db *gorm.DB, p posting.Posting) bool {
 }
 
 func IsInterest(db *gorm.DB, p posting.Posting) bool {
-	icache.Do(func() { loadInterestCache(db) })
-
 	if !utils.IsCurrency(p.Commodity) {
 		return false
 	}
 
-	for _, ip := range icache.postings[p.Date.Unix()] {
+	ensureInterestCacheLoaded(db)
+	icache.mu.RLock()
+	candidates := icache.postings[p.Date.Unix()]
+	icache.mu.RUnlock()
 
+	for _, ip := range candidates {
 		if ip.Date.Equal(p.Date) &&
 			ip.Amount.Neg().Equal(p.Amount) &&
 			ip.Payee == p.Payee {

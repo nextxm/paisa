@@ -80,12 +80,10 @@ func Sync(db *gorm.DB, request SyncRequest, progressFn func(completed, total int
 		}
 	}
 
-	// Warm the market price and FX-rate in-memory caches so the first API
-	// request after sync is served quickly.  WarmCache is intentionally
-	// unconditional: the in-memory caches are always cleared by cache.Clear()
-	// at the top of Sync, so they must be re-populated regardless of which
-	// stages ran.
-	service.WarmCache(db)
+	// Warm the market price and FX-rate in-memory caches synchronously so the
+	// subsequent XIRR/snapshot stages and the first API request after sync do
+	// not race on lazy initialization.
+	service.WarmCacheSync(db)
 
 	// Wrap XIRR calculations in the job flow: pre-compute XIRR for every
 	// investment account and store the results in the SQLite computation cache.
