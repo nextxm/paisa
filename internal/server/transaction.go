@@ -19,13 +19,20 @@ import (
 	"gorm.io/gorm"
 )
 
+func sortTransactionsDesc(transactions []transaction.Transaction) {
+	sort.Slice(transactions, func(i, j int) bool {
+		if transactions[i].Date.Equal(transactions[j].Date) {
+			return transactions[i].ID > transactions[j].ID
+		}
+		return transactions[i].Date.After(transactions[j].Date)
+	})
+}
+
 func GetTransactions(db *gorm.DB) gin.H {
 	postings := query.Init(db).Desc().All()
 	postings = accounting.PopulateBalance(postings)
 	transactions := transaction.Build(postings)
-
-	sort.Slice(transactions, func(i, j int) bool { return transactions[i].ID > transactions[j].ID })
-	sort.SliceStable(transactions, func(i, j int) bool { return transactions[i].Date.After(transactions[j].Date) })
+	sortTransactionsDesc(transactions)
 
 	return gin.H{"transactions": transactions}
 }
@@ -53,15 +60,21 @@ func GetTransactionsHandler(db *gorm.DB, c *gin.Context) {
 	if filters.DateTo != nil {
 		q = q.Where("date <= ?", *filters.DateTo)
 	}
+	if filters.Query != "" {
+		like := "%" + strings.ToLower(filters.Query) + "%"
+		q = q.Where("LOWER(payee) LIKE ? OR LOWER(transaction_note) LIKE ?", like, like)
+	}
 	postings := q.All()
 	postings = accounting.PopulateBalance(postings)
 	transactions := transaction.Build(postings)
 
-	sort.Slice(transactions, func(i, j int) bool { return transactions[i].ID > transactions[j].ID })
-	sort.SliceStable(transactions, func(i, j int) bool { return transactions[i].Date.After(transactions[j].Date) })
-	transactions = lo.Filter(transactions, func(t transaction.Transaction, _ int) bool {
-		return matchTransactionFilters(t, filters)
-	})
+	sortTransactionsDesc(transactions)
+	if filters.Commodity != "" || filters.AmountMin != nil || filters.AmountMax != nil {
+		matcher := newTransactionFilterMatcher(filters)
+		transactions = lo.Filter(transactions, func(t transaction.Transaction, _ int) bool {
+			return matcher(t)
+		})
+	}
 
 	// Apply offset and limit at the transaction level to preserve transaction integrity.
 	if offsetStr := c.Query("offset"); offsetStr != "" {
@@ -117,49 +130,45 @@ func parseTransactionFilters(c *gin.Context) transactionFilters {
 	return filters
 }
 
-func matchTransactionFilters(t transaction.Transaction, filters transactionFilters) bool {
-	queryLower := strings.ToLower(filters.Query)
-	if queryLower != "" {
-		payeeMatch := strings.Contains(strings.ToLower(t.Payee), queryLower)
-		noteMatch := strings.Contains(strings.ToLower(t.Note), queryLower)
-		if !payeeMatch && !noteMatch {
-			return false
-		}
+func newTransactionFilterMatcher(filters transactionFilters) func(transaction.Transaction) bool {
+	var minDec, maxDec decimal.Decimal
+	hasMin := filters.AmountMin != nil
+	if hasMin {
+		minDec = decimal.NewFromFloat(*filters.AmountMin)
+	}
+	hasMax := filters.AmountMax != nil
+	if hasMax {
+		maxDec = decimal.NewFromFloat(*filters.AmountMax)
 	}
 
-	if filters.Commodity != "" {
-		hasCommodity := lo.SomeBy(t.Postings, func(p posting.Posting) bool {
-			return strings.EqualFold(p.Commodity, filters.Commodity)
-		})
-		if !hasCommodity {
-			return false
-		}
-	}
-
-	if filters.DateFrom != nil && t.Date.Before(*filters.DateFrom) {
-		return false
-	}
-	if filters.DateTo != nil && t.Date.After(*filters.DateTo) {
-		return false
-	}
-
-	if filters.AmountMin != nil || filters.AmountMax != nil {
-		matched := lo.SomeBy(t.Postings, func(p posting.Posting) bool {
-			amount := p.Amount.Abs()
-			if filters.AmountMin != nil && amount.LessThan(decimal.NewFromFloat(*filters.AmountMin)) {
+	return func(t transaction.Transaction) bool {
+		if filters.Commodity != "" {
+			hasCommodity := lo.SomeBy(t.Postings, func(p posting.Posting) bool {
+				return strings.EqualFold(p.Commodity, filters.Commodity)
+			})
+			if !hasCommodity {
 				return false
 			}
-			if filters.AmountMax != nil && amount.GreaterThan(decimal.NewFromFloat(*filters.AmountMax)) {
+		}
+
+		if hasMin || hasMax {
+			matched := lo.SomeBy(t.Postings, func(p posting.Posting) bool {
+				amount := p.Amount.Abs()
+				if hasMin && amount.LessThan(minDec) {
+					return false
+				}
+				if hasMax && amount.GreaterThan(maxDec) {
+					return false
+				}
+				return true
+			})
+			if !matched {
 				return false
 			}
-			return true
-		})
-		if !matched {
-			return false
 		}
-	}
 
-	return true
+		return true
+	}
 }
 
 func GetBalancedPostings(db *gorm.DB) gin.H {
@@ -174,9 +183,7 @@ func GetLatestTransactions(db *gorm.DB) []transaction.Transaction {
 	postings := query.Init(db).Desc().Limit(200).All()
 	postings = accounting.PopulateBalance(postings)
 	transactions := transaction.Build(postings)
-
-	sort.Slice(transactions, func(i, j int) bool { return transactions[i].ID > transactions[j].ID })
-	sort.SliceStable(transactions, func(i, j int) bool { return transactions[i].Date.After(transactions[j].Date) })
+	sortTransactionsDesc(transactions)
 
 	return transactions
 }
