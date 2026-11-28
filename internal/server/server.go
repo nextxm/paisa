@@ -297,7 +297,14 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 	})
 
 	router.GET("/api/networth", func(c *gin.Context) {
-		c.JSON(200, GetNetworth(db, c.Query("report_currency")))
+		reportCurrency := c.Query("report_currency")
+		if reportCurrency == "" {
+			if payload, ok := getNetworthSnapshotPayload(db); ok {
+				c.Data(http.StatusOK, "application/json; charset=utf-8", payload)
+				return
+			}
+		}
+		c.JSON(200, GetNetworth(db, reportCurrency))
 	})
 	router.GET("/api/networth/projection", func(c *gin.Context) {
 		req, ok := parseNetworthProjectionRequest(c)
@@ -373,6 +380,10 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		c.JSON(200, GetInvestment(db, c.Query("report_currency")))
 	})
 	router.GET("/api/gain", func(c *gin.Context) {
+		if payload, ok := getGainSnapshotPayload(db); ok {
+			c.Data(http.StatusOK, "application/json; charset=utf-8", payload)
+			return
+		}
 		c.JSON(200, GetGain(db))
 	})
 	router.GET("/api/gain/:account", func(c *gin.Context) {

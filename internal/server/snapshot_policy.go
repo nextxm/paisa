@@ -15,6 +15,8 @@ var snapshotRefreshLocks = map[snapshotKind]*sync.Mutex{
 	snapshotKindDashboard:        {},
 	snapshotKindProjection:       {},
 	snapshotKindInvestmentIncome: {},
+	snapshotKindNetworth:         {},
+	snapshotKindGain:             {},
 }
 
 func snapshotLock(kind snapshotKind) *sync.Mutex {
@@ -28,22 +30,30 @@ const (
 	snapshotKindDashboard        snapshotKind = "dashboard"
 	snapshotKindProjection       snapshotKind = "projection"
 	snapshotKindInvestmentIncome snapshotKind = "investment_income"
+	snapshotKindNetworth         snapshotKind = "networth"
+	snapshotKindGain             snapshotKind = "gain"
 )
 
 const (
 	dashboardSnapshotDirtyKey        = "snapshot_dirty_dashboard"
 	projectionSnapshotDirtyKey       = "snapshot_dirty_projection"
 	investmentIncomeSnapshotDirtyKey = "snapshot_dirty_investment_income"
+	networthSnapshotDirtyKey         = "snapshot_dirty_networth"
+	gainSnapshotDirtyKey             = "snapshot_dirty_gain"
 )
 
 func parseSnapshotKind(raw string) snapshotKind {
 	switch strings.ToLower(strings.TrimSpace(raw)) {
 	case string(snapshotKindDashboard):
 		return snapshotKindDashboard
-	case string(snapshotKindProjection), "networth", "networth_projection":
+	case string(snapshotKindProjection), "networth_projection":
 		return snapshotKindProjection
 	case string(snapshotKindInvestmentIncome), "income", "investment":
 		return snapshotKindInvestmentIncome
+	case string(snapshotKindNetworth):
+		return snapshotKindNetworth
+	case string(snapshotKindGain):
+		return snapshotKindGain
 	default:
 		return ""
 	}
@@ -57,6 +67,10 @@ func snapshotDirtyKey(kind snapshotKind) string {
 		return projectionSnapshotDirtyKey
 	case snapshotKindInvestmentIncome:
 		return investmentIncomeSnapshotDirtyKey
+	case snapshotKindNetworth:
+		return networthSnapshotDirtyKey
+	case snapshotKindGain:
+		return gainSnapshotDirtyKey
 	default:
 		return ""
 	}
@@ -92,6 +106,8 @@ func markAllSnapshotsDirty(db *gorm.DB) error {
 		snapshotKindDashboard,
 		snapshotKindProjection,
 		snapshotKindInvestmentIncome,
+		snapshotKindNetworth,
+		snapshotKindGain,
 	}
 	return db.Transaction(func(tx *gorm.DB) error {
 		for _, kind := range kinds {
@@ -112,6 +128,10 @@ func refreshSnapshotByKind(db *gorm.DB, kind snapshotKind) error {
 		err = RefreshNetworthProjectionSnapshot(db)
 	case snapshotKindInvestmentIncome:
 		err = RefreshInvestmentIncomeSnapshot(db)
+	case snapshotKindNetworth:
+		err = RefreshNetworthSnapshot(db)
+	case snapshotKindGain:
+		err = RefreshGainSnapshot(db)
 	default:
 		return nil
 	}

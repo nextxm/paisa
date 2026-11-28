@@ -25,6 +25,7 @@ import (
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/price"
 	"github.com/ananthakumaran/paisa/internal/model/projection_snapshot"
+	"github.com/ananthakumaran/paisa/internal/model/report_snapshot"
 	"github.com/ananthakumaran/paisa/internal/model/session"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -66,6 +67,7 @@ var steps = []step{
 	{Version: 19, Apply: v19AddImportRules},
 	{Version: 20, Apply: v20AddCacheHashKeyUniqueIndex},
 	{Version: 21, Apply: v21AddMonthlyAccountBalances},
+	{Version: 22, Apply: v22AddReportSnapshots},
 }
 
 // v1Baseline is the initial migration that creates all tables for existing models.
@@ -359,6 +361,15 @@ func v20AddCacheHashKeyUniqueIndex(db *gorm.DB) error {
 func v21AddMonthlyAccountBalances(db *gorm.DB) error {
 	if err := db.AutoMigrate(&monthly_account_balance.MonthlyAccountBalance{}); err != nil {
 		return fmt.Errorf("v21: AutoMigrate monthly_account_balances failed: %w", err)
+	}
+	return nil
+}
+
+// v22AddReportSnapshots creates the report_snapshots table for materialized
+// report payloads (networth, gain).
+func v22AddReportSnapshots(db *gorm.DB) error {
+	if err := db.AutoMigrate(&report_snapshot.ReportSnapshot{}); err != nil {
+		return fmt.Errorf("v22: AutoMigrate report_snapshots failed: %w", err)
 	}
 	return nil
 }
