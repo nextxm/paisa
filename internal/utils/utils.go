@@ -316,10 +316,16 @@ func OpenDB() (*gorm.DB, error) {
 	// NORMAL synchronous: safe for a local single-user application and removes
 	// the fsync overhead of the default FULL mode.
 	// cache_size=-64000: Allocate a ~64 MB in-process page cache.
-	dsn := fmt.Sprintf("file:%s?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=cache_size(-64000)", filepath.ToSlash(config.GetDBPath()))
+	// busy_timeout=5000: Wait up to 5s on write lock contention instead of failing immediately.
+	dsn := fmt.Sprintf("file:%s?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=cache_size(-64000)&_pragma=busy_timeout(5000)", filepath.ToSlash(config.GetDBPath()))
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{Logger: gorm_logrus.New()})
 	if err != nil {
 		return nil, err
+	}
+
+	if sqlDB, err := db.DB(); err == nil {
+		sqlDB.SetMaxOpenConns(4)
+		sqlDB.SetMaxIdleConns(4)
 	}
 
 	return db, nil

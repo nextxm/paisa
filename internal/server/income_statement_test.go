@@ -6,6 +6,7 @@ import (
 
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/model/price"
+	"github.com/ananthakumaran/paisa/internal/service"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -79,6 +80,8 @@ func TestComputeStatement_ForeignCurrencyAssetPnlReconcilesNetWorth(t *testing.T
 
 func TestComputeStatement_ReconciliationAttributesForeignCurrencyIncomeFXTiming(t *testing.T) {
 	loadTestConfig(t, false)
+	service.ClearPriceCache()
+	service.ClearRateCache()
 	db := openTestDB(t)
 
 	// Receive 100 USD salary on May 1 at 80 INR/USD (8000 INR), held until FY end when 1 USD = 85 INR.

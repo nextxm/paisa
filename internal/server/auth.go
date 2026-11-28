@@ -3,6 +3,7 @@ package server
 import (
 	"crypto/subtle"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/config"
@@ -12,6 +13,54 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
+
+const sessionCacheTTL = time.Minute
+
+type cachedSession struct {
+	expiresAt   time.Time
+	cachedUntil time.Time
+}
+
+var (
+	sessionCacheMu sync.RWMutex
+	sessionCache   = make(map[string]cachedSession)
+)
+
+func isValidSessionToken(db *gorm.DB, token string) bool {
+	now := time.Now()
+	sessionCacheMu.RLock()
+	entry, ok := sessionCache[token]
+	sessionCacheMu.RUnlock()
+	if ok && now.Before(entry.cachedUntil) && now.Before(entry.expiresAt) {
+		return true
+	}
+
+	s, err := session.FindByToken(db, token)
+	if err != nil {
+		if ok {
+			invalidateSessionCache(token)
+		}
+		return false
+	}
+
+	cachedUntil := now.Add(sessionCacheTTL)
+	if s.ExpiresAt.Before(cachedUntil) {
+		cachedUntil = s.ExpiresAt
+	}
+	sessionCacheMu.Lock()
+	sessionCache[token] = cachedSession{
+		expiresAt:   s.ExpiresAt,
+		cachedUntil: cachedUntil,
+	}
+	sessionCacheMu.Unlock()
+	return true
+}
+
+func invalidateSessionCache(token string) {
+	sessionCacheMu.Lock()
+	delete(sessionCache, token)
+	sessionCacheMu.Unlock()
+}
 
 // loginRequest is the expected JSON body for POST /api/auth/login.
 type loginRequest struct {
@@ -33,6 +82,7 @@ func Logout(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.Request.Header.Get("X-Auth")
 		if token != "" {
+			invalidateSessionCache(token)
 			if err := session.DeleteByToken(db, token); err != nil {
 				log.Warnf("logout: failed to delete session token: %v", err)
 			}

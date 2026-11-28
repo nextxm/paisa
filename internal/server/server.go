@@ -9,8 +9,11 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/ananthakumaran/paisa/internal/accounting"
@@ -19,7 +22,6 @@ import (
 	"github.com/ananthakumaran/paisa/internal/generator"
 	"github.com/ananthakumaran/paisa/internal/model"
 	"github.com/ananthakumaran/paisa/internal/model/metadata"
-	"github.com/ananthakumaran/paisa/internal/model/session"
 	"github.com/ananthakumaran/paisa/internal/model/template"
 	"github.com/ananthakumaran/paisa/internal/prediction"
 	"github.com/ananthakumaran/paisa/internal/server/assets"
@@ -760,14 +762,33 @@ func Listen(db *gorm.DB, host string, port int) {
 	default:
 		log.Infof("Listening on http://%s", address)
 	}
-	err := router.Run(address)
-	if err != nil {
+
+	srv := &http.Server{
+		Addr:              address,
+		Handler:           router,
+		ReadHeaderTimeout: 10 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			log.WithError(err).Warn("Server forced to shutdown")
+		}
+	}()
+
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}
 }
 
 func TokenAuthMiddleware(db *gorm.DB) gin.HandlerFunc {
-	store, err := memstore.NewCtx(10)
+	store, err := memstore.NewCtx(1024)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -797,7 +818,8 @@ func TokenAuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		_, detail, _ := rateLimiter.RateLimitCtx(c.Request.Context(), "user", 0)
+		rateKey := "auth:" + c.ClientIP()
+		_, detail, _ := rateLimiter.RateLimitCtx(c.Request.Context(), rateKey, 0)
 		if detail.Remaining <= 0 {
 			AbortWithError(c, http.StatusTooManyRequests, ErrCodeTooManyRequests, "Too many requests")
 			return
@@ -805,14 +827,14 @@ func TokenAuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 
 		authHeader := c.Request.Header.Get("X-Auth")
 		if authHeader == "" {
-			rateLimiter.RateLimitCtx(c.Request.Context(), "user", 1)
+			rateLimiter.RateLimitCtx(c.Request.Context(), rateKey, 1)
 			AbortWithError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Missing credentials")
 			return
 		}
 
 		// Session token path: UUIDs contain only hex digits and hyphens, never colons.
 		if !strings.Contains(authHeader, ":") {
-			if _, err := session.FindByToken(db, authHeader); err == nil {
+			if isValidSessionToken(db, authHeader) {
 				c.Next()
 				return
 			}
@@ -829,7 +851,7 @@ func TokenAuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 			}
 		}
 
-		rateLimiter.RateLimitCtx(c.Request.Context(), "user", 1)
+		rateLimiter.RateLimitCtx(c.Request.Context(), rateKey, 1)
 		AbortWithError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Invalid username or password")
 
 	}
