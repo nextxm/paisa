@@ -29,6 +29,7 @@
   let configJson = $state<Record<string, unknown> | null>(null);
   let configSchema = $state<JsonSchemaNode | null>(null);
   let configAccounts = $state<string[]>([]);
+  let configCommodities = $state<string[]>([]);
   let deprecatedKeys = $state<string[]>([]);
   let configError = $state<string | null>(null);
   let logs = $state<LogEntry[]>([]);
@@ -42,6 +43,7 @@
           config?: Record<string, unknown>;
           schema?: JsonSchemaNode;
           accounts?: string[];
+          commodities?: string[];
           deprecated_keys?: string[];
         }>("/api/config").catch((e) => {
           configError = e instanceof Error ? e.message : "Failed to load configuration";
@@ -52,6 +54,7 @@
       configJson = cfgRes?.config || null;
       configSchema = cfgRes?.schema || null;
       configAccounts = cfgRes?.accounts || [];
+      configCommodities = cfgRes?.commodities || [];
       deprecatedKeys = cfgRes?.deprecated_keys || [];
       logs = logRes.logs || [];
     } finally {
@@ -69,11 +72,7 @@
   </div>
 
   <div class="border-b border-[var(--border)] flex items-center gap-6 text-sm overflow-x-auto">
-    {#each [
-      { id: "config", label: "Configuration" },
-      { id: "logs", label: `System Logs (${logs.length})` },
-      { id: "about", label: "About" }
-    ] as tab}
+    {#each [{ id: "config", label: "Configuration" }, { id: "logs", label: `System Logs (${logs.length})` }, { id: "about", label: "About" }] as tab}
       <button
         type="button"
         class="pb-2.5 border-b-2 whitespace-nowrap cursor-pointer {activeTab === tab.id
@@ -87,13 +86,16 @@
   </div>
 
   {#if loading}
-    <div class="h-64 rounded-xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"></div>
+    <div
+      class="h-64 rounded-xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"
+    ></div>
   {:else if activeTab === "config"}
     {#if configJson && configSchema}
       <ConfigPanel
         initialConfig={configJson}
         schema={configSchema}
         accounts={configAccounts}
+        commodities={configCommodities}
         {deprecatedKeys}
       />
     {:else}
@@ -128,7 +130,9 @@
               </span>
               <span class="break-words">{log.msg ?? log.message ?? ""}</span>
               {#if extraFields.length > 0}
-                <span class="text-[11px] text-[var(--muted)] flex flex-wrap gap-x-2 gap-y-0.5 ml-auto">
+                <span
+                  class="text-[11px] text-[var(--muted)] flex flex-wrap gap-x-2 gap-y-0.5 ml-auto"
+                >
                   {#each extraFields as [fk, fv]}
                     <span><span class="opacity-70">{fk}=</span>{String(fv)}</span>
                   {/each}
@@ -147,19 +151,25 @@
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-semibold">Paisa Personal Finance Manager</h3>
-              <span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[var(--accent)]/15 text-[var(--accent)]">
+              <span
+                class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[var(--accent)]/15 text-[var(--accent)]"
+              >
                 v2
               </span>
             </div>
             <p class="text-xs text-[var(--muted)]">
-              Double-entry plain-text accounting powered by ledger-cli, hledger, beancount, Go, SQLite, and SvelteKit.
+              Double-entry plain-text accounting powered by ledger-cli, hledger, beancount, Go,
+              SQLite, and SvelteKit.
             </p>
           </div>
         </div>
         <p class="text-xs text-[var(--muted)]">
-          Forked from <code>ananthakumaran/paisa</code>, maintained at <code>nextxm/paisa</code> under GNU AGPL-3.0-or-later.
+          Forked from <code>ananthakumaran/paisa</code>, maintained at <code>nextxm/paisa</code> under
+          GNU AGPL-3.0-or-later.
         </p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs pt-3 border-t border-[var(--border)]">
+        <div
+          class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs pt-3 border-t border-[var(--border)]"
+        >
           <div>
             <div class="text-[var(--muted)]">Version</div>
             <div class="font-semibold mt-0.5 font-mono">{buildInfo.version || "dev"}</div>
@@ -200,15 +210,7 @@
       <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-6 space-y-3">
         <h3 class="text-sm font-semibold">Links</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-          {#each [
-            { name: "Issue", href: "https://github.com/nextxm/paisa/issues" },
-            { name: "Discussions", href: "https://github.com/nextxm/paisa/discussions" },
-            { name: "Source Code", href: "https://github.com/nextxm/paisa" },
-            { name: "Upstream Project", href: "https://github.com/ananthakumaran/paisa" },
-            { name: "License (AGPL-3.0-or-later)", href: "https://www.gnu.org/licenses/agpl-3.0.html" },
-            { name: "Documentation", href: "https://nextxm.github.io/paisa/" },
-            { name: "Releases", href: "https://github.com/nextxm/paisa/releases" }
-          ] as link}
+          {#each [{ name: "Issue", href: "https://github.com/nextxm/paisa/issues" }, { name: "Discussions", href: "https://github.com/nextxm/paisa/discussions" }, { name: "Source Code", href: "https://github.com/nextxm/paisa" }, { name: "Upstream Project", href: "https://github.com/ananthakumaran/paisa" }, { name: "License (AGPL-3.0-or-later)", href: "https://www.gnu.org/licenses/agpl-3.0.html" }, { name: "Documentation", href: "https://nextxm.github.io/paisa/" }, { name: "Releases", href: "https://github.com/nextxm/paisa/releases" }] as link}
             <a
               href={link.href}
               target="_blank"

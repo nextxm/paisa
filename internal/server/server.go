@@ -163,6 +163,7 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 		resp := gin.H{
 			"config":            config.GetConfig(),
 			"accounts":          accounting.AllAccounts(requestDB),
+			"commodities":       accounting.AllCommodities(requestDB),
 			"now":               now,
 			"schema":            config.GetSchema(),
 			"last_price_update": lastPriceUpdate,

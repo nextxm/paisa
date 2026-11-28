@@ -52,4 +52,5 @@ The project uses a `Makefile` to orchestrate build and development tasks.
 - **API First:** The frontend communicates with the Go backend via a REST API defined in `internal/server/`.
 - **Testing:** New features should include both Go unit tests and Svelte component tests where applicable.
 - **Linting & Formatting:** Strict linting is enforced via `make lint`. **Always run `gofmt -w <file>` on touched Go files and `npx prettier --write <file>` on touched frontend files** before finishing tasks or commits.
+- **Commit Offer:** Always offer to commit the changes at the completion of each task after verification passes.
 - **Data Format:** Ledger files are the source of truth for financial data. SQLite is used for caching and supplemental metadata.

@@ -1,5 +1,7 @@
 <script lang="ts">
   import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-svelte";
+  import { getConfigSuggestionKind } from "$lib/autocomplete";
+  import AutocompleteInput from "./AutocompleteInput.svelte";
   import ConfigSchemaField from "./ConfigSchemaField.svelte";
 
   export interface JsonSchemaNode {
@@ -23,6 +25,8 @@
     value = $bindable<unknown>(),
     schema,
     accounts = [],
+    commodities = [],
+    parentKey = "",
     depth = 0,
     required = false,
     readonly = false,
@@ -33,6 +37,8 @@
     value: unknown;
     schema: JsonSchemaNode;
     accounts?: string[];
+    commodities?: string[];
+    parentKey?: string;
     depth?: number;
     required?: boolean;
     readonly?: boolean;
@@ -102,12 +108,23 @@
   );
 
   const arrayValue = $derived(Array.isArray(value) ? value : ([] as unknown[]));
+  const suggestionKind = $derived(
+    getConfigSuggestionKind(fieldKey, parentKey, schema?.["ui:widget"])
+  );
+  const fieldSuggestions = $derived(
+    suggestionKind === "account" ? accounts : suggestionKind === "commodity" ? commodities : []
+  );
 </script>
 
 {#if schemaType === "boolean"}
-  <div class="flex items-start justify-between gap-4 py-2 border-b border-[var(--border)]/40 last:border-b-0">
+  <div
+    class="flex items-start justify-between gap-4 py-2 border-b border-[var(--border)]/40 last:border-b-0"
+  >
     <div class="space-y-0.5">
-      <label class="text-xs font-medium text-[var(--text)] cursor-pointer" for={`cfg-${fieldKey}-${depth}`}>
+      <label
+        class="text-xs font-medium text-[var(--text)] cursor-pointer"
+        for={`cfg-${fieldKey}-${depth}`}
+      >
         {label}
       </label>
       {#if schema.description}
@@ -126,8 +143,10 @@
 {:else if schemaType === "object" && schema.properties}
   {@const obj = objectValue}
   {@const entries = sortedEntries(schema.properties, schema.required || [])}
-  <div class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/25 overflow-hidden">
-    <div class="px-3.5 py-2.5 bg-[var(--surface-elevated)]/60 flex items-center justify-between gap-2">
+  <div class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/25">
+    <div
+      class="px-3.5 py-2.5 rounded-t-lg bg-[var(--surface-elevated)]/60 flex items-center justify-between gap-2"
+    >
       <button
         type="button"
         onclick={() => (expanded = !expanded)}
@@ -167,6 +186,8 @@
             value={obj[subKey]}
             schema={subSchema}
             {accounts}
+            {commodities}
+            parentKey={fieldKey}
             depth={depth + 1}
             required={(schema.required || []).includes(subKey)}
             {readonly}
@@ -182,7 +203,9 @@
   {@const mapObj = objectValue}
   {@const mapEntries = Object.entries(mapObj)}
   {@const valSchema = schema.additionalProperties as JsonSchemaNode}
-  <div class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/20 p-3.5 space-y-3">
+  <div
+    class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/20 p-3.5 space-y-3"
+  >
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div>
         <div class="text-xs font-semibold">{label} ({mapEntries.length})</div>
@@ -192,13 +215,19 @@
       </div>
       {#if !readonly}
         <div class="flex items-center gap-1.5">
-          <input
-            type="text"
-            bind:value={newMapKey}
-            placeholder="New key / name…"
-            list={fieldKey === "accounts" ? "cfg-accounts-datalist" : undefined}
-            class="px-2.5 py-1 rounded text-xs bg-[var(--surface)] border border-[var(--border)] outline-none w-44"
-          />
+          <div class="w-44">
+            <AutocompleteInput
+              value={newMapKey}
+              suggestions={fieldKey === "accounts"
+                ? accounts
+                : fieldKey === "commodities"
+                  ? commodities
+                  : []}
+              placeholder="New key / name…"
+              onChange={(next) => (newMapKey = next)}
+              inputClass="px-2.5 py-1 rounded text-xs bg-[var(--surface)] border border-[var(--border)] outline-none w-full"
+            />
+          </div>
           <button
             type="button"
             disabled={!newMapKey.trim()}
@@ -227,6 +256,8 @@
             value={mapObj[entryKey]}
             schema={valSchema}
             {accounts}
+            {commodities}
+            parentKey={fieldKey}
             depth={depth + 1}
             {readonly}
             onValueChange={(nextVal) => {
@@ -245,7 +276,9 @@
 {:else if schemaType === "array"}
   {@const arr = arrayValue}
   {@const itemSchema = (schema.items || { type: "string" }) as JsonSchemaNode}
-  <div class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/20 p-3.5 space-y-2.5">
+  <div
+    class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/20 p-3.5 space-y-2.5"
+  >
     <div class="flex items-center justify-between gap-2">
       <div>
         <div class="text-xs font-semibold">{label} ({arr.length})</div>
@@ -276,6 +309,8 @@
             value={item}
             schema={itemSchema}
             {accounts}
+            {commodities}
+            parentKey={fieldKey}
             depth={depth + 1}
             {readonly}
             onValueChange={(nextVal) => {
@@ -333,13 +368,19 @@
         }}
         class="w-full px-3 py-1.5 rounded-lg bg-[var(--surface)] border border-[var(--border)] text-xs outline-none focus:border-[var(--accent)]"
       />
+    {:else if schema["ui:widget"] !== "password" && fieldSuggestions.length > 0}
+      <AutocompleteInput
+        id={`cfg-in-${fieldKey}-${depth}`}
+        value={String(value ?? schema.default ?? "")}
+        suggestions={fieldSuggestions}
+        disabled={readonly}
+        onChange={(next) => setVal(next)}
+        inputClass="w-full px-3 py-1.5 rounded-lg bg-[var(--surface)] border border-[var(--border)] text-xs font-mono outline-none focus:border-[var(--accent)]"
+      />
     {:else}
       <input
         id={`cfg-in-${fieldKey}-${depth}`}
         type={schema["ui:widget"] === "password" ? "password" : "text"}
-        list={schema["ui:widget"] === "account" || fieldKey.includes("account")
-          ? "cfg-accounts-datalist"
-          : undefined}
         disabled={readonly}
         value={value ?? schema.default ?? ""}
         oninput={(e) => setVal((e.currentTarget as HTMLInputElement).value)}
@@ -351,12 +392,4 @@
       <p class="text-[11px] text-[var(--muted)]">{schema.description}</p>
     {/if}
   </div>
-{/if}
-
-{#if depth === 0}
-  <datalist id="cfg-accounts-datalist">
-    {#each accounts as acc}
-      <option value={acc}></option>
-    {/each}
-  </datalist>
 {/if}

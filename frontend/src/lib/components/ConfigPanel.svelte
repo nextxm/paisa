@@ -8,11 +8,13 @@
     initialConfig,
     schema,
     accounts = [],
+    commodities = [],
     deprecatedKeys = []
   }: {
     initialConfig: Record<string, unknown>;
     schema: JsonSchemaNode;
     accounts?: string[];
+    commodities?: string[];
     deprecatedKeys?: string[];
   } = $props();
 
@@ -52,7 +54,9 @@
     message = null;
     error = null;
     try {
-      const payload = rawMode ? (JSON.parse(rawJsonText) as Record<string, unknown>) : deepClone(draft);
+      const payload = rawMode
+        ? (JSON.parse(rawJsonText) as Record<string, unknown>)
+        : deepClone(draft);
       const res = await updateConfig(payload);
       if (res.success) {
         draft = deepClone(payload);
@@ -153,7 +157,9 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
   <!-- Left Section Nav -->
-  <aside class="lg:col-span-3 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-3 space-y-4 h-fit">
+  <aside
+    class="lg:col-span-3 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-3 space-y-4 h-fit"
+  >
     {#each CONFIG_GROUPS as group}
       <div class="space-y-1">
         <div class="px-2.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">
@@ -181,7 +187,9 @@
   <!-- Right Form / Raw Editor -->
   <div class="lg:col-span-9 space-y-4">
     <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
-      <div class="px-5 py-3.5 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
+      <div
+        class="px-5 py-3.5 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3"
+      >
         <div>
           <h2 class="text-sm font-semibold">
             {rawMode ? "Raw Configuration (JSON / paisa.yaml)" : activeSection.label}
@@ -245,21 +253,27 @@
       </div>
 
       {#if deprecatedKeys.length > 0 && !message}
-        <div class="px-5 py-2.5 bg-[var(--warning)]/15 text-xs text-[var(--warning)] border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-2">
+        <div
+          class="px-5 py-2.5 bg-[var(--warning)]/15 text-xs text-[var(--warning)] border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-2"
+        >
           <span>
             Removed/deprecated settings in <code>paisa.yaml</code> were ignored on startup:
-            <strong class="font-mono">{deprecatedKeys.join(", ")}</strong>.
-            Save the configuration to clean up your file.
+            <strong class="font-mono">{deprecatedKeys.join(", ")}</strong>. Save the configuration
+            to clean up your file.
           </span>
         </div>
       {/if}
       {#if message}
-        <div class="px-5 py-2 bg-[var(--gain)]/10 text-xs text-[var(--gain)] border-b border-[var(--border)]">
+        <div
+          class="px-5 py-2 bg-[var(--gain)]/10 text-xs text-[var(--gain)] border-b border-[var(--border)]"
+        >
           {message}
         </div>
       {/if}
       {#if error}
-        <div class="px-5 py-2 bg-[var(--loss)]/10 text-xs text-[var(--loss)] border-b border-[var(--border)]">
+        <div
+          class="px-5 py-2 bg-[var(--loss)]/10 text-xs text-[var(--loss)] border-b border-[var(--border)]"
+        >
           {error}
         </div>
       {/if}
@@ -274,10 +288,13 @@
             class="w-full p-4 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] font-mono text-xs outline-none focus:border-[var(--accent)]"
           ></textarea>
         {:else if activeSectionId === "backup"}
-          <div class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/30 p-4 space-y-3 text-xs">
+          <div
+            class="rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]/30 p-4 space-y-3 text-xs"
+          >
             <div class="font-semibold text-sm">Full System Backup (.zip)</div>
             <p class="text-[var(--muted)]">
-              Includes all ledger journal files, <code>paisa.yaml</code>, and sheet templates/data. Excludes the SQLite cache DB.
+              Includes all ledger journal files, <code>paisa.yaml</code>, and sheet templates/data.
+              Excludes the SQLite cache DB.
             </p>
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" bind:checked={includeSecrets} />
@@ -295,10 +312,14 @@
           </div>
         {:else}
           {#if activeSectionId === "advanced" && !runtime.readonly}
-            <div class="rounded-lg border border-[var(--warning)]/30 bg-[var(--warning)]/10 p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div
+              class="rounded-lg border border-[var(--warning)]/30 bg-[var(--warning)]/10 p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs"
+            >
               <div>
                 <div class="font-semibold">Provider HTTP debug logging</div>
-                <div class="text-[var(--muted)]">Toggle request/response logging immediately without saving the full form.</div>
+                <div class="text-[var(--muted)]">
+                  Toggle request/response logging immediately without saving the full form.
+                </div>
               </div>
               <div class="flex items-center gap-1.5">
                 <button
@@ -329,6 +350,7 @@
                   bind:value={draft[key]}
                   schema={schema.properties[key]}
                   {accounts}
+                  {commodities}
                   required={(schema.required || []).includes(key)}
                   readonly={runtime.readonly}
                 />
