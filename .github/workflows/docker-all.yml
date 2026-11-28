@@ -1,6 +1,9 @@
 name: Docker Image (Manual - All)
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - develop
 
 jobs:
   docker:
