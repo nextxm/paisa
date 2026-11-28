@@ -260,7 +260,7 @@
         </span>
       </div>
       <a
-        href={appPath("/ledger")}
+        href={appPath("/ledger?tab=health")}
         class="text-xs font-medium text-[var(--accent)] hover:underline shrink-0"
       >
         Review →
