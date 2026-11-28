@@ -38,17 +38,28 @@
 </script>
 
 <div class="min-h-[75vh] flex items-center justify-center p-4">
-  <div class="w-full max-w-sm rounded-xl bg-[var(--surface)] border border-[var(--border)] p-6 space-y-5">
+  <div
+    class="w-full max-w-sm rounded-xl bg-[var(--surface)] border border-[var(--border)] p-6 space-y-5"
+  >
     <div class="flex items-center gap-2.5">
       <Logo size={28} />
       <div>
-        <h1 class="text-lg font-semibold leading-tight">Sign in to Paisa</h1>
+        <div class="flex items-center gap-2">
+          <h1 class="text-lg font-semibold leading-tight">Sign in to Paisa</h1>
+          <span
+            class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[var(--accent)]/15 text-[var(--accent)]"
+          >
+            v2
+          </span>
+        </div>
         <p class="text-xs text-[var(--muted)]">Personal Finance Manager</p>
       </div>
     </div>
 
     {#if error}
-      <div class="rounded-lg bg-[var(--loss)]/10 border border-[var(--loss)]/30 px-3 py-2 text-xs text-[var(--loss)]">
+      <div
+        class="rounded-lg bg-[var(--loss)]/10 border border-[var(--loss)]/30 px-3 py-2 text-xs text-[var(--loss)]"
+      >
         {error}
       </div>
     {/if}

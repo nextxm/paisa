@@ -1,5 +1,6 @@
 <script lang="ts">
   import dayjs from "dayjs";
+  import { page } from "$app/stores";
   import { onMount } from "svelte";
   import { ExternalLink } from "lucide-svelte";
   import { apiGet, runtime } from "$lib/api";
@@ -18,6 +19,12 @@
   }
 
   let activeTab = $state<SettingsTab>("config");
+  $effect(() => {
+    const tab = $page.url.searchParams.get("tab");
+    if (tab === "config" || tab === "logs" || tab === "about") {
+      activeTab = tab;
+    }
+  });
   let loading = $state(true);
   let configJson = $state<Record<string, unknown> | null>(null);
   let configSchema = $state<JsonSchemaNode | null>(null);
@@ -138,7 +145,12 @@
         <div class="flex items-center gap-3">
           <Logo size={48} />
           <div>
-            <h3 class="text-base font-semibold">Paisa Personal Finance Manager</h3>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base font-semibold">Paisa Personal Finance Manager</h3>
+              <span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[var(--accent)]/15 text-[var(--accent)]">
+                v2
+              </span>
+            </div>
             <p class="text-xs text-[var(--muted)]">
               Double-entry plain-text accounting powered by ledger-cli, hledger, beancount, Go, SQLite, and SvelteKit.
             </p>

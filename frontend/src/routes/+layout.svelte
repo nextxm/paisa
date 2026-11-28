@@ -67,6 +67,9 @@
   ];
 
   const pathname = $derived($page.url.pathname);
+  const buildInfo = __BUILD_INFO__;
+  const hasRunningJob = $derived(jobs.some((j) => j.status === "running" || j.status === "pending"));
+  const isSyncActive = $derived(syncing || hasRunningJob);
   const filteredCommands = $derived(
     navItems.filter((item) => item.label.toLowerCase().includes(cmdQuery.trim().toLowerCase()))
   );
@@ -164,12 +167,26 @@
       ? 'w-16'
       : 'w-56'}"
   >
-    <div class="h-13 px-4 flex items-center justify-between border-b border-[var(--border)]">
+    <div class="h-13 px-3 flex items-center justify-between gap-1 border-b border-[var(--border)]">
       {#if !sidebarCollapsed}
-        <a href={appPath("/")} class="flex items-center gap-2 font-semibold text-base tracking-tight">
-          <Logo size={22} />
-          <span>Paisa</span>
-        </a>
+        <div class="flex items-center gap-1.5 min-w-0">
+          <a href={appPath("/")} class="flex items-center gap-2 font-semibold text-base tracking-tight shrink-0">
+            <Logo size={22} animation={isSyncActive} />
+            <span>Paisa</span>
+          </a>
+          <a
+            href={appPath("/settings?tab=about")}
+            title="Paisa {buildInfo.version || 'v2'} ({isSyncActive ? 'Syncing…' : 'Synced'}) — View About"
+            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-[var(--surface-elevated)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--muted)] hover:text-[var(--text)] transition-colors shrink-0"
+          >
+            <span
+              class="w-1.5 h-1.5 rounded-full {isSyncActive
+                ? 'bg-[var(--warning)] animate-pulse'
+                : 'bg-[var(--gain)]'}"
+            ></span>
+            <span>v2 · {isSyncActive ? "Syncing" : "Synced"}</span>
+          </a>
+        </div>
       {/if}
       <button
         type="button"
