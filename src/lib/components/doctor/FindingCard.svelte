@@ -1,5 +1,9 @@
 <script lang="ts">
-  import type { DoctorFinding } from "$lib/doctor_v2";
+  import {
+    formatFindingEvidenceSummary,
+    getFindingPrimaryTarget,
+    type DoctorFinding
+  } from "$lib/doctor_v2";
   import { appPath, formatCurrency } from "$lib/utils";
 
   let {
@@ -33,23 +37,9 @@
     finding.actions.find((a) => a.type === "open_editor" || a.type === "open_url")
   );
 
-  const evidenceSummary = $derived.by(() => {
-    if (!finding.evidence || finding.evidence.length === 0) return null;
-    const first = finding.evidence[0];
-    if (finding.kind === "duplicate" && finding.evidence.length >= 2) {
-      return `${first.account || "Account"} • ${first.amount ? formatCurrency(first.amount) : ""} • 2 matching entries`;
-    }
-    if (first.account || first.amount) {
-      const parts = [
-        first.account,
-        first.payee,
-        first.amount ? formatCurrency(first.amount) : null,
-        first.date
-      ].filter(Boolean);
-      return parts.join(" • ");
-    }
-    return first.raw_message || null;
-  });
+  const primaryTarget = $derived(getFindingPrimaryTarget(finding));
+
+  const evidenceSummary = $derived(formatFindingEvidenceSummary(finding, formatCurrency));
 
   async function handleDismiss() {
     isSubmitting = true;
@@ -96,15 +86,36 @@
       {/if}
     </div>
 
+    {#if finding.details}
+      {#if primaryTarget}
+        <p class="card-details-text mb-1">
+          <a href={appPath(primaryTarget)} class="card-details-link">
+            <span>{finding.details}</span>
+            <i class="fas fa-arrow-up-right-from-square ml-1 is-size-7"></i>
+          </a>
+        </p>
+      {:else}
+        <p class="card-details-text mb-1">{finding.details}</p>
+      {/if}
+    {/if}
+
     <p class="card-why-text mb-2">
       {finding.why_it_matters}
     </p>
 
     {#if evidenceSummary}
-      <div class="evidence-chip-bar mb-3">
-        <i class="fas fa-database mr-1 text-muted"></i>
-        <span class="evidence-chip-text">{evidenceSummary}</span>
-      </div>
+      {#if primaryTarget}
+        <a href={appPath(primaryTarget)} class="evidence-chip-bar is-clickable mb-3">
+          <i class="fas fa-database mr-1 text-muted"></i>
+          <span class="evidence-chip-text">{evidenceSummary}</span>
+          <i class="fas fa-chevron-right ml-2 is-size-7 text-muted"></i>
+        </a>
+      {:else}
+        <div class="evidence-chip-bar mb-3">
+          <i class="fas fa-database mr-1 text-muted"></i>
+          <span class="evidence-chip-text">{evidenceSummary}</span>
+        </div>
+      {/if}
     {/if}
 
     <div
@@ -280,19 +291,46 @@
     line-height: 1.25;
   }
 
-  .card-why-text {
-    font-size: 0.92rem;
+  .card-details-text {
+    font-size: 0.94rem;
+    font-weight: 500;
     line-height: 1.4;
-    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .card-details-link {
+    color: #93c5fd;
+    text-decoration: none;
+  }
+
+  .card-details-link:hover {
+    text-decoration: underline;
+    color: #bfdbfe;
+  }
+
+  .card-why-text {
+    font-size: 0.86rem;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.72);
   }
 
   .evidence-chip-bar {
     display: inline-flex;
     align-items: center;
     background: rgba(255, 255, 255, 0.05);
+    border: 1px solid transparent;
     border-radius: 0.5rem;
     padding: 0.35rem 0.75rem;
     font-size: 0.82rem;
+    color: inherit;
+    text-decoration: none;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  .evidence-chip-bar.is-clickable:hover {
+    background: rgba(50, 115, 220, 0.15);
+    border-color: rgba(50, 115, 220, 0.45);
   }
 
   .evidence-chip-text {

@@ -81,6 +81,57 @@ export function groupDoctorFindings(findings: DoctorFinding[]) {
   return Object.values(groups);
 }
 
+export function getFindingPrimaryTarget(finding: DoctorFinding): string | null {
+  const action = finding.actions?.find(
+    (a) => (a.type === "open_editor" || a.type === "open_url") && a.url
+  );
+  if (action?.url) return action.url;
+  const ev = finding.evidence?.find((e) => e.target_url);
+  return ev?.target_url || null;
+}
+
+export function formatFindingEvidenceSummary(
+  finding: DoctorFinding,
+  formatAmount?: (amount: number) => string
+): string | null {
+  if (!finding.evidence || finding.evidence.length === 0) return null;
+  const first = finding.evidence[0];
+  const fmtAmount = (amt?: number) => {
+    if (amt === undefined || amt === null || amt === 0) return null;
+    return formatAmount ? formatAmount(amt) : amt.toFixed(2);
+  };
+  const fileLoc =
+    first.file_name && first.line_number
+      ? `${first.file_name}:${first.line_number}`
+      : first.file_name || null;
+
+  if (finding.kind === "duplicate" && finding.evidence.length >= 2) {
+    const second = finding.evidence[1];
+    const datePart =
+      first.date && second.date && first.date !== second.date
+        ? `${first.date} & ${second.date}`
+        : first.date || second.date || null;
+    return [
+      first.account || "Account",
+      fmtAmount(first.amount),
+      datePart,
+      "2 matching entries",
+      fileLoc
+    ]
+      .filter(Boolean)
+      .join(" • ");
+  }
+
+  if (first.account || first.amount || first.date || fileLoc) {
+    const parts = [first.account, first.payee, fmtAmount(first.amount), first.date, fileLoc].filter(
+      Boolean
+    );
+    return parts.join(" • ");
+  }
+
+  return first.raw_message || null;
+}
+
 export function filterDoctorFindings(findings: DoctorFinding[], query: string) {
   const q = normalizeDoctorQuery(query);
   if (!q) return findings;

@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { filterDoctorFindings, groupDoctorFindings, normalizeDoctorQuery } from "./doctor_v2";
+import {
+  filterDoctorFindings,
+  formatFindingEvidenceSummary,
+  getFindingPrimaryTarget,
+  groupDoctorFindings,
+  normalizeDoctorQuery
+} from "./doctor_v2";
 
 describe("doctor_v2", () => {
   test("normalizes query text", () => {
@@ -43,5 +49,62 @@ describe("doctor_v2", () => {
     expect(filterDoctorFindings(findings, "acme")).toHaveLength(1);
     expect(filterDoctorFindings(findings, "below zero")).toHaveLength(1);
     expect(filterDoctorFindings(findings, "nonexistent")).toHaveLength(0);
+  });
+
+  test("formats evidence summary with account, date, amount, and file location", () => {
+    const finding: any = {
+      id: "1",
+      rule_id: "negative_balance",
+      kind: "rule",
+      evidence: [
+        {
+          account: "Assets:Checking",
+          amount: -150,
+          date: "2024-02-05",
+          file_name: "2024.ledger",
+          line_number: 24,
+          target_url: "/ledger/editor/2024.ledger#24"
+        }
+      ],
+      actions: [
+        { type: "open_editor", label: "Edit Transaction", url: "/ledger/editor/2024.ledger#24" }
+      ]
+    };
+
+    const summary = formatFindingEvidenceSummary(finding);
+    expect(summary).toContain("Assets:Checking");
+    expect(summary).toContain("2024-02-05");
+    expect(summary).toContain("2024.ledger:24");
+    expect(getFindingPrimaryTarget(finding)).toBe("/ledger/editor/2024.ledger#24");
+  });
+
+  test("formats duplicate evidence summary with dates", () => {
+    const finding: any = {
+      id: "dup:1:2",
+      rule_id: "duplicate_transaction",
+      kind: "duplicate",
+      evidence: [
+        {
+          account: "Expenses:Food",
+          amount: 500,
+          date: "2024-01-10",
+          file_name: "food.ledger",
+          line_number: 12
+        },
+        {
+          account: "Expenses:Food",
+          amount: 500,
+          date: "2024-01-11",
+          file_name: "food.ledger",
+          line_number: 18
+        }
+      ],
+      actions: []
+    };
+
+    const summary = formatFindingEvidenceSummary(finding);
+    expect(summary).toContain("Expenses:Food");
+    expect(summary).toContain("2024-01-10 & 2024-01-11");
+    expect(summary).toContain("food.ledger:12");
   });
 });

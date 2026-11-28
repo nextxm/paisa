@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import {
     ChevronDown,
     ChevronRight,
@@ -22,9 +22,20 @@
     content: string;
   }
 
+  let {
+    targetFile = "",
+    targetLine = 0,
+    jumpSeq = 0
+  }: {
+    targetFile?: string;
+    targetLine?: number;
+    jumpSeq?: number;
+  } = $props();
+
   let files = $state<LedgerFile[]>([]);
   let selectedFileName = $state("");
   let content = $state("");
+  let textareaEl = $state<HTMLTextAreaElement | null>(null);
   let newFileName = $state("");
   let loading = $state(true);
   let saving = $state(false);
@@ -79,7 +90,9 @@
     }
     const sortNodes = (nodes: TreeNode[]): TreeNode[] =>
       nodes
-        .sort((a, b) => (a.isFolder === b.isFolder ? a.name.localeCompare(b.name) : a.isFolder ? -1 : 1))
+        .sort((a, b) =>
+          a.isFolder === b.isFolder ? a.name.localeCompare(b.name) : a.isFolder ? -1 : 1
+        )
         .map((n) => (n.isFolder ? { ...n, children: sortNodes(n.children) } : n));
     return sortNodes(root);
   });
@@ -120,11 +133,52 @@
       ...f,
       file_name: f.file_name || f.name || ""
     }));
-    const target = selectName || selectedFileName || files[0]?.file_name || "";
+    const target = selectName || targetFile || selectedFileName || files[0]?.file_name || "";
     if (target) {
       selectFile(target);
+      if (targetFile && target === targetFile && targetLine > 0) {
+        await focusLine(targetLine);
+      }
     }
   }
+
+  async function focusLine(lineNumber: number) {
+    if (lineNumber <= 0) return;
+    await tick();
+    if (!textareaEl) return;
+    const text = content;
+    const lines = text.split("\n");
+    const clampedLine = Math.min(Math.max(1, lineNumber), lines.length);
+    let startOffset = 0;
+    for (let i = 0; i < clampedLine - 1; i++) {
+      startOffset += lines[i].length + 1;
+    }
+    const endOffset = startOffset + (lines[clampedLine - 1]?.length ?? 0);
+    textareaEl.focus();
+    textareaEl.setSelectionRange(startOffset, endOffset);
+
+    const computed = window.getComputedStyle(textareaEl);
+    const lineHeight = Number.parseFloat(computed.lineHeight) || 19.5;
+    const targetScrollTop = Math.max(
+      0,
+      (clampedLine - 1) * lineHeight - textareaEl.clientHeight / 3
+    );
+    textareaEl.scrollTop = targetScrollTop;
+  }
+
+  $effect(() => {
+    const seq = jumpSeq;
+    const file = targetFile;
+    const line = targetLine;
+    if (seq > 0 && file && files.length > 0) {
+      if (files.some((f) => f.file_name === file)) {
+        selectFile(file);
+        if (line > 0) {
+          void focusLine(line);
+        }
+      }
+    }
+  });
 
   onMount(async () => {
     try {
@@ -237,15 +291,23 @@
 </script>
 
 {#if loading}
-  <div class="h-80 rounded-xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"></div>
+  <div
+    class="h-80 rounded-xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"
+  ></div>
 {:else if files.length === 0}
-  <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center text-sm text-[var(--muted)]">
+  <div
+    class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-8 text-center text-sm text-[var(--muted)]"
+  >
     No ledger files found.
   </div>
 {:else}
-  <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden flex flex-col lg:h-[calc(100vh-14.5rem)] lg:min-h-[600px]">
+  <div
+    class="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden flex flex-col lg:h-[calc(100vh-14.5rem)] lg:min-h-[600px]"
+  >
     <!-- Top Toolbar -->
-    <div class="px-4 py-2.5 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-2">
+    <div
+      class="px-4 py-2.5 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-2"
+    >
       <div class="flex items-center gap-2">
         <button
           type="button"
@@ -264,7 +326,9 @@
           <span class="text-xs text-[var(--gain)]">{status}</span>
         {/if}
         {#if validationErrors.length > 0}
-          <span class="text-xs px-2 py-0.5 rounded bg-[var(--loss)]/15 text-[var(--loss)] font-medium">
+          <span
+            class="text-xs px-2 py-0.5 rounded bg-[var(--loss)]/15 text-[var(--loss)] font-medium"
+          >
             {validationErrors.length} error(s)
           </span>
         {/if}
@@ -315,7 +379,9 @@
     </div>
 
     {#if error}
-      <div class="px-4 py-2 bg-[var(--loss)]/10 text-xs text-[var(--loss)] border-b border-[var(--border)]">
+      <div
+        class="px-4 py-2 bg-[var(--loss)]/10 text-xs text-[var(--loss)] border-b border-[var(--border)]"
+      >
         {error}
       </div>
     {/if}
@@ -348,7 +414,8 @@
             type="button"
             onclick={() => node.fileName && selectFile(node.fileName)}
             style="padding-left: {depth * 12 + 10}px"
-            class="w-full flex items-center gap-1.5 py-1 pr-2 rounded-md text-left cursor-pointer truncate {selectedFileName === node.fileName
+            class="w-full flex items-center gap-1.5 py-1 pr-2 rounded-md text-left cursor-pointer truncate {selectedFileName ===
+            node.fileName
               ? 'bg-[var(--accent)]/15 text-[var(--accent)] font-semibold'
               : 'hover:bg-[var(--surface-elevated)]'}"
           >
@@ -367,7 +434,9 @@
           style="width: {leftWidth}px"
           class="w-full lg:shrink-0 border-b lg:border-b-0 bg-[var(--surface-elevated)]/30 p-3 flex flex-col gap-3 min-h-0"
         >
-          <div class="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)] shrink-0">
+          <div
+            class="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)] shrink-0"
+          >
             Files ({files.length})
           </div>
           {#if !runtime.readonly}
@@ -388,7 +457,9 @@
               </button>
             </div>
           {/if}
-          <div class="space-y-0.5 max-h-[320px] lg:max-h-none lg:flex-1 lg:min-h-0 overflow-y-auto text-xs">
+          <div
+            class="space-y-0.5 max-h-[320px] lg:max-h-none lg:flex-1 lg:min-h-0 overflow-y-auto text-xs"
+          >
             {@render treeNodes(fileTree, 0)}
           </div>
         </div>
@@ -403,6 +474,7 @@
       <!-- Middle: Editor -->
       <div class="flex-1 min-w-0 min-h-[420px] lg:min-h-0 flex flex-col">
         <textarea
+          bind:this={textareaEl}
           bind:value={content}
           readonly={runtime.readonly}
           spellcheck="false"
@@ -433,17 +505,23 @@
           {#if validationErrors.length > 0}
             <div class="space-y-1.5 text-xs shrink-0 max-h-40 overflow-y-auto">
               {#each validationErrors as ve}
-                <div class="p-2 rounded bg-[var(--loss)]/10 border border-[var(--loss)]/30 text-[var(--loss)]">
+                <div
+                  class="p-2 rounded bg-[var(--loss)]/10 border border-[var(--loss)]/30 text-[var(--loss)]"
+                >
                   Line {ve.line_from ?? ve.line ?? "?"}: {ve.message}
                 </div>
               {/each}
             </div>
           {/if}
           {#if validationOutput}
-            <pre class="flex-1 min-h-0 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)] font-mono text-[11px] leading-relaxed overflow-auto max-h-[360px] lg:max-h-none whitespace-pre-wrap">{validationOutput}</pre>
+            <pre
+              class="flex-1 min-h-0 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)] font-mono text-[11px] leading-relaxed overflow-auto max-h-[360px] lg:max-h-none whitespace-pre-wrap">{validationOutput}</pre>
           {:else}
-            <div class="text-xs text-[var(--muted)] p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
-              Click <strong>Validate</strong> or <strong>Save &amp; Sync</strong> to view ledger/beancount summary output.
+            <div
+              class="text-xs text-[var(--muted)] p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]"
+            >
+              Click <strong>Validate</strong> or <strong>Save &amp; Sync</strong> to view ledger/beancount
+              summary output.
             </div>
           {/if}
         </div>

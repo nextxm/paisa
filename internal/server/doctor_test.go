@@ -282,3 +282,55 @@ func TestGetUnifiedFindings_StructureAndDismissal(t *testing.T) {
 	}
 	assert.False(t, restoredFinding.Dismissed)
 }
+
+func TestEvaluateAssetRegisterNonNegative_IncludesFileLocationAndAction(t *testing.T) {
+	loadTestConfig(t, false)
+	db := openTestDB(t)
+
+	p1 := makePosting(1, "Assets:Checking", 100.0, "2024-02-01", "Deposit")
+	p1.FileName = "2024.ledger"
+	p1.TransactionBeginLine = 10
+
+	p2 := makePosting(2, "Assets:Checking", -250.0, "2024-02-05", "Rent")
+	p2.FileName = "2024.ledger"
+	p2.TransactionBeginLine = 24
+
+	require.NoError(t, db.Create(&p1).Error)
+	require.NoError(t, db.Create(&p2).Error)
+
+	findings := evaluateAssetRegisterNonNegative(db)
+	require.Len(t, findings, 1)
+
+	f := findings[0]
+	assert.Equal(t, "negative_balance", f.RuleID)
+	assert.Contains(t, f.Details, "Assets:Checking")
+	assert.Contains(t, f.Details, "05 Feb 2024")
+	require.Len(t, f.Evidence, 1)
+	assert.Equal(t, "Assets:Checking", f.Evidence[0].Account)
+	assert.Equal(t, "2024-02-05", f.Evidence[0].Date)
+	assert.Equal(t, "2024.ledger", f.Evidence[0].FileName)
+	assert.Equal(t, uint64(24), f.Evidence[0].LineNumber)
+	assert.Equal(t, "/ledger/editor/2024.ledger#24", f.Evidence[0].TargetURL)
+	require.Len(t, f.Actions, 1)
+	assert.Equal(t, "open_editor", f.Actions[0].Type)
+	assert.Equal(t, "/ledger/editor/2024.ledger#24", f.Actions[0].URL)
+}
+
+func TestEvaluateDuplicates_PlainDetailsWithoutHTML(t *testing.T) {
+	db := openTestDB(t)
+
+	p1 := makePosting(1, "Expenses:Food", 500.0, "2024-01-10", "Cafe")
+	p1.FileName = "food.ledger"
+	p1.TransactionBeginLine = 12
+	p2 := makePosting(2, "Expenses:Food", 500.0, "2024-01-10", "Cafe")
+	p2.FileName = "food.ledger"
+	p2.TransactionBeginLine = 18
+	require.NoError(t, db.Create(&p1).Error)
+	require.NoError(t, db.Create(&p2).Error)
+
+	findings := evaluateDuplicates(db)
+	require.Len(t, findings, 1)
+	assert.NotContains(t, findings[0].Details, "<b>")
+	assert.Contains(t, findings[0].Details, "Expenses:Food")
+	assert.Equal(t, "/ledger/editor/food.ledger#12", findings[0].Evidence[0].TargetURL)
+}

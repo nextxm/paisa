@@ -40,10 +40,11 @@ describe("networth_chart helpers", () => {
     ).toBe(14);
   });
 
-  test("computeNetworthBounds tracks balance, invested, zero, and ex-FX values", () => {
+  test("computeNetworthBounds scales to the windowed data range instead of anchoring min at 0", () => {
     const withoutFx = computeNetworthBounds(sample, false);
-    expect(withoutFx.min).toBe(0);
-    expect(withoutFx.max).toBeCloseTo(120000 * 1.06, 2);
+    // sample spans 100000..120000 (span = 20000, 6% pad = 1200)
+    expect(withoutFx.min).toBeCloseTo(100000 - 1200, 2);
+    expect(withoutFx.max).toBeCloseTo(120000 + 1200, 2);
 
     const withFx = computeNetworthBounds(
       [
@@ -58,7 +59,20 @@ describe("networth_chart helpers", () => {
       ],
       true
     );
-    expect(withFx.max).toBeCloseTo(120000 * 1.06, 2);
+    // exFx = 120000, min = 90000, span = 30000, 6% pad = 1800
+    expect(withFx.min).toBeCloseTo(90000 - 1800, 2);
+    expect(withFx.max).toBeCloseTo(120000 + 1800, 2);
+
+    // Non-negative series near 0 should clamp min at 0
+    const nearZero = computeNetworthBounds(
+      [
+        { date: "2026-01-01", balanceAmount: 100, netInvestmentAmount: 0, gainAmount: 100 },
+        { date: "2026-02-01", balanceAmount: 1000, netInvestmentAmount: 800, gainAmount: 200 }
+      ],
+      false
+    );
+    expect(nearZero.min).toBe(0);
+    expect(nearZero.max).toBeCloseTo(1060, 2);
   });
 
   test("buildLinePath and buildBandPath produce valid SVG paths", () => {

@@ -15,8 +15,12 @@ export function computeNetworthBounds(
   data: ReadonlyArray<NetworthPoint>,
   showFxImpact: boolean
 ): { min: number; max: number } {
-  let min = 0;
-  let max = 0;
+  if (data.length === 0) {
+    return { min: 0, max: 1000 };
+  }
+
+  let min = Infinity;
+  let max = -Infinity;
   for (const d of data) {
     const balance = d.balanceAmount || 0;
     const invested = d.netInvestmentAmount || 0;
@@ -28,10 +32,13 @@ export function computeNetworthBounds(
       max = Math.max(max, exFx);
     }
   }
-  if (max === min) {
-    max = min + 1000;
-  }
-  return { min, max: max * 1.06 };
+
+  const span = max - min;
+  const pad = span > 0 ? span * 0.06 : Math.max(Math.abs(max) * 0.05, 500);
+  const paddedMin = min >= 0 ? Math.max(0, min - pad) : min - pad;
+  const paddedMax = max + pad;
+
+  return { min: paddedMin, max: paddedMax };
 }
 
 export function buildLinePath(xs: ReadonlyArray<number>, ys: ReadonlyArray<number>): string {

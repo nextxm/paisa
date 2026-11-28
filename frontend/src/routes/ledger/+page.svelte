@@ -1,23 +1,20 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import { onMount } from "svelte";
-  import { CheckCircle2, Search } from "lucide-svelte";
+  import { ArrowUpRight, CheckCircle2, FileCode2, Search } from "lucide-svelte";
   import LedgerEditorPanel from "$lib/components/LedgerEditorPanel.svelte";
   import LedgerToolsPanels from "$lib/components/LedgerToolsPanels.svelte";
   import { apiGet, authHeaders } from "$lib/api";
+  import {
+    formatEvidenceLabel,
+    getEvidenceEditorLocation,
+    getPrimaryEditorLocation,
+    matchesFindingSearch,
+    type DoctorFinding
+  } from "$lib/doctor_helpers";
 
   type LedgerTab = "health" | "editor" | "import" | "sheets";
   type HealthFilter = "fix" | "review" | "dismissed" | "all";
-
-  interface DoctorFinding {
-    id: string;
-    rule_id: string;
-    severity: "fix" | "review" | "info";
-    title: string;
-    description?: string;
-    account?: string;
-    dismissed?: boolean;
-  }
 
   interface DoctorSummary {
     total: number;
@@ -28,12 +25,31 @@
   }
 
   let activeTab = $state<LedgerTab>("import");
+  let editorTargetFile = $state("");
+  let editorTargetLine = $state(0);
+  let editorJumpSeq = $state(0);
+
   $effect(() => {
     const tab = $page.url.searchParams.get("tab");
     if (tab === "health" || tab === "editor" || tab === "import" || tab === "sheets") {
       activeTab = tab;
     }
+    const file = $page.url.searchParams.get("file");
+    const lineParam = $page.url.searchParams.get("line");
+    if (file) {
+      editorTargetFile = file;
+      const parsed = lineParam ? Number.parseInt(lineParam, 10) : 0;
+      editorTargetLine = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+      editorJumpSeq += 1;
+    }
   });
+
+  function openInEditor(fileName: string, lineNumber = 0) {
+    editorTargetFile = fileName;
+    editorTargetLine = lineNumber;
+    editorJumpSeq += 1;
+    activeTab = "editor";
+  }
   let healthFilter = $state<HealthFilter>("fix");
   let search = $state("");
 
@@ -86,7 +102,7 @@
     await fetch("/api/doctor/dismiss", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ id: finding.id, rule_id: finding.rule_id })
+      body: JSON.stringify({ fingerprint: finding.id, rule_id: finding.rule_id })
     });
     await loadHealth();
   }
@@ -95,23 +111,17 @@
     await fetch("/api/doctor/undismiss", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ id: finding.id })
+      body: JSON.stringify({ fingerprint: finding.id })
     });
     await loadHealth();
   }
 
   const filteredFindings = $derived.by(() => {
-    const q = search.trim().toLowerCase();
     return findings.filter((f) => {
       if (healthFilter === "fix" && (f.dismissed || f.severity !== "fix")) return false;
       if (healthFilter === "review" && (f.dismissed || f.severity !== "review")) return false;
       if (healthFilter === "dismissed" && !f.dismissed) return false;
-      if (!q) return true;
-      return (
-        f.title.toLowerCase().includes(q) ||
-        f.description?.toLowerCase().includes(q) ||
-        f.account?.toLowerCase().includes(q)
-      );
+      return matchesFindingSearch(f, search);
     });
   });
 </script>
@@ -188,11 +198,13 @@
     {:else}
       <div class="space-y-3">
         {#each filteredFindings as f (f.id)}
+          {@const primaryLoc = getPrimaryEditorLocation(f)}
+          {@const messageText = f.details || f.description}
           <div
             class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 flex items-start justify-between gap-4"
           >
-            <div class="space-y-1 min-w-0">
-              <div class="flex items-center gap-2">
+            <div class="space-y-1.5 min-w-0 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
                 <span
                   class="px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase {f.severity ===
                   'fix'
@@ -205,20 +217,75 @@
                 </span>
                 <span class="text-sm font-semibold">{f.title}</span>
               </div>
-              {#if f.description}
+
+              {#if messageText}
+                {#if primaryLoc}
+                  <button
+                    type="button"
+                    onclick={() => openInEditor(primaryLoc.fileName, primaryLoc.lineNumber)}
+                    class="text-left text-xs text-[var(--accent)] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>{messageText}</span>
+                    <ArrowUpRight class="w-3.5 h-3.5 shrink-0" />
+                  </button>
+                {:else}
+                  <p class="text-xs text-[var(--text)]/90">{messageText}</p>
+                {/if}
+              {/if}
+
+              {#if f.details && f.description && f.details !== f.description}
                 <p class="text-xs text-[var(--muted)]">{f.description}</p>
               {/if}
-              {#if f.account}
+
+              {#if f.evidence && f.evidence.length > 0}
+                <div class="flex flex-wrap gap-1.5 pt-0.5">
+                  {#each f.evidence as ev}
+                    {@const evLoc = getEvidenceEditorLocation(ev)}
+                    {@const label = formatEvidenceLabel(ev)}
+                    {#if label}
+                      {#if evLoc}
+                        <button
+                          type="button"
+                          onclick={() => openInEditor(evLoc.fileName, evLoc.lineNumber)}
+                          title="Open in Journal Editor"
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono bg-[var(--surface-elevated)] border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+                        >
+                          <FileCode2 class="w-3.5 h-3.5 shrink-0" />
+                          <span>{label}</span>
+                        </button>
+                      {:else}
+                        <span
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--muted)]"
+                        >
+                          {label}
+                        </span>
+                      {/if}
+                    {/if}
+                  {/each}
+                </div>
+              {:else if f.account}
                 <div class="text-xs text-[var(--muted)] font-mono">{f.account}</div>
               {/if}
             </div>
-            <button
-              type="button"
-              class="px-2.5 py-1 rounded-md text-xs border border-[var(--border)] hover:bg-[var(--surface-elevated)] shrink-0 cursor-pointer"
-              onclick={() => (f.dismissed ? undismissFinding(f) : dismissFinding(f))}
-            >
-              {f.dismissed ? "Restore" : "Dismiss"}
-            </button>
+
+            <div class="flex items-center gap-2 shrink-0">
+              {#if primaryLoc}
+                <button
+                  type="button"
+                  onclick={() => openInEditor(primaryLoc.fileName, primaryLoc.lineNumber)}
+                  class="px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--accent)]/15 text-[var(--accent)] hover:bg-[var(--accent)]/25 cursor-pointer"
+                >
+                  Open in Editor
+                </button>
+              {/if}
+              <button
+                type="button"
+                class="px-2.5 py-1 rounded-md text-xs border border-[var(--border)] hover:bg-[var(--surface-elevated)] cursor-pointer"
+                onclick={() => (f.dismissed ? undismissFinding(f) : dismissFinding(f))}
+              >
+                {f.dismissed ? "Restore" : "Dismiss"}
+              </button>
+            </div>
           </div>
         {/each}
       </div>
@@ -251,7 +318,11 @@
       </div>
     {/if}
   {:else if activeTab === "editor"}
-    <LedgerEditorPanel />
+    <LedgerEditorPanel
+      targetFile={editorTargetFile}
+      targetLine={editorTargetLine}
+      jumpSeq={editorJumpSeq}
+    />
   {:else}
     <LedgerToolsPanels mode={activeTab} />
   {/if}

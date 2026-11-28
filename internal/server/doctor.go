@@ -588,6 +588,16 @@ type UndismissRequest struct {
 	Fingerprint string `json:"fingerprint"`
 }
 
+func formatEditorURL(fileName string, line uint64) string {
+	if fileName == "" {
+		return "/ledger/editor"
+	}
+	if line > 0 {
+		return fmt.Sprintf("/ledger/editor/%s#%d", url.PathEscape(fileName), line)
+	}
+	return fmt.Sprintf("/ledger/editor/%s", url.PathEscape(fileName))
+}
+
 func evaluateAssetRegisterNonNegative(db *gorm.DB) []DoctorFinding {
 	findings := make([]DoctorFinding, 0)
 	ruleConfig := config.GetConfig().Doctor.NegativeBalance
@@ -600,6 +610,40 @@ func evaluateAssetRegisterNonNegative(db *gorm.DB) []DoctorFinding {
 			if balance.Quantity.LessThan(decimal.NewFromFloat(0.01).Neg()) {
 				fingerprint := fmt.Sprintf("negative_balance:%s", account)
 				details := fmt.Sprintf("%s account went negative (%.2f) on %s", account, balance.Quantity.InexactFloat64(), balance.Date.Format(DATE_FORMAT))
+
+				var triggerPosting posting.Posting
+				hasTrigger := false
+				for _, p := range ps {
+					if p.Date.Equal(balance.Date) {
+						triggerPosting = p
+						hasTrigger = true
+					}
+				}
+
+				editorURL := "/ledger/editor"
+				evidence := FindingEvidence{
+					Account:    account,
+					Amount:     balance.Quantity.InexactFloat64(),
+					Date:       balance.Date.Format("2006-01-02"),
+					RawMessage: details,
+					TargetURL:  editorURL,
+				}
+				actions := []FindingAction{
+					{Type: "open_url", Label: "Open Ledger Editor", URL: editorURL},
+				}
+				if hasTrigger && triggerPosting.FileName != "" {
+					editorURL = formatEditorURL(triggerPosting.FileName, triggerPosting.TransactionBeginLine)
+					evidence.PostingID = triggerPosting.ID
+					evidence.FileName = triggerPosting.FileName
+					evidence.LineNumber = triggerPosting.TransactionBeginLine
+					evidence.Payee = triggerPosting.Payee
+					evidence.Commodity = triggerPosting.Commodity
+					evidence.TargetURL = editorURL
+					actions = []FindingAction{
+						{Type: "open_editor", Label: "Edit Transaction", URL: editorURL},
+					}
+				}
+
 				findings = append(findings, DoctorFinding{
 					ID:           fingerprint,
 					RuleID:       "negative_balance",
@@ -611,18 +655,8 @@ func evaluateAssetRegisterNonNegative(db *gorm.DB) []DoctorFinding {
 					HowToFix:     "Review transactions for this account around the date it went negative and insert missing deposits or correct transaction dates.",
 					Severity:     SeverityFix,
 					Details:      details,
-					Evidence: []FindingEvidence{
-						{
-							Account:    account,
-							Amount:     balance.Quantity.InexactFloat64(),
-							Date:       balance.Date.Format("2006-01-02"),
-							RawMessage: details,
-							TargetURL:  "/ledger/editor",
-						},
-					},
-					Actions: []FindingAction{
-						{Type: "open_url", Label: "Open Ledger Editor", URL: "/ledger/editor"},
-					},
+					Evidence:     []FindingEvidence{evidence},
+					Actions:      actions,
 				})
 				break
 			}
@@ -737,7 +771,19 @@ func evaluateExchangePriceMissing(db *gorm.DB) []DoctorFinding {
 			if externalPrice.CommodityName != "" && externalPrice.CommodityName != p.Commodity {
 				seenCommodities[p.Commodity] = true
 				fingerprint := fmt.Sprintf("exchange_price_missing:%s", p.Commodity)
-				details := fmt.Sprintf("Exchange price from %s to your default currency %s is not specified", p.Commodity, config.DefaultCurrency())
+				details := fmt.Sprintf("Exchange price from %s to %s is not specified (seen in %s on %s)", p.Commodity, config.DefaultCurrency(), p.Account, p.Date.Format(DATE_FORMAT))
+				editorURL := formatEditorURL(p.FileName, p.TransactionBeginLine)
+				targetURL := "/ledger/price"
+				actions := []FindingAction{
+					{Type: "open_url", Label: "Open Price Manager", URL: "/ledger/price"},
+				}
+				if p.FileName != "" {
+					targetURL = editorURL
+					actions = []FindingAction{
+						{Type: "open_editor", Label: "Edit Transaction", URL: editorURL},
+						{Type: "open_url", Label: "Open Price Manager", URL: "/ledger/price"},
+					}
+				}
 				findings = append(findings, DoctorFinding{
 					ID:           fingerprint,
 					RuleID:       "exchange_price_missing",
@@ -751,14 +797,19 @@ func evaluateExchangePriceMissing(db *gorm.DB) []DoctorFinding {
 					Details:      details,
 					Evidence: []FindingEvidence{
 						{
+							PostingID:  p.ID,
+							FileName:   p.FileName,
+							LineNumber: p.TransactionBeginLine,
+							Account:    p.Account,
+							Date:       p.Date.Format("2006-01-02"),
+							Amount:     p.Quantity.InexactFloat64(),
 							Commodity:  p.Commodity,
+							Payee:      p.Payee,
 							RawMessage: details,
-							TargetURL:  "/price",
+							TargetURL:  targetURL,
 						},
 					},
-					Actions: []FindingAction{
-						{Type: "open_url", Label: "Open Price Manager", URL: "/price"},
-					},
+					Actions: actions,
 				})
 			}
 		}
@@ -781,8 +832,8 @@ func evaluateJournalPriceMismatch(db *gorm.DB) []DoctorFinding {
 				!service.IsSellWithCapitalGains(db, p) &&
 				diff.GreaterThanOrEqual(decimal.NewFromFloat(0.0001)) {
 				fingerprint := fmt.Sprintf("unit_price_mismatch:%d:%s", p.ID, p.Commodity)
-				editorURL := fmt.Sprintf("/ledger/editor/%s#%d", url.PathEscape(p.FileName), p.TransactionBeginLine)
-				details := fmt.Sprintf("The price specified in posting doesn't match the price %.4f (%s) fetched from external system", externalPrice.Value.InexactFloat64(), externalPrice.Date.Format(DATE_FORMAT))
+				editorURL := formatEditorURL(p.FileName, p.TransactionBeginLine)
+				details := fmt.Sprintf("The price specified for %s in %s on %s doesn't match the price %.4f (%s) fetched from external system", p.Commodity, p.Account, p.Date.Format(DATE_FORMAT), externalPrice.Value.InexactFloat64(), externalPrice.Date.Format(DATE_FORMAT))
 				findings = append(findings, DoctorFinding{
 					ID:           fingerprint,
 					RuleID:       "unit_price_mismatch",
@@ -803,6 +854,7 @@ func evaluateJournalPriceMismatch(db *gorm.DB) []DoctorFinding {
 							Date:       p.Date.Format("2006-01-02"),
 							Amount:     p.Price().InexactFloat64(),
 							Commodity:  p.Commodity,
+							Payee:      p.Payee,
 							RawMessage: details,
 							TargetURL:  editorURL,
 						},
@@ -872,11 +924,11 @@ func evaluateAllocationTargetMissingAssetAccounts(db *gorm.DB) []DoctorFinding {
 			Evidence: []FindingEvidence{
 				{
 					RawMessage: strings.Join(ignoredAccounts, ", "),
-					TargetURL:  "/allocation",
+					TargetURL:  "/assets/allocation",
 				},
 			},
 			Actions: []FindingAction{
-				{Type: "open_url", Label: "Configure Allocation", URL: "/allocation"},
+				{Type: "open_url", Label: "Configure Allocation", URL: "/assets/allocation"},
 			},
 		})
 	}
@@ -892,8 +944,9 @@ func evaluateDuplicates(db *gorm.DB) []DoctorFinding {
 			id1, id2 = id2, id1
 		}
 		fingerprint := fmt.Sprintf("duplicate:%d:%d", id1, id2)
-		url1 := fmt.Sprintf("/ledger/editor/%s#%d", url.PathEscape(pair.Posting1.FileName), pair.Posting1.TransactionBeginLine)
-		url2 := fmt.Sprintf("/ledger/editor/%s#%d", url.PathEscape(pair.Posting2.FileName), pair.Posting2.TransactionBeginLine)
+		url1 := formatEditorURL(pair.Posting1.FileName, pair.Posting1.TransactionBeginLine)
+		url2 := formatEditorURL(pair.Posting2.FileName, pair.Posting2.TransactionBeginLine)
+		plainDetails := strings.NewReplacer("<b>", "", "</b>", "").Replace(pair.Reason)
 
 		findings = append(findings, DoctorFinding{
 			ID:           fingerprint,
@@ -905,7 +958,7 @@ func evaluateDuplicates(db *gorm.DB) []DoctorFinding {
 			WhyItMatters: "Duplicate entries inflate expenses or income figures and distort net worth.",
 			HowToFix:     "Inspect both postings. If it is a true duplicate, remove one entry in the editor. Otherwise, dismiss this finding.",
 			Severity:     SeverityReview,
-			Details:      pair.Reason,
+			Details:      plainDetails,
 			Confidence:   pair.Confidence,
 			Evidence: []FindingEvidence{
 				{
