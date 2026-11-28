@@ -104,6 +104,8 @@ type Registry struct {
 	nextSubID   int
 	recoverable map[string]RecoverableJobFn
 	db          *gorm.DB
+	stopCh      chan struct{}
+	closeOnce   sync.Once
 }
 
 func isInitializedDB(db *gorm.DB) bool {
@@ -125,6 +127,7 @@ func NewRegistry(db ...*gorm.DB) *Registry {
 		subscribers: make(map[int]chan Job),
 		recoverable: make(map[string]RecoverableJobFn),
 		db:          gormDB,
+		stopCh:      make(chan struct{}),
 	}
 	if gormDB != nil {
 		if isInitializedDB(gormDB) {
@@ -133,6 +136,15 @@ func NewRegistry(db ...*gorm.DB) *Registry {
 		go r.periodicCleanup(24 * time.Hour)
 	}
 	return r
+}
+
+// Close stops background cleanup goroutines owned by the Registry.
+func (r *Registry) Close() {
+	r.closeOnce.Do(func() {
+		if r.stopCh != nil {
+			close(r.stopCh)
+		}
+	})
 }
 
 func (r *Registry) loadPersistedJobs() {
@@ -157,8 +169,14 @@ func (r *Registry) loadPersistedJobs() {
 
 func (r *Registry) periodicCleanup(maxAge time.Duration) {
 	ticker := time.NewTicker(1 * time.Hour)
-	for range ticker.C {
-		r.clearOldJobs(maxAge)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			r.clearOldJobs(maxAge)
+		case <-r.stopCh:
+			return
+		}
 	}
 }
 
@@ -341,6 +359,9 @@ func (r *Registry) runDetailed(ctx context.Context, jobID string, fn DetailedJob
 
 	log.WithField("job_id", jobID).Info("worker: job started")
 
+	const progressSaveInterval = 500 * time.Millisecond
+	var lastProgressSave time.Time
+
 	progress := func(completed, total int) {
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -350,7 +371,11 @@ func (r *Registry) runDetailed(ctx context.Context, jobID string, fn DetailedJob
 		}
 		job.ItemsCompleted = completed
 		job.TotalItems = total
-		r.saveLocked(job)
+		now := time.Now()
+		if lastProgressSave.IsZero() || now.Sub(lastProgressSave) >= progressSaveInterval || (total > 0 && completed >= total) {
+			r.saveLocked(job)
+			lastProgressSave = now
+		}
 		r.notifyLocked(cloneJob(*job))
 	}
 
@@ -393,6 +418,18 @@ func (r *Registry) Get(id string) (Job, bool) {
 	}
 	clone := cloneJob(*j)
 	return clone, true
+}
+
+// FindActiveByType returns the first pending or running job with the given type.
+func (r *Registry) FindActiveByType(jobType string) (Job, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, j := range r.jobs {
+		if j.Type == jobType && (j.Status == StatusPending || j.Status == StatusRunning) {
+			return cloneJob(*j), true
+		}
+	}
+	return Job{}, false
 }
 
 // List returns all jobs ordered by CreatedAt ascending (oldest first).

@@ -646,3 +646,40 @@ func TestRegistry_UninitializedGormDBDoesNotPanic(t *testing.T) {
 	require.NoError(t, r.RecoverInterrupted(context.Background()))
 	r.ClearTerminal()
 }
+
+func TestRegistry_FindActiveByTypeAndClose(t *testing.T) {
+	r := worker.NewRegistry()
+	t.Cleanup(r.Close)
+
+	started := make(chan struct{})
+	release := make(chan struct{})
+	r.RegisterRecoverable("sync", func(_ context.Context, _ json.RawMessage, progress func(int, int)) ([]string, error) {
+		close(started)
+		progress(1, 2)
+		<-release
+		progress(2, 2)
+		return nil, nil
+	})
+
+	id, err := r.SubmitRecoverable(context.Background(), "sync", map[string]any{"journal": true}, nil)
+	require.NoError(t, err)
+	<-started
+
+	active, ok := r.FindActiveByType("sync")
+	require.True(t, ok)
+	assert.Equal(t, id, active.ID)
+
+	_, otherOK := r.FindActiveByType("other")
+	assert.False(t, otherOK)
+
+	close(release)
+	assert.Eventually(t, func() bool {
+		j, _ := r.Get(id)
+		return j.Status == worker.StatusCompleted
+	}, 2*time.Second, 5*time.Millisecond)
+
+	_, activeAfter := r.FindActiveByType("sync")
+	assert.False(t, activeAfter)
+	r.Close()
+	r.Close() // idempotent
+}

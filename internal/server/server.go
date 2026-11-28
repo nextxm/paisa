@@ -209,6 +209,11 @@ func Build(db *gorm.DB, enableCompression bool) *gin.Engine {
 			return
 		}
 
+		if existing, ok := registry.FindActiveByType("sync"); ok {
+			c.JSON(http.StatusAccepted, gin.H{"job_id": existing.ID, "deduplicated": true})
+			return
+		}
+
 		jobID, err := registry.SubmitRecoverable(context.Background(), "sync", syncRequest, map[string]any{
 			"journal":         syncRequest.Journal,
 			"prices":          syncRequest.Prices,
