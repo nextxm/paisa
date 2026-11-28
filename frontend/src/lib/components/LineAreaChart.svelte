@@ -172,7 +172,7 @@
               font-size="11"
               fill="var(--muted)"
             >
-              {dayjs(d.date).format("MMM YY")}
+              {dayjs(d.date).format("MMM 'YY")}
             </text>
           {/if}
         {/each}

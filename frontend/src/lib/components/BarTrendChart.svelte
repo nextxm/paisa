@@ -42,7 +42,10 @@
   const activeSeriesCount = $derived(
     Math.max(
       1,
-      (hasIncome ? 1 : 0) + (hasExpenses ? 1 : 0) + (hasInvestment ? 1 : 0) + (hasLiabilities ? 1 : 0)
+      (hasIncome ? 1 : 0) +
+        (hasExpenses ? 1 : 0) +
+        (hasInvestment ? 1 : 0) +
+        (hasLiabilities ? 1 : 0)
     )
   );
 
@@ -112,8 +115,12 @@
           {@const seriesBars = [
             ...(hasIncome ? [{ val: Math.max(0, d.income || 0), color: "var(--gain)" }] : []),
             ...(hasExpenses ? [{ val: Math.max(0, d.expenses || 0), color: "var(--loss)" }] : []),
-            ...(hasInvestment ? [{ val: Math.max(0, d.investment || 0), color: "var(--accent)" }] : []),
-            ...(hasLiabilities ? [{ val: Math.max(0, d.liabilities || 0), color: "var(--warning)" }] : [])
+            ...(hasInvestment
+              ? [{ val: Math.max(0, d.investment || 0), color: "var(--accent)" }]
+              : []),
+            ...(hasLiabilities
+              ? [{ val: Math.max(0, d.liabilities || 0), color: "var(--warning)" }]
+              : [])
           ]}
           {@const groupW = seriesBars.length * barWidth + Math.max(0, seriesBars.length - 1) * 2}
           {@const startX = cx - groupW / 2}
@@ -150,7 +157,7 @@
                 font-size="11"
                 fill="var(--muted)"
               >
-                {dayjs(d.date).format("MMM YY")}
+                {dayjs(d.date).format("MMM 'YY")}
               </text>
             {/if}
           </g>

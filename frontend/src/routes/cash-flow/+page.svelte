@@ -364,7 +364,7 @@
         segments.push({ name: "Other", amount: other, color: categoryPalette[8] });
       }
       return {
-        label: expenseTrendGranularity === "yearly" ? pk : dayjs(`${pk}-01`).format("MMM YY"),
+        label: expenseTrendGranularity === "yearly" ? pk : dayjs(`${pk}-01`).format("MMM 'YY"),
         total,
         segments
       };
@@ -375,7 +375,7 @@
     const months = Object.keys(monthWiseExpenses).sort().slice(-13);
     const totals = months.map((m) => ({
       month: m,
-      label: dayjs(`${m}-01`).format("MMM YY"),
+      label: dayjs(`${m}-01`).format("MMM 'YY"),
       total: (monthWiseExpenses[m] || []).reduce((s, p) => s + Math.max(0, p.amount || 0), 0)
     }));
     return totals.slice(1).map((cur, idx) => {
