@@ -108,9 +108,27 @@
   let yearlyStatements = $state<Record<string, IncomeStatement>>({});
   let sankeyLinks = $state<SankeyLink[]>([]);
   let sankeyLoading = $state(false);
-  let sankeyFrom = $state("");
-  let sankeyTo = $state("");
+  let sankeyFrom = $state(dayjs().startOf("month").format("YYYY-MM-DD"));
+  let sankeyTo = $state(dayjs().endOf("month").format("YYYY-MM-DD"));
+  let sankeyCustomRange = $state(false);
   let sankeyExpenseOnly = $state(false);
+
+  function setSankeyRangeForPeriod(period: SankeyPeriod) {
+    const ref = selectedMonth ? dayjs(`${selectedMonth}-01`) : dayjs();
+    if (period === "quarter") {
+      const qStartMonth = Math.floor(ref.month() / 3) * 3;
+      const start = ref.month(qStartMonth).startOf("month");
+      sankeyFrom = start.format("YYYY-MM-DD");
+      sankeyTo = start.add(2, "month").endOf("month").format("YYYY-MM-DD");
+    } else if (period === "year") {
+      sankeyFrom = ref.startOf("year").format("YYYY-MM-DD");
+      sankeyTo = ref.endOf("year").format("YYYY-MM-DD");
+    } else {
+      sankeyFrom = ref.startOf("month").format("YYYY-MM-DD");
+      sankeyTo = ref.endOf("month").format("YYYY-MM-DD");
+    }
+    sankeyCustomRange = false;
+  }
   let dailyExpenses = $state<Array<{ date: string; amount: number; category?: string }>>([]);
   let dailyLoading = $state(false);
   let recurringView = $state<"list" | "calendar">("calendar");
@@ -127,6 +145,20 @@
       gross_income?: number;
     }>
   >([]);
+
+  function formatIncomeCardYear(yc: {
+    year?: string;
+    start_date?: string;
+    end_date?: string;
+  }): string {
+    if (yc.year) return yc.year;
+    const startY = yc.start_date ? dayjs(yc.start_date).year() : null;
+    const endY = yc.end_date ? dayjs(yc.end_date).year() : null;
+    if (startY !== null && endY !== null) {
+      return startY === endY ? String(startY) : `FY ${startY}-${String(endY).slice(-2)}`;
+    }
+    return startY !== null ? String(startY) : "—";
+  }
   let incomeTimeline = $state<Array<{ date: string; postings?: Posting[] }>>([]);
   let taxTimeline = $state<Array<{ date: string; postings?: Posting[] }>>([]);
   let ttmInvestmentIncome = $state(0);
@@ -198,6 +230,9 @@
       const availableMonths = Object.keys(monthWiseExpenses).sort();
       if (availableMonths.length > 0 && !monthWiseExpenses[selectedMonth]) {
         selectedMonth = availableMonths[availableMonths.length - 1];
+      }
+      if (!sankeyCustomRange) {
+        setSankeyRangeForPeriod(sankeyPeriod);
       }
 
       const stmtYears = Object.keys(yearlyStatements).sort().reverse();
@@ -742,7 +777,10 @@
             class="px-2.5 py-1 rounded-md capitalize cursor-pointer {sankeyPeriod === p
               ? 'bg-[var(--surface-elevated)] font-semibold'
               : 'text-[var(--muted)]'}"
-            onclick={() => (sankeyPeriod = p as SankeyPeriod)}
+            onclick={() => {
+              sankeyPeriod = p as SankeyPeriod;
+              setSankeyRangeForPeriod(sankeyPeriod);
+            }}
           >
             {p}
           </button>
@@ -1053,48 +1091,116 @@
         </div>
       </div>
 
-      <!-- Waterfall Bridge Graph (Horizontal) -->
-      {#if statementWaterfall.length > 0}
-        {@const wfMin = Math.min(0, ...statementWaterfall.flatMap((s) => [s.start, s.end]))}
-        {@const wfMax = Math.max(1, ...statementWaterfall.flatMap((s) => [s.start, s.end]))}
+      <!-- Waterfall Bridge Graph (Horizontal, delta steps only with top scale) -->
+      {@const bridgeSteps = statementWaterfall.filter((s) => s.kind !== "total")}
+      {#if bridgeSteps.length > 0}
+        {@const rawMin = Math.min(...bridgeSteps.flatMap((s) => [s.start, s.end]))}
+        {@const rawMax = Math.max(...bridgeSteps.flatMap((s) => [s.start, s.end]))}
+        {@const rawSpan = Math.max(1, rawMax - rawMin)}
+        {@const wfMin = rawMin - rawSpan * 0.04}
+        {@const wfMax = rawMax + rawSpan * 0.04}
         {@const wfSpan = Math.max(1, wfMax - wfMin)}
-        {@const wfW = 760}
-        {@const rowH = 34}
-        {@const barH = 20}
-        {@const padT = 8}
-        {@const padB = 8}
-        {@const padL = 136}
-        {@const padR = 120}
-        {@const wfH = statementWaterfall.length * rowH + padT + padB}
+        {@const wfW = 1040}
+        {@const wfH = 228}
+        {@const padT = 28}
+        {@const padB = 14}
+        {@const padL = 104}
+        {@const padR = 116}
+        {@const rowH = (wfH - padT - padB) / bridgeSteps.length}
+        {@const barH = Math.min(20, rowH * 0.62)}
         {@const plotW = wfW - padL - padR}
         {@const xAt = (v: number) => padL + ((v - wfMin) / wfSpan) * plotW}
+        {@const wfTicks = [0, 0.25, 0.5, 0.75, 1].map((t) => wfMin + t * wfSpan)}
+        {@const formatWfTick = (val: number) =>
+          Math.abs(val) >= 10000000
+            ? `${(val / 10000000).toFixed(2)}Cr`
+            : Math.abs(val) >= 100000
+              ? `${(val / 100000).toFixed(1)}L`
+              : Math.abs(val) >= 1000
+                ? `${(val / 1000).toFixed(0)}K`
+                : `${Math.round(val)}`}
+        {@const startStep = statementWaterfall[0]}
+        {@const endStep = statementWaterfall[statementWaterfall.length - 1]}
         <div class="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-5 space-y-3">
-          <div class="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-            Net Worth Bridge ({selectedYear})
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span class="font-semibold uppercase tracking-wider text-[var(--muted)]">
+              Net Worth Bridge ({selectedYear})
+            </span>
+            {#if startStep && endStep}
+              <span class="text-[var(--muted)] tabular-nums">
+                Start {formatMoney(startStep.end)} → End {formatMoney(endStep.end)}
+              </span>
+            {/if}
           </div>
           <div class="overflow-x-auto">
-            <svg viewBox="0 0 {wfW} {wfH}" class="w-full min-w-[520px] h-auto overflow-visible">
-              <line
-                x1={xAt(0)}
-                x2={xAt(0)}
-                y1={padT}
-                y2={wfH - padB}
-                stroke="var(--border)"
-                stroke-dasharray="3 3"
-              />
-              {#each statementWaterfall as step, idx}
+            <svg viewBox="0 0 {wfW} {wfH}" class="w-full min-w-[600px] h-56 overflow-visible">
+              <!-- Top X-Axis Scale & Vertical Gridlines -->
+              <line x1={padL} x2={wfW - padR} y1={padT} y2={padT} stroke="var(--border)" />
+              {#each wfTicks as tick}
+                {@const tx = xAt(tick)}
+                <line
+                  x1={tx}
+                  x2={tx}
+                  y1={padT}
+                  y2={wfH - padB}
+                  stroke="var(--border)"
+                  stroke-dasharray="3 3"
+                  opacity="0.6"
+                />
+                <text
+                  x={tx}
+                  y={padT - 8}
+                  text-anchor="middle"
+                  font-size="10"
+                  fill="var(--muted)"
+                  class="tabular-nums"
+                >
+                  {formatWfTick(tick)}
+                </text>
+              {/each}
+
+              <!-- Start & End Reference Markers -->
+              {#if startStep}
+                {@const sx = xAt(startStep.end)}
+                <line
+                  x1={sx}
+                  x2={sx}
+                  y1={padT}
+                  y2={wfH - padB}
+                  stroke="var(--accent)"
+                  stroke-dasharray="2 2"
+                  opacity="0.6"
+                />
+                <polygon
+                  points="{sx - 4},{padT - 3} {sx + 4},{padT - 3} {sx},{padT + 3}"
+                  fill="var(--accent)"
+                />
+              {/if}
+              {#if endStep}
+                {@const ex = xAt(endStep.end)}
+                <line
+                  x1={ex}
+                  x2={ex}
+                  y1={padT}
+                  y2={wfH - padB}
+                  stroke="var(--accent)"
+                  stroke-dasharray="2 2"
+                  opacity="0.6"
+                />
+                <polygon
+                  points="{ex - 4},{wfH - padB + 3} {ex + 4},{wfH - padB + 3} {ex},{wfH - padB - 3}"
+                  fill="var(--accent)"
+                />
+              {/if}
+
+              {#each bridgeSteps as step, idx}
                 {@const xStart = xAt(step.start)}
                 {@const xEnd = xAt(step.end)}
                 {@const x1 = Math.min(xStart, xEnd)}
                 {@const x2 = Math.max(xStart, xEnd)}
                 {@const y = padT + idx * rowH + (rowH - barH) / 2}
-                {@const fill =
-                  step.kind === "total"
-                    ? "var(--accent)"
-                    : step.kind === "pos"
-                      ? "var(--gain)"
-                      : "var(--loss)"}
-                {#if idx < statementWaterfall.length - 1}
+                {@const fill = step.kind === "pos" ? "var(--gain)" : "var(--loss)"}
+                {#if idx < bridgeSteps.length - 1}
                   {@const nextY = padT + (idx + 1) * rowH + (rowH - barH) / 2}
                   <line
                     x1={xEnd}
@@ -1109,7 +1215,7 @@
                   x={padL - 12}
                   y={y + barH / 2 + 4}
                   text-anchor="end"
-                  font-size="11"
+                  font-size="11.5"
                   fill="var(--muted)"
                 >
                   {step.label}
@@ -1117,23 +1223,21 @@
                 <rect
                   x={x1}
                   {y}
-                  width={Math.max(3, x2 - x1)}
+                  width={Math.max(4, x2 - x1)}
                   height={barH}
                   {fill}
                   rx="4"
                   opacity="0.9"
                 />
                 <text
-                  x={Math.max(x1 + 3, x2) + 8}
-                  y={y + barH / 2 + 3.5}
+                  x={Math.max(x1 + 4, x2) + 8}
+                  y={y + barH / 2 + 4}
                   text-anchor="start"
-                  font-size="10.5"
+                  font-size="11"
                   fill="var(--muted)"
                   class="tabular-nums"
                 >
-                  {step.kind === "total"
-                    ? formatMoney(step.end)
-                    : `${step.delta >= 0 ? "+" : ""}${formatMoney(step.delta)}`}
+                  {`${step.delta >= 0 ? "+" : ""}${formatMoney(step.delta)}`}
                 </text>
               {/each}
             </svg>
@@ -1236,21 +1340,20 @@
           <input
             type="date"
             bind:value={sankeyFrom}
+            oninput={() => (sankeyCustomRange = true)}
             class="px-2.5 py-1 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] tabular-nums"
           />
           <span class="text-[var(--muted)]">to</span>
           <input
             type="date"
             bind:value={sankeyTo}
+            oninput={() => (sankeyCustomRange = true)}
             class="px-2.5 py-1 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] tabular-nums"
           />
-          {#if sankeyFrom || sankeyTo}
+          {#if sankeyCustomRange}
             <button
               type="button"
-              onclick={() => {
-                sankeyFrom = "";
-                sankeyTo = "";
-              }}
+              onclick={() => setSankeyRangeForPeriod(sankeyPeriod)}
               class="px-2.5 py-1 rounded-lg border border-[var(--border)] hover:border-[var(--accent)] cursor-pointer"
             >
               Reset
@@ -1377,7 +1480,9 @@
                       title="Tax: {formatMoney(yc.net_tax || 0)}"
                     ></div>
                   </div>
-                  <span class="text-[10px] text-[var(--muted)] truncate">{yc.year}</span>
+                  <span class="text-[10px] text-[var(--muted)] truncate"
+                    >{formatIncomeCardYear(yc)}</span
+                  >
                 </div>
               {/each}
             </div>
@@ -1399,7 +1504,9 @@
                       title="Net Income: {formatMoney(yc.net_income || 0)}"
                     ></div>
                   </div>
-                  <span class="text-[10px] text-[var(--muted)] truncate">{yc.year}</span>
+                  <span class="text-[10px] text-[var(--muted)] truncate"
+                    >{formatIncomeCardYear(yc)}</span
+                  >
                 </div>
               {/each}
             </div>
@@ -1421,7 +1528,9 @@
                       title="Net Tax: {formatMoney(yc.net_tax || 0)}"
                     ></div>
                   </div>
-                  <span class="text-[10px] text-[var(--muted)] truncate">{yc.year}</span>
+                  <span class="text-[10px] text-[var(--muted)] truncate"
+                    >{formatIncomeCardYear(yc)}</span
+                  >
                 </div>
               {/each}
             </div>
@@ -1448,17 +1557,7 @@
             </thead>
             <tbody class="divide-y divide-[var(--border)] tabular-nums">
               {#each yearlyIncomeCards as yc}
-                {@const startY = yc.start_date ? dayjs(yc.start_date).year() : null}
-                {@const endY = yc.end_date ? dayjs(yc.end_date).year() : null}
-                {@const fyLabel =
-                  yc.year ||
-                  (startY !== null && endY !== null
-                    ? startY === endY
-                      ? String(startY)
-                      : `FY ${startY}-${String(endY).slice(-2)}`
-                    : startY !== null
-                      ? String(startY)
-                      : "—")}
+                {@const fyLabel = formatIncomeCardYear(yc)}
                 <tr class="hover:bg-[var(--surface-elevated)]/50">
                   <td class="py-2.5 px-4 font-medium">{fyLabel}</td>
                   <td class="py-2.5 px-4 text-right">{formatMoney(yc.gross_income || 0)}</td>
